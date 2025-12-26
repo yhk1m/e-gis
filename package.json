@@ -1,0 +1,45 @@
+{
+  "name": "egis",
+  "version": "0.1.0",
+  "description": "교육용 GIS 웹 애플리케이션",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "gis",
+    "education",
+    "openlayers",
+    "mapping",
+    "geography"
+  ],
+  "author": "김용현",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@turf/turf": "^7.0.0",
+    "chart.js": "^4.4.0",
+    "d3": "^7.8.0",
+    "d3-contour": "^4.0.0",
+    "geotiff": "^2.1.0",
+    "html2canvas": "^1.4.0",
+    "intro.js": "^7.2.0",
+    "jspdf": "^2.5.0",
+    "jszip": "^3.10.1",
+    "mathjs": "^12.0.0",
+    "ngraph.graph": "^20.0.0",
+    "ngraph.path": "^1.5.0",
+    "ol": "^9.0.0",
+    "papaparse": "^5.4.0",
+    "proj4": "^2.20.2",
+    "shapefile": "^0.6.6",
+    "shpjs": "^6.2.0",
+    "sql.js": "^1.13.0",
+    "xlsx": "^0.18.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

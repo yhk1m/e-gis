@@ -1,0 +1,136 @@
+/**
+ * eGIS CSS 변수 정의
+ * 깔끔한 현대적 디자인 + 다크/라이트 모드 지원
+ */
+
+:root {
+  /* 크기 - 레이아웃 */
+  --menubar-height: 32px;
+  --toolbar-height: 40px;
+  --statusbar-height: 26px;
+  --panel-width: 260px;
+  --panel-min-width: 200px;
+  --panel-max-width: 400px;
+
+  /* 크기 - 간격 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+
+  /* 크기 - 폰트 */
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 14px;
+  --font-size-xl: 16px;
+
+  /* 폰트 */
+  --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* 둥근 모서리 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 트랜지션 */
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* z-index 레벨 */
+  --z-panel: 100;
+  --z-toolbar: 200;
+  --z-menubar: 300;
+  --z-dropdown: 400;
+  --z-dialog: 500;
+  --z-tooltip: 600;
+}
+
+/* ===== 라이트 모드 (기본) ===== */
+:root,
+[data-theme="light"] {
+  /* 기본 색상 */
+  --color-primary: #0066cc;
+  --color-primary-hover: #0052a3;
+  --color-primary-light: #e6f2ff;
+  --color-accent: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* 배경 */
+  --bg-app: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-menubar: #ffffff;
+  --bg-toolbar: #ffffff;
+  --bg-statusbar: #f1f5f9;
+  --bg-hover: #f1f5f9;
+  --bg-active: #e2e8f0;
+  --bg-selected: #dbeafe;
+  --bg-input: #ffffff;
+  --bg-button: #f1f5f9;
+  --bg-button-hover: #e2e8f0;
+
+  /* 텍스트 */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* 테두리 */
+  --border-color: #e2e8f0;
+  --border-color-strong: #cbd5e1;
+
+  /* 그림자 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* 지도 오버레이 */
+  --map-overlay-bg: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== 다크 모드 ===== */
+[data-theme="dark"] {
+  /* 기본 색상 */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-light: #1e3a5f;
+  --color-accent: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+
+  /* 배경 */
+  --bg-app: #0f172a;
+  --bg-panel: #1e293b;
+  --bg-menubar: #1e293b;
+  --bg-toolbar: #1e293b;
+  --bg-statusbar: #1e293b;
+  --bg-hover: #334155;
+  --bg-active: #475569;
+  --bg-selected: #1e3a5f;
+  --bg-input: #0f172a;
+  --bg-button: #334155;
+  --bg-button-hover: #475569;
+
+  /* 텍스트 */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0f172a;
+
+  /* 테두리 */
+  --border-color: #334155;
+  --border-color-strong: #475569;
+
+  /* 그림자 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+
+  /* 지도 오버레이 */
+  --map-overlay-bg: rgba(30, 41, 59, 0.9);
+}

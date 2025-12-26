@@ -1,0 +1,369 @@
+/**
+ * eGIS 레이아웃 스타일
+ */
+
+/* 전체 앱 컨테이너 */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+}
+
+/* 메뉴바 */
+#menubar {
+  height: var(--menubar-height);
+  background: var(--bg-menubar);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-sm);
+  z-index: var(--z-menubar);
+  flex-shrink: 0;
+}
+
+.menu-right {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* 툴바 */
+#toolbar {
+  height: var(--toolbar-height);
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-md);
+  gap: var(--spacing-sm);
+  z-index: var(--z-toolbar);
+  flex-shrink: 0;
+}
+
+/* 메인 컨테이너 (패널 + 지도) */
+#main-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 왼쪽 패널 영역 */
+#left-panel {
+  width: var(--panel-width);
+  min-width: var(--panel-min-width);
+  max-width: var(--panel-max-width);
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-panel);
+  flex-shrink: 0;
+}
+
+/* 패널 리사이저 */
+.panel-resizer {
+  width: 4px;
+  background: transparent;
+  cursor: ew-resize;
+  transition: background var(--transition-fast);
+}
+
+.panel-resizer:hover,
+.panel-resizer.active {
+  background: var(--color-primary);
+}
+
+/* 브라우저 패널 */
+#browser-panel {
+  height: 35%;
+  min-height: 100px;
+  border-bottom: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 레이어 패널 */
+#layer-panel {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 패널 헤더 */
+.panel-header {
+  height: 32px;
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.panel-header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* 패널 내용 */
+.panel-content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--spacing-sm);
+}
+
+/* 지도 컨테이너 */
+#map-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* 상태표시줄 */
+#statusbar {
+  height: var(--statusbar-height);
+  background: var(--bg-statusbar);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  gap: var(--spacing-lg);
+  flex-shrink: 0;
+}
+
+/* 상태표시줄 항목 */
+.statusbar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.statusbar-item.coordinates {
+  min-width: 200px;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+}
+
+.statusbar-item.scale {
+  min-width: 100px;
+}
+
+/* 상태표시줄 값 텍스트 - 더 밝게 */
+.scale-value,
+.coord-value {
+  color: var(--text-primary);
+}
+
+
+.statusbar-item.crs {
+  min-width: 100px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.statusbar-item.crs:hover {
+  background: var(--bg-hover);
+}
+
+.statusbar-spacer {
+  flex: 1;
+}
+
+/* 속성 테이블 패널 (하단) */
+#attribute-panel {
+  height: 0;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: height var(--transition-normal);
+}
+
+#attribute-panel.open {
+  height: 220px;
+}
+
+/* 오른쪽 패널 (처리 도구) */
+#right-panel {
+  width: 0;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: width var(--transition-normal);
+}
+
+#right-panel.open {
+  width: var(--panel-width);
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* 다크 모드 스크롤바 */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* CRS 드롭다운 */
+.crs-dropdown {
+  position: relative;
+}
+
+.crs-dropdown-menu {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  min-width: 220px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+  z-index: var(--z-dropdown);
+}
+
+.crs-dropdown.open .crs-dropdown-menu {
+  display: block;
+}
+
+.crs-option {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.crs-option:hover {
+  background: var(--bg-hover);
+}
+
+.crs-code {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.crs-name {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.crs-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* 메뉴바 드롭다운 */
+.menu-item.dropdown {
+  position: relative;
+}
+
+.menu-item .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 160px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-xs);
+  z-index: var(--z-dropdown);
+}
+
+.menu-item.dropdown.open .dropdown-menu {
+  display: block;
+}
+
+.menu-button {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.menu-button:hover {
+  background: var(--bg-hover);
+}
+
+/* 드롭다운 아이템 */
+.dropdown-item {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.dropdown-item:hover {
+  background: var(--bg-hover);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: var(--spacing-xs) 0;
+}
+
+/* 패널 숨기기 */
+#left-panel.hidden {
+  display: none;
+}
