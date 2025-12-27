@@ -107,8 +107,6 @@ class BufferPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    });
-
     opacityInput.addEventListener('input', (e) => {
       opacityValue.textContent = e.target.value;
     });

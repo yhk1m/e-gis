@@ -102,8 +102,6 @@ class SpatialOperationsPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    });
-
     // 연산 변경 시 설명 업데이트
     operationSelect.addEventListener('change', () => this.updateDescription());
 

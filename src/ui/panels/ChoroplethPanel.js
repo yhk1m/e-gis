@@ -130,7 +130,6 @@ class ChoroplethPanel {
     const removeColorBtn = document.getElementById("remove-color-btn");
 
     closeBtn.addEventListener("click", () => this.close());
-    });
 
     applyBtn.addEventListener("click", () => this.apply());
     okBtn.addEventListener("click", () => {

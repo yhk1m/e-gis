@@ -213,6 +213,24 @@ export class AppLayout {
         </div>
 
         <div class="toolbar-spacer"></div>
+
+        <!-- 위치 검색 -->
+        <div class="toolbar-search" id="toolbar-search">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="location-search-input" placeholder="장소 검색..." autocomplete="off">
+            <button class="search-clear" id="search-clear" title="지우기" style="display:none;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="search-results" id="search-results" style="display:none;"></div>
+        </div>
       </div>
 
       <!-- 메인 컨테이너 -->

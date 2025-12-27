@@ -1,12 +1,12 @@
 /**
  * AttributeTable - 속성 테이블 컴포넌트
+ * 새 창(팝업 윈도우)으로 열기 - QGIS 스타일
  */
 
 import { eventBus, Events } from '../../utils/EventBus.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { mapManager } from '../../core/MapManager.js';
 import Select from 'ol/interaction/Select';
-import { click } from 'ol/events/condition';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 
 // 하이라이트 스타일
@@ -22,78 +22,10 @@ const HIGHLIGHT_STYLE = new Style({
 
 export class AttributeTable {
   constructor() {
-    this.container = null;
-    this.currentLayerId = null;
-    this.features = [];
-    this.columns = [];
-    this.selectedFeatureId = null;
-    this.highlightSelect = null;
-    this.sortColumn = null;
-    this.sortAsc = true;
-    this.initialized = false;
+    this.openWindows = new Map(); // layerId -> window
+    this.highlightSelects = new Map(); // layerId -> Select interaction
 
     this.bindEvents();
-  }
-
-  /**
-   * 초기화 (DOM 준비 후 호출)
-   */
-  init() {
-    if (this.initialized) return;
-    this.createContainer();
-    this.initialized = true;
-  }
-
-  /**
-   * 컨테이너 생성
-   */
-  createContainer() {
-    // 속성 테이블 패널 생성
-    this.container = document.createElement('div');
-    this.container.id = 'attribute-panel';
-    this.container.className = 'attribute-panel';
-    this.container.innerHTML = `
-      <div class="attribute-header">
-        <div class="attribute-title">
-          <span class="attribute-layer-name">속성 테이블</span>
-          <span class="attribute-count"></span>
-        </div>
-        <div class="attribute-actions">
-          <button class="btn-icon" id="attr-zoom-selected" title="선택 피처로 이동">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </button>
-          <button class="btn-icon" id="attr-close" title="닫기">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="attribute-content">
-        <table class="attribute-table">
-          <thead></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    `;
-
-    // main-container 뒤에 삽입
-    const mainContainer = document.getElementById('main-container');
-    mainContainer.parentNode.insertBefore(this.container, mainContainer.nextSibling);
-
-    // 닫기 버튼
-    this.container.querySelector('#attr-close').addEventListener('click', () => {
-      this.close();
-    });
-
-    // 선택 피처로 이동 버튼
-    this.container.querySelector('#attr-zoom-selected').addEventListener('click', () => {
-      this.zoomToSelected();
-    });
   }
 
   /**
@@ -105,99 +37,87 @@ export class AttributeTable {
       this.open(layerId);
     });
 
-    // 레이어 삭제 시 테이블 닫기
+    // 레이어 삭제 시 창 닫기
     eventBus.on(Events.LAYER_REMOVED, ({ layerId }) => {
-      if (this.currentLayerId === layerId) {
-        this.close();
-      }
+      this.closeWindow(layerId);
     });
 
-    // 피처 생성/삭제 시 테이블 갱신
+    // 피처 변경 시 테이블 갱신
     eventBus.on(Events.FEATURE_CREATED, () => {
-      if (this.currentLayerId) {
-        this.refresh();
-      }
+      this.refreshAllWindows();
     });
 
     eventBus.on(Events.FEATURE_DELETED, () => {
-      if (this.currentLayerId) {
-        this.refresh();
-      }
+      this.refreshAllWindows();
     });
   }
 
   /**
-   * 속성 테이블 열기
+   * 속성 테이블 열기 (새 창)
    */
   open(layerId) {
-    // DOM 준비 확인
-    this.init();
-
     const layerInfo = layerManager.getLayer(layerId);
     if (!layerInfo) return;
 
-    this.currentLayerId = layerId;
-    this.features = layerInfo.source.getFeatures();
+    // 이미 열린 창이 있으면 포커스
+    if (this.openWindows.has(layerId)) {
+      const existingWin = this.openWindows.get(layerId);
+      if (existingWin && !existingWin.closed) {
+        existingWin.focus();
+        return;
+      }
+    }
 
-    // 컬럼 추출
-    this.extractColumns();
+    // 피처 및 컬럼 추출
+    const features = layerInfo.source.getFeatures();
+    const columns = this.extractColumns(features);
 
-    // 테이블 렌더링
-    this.render();
+    // 새 창 열기
+    const windowWidth = 900;
+    const windowHeight = 500;
+    const left = (screen.width - windowWidth) / 2;
+    const top = (screen.height - windowHeight) / 2;
 
-    // 패널 표시
-    this.container.classList.add('open');
+    const win = window.open(
+      '',
+      `attribute_table_${layerId}`,
+      `width=${windowWidth},height=${windowHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`
+    );
 
-    // 하이라이트 인터랙션 설정
-    this.setupHighlight(layerInfo);
-
-    // 지도 크기 조정
-    setTimeout(() => mapManager.updateSize(), 300);
-  }
-
-  /**
-   * 속성 테이블 닫기
-   */
-  close() {
-    if (!this.container) return;
-
-    this.container.classList.remove('open');
-    this.currentLayerId = null;
-    this.features = [];
-    this.columns = [];
-    this.selectedFeatureId = null;
-
-    // 하이라이트 제거
-    this.removeHighlight();
-
-    // 지도 크기 조정
-    setTimeout(() => mapManager.updateSize(), 300);
-  }
-
-  /**
-   * 테이블 새로고침
-   */
-  refresh() {
-    if (!this.currentLayerId) return;
-
-    const layerInfo = layerManager.getLayer(this.currentLayerId);
-    if (!layerInfo) {
-      this.close();
+    if (!win) {
+      alert('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
       return;
     }
 
-    this.features = layerInfo.source.getFeatures();
-    this.extractColumns();
-    this.render();
+    this.openWindows.set(layerId, win);
+
+    // HTML 작성
+    const html = this.generateHTML(layerInfo, features, columns, layerId);
+    win.document.write(html);
+    win.document.close();
+
+    // 창 닫힘 감지
+    const checkClosed = setInterval(() => {
+      if (win.closed) {
+        clearInterval(checkClosed);
+        this.removeHighlight(layerId);
+        this.openWindows.delete(layerId);
+      }
+    }, 500);
+
+    // 하이라이트 인터랙션 설정
+    this.setupHighlight(layerId, layerInfo);
+
+    // 창 내부 이벤트 바인딩
+    this.bindWindowEvents(win, layerId, features, columns);
   }
 
   /**
    * 컬럼 추출
    */
-  extractColumns() {
+  extractColumns(features) {
     const columnSet = new Set();
-
-    this.features.forEach(feature => {
+    features.forEach(feature => {
       const props = feature.getProperties();
       Object.keys(props).forEach(key => {
         if (key !== 'geometry') {
@@ -205,180 +125,396 @@ export class AttributeTable {
         }
       });
     });
-
-    this.columns = Array.from(columnSet);
+    return Array.from(columnSet);
   }
 
   /**
-   * 테이블 렌더링
+   * HTML 생성
    */
-  render() {
-    const layerInfo = layerManager.getLayer(this.currentLayerId);
-    if (!layerInfo) return;
+  generateHTML(layerInfo, features, columns, layerId) {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-    // 헤더 업데이트
-    this.container.querySelector('.attribute-layer-name').textContent = layerInfo.name;
-    this.container.querySelector('.attribute-count').textContent = `(${this.features.length}개)`;
-
-    // 정렬 적용
-    let sortedFeatures = [...this.features];
-    if (this.sortColumn) {
-      sortedFeatures.sort((a, b) => {
-        const valA = a.get(this.sortColumn) || '';
-        const valB = b.get(this.sortColumn) || '';
-
-        if (typeof valA === 'number' && typeof valB === 'number') {
-          return this.sortAsc ? valA - valB : valB - valA;
-        }
-
-        const strA = String(valA).toLowerCase();
-        const strB = String(valB).toLowerCase();
-        return this.sortAsc ? strA.localeCompare(strB) : strB.localeCompare(strA);
-      });
-    }
-
-    // 테이블 헤더
-    const thead = this.container.querySelector('thead');
-    thead.innerHTML = `
-      <tr>
-        <th class="row-num">#</th>
-        ${this.columns.map(col => `
-          <th class="sortable ${this.sortColumn === col ? (this.sortAsc ? 'asc' : 'desc') : ''}"
-              data-column="${col}">
-            ${col}
-            <span class="sort-icon"></span>
-          </th>
-        `).join('')}
-      </tr>
-    `;
-
-    // 정렬 클릭 이벤트
-    thead.querySelectorAll('.sortable').forEach(th => {
-      th.addEventListener('click', () => {
-        const col = th.dataset.column;
-        if (this.sortColumn === col) {
-          this.sortAsc = !this.sortAsc;
-        } else {
-          this.sortColumn = col;
-          this.sortAsc = true;
-        }
-        this.render();
-      });
-    });
-
-    // 테이블 바디
-    const tbody = this.container.querySelector('tbody');
-    tbody.innerHTML = sortedFeatures.map((feature, index) => {
+    const tableRows = features.map((feature, index) => {
       const featureId = feature.ol_uid;
-      const isSelected = featureId === this.selectedFeatureId;
-
-      return `
-        <tr data-feature-id="${featureId}" class="${isSelected ? 'selected' : ''}">
-          <td class="row-num">${index + 1}</td>
-          ${this.columns.map(col => {
-            const value = feature.get(col);
-            const displayValue = value !== undefined && value !== null ? value : '';
-            return `<td title="${displayValue}">${displayValue}</td>`;
-          }).join('')}
-        </tr>
-      `;
+      const cells = columns.map(col => {
+        const value = feature.get(col);
+        const displayValue = value !== undefined && value !== null ? value : '';
+        return `<td title="${displayValue}">${displayValue}</td>`;
+      }).join('');
+      return `<tr data-feature-id="${featureId}"><td class="row-num">${index + 1}</td>${cells}</tr>`;
     }).join('');
 
-    // 행 클릭 이벤트
-    tbody.querySelectorAll('tr').forEach(tr => {
-      tr.addEventListener('click', () => {
-        const featureId = parseInt(tr.dataset.featureId);
-        this.selectFeature(featureId);
-      });
+    const headerCells = columns.map(col =>
+      `<th class="sortable" data-column="${col}">${col}<span class="sort-icon"></span></th>`
+    ).join('');
 
-      tr.addEventListener('dblclick', () => {
-        const featureId = parseInt(tr.dataset.featureId);
-        this.selectFeature(featureId);
-        this.zoomToSelected();
-      });
-    });
-  }
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>속성 테이블 - ${layerInfo.name}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  /**
-   * 피처 선택
-   */
-  selectFeature(featureId) {
-    this.selectedFeatureId = featureId;
-
-    // 테이블 행 하이라이트
-    this.container.querySelectorAll('tbody tr').forEach(tr => {
-      tr.classList.remove('selected');
-      if (parseInt(tr.dataset.featureId) === featureId) {
-        tr.classList.add('selected');
-        // 스크롤
-        tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    });
-
-    // 지도에서 하이라이트
-    const feature = this.features.find(f => f.ol_uid === featureId);
-    if (feature && this.highlightSelect) {
-      this.highlightSelect.getFeatures().clear();
-      this.highlightSelect.getFeatures().push(feature);
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      background: ${isDark ? '#1a1a2e' : '#ffffff'};
+      color: ${isDark ? '#e4e4e7' : '#333333'};
     }
 
-    eventBus.emit(Events.FEATURE_SELECTED, { feature });
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: ${isDark ? '#252540' : '#f5f5f5'};
+      border-bottom: 1px solid ${isDark ? '#3a3a5c' : '#e0e0e0'};
+    }
+
+    .header-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .header-count {
+      color: ${isDark ? '#a0a0b0' : '#666666'};
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      background: ${isDark ? '#3a3a5c' : '#e0e0e0'};
+      color: ${isDark ? '#e4e4e7' : '#333333'};
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: ${isDark ? '#4a4a6c' : '#d0d0d0'};
+    }
+
+    .btn-primary {
+      background: #4a90d9;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #3a80c9;
+    }
+
+    .table-container {
+      height: calc(100vh - 50px);
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    th {
+      background: ${isDark ? '#2a2a45' : '#f0f0f0'};
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid ${isDark ? '#4a4a6c' : '#ccc'};
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th:hover {
+      background: ${isDark ? '#353555' : '#e5e5e5'};
+    }
+
+    th.sortable .sort-icon::after {
+      content: '⇅';
+      margin-left: 4px;
+      opacity: 0.4;
+    }
+
+    th.asc .sort-icon::after {
+      content: '↑';
+      opacity: 1;
+    }
+
+    th.desc .sort-icon::after {
+      content: '↓';
+      opacity: 1;
+    }
+
+    td {
+      padding: 6px 10px;
+      border-bottom: 1px solid ${isDark ? '#3a3a5c' : '#eee'};
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-num {
+      width: 50px;
+      text-align: center;
+      color: ${isDark ? '#808090' : '#999'};
+      background: ${isDark ? '#222238' : '#fafafa'};
+    }
+
+    tr:hover {
+      background: ${isDark ? '#2a2a45' : '#f5f5f5'};
+    }
+
+    tr.selected {
+      background: ${isDark ? '#3a4a5c' : '#e3f2fd'} !important;
+    }
+
+    tr.selected td {
+      border-color: ${isDark ? '#4a5a6c' : '#bbdefb'};
+    }
+
+    .empty-message {
+      padding: 40px;
+      text-align: center;
+      color: ${isDark ? '#808090' : '#999'};
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <span class="header-title">${layerInfo.name}</span>
+      <span class="header-count">(${features.length}개 피처)</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn" id="btn-zoom-selected" title="선택한 피처로 이동">선택 피처로 이동</button>
+      <button class="btn" id="btn-refresh">새로고침</button>
+    </div>
+  </div>
+  <div class="table-container">
+    ${features.length > 0 ? `
+    <table>
+      <thead>
+        <tr>
+          <th class="row-num">#</th>
+          ${headerCells}
+        </tr>
+      </thead>
+      <tbody>
+        ${tableRows}
+      </tbody>
+    </table>
+    ` : '<div class="empty-message">피처가 없습니다.</div>'}
+  </div>
+</body>
+</html>
+    `;
   }
 
   /**
-   * 선택된 피처로 이동
+   * 창 내부 이벤트 바인딩
    */
-  zoomToSelected() {
-    const feature = this.features.find(f => f.ol_uid === this.selectedFeatureId);
-    if (!feature) return;
+  bindWindowEvents(win, layerId, features, columns) {
+    const self = this;
 
-    const geometry = feature.getGeometry();
-    const extent = geometry.getExtent();
+    win.onload = function() {
+      const doc = win.document;
+      let selectedFeatureId = null;
+      let sortColumn = null;
+      let sortAsc = true;
 
-    mapManager.fitExtent(extent, {
-      padding: [100, 100, 100, 100],
-      maxZoom: 15
-    });
+      // 행 클릭 - 선택
+      doc.querySelectorAll('tbody tr').forEach(tr => {
+        tr.addEventListener('click', function() {
+          const featureId = parseInt(this.dataset.featureId);
+          selectFeature(featureId);
+        });
+
+        tr.addEventListener('dblclick', function() {
+          const featureId = parseInt(this.dataset.featureId);
+          selectFeature(featureId);
+          zoomToSelected();
+        });
+      });
+
+      // 헤더 클릭 - 정렬
+      doc.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', function() {
+          const col = this.dataset.column;
+          if (sortColumn === col) {
+            sortAsc = !sortAsc;
+          } else {
+            sortColumn = col;
+            sortAsc = true;
+          }
+          sortTable(col, sortAsc);
+          updateSortUI(col, sortAsc);
+        });
+      });
+
+      // 선택 피처로 이동 버튼
+      doc.getElementById('btn-zoom-selected').addEventListener('click', zoomToSelected);
+
+      // 새로고침 버튼
+      doc.getElementById('btn-refresh').addEventListener('click', function() {
+        self.refreshWindow(layerId);
+      });
+
+      function selectFeature(featureId) {
+        selectedFeatureId = featureId;
+
+        // UI 업데이트
+        doc.querySelectorAll('tbody tr').forEach(tr => {
+          tr.classList.remove('selected');
+          if (parseInt(tr.dataset.featureId) === featureId) {
+            tr.classList.add('selected');
+          }
+        });
+
+        // 지도 하이라이트
+        const feature = features.find(f => f.ol_uid === featureId);
+        if (feature) {
+          const highlightSelect = self.highlightSelects.get(layerId);
+          if (highlightSelect) {
+            highlightSelect.getFeatures().clear();
+            highlightSelect.getFeatures().push(feature);
+          }
+          eventBus.emit(Events.FEATURE_SELECTED, { feature });
+        }
+      }
+
+      function zoomToSelected() {
+        if (!selectedFeatureId) {
+          win.alert('먼저 피처를 선택하세요.');
+          return;
+        }
+
+        const feature = features.find(f => f.ol_uid === selectedFeatureId);
+        if (feature) {
+          const geometry = feature.getGeometry();
+          const extent = geometry.getExtent();
+          mapManager.fitExtent(extent, {
+            padding: [100, 100, 100, 100],
+            maxZoom: 15
+          });
+        }
+      }
+
+      function sortTable(column, ascending) {
+        const tbody = doc.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        rows.sort((a, b) => {
+          const aFeatureId = parseInt(a.dataset.featureId);
+          const bFeatureId = parseInt(b.dataset.featureId);
+          const aFeature = features.find(f => f.ol_uid === aFeatureId);
+          const bFeature = features.find(f => f.ol_uid === bFeatureId);
+
+          const valA = aFeature ? aFeature.get(column) : '';
+          const valB = bFeature ? bFeature.get(column) : '';
+
+          if (typeof valA === 'number' && typeof valB === 'number') {
+            return ascending ? valA - valB : valB - valA;
+          }
+
+          const strA = String(valA || '').toLowerCase();
+          const strB = String(valB || '').toLowerCase();
+          return ascending ? strA.localeCompare(strB) : strB.localeCompare(strA);
+        });
+
+        // 행 번호 재정렬
+        rows.forEach((row, index) => {
+          row.querySelector('.row-num').textContent = index + 1;
+          tbody.appendChild(row);
+        });
+      }
+
+      function updateSortUI(column, ascending) {
+        doc.querySelectorAll('th.sortable').forEach(th => {
+          th.classList.remove('asc', 'desc');
+          if (th.dataset.column === column) {
+            th.classList.add(ascending ? 'asc' : 'desc');
+          }
+        });
+      }
+    };
+  }
+
+  /**
+   * 창 새로고침
+   */
+  refreshWindow(layerId) {
+    this.closeWindow(layerId);
+    this.open(layerId);
+  }
+
+  /**
+   * 모든 창 새로고침
+   */
+  refreshAllWindows() {
+    for (const layerId of this.openWindows.keys()) {
+      this.refreshWindow(layerId);
+    }
+  }
+
+  /**
+   * 창 닫기
+   */
+  closeWindow(layerId) {
+    const win = this.openWindows.get(layerId);
+    if (win && !win.closed) {
+      win.close();
+    }
+    this.openWindows.delete(layerId);
+    this.removeHighlight(layerId);
   }
 
   /**
    * 하이라이트 인터랙션 설정
    */
-  setupHighlight(layerInfo) {
-    this.removeHighlight();
+  setupHighlight(layerId, layerInfo) {
+    this.removeHighlight(layerId);
 
     const map = mapManager.getMap();
 
-    this.highlightSelect = new Select({
-      condition: () => false, // 클릭으로 선택 안 함 (테이블에서만)
+    const highlightSelect = new Select({
+      condition: () => false,
       style: HIGHLIGHT_STYLE,
       layers: [layerInfo.olLayer]
     });
 
-    map.addInteraction(this.highlightSelect);
+    map.addInteraction(highlightSelect);
+    this.highlightSelects.set(layerId, highlightSelect);
   }
 
   /**
    * 하이라이트 제거
    */
-  removeHighlight() {
-    if (this.highlightSelect) {
+  removeHighlight(layerId) {
+    const highlightSelect = this.highlightSelects.get(layerId);
+    if (highlightSelect) {
       const map = mapManager.getMap();
       if (map) {
-        map.removeInteraction(this.highlightSelect);
+        map.removeInteraction(highlightSelect);
       }
-      this.highlightSelect = null;
+      this.highlightSelects.delete(layerId);
     }
-  }
-
-  /**
-   * 지도에서 피처 클릭 시 테이블 동기화
-   */
-  syncFromMap(feature) {
-    if (!feature || !this.currentLayerId) return;
-
-    const featureId = feature.ol_uid;
-    this.selectFeature(featureId);
   }
 }
 

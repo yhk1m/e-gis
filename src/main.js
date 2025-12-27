@@ -34,6 +34,7 @@ import { drawingPanel } from './ui/panels/DrawingPanel.js';
 import { cloudPanel } from './ui/panels/CloudPanel.js';
 import { myPagePanel } from './ui/panels/MyPagePanel.js';
 import { supabaseManager } from './core/SupabaseManager.js';
+import { geocodingService } from './services/GeocodingService.js';
 import { geojsonLoader } from './loaders/GeoJSONLoader.js';
 import { shapefileLoader } from './loaders/ShapefileLoader.js';
 import { geopackageLoader } from './loaders/GeoPackageLoader.js';
@@ -97,6 +98,9 @@ function initApp() {
 
   // 10. 메뉴바 초기화
   initMenubar();
+
+  // 11. 위치 검색 초기화
+  initLocationSearch();
 
 
 
@@ -490,7 +494,7 @@ function handleMenuAction(action) {
     case 'layer-attribute-table': {
       const attrLayerId = layerManager.getSelectedLayerId();
       if (attrLayerId) {
-        attributeTable.show(attrLayerId);
+        attributeTable.open(attrLayerId);
       } else {
         showStatusMessage('먼저 레이어를 선택해주세요.');
       }
@@ -662,6 +666,184 @@ function updateHeaderAuth() {
     headerAuth.innerHTML = `
       <button class="btn btn-sm btn-primary" id="header-login-btn">로그인</button>
     `;
+  }
+}
+
+/**
+ * 위치 검색 초기화
+ */
+function initLocationSearch() {
+  const searchInput = document.getElementById('location-search-input');
+  const searchResults = document.getElementById('search-results');
+  const searchClear = document.getElementById('search-clear');
+
+  if (!searchInput || !searchResults) return;
+
+  let debounceTimer = null;
+  let selectedIndex = -1;
+  let results = [];
+
+  // 입력 이벤트
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.trim();
+
+    // 지우기 버튼 표시/숨김
+    searchClear.style.display = query ? 'flex' : 'none';
+
+    // 디바운스
+    clearTimeout(debounceTimer);
+
+    if (query.length < 2) {
+      hideResults();
+      return;
+    }
+
+    // 로딩 표시
+    searchResults.style.display = 'block';
+    searchResults.innerHTML = '<div class="search-loading"></div>';
+
+    debounceTimer = setTimeout(async () => {
+      results = await geocodingService.search(query);
+      selectedIndex = -1;
+      renderResults(results);
+    }, 300);
+  });
+
+  // 키보드 네비게이션
+  searchInput.addEventListener('keydown', (e) => {
+    if (!results.length) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, results.length - 1);
+        updateSelection();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, 0);
+        updateSelection();
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0) {
+          selectResult(results[selectedIndex]);
+        } else if (results.length > 0) {
+          selectResult(results[0]);
+        }
+        break;
+      case 'Escape':
+        hideResults();
+        searchInput.blur();
+        break;
+    }
+  });
+
+  // 포커스 아웃 시 결과 숨김
+  searchInput.addEventListener('blur', () => {
+    setTimeout(() => hideResults(), 200);
+  });
+
+  // 지우기 버튼
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchClear.style.display = 'none';
+    hideResults();
+    searchInput.focus();
+  });
+
+  // 결과 렌더링
+  function renderResults(items) {
+    if (!items.length) {
+      searchResults.innerHTML = '<div class="search-empty"></div>';
+      return;
+    }
+
+    searchResults.innerHTML = items.map((item, index) => `
+      <div class="search-result-item" data-index="${index}">
+        <div class="search-result-name">
+          ${item.category ? `<span class="search-result-type">${getTypeLabel(item.category)}</span>` : ''}
+          ${item.shortName}
+        </div>
+        <div class="search-result-address">${item.displayName}</div>
+      </div>
+    `).join('');
+
+    // 클릭 이벤트
+    searchResults.querySelectorAll('.search-result-item').forEach(el => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const index = parseInt(el.dataset.index);
+        selectResult(results[index]);
+      });
+    });
+  }
+
+  // 선택 상태 업데이트
+  function updateSelection() {
+    searchResults.querySelectorAll('.search-result-item').forEach((el, idx) => {
+      el.classList.toggle('selected', idx === selectedIndex);
+      if (idx === selectedIndex) {
+        el.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  }
+
+  // 결과 선택 - 지도 이동
+  function selectResult(item) {
+    hideResults();
+    searchInput.value = item.shortName;
+
+    // 지도 이동
+    if (item.boundingBox) {
+      // boundingBox: [south, north, west, east]
+      const extent = [
+        parseFloat(item.boundingBox[2]), // west (minX)
+        parseFloat(item.boundingBox[0]), // south (minY)
+        parseFloat(item.boundingBox[3]), // east (maxX)
+        parseFloat(item.boundingBox[1])  // north (maxY)
+      ];
+
+      // EPSG:4326 → EPSG:3857 변환
+      const transformedExtent = window.ol.proj.transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
+      mapManager.fitExtent(transformedExtent, { padding: [50, 50, 50, 50], maxZoom: 18 });
+    } else {
+      // 중심점으로 이동
+      const center = window.ol.proj.fromLonLat([item.lon, item.lat]);
+      mapManager.getView().animate({
+        center: center,
+        zoom: 15,
+        duration: 500
+      });
+    }
+
+    showStatusMessage(`${item.shortName}(으)로 이동했습니다.`);
+  }
+
+  // 결과 숨김
+  function hideResults() {
+    searchResults.style.display = 'none';
+    results = [];
+    selectedIndex = -1;
+  }
+
+  // 카테고리 한글화
+  function getTypeLabel(category) {
+    const labels = {
+      'amenity': '시설',
+      'building': '건물',
+      'place': '장소',
+      'highway': '도로',
+      'natural': '자연',
+      'tourism': '관광',
+      'shop': '상점',
+      'office': '사무실',
+      'leisure': '레저',
+      'boundary': '경계',
+      'landuse': '토지',
+      'waterway': '수로'
+    };
+    return labels[category] || category;
   }
 }
 

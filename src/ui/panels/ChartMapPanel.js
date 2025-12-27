@@ -114,8 +114,6 @@ class ChartMapPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    });
-
     layerSelect.addEventListener('change', () => {
       this.selectedLayerId = layerSelect.value;
       this.selectedFields = [];

@@ -99,8 +99,6 @@ class CoordinateImportPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    });
-
     // 파일 선택
     fileArea.addEventListener('click', () => fileInput.click());
 

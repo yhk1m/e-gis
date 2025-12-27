@@ -98,9 +98,6 @@ class LabelPanel {
     // 닫기 버튼
     this.modal.querySelector('.modal-close').addEventListener('click', () => this.close());
 
-    // 오버레이 클릭으로 닫기
-    });
-
     // 레이어 선택 변경
     this.modal.querySelector('#label-layer-select').addEventListener('change', (e) => {
       this.currentLayerId = e.target.value;

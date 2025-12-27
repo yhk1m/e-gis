@@ -167,8 +167,6 @@ class RoutingPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    });
-
     analyzeBtn.addEventListener('click', () => this.analyze());
     clearBtn.addEventListener('click', () => this.clearResults());
 

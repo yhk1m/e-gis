@@ -98,8 +98,6 @@ class ExportPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    });
-
     // 포맷 변경 시 품질 옵션 표시/숨기기
     formatSelect.addEventListener('change', (e) => {
       qualityGroup.style.display = e.target.value === 'jpg' ? 'block' : 'none';

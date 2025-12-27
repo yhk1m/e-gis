@@ -127,8 +127,6 @@ class DrawingPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    });
-
     // 도형 유형 버튼
     this.modal.querySelectorAll('.geo-type-btn').forEach(btn => {
       btn.addEventListener('click', () => {

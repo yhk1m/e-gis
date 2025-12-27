@@ -140,8 +140,6 @@ class FieldCalculatorPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    });
-
     // 기존 필드 업데이트 체크박스
     updateCheckbox.addEventListener('change', (e) => {
       existingSelect.disabled = !e.target.checked;

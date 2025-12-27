@@ -86,8 +86,6 @@ class BookmarkPanel {
     closeBtn.addEventListener('click', () => this.close());
     doneBtn.addEventListener('click', () => this.close());
 
-    });
-
     // 북마크 추가
     addBtn.addEventListener('click', () => this.addBookmark());
     nameInput.addEventListener('keypress', (e) => {

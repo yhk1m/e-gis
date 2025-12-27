@@ -125,7 +125,6 @@ class TableJoinPanel {
 
     closeBtn.addEventListener("click", () => this.close());
     cancelBtn.addEventListener("click", () => this.close());
-    });
 
     applyBtn.addEventListener("click", () => this.executeJoin());
 
