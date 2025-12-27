@@ -114,8 +114,6 @@ class ChartMapPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
     });
 
     layerSelect.addEventListener('change', () => {

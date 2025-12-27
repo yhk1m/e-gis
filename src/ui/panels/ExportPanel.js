@@ -98,8 +98,6 @@ class ExportPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
     });
 
     // 포맷 변경 시 품질 옵션 표시/숨기기

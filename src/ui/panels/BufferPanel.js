@@ -107,8 +107,6 @@ class BufferPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
     });
 
     opacityInput.addEventListener('input', (e) => {

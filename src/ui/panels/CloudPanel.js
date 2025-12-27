@@ -136,6 +136,10 @@ CREATE POLICY "Users can manage own projects"
               <label for="signup-password">비밀번호</label>
               <input type="password" id="signup-password" placeholder="비밀번호 (6자 이상)">
             </div>
+            <div class="form-group">
+              <label for="signup-password-confirm">비밀번호 확인</label>
+              <input type="password" id="signup-password-confirm" placeholder="비밀번호 확인">
+            </div>
             <button class="btn btn-primary btn-full" id="signup-btn">회원가입</button>
           </div>
         </div>
@@ -378,6 +382,7 @@ CREATE POLICY "Users can manage own projects"
   async handleSignup() {
     const email = document.getElementById('signup-email').value.trim();
     const password = document.getElementById('signup-password').value;
+    const passwordConfirm = document.getElementById('signup-password-confirm').value;
 
     if (!email || !password) {
       alert('이메일과 비밀번호를 입력해주세요.');
@@ -389,9 +394,14 @@ CREATE POLICY "Users can manage own projects"
       return;
     }
 
+    if (password !== passwordConfirm) {
+      alert('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
     try {
       await supabaseManager.signUp(email, password);
-      alert('회원가입 완료! 이메일을 확인해주세요.');
+      alert('회원가입 완료! 로그인해주세요.');
     } catch (error) {
       alert('회원가입 실패: ' + error.message);
     }

@@ -86,8 +86,6 @@ class BookmarkPanel {
     closeBtn.addEventListener('click', () => this.close());
     doneBtn.addEventListener('click', () => this.close());
 
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
     });
 
     // 북마크 추가

@@ -123,8 +123,6 @@ class HeatmapPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
     });
 
     // 레이어 변경 시 가중치 필드 업데이트

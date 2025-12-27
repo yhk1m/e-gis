@@ -102,8 +102,6 @@ class SpatialOperationsPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
     });
 
     // 연산 변경 시 설명 업데이트

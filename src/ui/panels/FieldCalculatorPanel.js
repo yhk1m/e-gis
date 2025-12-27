@@ -140,8 +140,6 @@ class FieldCalculatorPanel {
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
 
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
     });
 
     // 기존 필드 업데이트 체크박스

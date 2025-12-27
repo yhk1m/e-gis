@@ -99,8 +99,6 @@ class LabelPanel {
     this.modal.querySelector('.modal-close').addEventListener('click', () => this.close());
 
     // 오버레이 클릭으로 닫기
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
     });
 
     // 레이어 선택 변경
