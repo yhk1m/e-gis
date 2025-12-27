@@ -162,7 +162,7 @@ function initApp() {
  */
 function initStatusBar() {
   const coordsEl = document.querySelector('#status-coords .coord-value');
-  const scaleEl = document.querySelector('#status-scale .scale-value');
+  const scaleInput = document.getElementById('scale-input');
   const crsEl = document.getElementById('status-crs');
 
   // 마우스 이동 시 좌표 업데이트 (선택된 좌표계로 변환)
@@ -180,7 +180,9 @@ function initStatusBar() {
   // 지도 이동 시 축척 업데이트
   eventBus.on(Events.MAP_MOVEEND, () => {
     const scale = mapManager.getScale();
-    scaleEl.textContent = formatScale(scale);
+    if (document.activeElement !== scaleInput) {
+      scaleInput.value = formatScale(scale);
+    }
   });
 
   // CRS 변경 시 표시 업데이트
@@ -191,12 +193,62 @@ function initStatusBar() {
   // 초기 축척 표시
   setTimeout(() => {
     const scale = mapManager.getScale();
-    scaleEl.textContent = formatScale(scale);
+    scaleInput.value = formatScale(scale);
   }, 100);
+
+  // 축척 입력 처리
+  if (scaleInput) {
+    // Enter 키로 축척 적용
+    scaleInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        applyScaleFromInput(scaleInput);
+        scaleInput.blur();
+      } else if (e.key === 'Escape') {
+        // ESC로 취소하고 현재 축척으로 복원
+        const scale = mapManager.getScale();
+        scaleInput.value = formatScale(scale);
+        scaleInput.blur();
+      }
+    });
+
+    // 포커스 아웃 시 축척 적용
+    scaleInput.addEventListener('blur', () => {
+      applyScaleFromInput(scaleInput);
+    });
+
+    // 클릭 시 전체 선택
+    scaleInput.addEventListener('focus', () => {
+      scaleInput.select();
+    });
+  }
 
   // CRS 선택 드롭다운 초기화
   if (crsEl) {
     initCRSSelector(crsEl);
+  }
+}
+
+/**
+ * 입력된 축척 값을 지도에 적용
+ */
+function applyScaleFromInput(inputEl) {
+  const inputValue = inputEl.value.replace(/,/g, '').trim();
+  const targetScale = parseInt(inputValue, 10);
+
+  if (isNaN(targetScale) || targetScale <= 0) {
+    // 유효하지 않은 값이면 현재 축척으로 복원
+    const scale = mapManager.getScale();
+    inputEl.value = formatScale(scale);
+    return;
+  }
+
+  // 축척을 줌 레벨로 변환하여 적용
+  const targetZoom = mapManager.scaleToZoom(targetScale);
+  if (targetZoom !== null) {
+    mapManager.getView().animate({
+      zoom: targetZoom,
+      duration: 300
+    });
   }
 }
 
@@ -249,15 +301,10 @@ function updateCRSDisplay(crs) {
 }
 
 /**
- * 축척 포맷팅
+ * 축척 포맷팅 (천 단위 콤마)
  */
 function formatScale(scale) {
-  if (scale >= 1000000) {
-    return '1:' + (scale / 1000000).toFixed(1) + 'M';
-  } else if (scale >= 1000) {
-    return '1:' + (scale / 1000).toFixed(0) + 'K';
-  }
-  return '1:' + scale.toFixed(0);
+  return Math.round(scale).toLocaleString('ko-KR');
 }
 
 /**

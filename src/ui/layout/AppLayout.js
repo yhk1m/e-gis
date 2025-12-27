@@ -273,8 +273,8 @@ export class AppLayout {
           <span class="coord-value">---, ---</span>
         </div>
         <div class="statusbar-item scale" id="status-scale">
-          <span class="scale-label">축척:</span>
-          <span class="scale-value">---</span>
+          <span class="scale-label">1:</span>
+          <input type="text" class="scale-input" id="scale-input" value="---" title="축척 입력 (Enter로 적용)">
         </div>
         <div class="statusbar-item crs" id="status-crs" title="좌표계 변경">
           <span class="crs-value">EPSG:4326</span>

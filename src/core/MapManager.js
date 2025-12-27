@@ -278,6 +278,33 @@ export class MapManager {
 
     return resolution * mpu * inchesPerMeter * dpi;
   }
+
+  /**
+   * 축척 값을 줌 레벨로 변환
+   * @param {number} scale - 목표 축척 (예: 100000 = 1:100,000)
+   * @returns {number|null} 줌 레벨 또는 유효하지 않은 경우 null
+   */
+  scaleToZoom(scale) {
+    if (!this.map || scale <= 0) return null;
+
+    const view = this.map.getView();
+    const mpu = view.getProjection().getMetersPerUnit();
+    const dpi = 96;
+    const inchesPerMeter = 39.3701;
+
+    // scale = resolution * mpu * inchesPerMeter * dpi
+    // resolution = scale / (mpu * inchesPerMeter * dpi)
+    const targetResolution = scale / (mpu * inchesPerMeter * dpi);
+
+    // Get zoom level for this resolution
+    const zoom = view.getZoomForResolution(targetResolution);
+
+    // Clamp to min/max zoom
+    const minZoom = view.getMinZoom();
+    const maxZoom = view.getMaxZoom();
+
+    return Math.max(minZoom, Math.min(maxZoom, zoom));
+  }
 }
 
 // 싱글톤 인스턴스

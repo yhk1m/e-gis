@@ -176,6 +176,35 @@
   min-width: 100px;
 }
 
+/* 축척 입력 필드 */
+.scale-label {
+  color: var(--text-secondary);
+}
+
+.scale-input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  padding: 2px 4px;
+  width: 90px;
+  text-align: right;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.scale-input:hover {
+  border-color: var(--border-color);
+  background: var(--bg-hover);
+}
+
+.scale-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--bg-panel);
+}
+
 /* 상태표시줄 값 텍스트 - 더 밝게 */
 .scale-value,
 .coord-value {
