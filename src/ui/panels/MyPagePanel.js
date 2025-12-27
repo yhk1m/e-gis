@@ -91,7 +91,7 @@ class MyPagePanel {
               </div>
               <div class="form-group">
                 <label for="profile-school">학교명</label>
-                <input type="text" id="profile-school" placeholder="학교 전체 이름을 입력하세요 (예: 충남삼성고등학교)" value="${this.profile?.school || ''}">
+                <input type="text" id="profile-school" placeholder="공식 학교 명칭을 적어주세요 (예: 충남삼성고등학교)" value="${this.profile?.school || ''}">
               </div>
             </div>
 
