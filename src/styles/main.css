@@ -2738,12 +2738,16 @@ input:focus, select:focus, textarea:focus {
   margin-right: var(--spacing-md);
 }
 
-.header-auth .btn {
-  color: var(--text-inverse);
+.header-auth .btn-primary {
+  color: #ffffff !important;
 }
 
 .header-auth .btn-secondary {
   color: var(--text-primary);
+}
+
+.admin-badge {
+  color: #ffffff !important;
 }
 
 .header-user-email {
@@ -3079,4 +3083,34 @@ input:focus, select:focus, textarea:focus {
   background: var(--bg-input);
   color: var(--text-primary);
   font-size: var(--font-size-sm);
+}
+
+/* 관리자 설정 섹션 */
+.admin-section {
+  padding: var(--spacing-md);
+  background: var(--bg-app);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.admin-section h4 {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.admin-warning {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  margin-bottom: var(--spacing-md);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #ffffff !important;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
 }

@@ -58,6 +58,7 @@ class MyPagePanel {
             <button class="mypage-tab active" data-tab="profile">프로필</button>
             <button class="mypage-tab" data-tab="password">비밀번호 변경</button>
             <button class="mypage-tab" data-tab="school-stats">학교 통계</button>
+            ${supabaseManager.isAdmin() ? '<button class="mypage-tab" data-tab="admin">관리자 설정</button>' : ''}
           </div>
 
           <!-- 프로필 탭 -->
@@ -91,7 +92,7 @@ class MyPagePanel {
               </div>
               <div class="form-group">
                 <label for="profile-school">학교명</label>
-                <input type="text" id="profile-school" placeholder="공식 학교 명칭을 적어주세요 (예: 충남삼성고등학교)" value="${this.profile?.school || ''}">
+                <input type="text" id="profile-school" placeholder="공식 학교 명칭을 적어주세요" value="${this.profile?.school || ''}">
               </div>
             </div>
 
@@ -121,6 +122,17 @@ class MyPagePanel {
               <div class="loading">순위 로딩 중...</div>
             </div>
           </div>
+
+          ${supabaseManager.isAdmin() ? `
+          <!-- 관리자 설정 탭 -->
+          <div class="mypage-tab-content" id="admin-tab" style="display:none;">
+            <div class="admin-section">
+              <h4>Supabase 설정</h4>
+              <p class="admin-warning">주의: 설정을 초기화하면 다시 URL과 Key를 입력해야 합니다.</p>
+              <button class="btn btn-danger" id="reset-supabase-btn">Supabase 설정 초기화</button>
+            </div>
+          </div>
+          ` : ''}
         </div>
       </div>
     `;
@@ -157,6 +169,24 @@ class MyPagePanel {
     const changePasswordBtn = document.getElementById('change-password-btn');
     if (changePasswordBtn) {
       changePasswordBtn.addEventListener('click', () => this.changePassword());
+    }
+
+    // Supabase 초기화 (관리자 전용)
+    const resetSupabaseBtn = document.getElementById('reset-supabase-btn');
+    if (resetSupabaseBtn) {
+      resetSupabaseBtn.addEventListener('click', () => this.resetSupabase());
+    }
+  }
+
+  /**
+   * Supabase 설정 초기화 (관리자 전용)
+   */
+  resetSupabase() {
+    if (confirm('정말로 Supabase 설정을 초기화하시겠습니까?\n초기화 후 다시 URL과 Key를 입력해야 합니다.')) {
+      localStorage.removeItem('eGIS_supabaseUrl');
+      localStorage.removeItem('eGIS_supabaseKey');
+      alert('Supabase 설정이 초기화되었습니다. 페이지를 새로고침합니다.');
+      window.location.reload();
     }
   }
 

@@ -138,9 +138,6 @@ CREATE POLICY "Users can manage own projects"
             </div>
             <button class="btn btn-primary btn-full" id="signup-btn">회원가입</button>
           </div>
-          <div class="cloud-reset-config">
-            <button class="btn-link" id="reset-config-btn">Supabase 설정 초기화</button>
-          </div>
         </div>
       </div>
     `;
