@@ -66,7 +66,12 @@ function initApp() {
   autoSaveManager.init();
 
   // 4.6 Supabase 클라우드 관리자 초기화
-  supabaseManager.init();
+  supabaseManager.init().then(() => {
+    updateHeaderAuth();
+  });
+
+  // 4.7 헤더 로그인 버튼 이벤트
+  initHeaderAuth();
 
   // 5. 패널 초기화
   new LayerPanel('layer-list');
@@ -601,11 +606,58 @@ function showStatusMessage(message) {
   const statusMessage = document.getElementById('status-message');
   if (statusMessage) {
     statusMessage.textContent = message;
-    
+
     // 3초 후 기본 메시지로 복원
     setTimeout(() => {
       statusMessage.textContent = '준비';
     }, 3000);
+  }
+}
+
+/**
+ * 헤더 인증 버튼 초기화
+ */
+function initHeaderAuth() {
+  const headerAuth = document.getElementById('header-auth');
+  if (!headerAuth) return;
+
+  headerAuth.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    if (btn.id === 'header-login-btn') {
+      cloudPanel.show();
+    } else if (btn.id === 'header-logout-btn') {
+      supabaseManager.signOut().then(() => {
+        updateHeaderAuth();
+        showStatusMessage('로그아웃되었습니다.');
+      });
+    }
+  });
+
+  // 인증 상태 변경 이벤트 구독
+  eventBus.on('auth:login', () => updateHeaderAuth());
+  eventBus.on('auth:logout', () => updateHeaderAuth());
+}
+
+/**
+ * 헤더 인증 상태 업데이트
+ */
+function updateHeaderAuth() {
+  const headerAuth = document.getElementById('header-auth');
+  if (!headerAuth) return;
+
+  if (supabaseManager.isLoggedIn()) {
+    const user = supabaseManager.getUser();
+    const isAdmin = supabaseManager.isAdmin();
+    headerAuth.innerHTML = `
+      <span class="header-user-email">${user.email}${isAdmin ? ' <span class="admin-badge">관리자</span>' : ''}</span>
+      <button class="btn btn-sm btn-secondary" id="header-logout-btn">로그아웃</button>
+    `;
+  } else {
+    headerAuth.innerHTML = `
+      <button class="btn btn-sm btn-primary" id="header-login-btn">로그인</button>
+    `;
   }
 }
 

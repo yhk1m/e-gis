@@ -6,9 +6,9 @@
 import { eventBus } from '../utils/EventBus.js';
 import { stateManager } from './StateManager.js';
 
-// Supabase 설정 (환경변수 또는 설정에서 가져옴)
-const SUPABASE_URL = localStorage.getItem('eGIS_supabaseUrl') || '';
-const SUPABASE_ANON_KEY = localStorage.getItem('eGIS_supabaseKey') || '';
+// Supabase 설정 (하드코딩)
+const SUPABASE_URL = 'https://lufbotdmhgsuvejlytgh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1ZmJvdGRtaGdzdXZlamx5dGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzMDY1NzUsImV4cCI6MjA4MTg4MjU3NX0.JMzU8SiR8jb39xcRe4ySQSvZJButJP8OeCqOMDkNbRI';
 
 // 관리자 이메일
 const ADMIN_EMAIL = 'fkv777@gmail.com';
@@ -95,9 +95,7 @@ class SupabaseManager {
    * 설정 여부 확인
    */
   isSupabaseConfigured() {
-    const url = localStorage.getItem('eGIS_supabaseUrl');
-    const key = localStorage.getItem('eGIS_supabaseKey');
-    return !!(url && key);
+    return !!(SUPABASE_URL && SUPABASE_ANON_KEY);
   }
 
   /**

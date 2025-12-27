@@ -2730,6 +2730,19 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--radius-sm);
 }
 
+/* 헤더 인증 영역 */
+.header-auth {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-right: var(--spacing-md);
+}
+
+.header-user-email {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
 .cloud-actions {
   margin-bottom: var(--spacing-md);
 }
