@@ -23,7 +23,7 @@ class ExportTool {
   async exportMap(options = {}) {
     const {
       format = 'png',
-      filename = 'eGIS_map',
+      filename = 'e-GIS_map',
       quality = 0.92,
       scale = 2,
       includeLegend = false,

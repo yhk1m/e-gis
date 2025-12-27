@@ -48,7 +48,7 @@ class ExportPanel {
       '<div class="export-body">' +
         '<div class="export-form-group">' +
           '<label for="export-filename">파일 이름</label>' +
-          '<input type="text" id="export-filename" value="eGIS_map" placeholder="파일 이름">' +
+          '<input type="text" id="export-filename" value="e-GIS_map" placeholder="파일 이름">' +
         '</div>' +
         '<div class="export-form-group">' +
           '<label for="export-format">파일 형식</label>' +
@@ -119,7 +119,7 @@ class ExportPanel {
    * 내보내기 실행
    */
   async export() {
-    const filename = document.getElementById('export-filename').value.trim() || 'eGIS_map';
+    const filename = document.getElementById('export-filename').value.trim() || 'e-GIS_map';
     const format = document.getElementById('export-format').value;
     const quality = parseFloat(document.getElementById('export-quality').value);
     const scale = parseInt(document.getElementById('export-scale').value);

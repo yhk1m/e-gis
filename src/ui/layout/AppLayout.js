@@ -15,7 +15,7 @@ export class AppLayout {
       <!-- 메뉴바 -->
       <header id="menubar">
         <div class="menu-left">
-          <span class="app-title">eGIS</span>
+          <span class="app-title">e-GIS</span>
         </div>
         <div class="menu-center">
           <div class="menu-items">
