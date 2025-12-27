@@ -35,6 +35,8 @@ import { cloudPanel } from './ui/panels/CloudPanel.js';
 import { myPagePanel } from './ui/panels/MyPagePanel.js';
 import { supabaseManager } from './core/SupabaseManager.js';
 import { geocodingService } from './services/GeocodingService.js';
+import { fromLonLat } from 'ol/proj';
+import { transformExtent } from 'ol/proj';
 import { geojsonLoader } from './loaders/GeoJSONLoader.js';
 import { shapefileLoader } from './loaders/ShapefileLoader.js';
 import { geopackageLoader } from './loaders/GeoPackageLoader.js';
@@ -805,11 +807,11 @@ function initLocationSearch() {
       ];
 
       // EPSG:4326 → EPSG:3857 변환
-      const transformedExtent = window.ol.proj.transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
+      const transformedExtent = transformExtent(extent, 'EPSG:4326', 'EPSG:3857');
       mapManager.fitExtent(transformedExtent, { padding: [50, 50, 50, 50], maxZoom: 18 });
     } else {
       // 중심점으로 이동
-      const center = window.ol.proj.fromLonLat([item.lon, item.lat]);
+      const center = fromLonLat([item.lon, item.lat]);
       mapManager.getView().animate({
         center: center,
         zoom: 15,
