@@ -2563,7 +2563,8 @@ input:focus, select:focus, textarea:focus {
 
 /* ===== 클라우드 패널 스타일 ===== */
 .cloud-modal .modal-content {
-  max-width: 450px;
+  max-width: 520px;
+  width: 90vw;
 }
 
 .cloud-content {
@@ -2573,7 +2574,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .cloud-content .modal-header {
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
@@ -2582,33 +2583,33 @@ input:focus, select:focus, textarea:focus {
 
 .cloud-content .modal-header h3 {
   margin: 0;
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
 }
 
 .cloud-content .modal-body {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
 }
 
 .cloud-content .form-group {
   display: block;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 .cloud-content .form-group label {
   display: block;
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-md);
+  margin-bottom: var(--spacing-sm);
   color: var(--text-secondary);
 }
 
 .cloud-content .form-group input {
   width: 100%;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-md);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: var(--bg-input);
   color: var(--text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
 }
 
 .cloud-info {
@@ -2684,6 +2685,8 @@ input:focus, select:focus, textarea:focus {
 .btn-full {
   width: 100%;
   margin-top: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-md);
 }
 
 .cloud-reset-config {

@@ -245,10 +245,6 @@ CREATE POLICY "Users can manage own projects"
     if (closeBtn) closeBtn.addEventListener('click', () => this.close());
     if (cancelBtn) cancelBtn.addEventListener('click', () => this.close());
 
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
-    });
-
     // Supabase 설정
     const configBtn = document.getElementById('cloud-configure');
     if (configBtn) {

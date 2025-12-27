@@ -149,10 +149,6 @@ class MyPagePanel {
     const closeBtn = document.getElementById('mypage-close');
     if (closeBtn) closeBtn.addEventListener('click', () => this.close());
 
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.close();
-    });
-
     // 탭 전환
     const tabs = this.modal.querySelectorAll('.mypage-tab');
     tabs.forEach(tab => {
