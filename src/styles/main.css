@@ -2738,6 +2738,14 @@ input:focus, select:focus, textarea:focus {
   margin-right: var(--spacing-md);
 }
 
+.header-auth .btn {
+  color: var(--text-inverse);
+}
+
+.header-auth .btn-secondary {
+  color: var(--text-primary);
+}
+
 .header-user-email {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
@@ -2859,6 +2867,9 @@ input:focus, select:focus, textarea:focus {
 .mypage-modal .mypage-content {
   width: 480px;
   max-width: 95vw;
+  background: var(--bg-panel);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
 }
 
 .mypage-tabs {
@@ -3028,4 +3039,44 @@ input:focus, select:focus, textarea:focus {
   text-align: center;
   font-size: var(--font-size-xs);
   color: var(--text-muted);
+}
+
+/* 학교 등록 섹션 */
+.school-registration-section {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-app);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.school-registration-section h4 {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.current-school {
+  margin-bottom: var(--spacing-md);
+}
+
+.school-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-primary);
+  color: var(--text-inverse);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.school-registration-section select {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
 }

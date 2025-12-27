@@ -5,6 +5,12 @@
 
 import { supabaseManager } from '../../core/SupabaseManager.js';
 
+// 시도 목록 (짧은 이름)
+const REGIONS = [
+  '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
+  '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'
+];
+
 class MyPagePanel {
   constructor() {
     this.modal = null;
@@ -68,10 +74,27 @@ class MyPagePanel {
               <label for="profile-nickname">닉네임</label>
               <input type="text" id="profile-nickname" placeholder="닉네임을 입력하세요" value="${this.profile?.nickname || ''}">
             </div>
-            <div class="form-group">
-              <label for="profile-school">학교</label>
-              <input type="text" id="profile-school" placeholder="학교명을 입력하세요" value="${this.profile?.school || ''}">
+
+            <div class="school-registration-section">
+              <h4>학교 등록</h4>
+              ${this.profile?.school ? `
+                <div class="current-school">
+                  <span class="school-badge">${this.profile.region || ''} ${this.profile.school}</span>
+                </div>
+              ` : ''}
+              <div class="form-group">
+                <label for="profile-region">지역 (시/도)</label>
+                <select id="profile-region">
+                  <option value="">지역을 선택하세요</option>
+                  ${REGIONS.map(r => `<option value="${r}" ${this.profile?.region === r ? 'selected' : ''}>${r}</option>`).join('')}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="profile-school">학교명</label>
+                <input type="text" id="profile-school" placeholder="학교 전체 이름을 입력하세요 (예: 충남삼성고등학교)" value="${this.profile?.school || ''}">
+              </div>
             </div>
+
             <button class="btn btn-primary btn-full" id="save-profile-btn">프로필 저장</button>
           </div>
 
@@ -167,12 +190,19 @@ class MyPagePanel {
   async saveProfile() {
     const name = document.getElementById('profile-name').value.trim();
     const nickname = document.getElementById('profile-nickname').value.trim();
+    const region = document.getElementById('profile-region').value;
     const school = document.getElementById('profile-school').value.trim();
 
+    if (school && !region) {
+      alert('학교를 등록하려면 지역을 선택해주세요.');
+      return;
+    }
+
     try {
-      await supabaseManager.saveProfile({ name, nickname, school });
+      await supabaseManager.saveProfile({ name, nickname, region, school });
       alert('프로필이 저장되었습니다.');
-      this.profile = { name, nickname, school };
+      this.profile = { name, nickname, region, school };
+      this.render(); // 화면 갱신
     } catch (error) {
       alert('프로필 저장 실패: ' + error.message);
     }

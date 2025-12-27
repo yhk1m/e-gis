@@ -230,6 +230,7 @@ class SupabaseManager {
         user_id: this.user.id,
         name: profileData.name,
         nickname: profileData.nickname,
+        region: profileData.region,
         school: profileData.school,
         updated_at: new Date().toISOString()
       }, {
