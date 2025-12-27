@@ -180,6 +180,118 @@ class SupabaseManager {
     this.user = null;
   }
 
+  /**
+   * 비밀번호 변경
+   */
+  async updatePassword(newPassword) {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const { error } = await this.supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) throw error;
+    return true;
+  }
+
+  // ==================== 프로필 관리 ====================
+
+  /**
+   * 사용자 프로필 가져오기
+   */
+  async getProfile() {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const { data, error } = await this.supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', this.user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116: no rows found
+    return data;
+  }
+
+  /**
+   * 프로필 저장/업데이트
+   */
+  async saveProfile(profileData) {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const { data, error } = await this.supabase
+      .from('user_profiles')
+      .upsert({
+        user_id: this.user.id,
+        name: profileData.name,
+        nickname: profileData.nickname,
+        school: profileData.school,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      })
+      .select();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * 학교별 사용자 통계 가져오기
+   */
+  async getSchoolStats() {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const { data, error } = await this.supabase
+      .from('user_profiles')
+      .select('school')
+      .not('school', 'is', null)
+      .not('school', 'eq', '');
+
+    if (error) throw error;
+
+    // 학교별 집계
+    const stats = {};
+    data.forEach(row => {
+      if (row.school) {
+        stats[row.school] = (stats[row.school] || 0) + 1;
+      }
+    });
+
+    // 순위 정렬
+    const ranked = Object.entries(stats)
+      .map(([school, count]) => ({ school, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return ranked;
+  }
+
+  /**
+   * 내 학교 사용자 수 가져오기
+   */
+  async getMySchoolCount() {
+    const profile = await this.getProfile();
+    if (!profile || !profile.school) return null;
+
+    const stats = await this.getSchoolStats();
+    const mySchool = stats.find(s => s.school === profile.school);
+    const rank = stats.findIndex(s => s.school === profile.school) + 1;
+
+    return {
+      school: profile.school,
+      count: mySchool ? mySchool.count : 0,
+      rank: rank || null,
+      totalSchools: stats.length
+    };
+  }
+
   // ==================== 프로젝트 저장/불러오기 ====================
 
   /**

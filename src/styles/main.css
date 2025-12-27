@@ -2853,3 +2853,179 @@ input:focus, select:focus, textarea:focus {
   color: var(--text-muted);
   font-size: var(--font-size-xs);
 }
+
+/* ==================== 마이페이지 스타일 ==================== */
+
+.mypage-modal .mypage-content {
+  width: 480px;
+  max-width: 95vw;
+}
+
+.mypage-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: var(--spacing-sm);
+}
+
+.mypage-tab {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.mypage-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.mypage-tab.active {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  font-weight: 500;
+}
+
+.mypage-tab-content {
+  padding: var(--spacing-sm) 0;
+}
+
+.profile-email {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background: var(--bg-app);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.profile-email label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.profile-email span {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* 내 학교 정보 */
+.my-school-info {
+  margin-bottom: var(--spacing-lg);
+}
+
+.my-school-card {
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.my-school-name {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.my-school-stats {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+}
+
+.stat-value {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.no-school-info {
+  padding: var(--spacing-md);
+  background: var(--bg-app);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  text-align: center;
+  font-size: var(--font-size-sm);
+}
+
+/* 학교 순위 */
+.school-ranking h4 {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.ranking-list {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  font-size: var(--font-size-sm);
+}
+
+.ranking-item:last-child {
+  border-bottom: none;
+}
+
+.ranking-item.my-school {
+  background: var(--color-primary-light);
+}
+
+.ranking-position {
+  width: 30px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ranking-item:nth-child(1) .ranking-position {
+  color: #FFD700;
+}
+
+.ranking-item:nth-child(2) .ranking-position {
+  color: #C0C0C0;
+}
+
+.ranking-item:nth-child(3) .ranking-position {
+  color: #CD7F32;
+}
+
+.ranking-school {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.ranking-count {
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.ranking-more {
+  padding: var(--spacing-sm);
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}

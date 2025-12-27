@@ -32,6 +32,7 @@ import { isochronePanel } from './ui/panels/IsochronePanel.js';
 import { routingPanel } from './ui/panels/RoutingPanel.js';
 import { drawingPanel } from './ui/panels/DrawingPanel.js';
 import { cloudPanel } from './ui/panels/CloudPanel.js';
+import { myPagePanel } from './ui/panels/MyPagePanel.js';
 import { supabaseManager } from './core/SupabaseManager.js';
 import { geojsonLoader } from './loaders/GeoJSONLoader.js';
 import { shapefileLoader } from './loaders/ShapefileLoader.js';
@@ -627,6 +628,8 @@ function initHeaderAuth() {
 
     if (btn.id === 'header-login-btn') {
       cloudPanel.show();
+    } else if (btn.id === 'header-mypage-btn') {
+      myPagePanel.show();
     } else if (btn.id === 'header-logout-btn') {
       supabaseManager.signOut().then(() => {
         updateHeaderAuth();
@@ -652,6 +655,7 @@ function updateHeaderAuth() {
     const isAdmin = supabaseManager.isAdmin();
     headerAuth.innerHTML = `
       <span class="header-user-email">${user.email}${isAdmin ? ' <span class="admin-badge">관리자</span>' : ''}</span>
+      <button class="btn btn-sm btn-primary" id="header-mypage-btn">마이페이지</button>
       <button class="btn btn-sm btn-secondary" id="header-logout-btn">로그아웃</button>
     `;
   } else {
