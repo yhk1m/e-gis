@@ -3,7 +3,7 @@
  * 고도 데이터를 색상으로 시각화하여 표시
  */
 
-import GeoTIFF from 'geotiff';
+import { fromArrayBuffer, fromUrl } from 'geotiff';
 import ImageLayer from 'ol/layer/Image';
 import ImageCanvasSource from 'ol/source/ImageCanvas';
 import { transformExtent } from 'ol/proj';
@@ -34,20 +34,27 @@ class DEMLoader {
    */
   async loadFromFile(file) {
     try {
+      console.log('DEM 파일 로드 시작:', file.name);
       const arrayBuffer = await file.arrayBuffer();
-      const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
+      console.log('ArrayBuffer 크기:', arrayBuffer.byteLength);
+
+      const tiff = await fromArrayBuffer(arrayBuffer);
+      console.log('GeoTIFF 파싱 완료');
+
       const image = await tiff.getImage();
+      console.log('이미지 로드 완료:', image.getWidth(), 'x', image.getHeight());
 
       // 파일명에서 확장자 제거
       const layerName = file.name.replace(/\.(tif|tiff|geotiff|img)$/i, '');
 
-      return this.createDEMLayer(image, layerName);
+      return await this.createDEMLayer(image, layerName);
     } catch (error) {
+      console.error('DEM 로드 에러:', error);
       // IMG 파일이 GeoTIFF 형식이 아닌 경우 에러 처리
       if (file.name.toLowerCase().endsWith('.img')) {
         throw new Error('IMG 파일을 읽을 수 없습니다. GeoTIFF 형식의 IMG 파일만 지원됩니다.');
       }
-      throw error;
+      throw new Error('래스터 파일 로드 실패: ' + error.message);
     }
   }
 
@@ -58,9 +65,9 @@ class DEMLoader {
    * @returns {Promise<string>} 생성된 레이어 ID
    */
   async loadFromUrl(url, name = 'DEM') {
-    const tiff = await GeoTIFF.fromUrl(url);
+    const tiff = await fromUrl(url);
     const image = await tiff.getImage();
-    return this.createDEMLayer(image, name);
+    return await this.createDEMLayer(image, name);
   }
 
   /**
