@@ -5,6 +5,7 @@
 import { geojsonLoader } from '../../loaders/GeoJSONLoader.js';
 import { shapefileLoader } from '../../loaders/ShapefileLoader.js';
 import { geopackageLoader } from '../../loaders/GeoPackageLoader.js';
+import { demLoader } from '../../loaders/DEMLoader.js';
 import { eventBus } from '../../utils/EventBus.js';
 
 export class BrowserPanel {
@@ -25,7 +26,7 @@ export class BrowserPanel {
   createFileInput() {
     this.fileInput = document.createElement('input');
     this.fileInput.type = 'file';
-    this.fileInput.accept = '.geojson,.json,.zip,.shp,.dbf,.shx,.prj,.gpkg';
+    this.fileInput.accept = '.geojson,.json,.zip,.shp,.dbf,.shx,.prj,.gpkg,.tif,.tiff';
     this.fileInput.multiple = true;
     this.fileInput.style.display = 'none';
     document.body.appendChild(this.fileInput);
@@ -125,8 +126,13 @@ export class BrowserPanel {
         // GeoPackage
         return await geopackageLoader.loadFromFile(file);
 
+      case 'tif':
+      case 'tiff':
+        // DEM (GeoTIFF)
+        return await demLoader.loadFromFile(file);
+
       default:
-        throw new Error('지원하지 않는 파일 형식입니다. (GeoJSON, ZIP, GPKG 지원)');
+        throw new Error('지원하지 않는 파일 형식입니다. (GeoJSON, ZIP, GPKG, TIF 지원)');
     }
   }
 

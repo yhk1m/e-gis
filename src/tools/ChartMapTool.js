@@ -7,6 +7,7 @@ import Overlay from 'ol/Overlay';
 import { getCenter } from 'ol/extent';
 import { layerManager } from '../core/LayerManager.js';
 import { mapManager } from '../core/MapManager.js';
+import { eventBus, Events } from '../utils/EventBus.js';
 
 class ChartMapTool {
   constructor() {
@@ -17,6 +18,20 @@ class ChartMapTool {
       '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
       '#f97316', '#14b8a6', '#a855f7', '#f43f5e'
     ];
+
+    // 레이어 삭제 시 차트도 함께 삭제
+    this.initEventListeners();
+  }
+
+  /**
+   * 이벤트 리스너 초기화
+   */
+  initEventListeners() {
+    eventBus.on(Events.LAYER_REMOVED, (data) => {
+      if (data && data.layerId) {
+        this.removeChartMap(data.layerId);
+      }
+    });
   }
 
   /**
