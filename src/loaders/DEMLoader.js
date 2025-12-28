@@ -29,18 +29,26 @@ class DEMLoader {
 
   /**
    * File 객체로부터 DEM 로드
-   * @param {File} file - GeoTIFF 파일
+   * @param {File} file - GeoTIFF 또는 IMG 파일
    * @returns {Promise<string>} 생성된 레이어 ID
    */
   async loadFromFile(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
-    const image = await tiff.getImage();
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
+      const image = await tiff.getImage();
 
-    // 파일명에서 확장자 제거
-    const layerName = file.name.replace(/\.(tif|tiff|geotiff)$/i, '');
+      // 파일명에서 확장자 제거
+      const layerName = file.name.replace(/\.(tif|tiff|geotiff|img)$/i, '');
 
-    return this.createDEMLayer(image, layerName);
+      return this.createDEMLayer(image, layerName);
+    } catch (error) {
+      // IMG 파일이 GeoTIFF 형식이 아닌 경우 에러 처리
+      if (file.name.toLowerCase().endsWith('.img')) {
+        throw new Error('IMG 파일을 읽을 수 없습니다. GeoTIFF 형식의 IMG 파일만 지원됩니다.');
+      }
+      throw error;
+    }
   }
 
   /**

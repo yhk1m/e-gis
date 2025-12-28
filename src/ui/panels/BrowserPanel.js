@@ -26,7 +26,7 @@ export class BrowserPanel {
   createFileInput() {
     this.fileInput = document.createElement('input');
     this.fileInput.type = 'file';
-    this.fileInput.accept = '.geojson,.json,.zip,.shp,.dbf,.shx,.prj,.gpkg,.tif,.tiff';
+    this.fileInput.accept = '.geojson,.json,.zip,.shp,.dbf,.shx,.prj,.gpkg,.tif,.tiff,.img';
     this.fileInput.multiple = true;
     this.fileInput.style.display = 'none';
     document.body.appendChild(this.fileInput);
@@ -128,11 +128,12 @@ export class BrowserPanel {
 
       case 'tif':
       case 'tiff':
-        // DEM (GeoTIFF)
+      case 'img':
+        // DEM (GeoTIFF, ERDAS IMAGINE)
         return await demLoader.loadFromFile(file);
 
       default:
-        throw new Error('지원하지 않는 파일 형식입니다. (GeoJSON, ZIP, GPKG, TIF 지원)');
+        throw new Error('지원하지 않는 파일 형식입니다. (GeoJSON, ZIP, GPKG, TIF, IMG 지원)');
     }
   }
 
