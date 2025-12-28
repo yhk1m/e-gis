@@ -32,6 +32,7 @@ import { isochronePanel } from './ui/panels/IsochronePanel.js';
 import { routingPanel } from './ui/panels/RoutingPanel.js';
 import { drawingPanel } from './ui/panels/DrawingPanel.js';
 import { cloudPanel } from './ui/panels/CloudPanel.js';
+import { rasterAnalysisPanel } from './ui/panels/RasterAnalysisPanel.js';
 import { myPagePanel } from './ui/panels/MyPagePanel.js';
 import { supabaseManager } from './core/SupabaseManager.js';
 import { geocodingService } from './services/GeocodingService.js';
@@ -623,6 +624,20 @@ function handleMenuAction(action) {
       break;
     case 'analysis-routing':
       routingPanel.show();
+      break;
+
+    // ===== 래스터 분석 메뉴 =====
+    case 'raster-elevation':
+      rasterAnalysisPanel.showHillshade();
+      break;
+    case 'raster-slope':
+      rasterAnalysisPanel.showSlope();
+      break;
+    case 'raster-aspect':
+      rasterAnalysisPanel.showAspect();
+      break;
+    case 'raster-contour':
+      rasterAnalysisPanel.showContour();
       break;
 
     default:

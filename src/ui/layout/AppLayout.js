@@ -81,9 +81,9 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="analysis-clear-measures">측정 결과 지우기</div>
               </div>
             </div>
-            <div class="menu-item dropdown" data-menu="analysis">
-              <button class="menu-button">분석</button>
-              <div class="dropdown-menu" id="menu-analysis">
+            <div class="menu-item dropdown" data-menu="vector-analysis">
+              <button class="menu-button">벡터 분석</button>
+              <div class="dropdown-menu" id="menu-vector-analysis">
                 <div class="dropdown-item" data-action="analysis-choropleth">단계구분도</div>
                 <div class="dropdown-item" data-action="analysis-chart-map">도형표현도</div>
                 <div class="dropdown-item" data-action="analysis-heatmap">히트맵</div>
@@ -93,6 +93,16 @@ export class AppLayout {
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="analysis-isochrone">등시선 분석</div>
                 <div class="dropdown-item" data-action="analysis-routing">최단경로 분석</div>
+              </div>
+            </div>
+            <div class="menu-item dropdown" data-menu="raster-analysis">
+              <button class="menu-button">래스터 분석</button>
+              <div class="dropdown-menu" id="menu-raster-analysis">
+                <div class="dropdown-item" data-action="raster-elevation">해발고도 (Hillshade)</div>
+                <div class="dropdown-item" data-action="raster-slope">경사도 (Slope)</div>
+                <div class="dropdown-item" data-action="raster-aspect">경사방향 (Aspect)</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="raster-contour">등고선 생성</div>
               </div>
             </div>
           </div>
