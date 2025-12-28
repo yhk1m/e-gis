@@ -3,7 +3,7 @@
  * 고도 데이터를 색상으로 시각화하여 표시
  */
 
-import { fromArrayBuffer, fromUrl } from 'geotiff';
+import * as GeoTIFF from 'geotiff';
 import ImageLayer from 'ol/layer/Image';
 import ImageCanvasSource from 'ol/source/ImageCanvas';
 import { transformExtent } from 'ol/proj';
@@ -38,7 +38,7 @@ class DEMLoader {
       const arrayBuffer = await file.arrayBuffer();
       console.log('ArrayBuffer 크기:', arrayBuffer.byteLength);
 
-      const tiff = await fromArrayBuffer(arrayBuffer);
+      const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
       console.log('GeoTIFF 파싱 완료');
 
       const image = await tiff.getImage();
@@ -65,7 +65,7 @@ class DEMLoader {
    * @returns {Promise<string>} 생성된 레이어 ID
    */
   async loadFromUrl(url, name = 'DEM') {
-    const tiff = await fromUrl(url);
+    const tiff = await GeoTIFF.fromUrl(url);
     const image = await tiff.getImage();
     return await this.createDEMLayer(image, name);
   }
