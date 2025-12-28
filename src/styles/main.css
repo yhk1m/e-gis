@@ -3428,3 +3428,160 @@ input:focus, select:focus, textarea:focus {
 .contour-line.minor {
   background: #A0522D;
 }
+
+/* ===== 래스터 분석 범례 ===== */
+.raster-analysis-legend {
+  position: absolute;
+  bottom: 40px;
+  right: 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+  min-width: 140px;
+  max-width: 180px;
+}
+
+.raster-legend-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.raster-legend-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.raster-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* Hillshade 범례 */
+.hillshade-gradient {
+  height: 16px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #000000, #ffffff);
+  border: 1px solid var(--border-color);
+}
+
+/* Slope 범례 */
+.slope-legend-gradient {
+  height: 16px;
+  border-radius: 2px;
+  background: linear-gradient(to right,
+    rgb(0, 128, 0),
+    rgb(128, 192, 0),
+    rgb(255, 255, 0),
+    rgb(255, 128, 0),
+    rgb(255, 0, 0),
+    rgb(128, 0, 0)
+  );
+  border: 1px solid var(--border-color);
+}
+
+.slope-legend-desc {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  margin-top: 2px;
+}
+
+.slope-legend-desc .gentle {
+  color: #00aa00;
+}
+
+.slope-legend-desc .steep {
+  color: #cc0000;
+}
+
+/* Aspect 범례 */
+.aspect-legend-compass {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: var(--spacing-sm) auto;
+}
+
+.aspect-compass-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    hsl(0, 70%, 50%),
+    hsl(45, 70%, 50%),
+    hsl(90, 70%, 50%),
+    hsl(135, 70%, 50%),
+    hsl(180, 70%, 50%),
+    hsl(225, 70%, 50%),
+    hsl(270, 70%, 50%),
+    hsl(315, 70%, 50%),
+    hsl(360, 70%, 50%)
+  );
+  border: 1px solid var(--border-color);
+}
+
+.aspect-compass-ring::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  background: var(--bg-panel);
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+}
+
+.aspect-compass-label {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-primary);
+  z-index: 1;
+}
+
+.aspect-compass-label.n { top: -16px; left: 50%; transform: translateX(-50%); }
+.aspect-compass-label.e { right: -12px; top: 50%; transform: translateY(-50%); }
+.aspect-compass-label.s { bottom: -16px; left: 50%; transform: translateX(-50%); }
+.aspect-compass-label.w { left: -14px; top: 50%; transform: translateY(-50%); }
+
+.aspect-legend-items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: var(--spacing-sm);
+}
+
+.aspect-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.aspect-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}

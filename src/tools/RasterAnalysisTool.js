@@ -12,12 +12,28 @@ import { LineString } from 'ol/geom';
 import { Style, Stroke } from 'ol/style';
 import { layerManager } from '../core/LayerManager.js';
 import { mapManager } from '../core/MapManager.js';
+import { eventBus, Events } from '../utils/EventBus.js';
 
 class RasterAnalysisTool {
   constructor() {
     // 기본 태양 위치 (Hillshade용)
     this.defaultAzimuth = 315; // 북서쪽에서 빛
     this.defaultAltitude = 45; // 45도 고도각
+    this.legends = new Map(); // layerId -> legend element
+
+    // 레이어 삭제 시 범례도 삭제
+    this.initEventListeners();
+  }
+
+  /**
+   * 이벤트 리스너 초기화
+   */
+  initEventListeners() {
+    eventBus.on(Events.LAYER_REMOVED, (data) => {
+      if (data && data.layerId) {
+        this.removeLegend(data.layerId);
+      }
+    });
   }
 
   /**
@@ -488,6 +504,9 @@ class RasterAnalysisTool {
       layerInfo.featureCount = `${width}×${height}`;
     }
 
+    // 범례 생성
+    this.createLegend(layerId, name, colorScheme, metadata);
+
     return layerId;
   }
 
@@ -587,6 +606,133 @@ class RasterAnalysisTool {
     const a = s * Math.min(l, 1 - l);
     const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
     return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
+  }
+
+  /**
+   * 범례 생성
+   * @param {string} layerId - 레이어 ID
+   * @param {string} layerName - 레이어 이름
+   * @param {string} colorScheme - 색상 스킴
+   * @param {Object} metadata - 메타데이터
+   */
+  createLegend(layerId, layerName, colorScheme, metadata = {}) {
+    // 기존 범례 제거
+    this.removeLegend(layerId);
+
+    const legendEl = document.createElement('div');
+    legendEl.className = 'raster-analysis-legend';
+    legendEl.id = `raster-legend-${layerId}`;
+
+    let legendHTML = '';
+
+    switch (colorScheme) {
+      case 'grayscale':
+        legendHTML = this.getHillshadeLegendHTML(layerName);
+        break;
+      case 'slope':
+        legendHTML = this.getSlopeLegendHTML(layerName, metadata);
+        break;
+      case 'aspect':
+        legendHTML = this.getAspectLegendHTML(layerName);
+        break;
+      default:
+        return;
+    }
+
+    legendEl.innerHTML = legendHTML;
+
+    // 지도 컨테이너에 추가
+    const mapContainer = document.getElementById('map');
+    if (mapContainer) {
+      mapContainer.appendChild(legendEl);
+      this.legends.set(layerId, legendEl);
+    }
+  }
+
+  /**
+   * Hillshade 범례 HTML
+   */
+  getHillshadeLegendHTML(layerName) {
+    return `
+      <div class="raster-legend-title">${layerName}</div>
+      <div class="raster-legend-content">
+        <div class="hillshade-gradient"></div>
+        <div class="raster-legend-labels">
+          <span>어두움</span>
+          <span>밝음</span>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Slope 범례 HTML
+   */
+  getSlopeLegendHTML(layerName, metadata) {
+    const { minVal = 0, maxVal = 90, unit = 'degree' } = metadata;
+    const unitLabel = unit === 'degree' ? '°' : '%';
+
+    return `
+      <div class="raster-legend-title">${layerName}</div>
+      <div class="raster-legend-content">
+        <div class="slope-legend-gradient"></div>
+        <div class="raster-legend-labels">
+          <span>${minVal.toFixed(1)}${unitLabel}</span>
+          <span>${(maxVal / 2).toFixed(1)}${unitLabel}</span>
+          <span>${maxVal.toFixed(1)}${unitLabel}</span>
+        </div>
+        <div class="slope-legend-desc">
+          <span class="gentle">완만</span>
+          <span class="steep">급경사</span>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Aspect 범례 HTML
+   */
+  getAspectLegendHTML(layerName) {
+    return `
+      <div class="raster-legend-title">${layerName}</div>
+      <div class="raster-legend-content">
+        <div class="aspect-legend-compass">
+          <div class="aspect-compass-label n">N</div>
+          <div class="aspect-compass-label e">E</div>
+          <div class="aspect-compass-label s">S</div>
+          <div class="aspect-compass-label w">W</div>
+          <div class="aspect-compass-ring"></div>
+        </div>
+        <div class="aspect-legend-items">
+          <div class="aspect-item"><span class="aspect-color" style="background:hsl(0,70%,50%)"></span>북 (0°)</div>
+          <div class="aspect-item"><span class="aspect-color" style="background:hsl(90,70%,50%)"></span>동 (90°)</div>
+          <div class="aspect-item"><span class="aspect-color" style="background:hsl(180,70%,50%)"></span>남 (180°)</div>
+          <div class="aspect-item"><span class="aspect-color" style="background:hsl(270,70%,50%)"></span>서 (270°)</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * 범례 제거
+   * @param {string} layerId - 레이어 ID
+   */
+  removeLegend(layerId) {
+    const legendEl = this.legends.get(layerId);
+    if (legendEl) {
+      legendEl.remove();
+      this.legends.delete(layerId);
+    }
+  }
+
+  /**
+   * 모든 범례 제거
+   */
+  clearAllLegends() {
+    this.legends.forEach((legendEl) => {
+      legendEl.remove();
+    });
+    this.legends.clear();
   }
 }
 
