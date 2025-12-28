@@ -85,13 +85,15 @@ class LayerManager {
     const layerId = "layer-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
     const layerColor = color || this.getNextColor();
 
-    let vectorSource;
+    let vectorSource = null;
     let olLayer;
+    let geometryType = options.geometryType || "Polygon";
+    let featureCount = 0;
 
-    // geometryType 결정 함수
+    // geometryType 결정 함수 (벡터 레이어용)
     const detectGeometryType = (src) => {
       if (options.geometryType) return options.geometryType;
-      if (src) {
+      if (src && typeof src.getFeatures === 'function') {
         const firstFeature = src.getFeatures()[0];
         if (firstFeature && firstFeature.getGeometry()) {
           return firstFeature.getGeometry().getType();
@@ -100,10 +102,20 @@ class LayerManager {
       return "Polygon";
     };
 
-    // 기존 레이어가 전달된 경우 (히트맵 등)
-    if (existingLayer) {
+    // 래스터 레이어 처리
+    if (type === 'raster' && existingLayer) {
       olLayer = existingLayer;
-      vectorSource = olLayer.getSource();
+      geometryType = options.geometryType || 'Raster';
+      featureCount = 0;
+    }
+    // 기존 레이어가 전달된 경우 (히트맵 등)
+    else if (existingLayer) {
+      olLayer = existingLayer;
+      vectorSource = olLayer.getSource && olLayer.getSource();
+      if (vectorSource && typeof vectorSource.getFeatures === 'function') {
+        geometryType = detectGeometryType(vectorSource);
+        featureCount = vectorSource.getFeatures().length;
+      }
     } else {
       if (source) {
         vectorSource = source;
@@ -114,20 +126,20 @@ class LayerManager {
         }
       }
 
-      const geoType = detectGeometryType(vectorSource);
-      const layerStyle = style || this.createStyle(layerColor, geoType);
+      geometryType = detectGeometryType(vectorSource);
+      const layerStyle = style || this.createStyle(layerColor, geometryType);
 
       olLayer = new VectorLayer({
         source: vectorSource,
         style: layerStyle,
         visible: visible
       });
+
+      featureCount = vectorSource.getFeatures().length;
     }
 
     const newZIndex = zIndex !== null ? zIndex : this.layerOrder.length + 1;
     olLayer.setZIndex(newZIndex);
-
-    const geometryType = detectGeometryType(vectorSource);
 
     const layerInfo = {
       id: layerId,
@@ -140,7 +152,7 @@ class LayerManager {
       strokeColor: layerColor,
       fillColor: layerColor,
       geometryType: geometryType,
-      featureCount: vectorSource ? vectorSource.getFeatures().length : 0,
+      featureCount: featureCount,
       strokeDash: "solid",
       fillOpacity: 0.3,
       strokeOpacity: 1.0,

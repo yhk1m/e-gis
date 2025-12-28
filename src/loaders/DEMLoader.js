@@ -98,12 +98,38 @@ class DEMLoader {
       sourceProj = `EPSG:${geoKeys.GeographicTypeGeoKey}`;
     }
 
+    console.log('DEM 좌표계:', sourceProj, 'bbox:', bbox);
+
     // EPSG:3857로 변환 (웹 지도용)
     try {
-      extent = transformExtent(bbox, sourceProj, 'EPSG:3857');
+      // 좌표계가 이미 EPSG:3857인지 확인
+      if (sourceProj === 'EPSG:3857') {
+        extent = bbox;
+      } else {
+        extent = transformExtent(bbox, sourceProj, 'EPSG:3857');
+      }
     } catch (e) {
       console.warn('좌표계 변환 실패, EPSG:4326으로 시도:', e);
-      extent = transformExtent(bbox, 'EPSG:4326', 'EPSG:3857');
+      try {
+        extent = transformExtent(bbox, 'EPSG:4326', 'EPSG:3857');
+      } catch (e2) {
+        console.warn('EPSG:4326 변환도 실패, bbox 그대로 사용:', e2);
+        // bbox가 이미 EPSG:3857 범위처럼 보이면 그대로 사용
+        if (Math.abs(bbox[0]) > 180 || Math.abs(bbox[2]) > 180) {
+          extent = bbox; // 이미 미터 단위로 보임
+        } else {
+          // 수동으로 EPSG:4326 -> EPSG:3857 변환
+          const toMercator = (lon, lat) => {
+            const x = lon * 20037508.34 / 180;
+            let y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
+            y = y * 20037508.34 / 180;
+            return [x, y];
+          };
+          const min = toMercator(bbox[0], bbox[1]);
+          const max = toMercator(bbox[2], bbox[3]);
+          extent = [min[0], min[1], max[0], max[1]];
+        }
+      }
     }
 
     // 최소/최대 고도 값 계산 (nodata 값 제외)
