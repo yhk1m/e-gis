@@ -26,7 +26,9 @@ export class BrowserPanel {
   createFileInput() {
     this.fileInput = document.createElement('input');
     this.fileInput.type = 'file';
-    this.fileInput.accept = '.geojson,.json,.zip,.shp,.dbf,.shx,.prj,.gpkg,.tif,.tiff,.img';
+    // .img 파일 호환성을 위해 accept를 넓게 설정
+    // 확장자 기반 필터링은 loadFile에서 처리
+    this.fileInput.accept = '.geojson,.json,.zip,.shp,.dbf,.shx,.prj,.gpkg,.tif,.tiff,.img,image/tiff,application/octet-stream,*/*';
     this.fileInput.multiple = true;
     this.fileInput.style.display = 'none';
     document.body.appendChild(this.fileInput);

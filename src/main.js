@@ -41,6 +41,7 @@ import { transformExtent } from 'ol/proj';
 import { geojsonLoader } from './loaders/GeoJSONLoader.js';
 import { shapefileLoader } from './loaders/ShapefileLoader.js';
 import { geopackageLoader } from './loaders/GeoPackageLoader.js';
+import { demLoader } from './loaders/DEMLoader.js';
 
 /**
  * 앱 초기화
@@ -131,7 +132,7 @@ function initApp() {
     btnAddLayer.addEventListener('click', () => {
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
-      fileInput.accept = '.geojson,.json,.zip,.shp,.dbf,.shx,.prj,.gpkg';
+      fileInput.accept = '.geojson,.json,.zip,.shp,.dbf,.shx,.prj,.gpkg,.tif,.tiff,.img,image/tiff,application/octet-stream,*/*';
       fileInput.multiple = true;
       fileInput.style.display = 'none';
       document.body.appendChild(fileInput);
@@ -663,8 +664,12 @@ async function loadFileByExtension(file) {
       return await shapefileLoader.loadFromFile(file);
     case 'gpkg':
       return await geopackageLoader.loadFromFile(file);
+    case 'tif':
+    case 'tiff':
+    case 'img':
+      return await demLoader.loadFromFile(file);
     default:
-      throw new Error('지원하지 않는 파일 형식입니다.');
+      throw new Error('지원하지 않는 파일 형식입니다. (GeoJSON, ZIP, GPKG, TIF, IMG 지원)');
   }
 }
 
