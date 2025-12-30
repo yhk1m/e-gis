@@ -96,6 +96,22 @@ class CartogramPanel {
                     </div>
                   </div>
                 </label>
+                <label class="cartogram-type-option">
+                  <input type="radio" name="cartogram-type" value="contiguous">
+                  <div class="type-content">
+                    <div class="type-icon">
+                      <svg width="40" height="40" viewBox="0 0 40 40">
+                        <polygon points="5,15 15,5 22,8 20,18 22,28 10,25" fill="#4292c6" stroke="#333" stroke-width="1"/>
+                        <polygon points="22,8 32,6 35,20 25,28 20,18" fill="#2171b5" stroke="#333" stroke-width="1"/>
+                        <polygon points="10,25 22,28 18,38 5,32" fill="#6baed6" stroke="#333" stroke-width="1"/>
+                      </svg>
+                    </div>
+                    <div class="type-info">
+                      <strong>Contiguous (연속)</strong>
+                      <small>원래 모양 유지, 폴리곤들이 서로 붙어있음</small>
+                    </div>
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -239,6 +255,12 @@ class CartogramPanel {
           this.selectedAttribute,
           { colorScheme, showLabels }
         );
+      } else if (cartogramType === 'contiguous') {
+        newLayerId = cartogramTool.createContiguousCartogram(
+          this.selectedLayerId,
+          this.selectedAttribute,
+          { colorScheme, showLabels }
+        );
       } else {
         newLayerId = cartogramTool.createNonContiguousCartogram(
           this.selectedLayerId,
@@ -254,9 +276,21 @@ class CartogramPanel {
         if (data && data.layerId === newLayerId) {
           cartogramTool.removeLegend(newLayerId);
           eventBus.off(Events.LAYER_REMOVED, removeHandler);
+          eventBus.off(Events.LAYER_VISIBILITY_CHANGED, visibilityHandler);
         }
       };
       eventBus.on(Events.LAYER_REMOVED, removeHandler);
+
+      // 레이어 가시성 변경 시 범례도 숨김/표시
+      const visibilityHandler = (data) => {
+        if (data && data.layerId === newLayerId) {
+          const legend = document.getElementById(`legend-${newLayerId}`);
+          if (legend) {
+            legend.style.display = data.visible ? 'block' : 'none';
+          }
+        }
+      };
+      eventBus.on(Events.LAYER_VISIBILITY_CHANGED, visibilityHandler);
 
     } catch (error) {
       alert('카토그램 생성 실패: ' + error.message);

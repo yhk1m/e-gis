@@ -291,6 +291,222 @@ class CartogramTool {
   }
 
   /**
+   * Contiguous 카토그램 생성 (연속형 - 폴리곤 붙이기)
+   * @param {string} layerId - 원본 레이어 ID
+   * @param {string} attribute - 크기를 결정할 속성
+   * @param {Object} options - 옵션
+   * @returns {string} 생성된 레이어 ID
+   */
+  createContiguousCartogram(layerId, attribute, options = {}) {
+    const layer = layerManager.getLayer(layerId);
+    if (!layer || !layer.source) {
+      throw new Error('유효한 레이어를 선택해주세요.');
+    }
+
+    const features = layer.source.getFeatures();
+    if (features.length === 0) {
+      throw new Error('레이어에 객체가 없습니다.');
+    }
+
+    const {
+      colorScheme = 'blues',
+      minScale = 0.5,
+      maxScale = 1.5,
+      showLabels = false,
+      iterations = 50
+    } = options;
+
+    // 속성값 수집
+    let minVal = Infinity, maxVal = -Infinity;
+    const data = [];
+
+    features.forEach(feature => {
+      const value = parseFloat(feature.get(attribute));
+      if (isNaN(value) || value <= 0) return;
+
+      const geom = feature.getGeometry();
+      if (!geom) return;
+
+      const center = getCenter(geom.getExtent());
+
+      data.push({
+        feature,
+        value,
+        originalCenter: center,
+        currentCenter: [...center],
+        scale: 1,
+        geom: geom.clone()
+      });
+
+      if (value < minVal) minVal = value;
+      if (value > maxVal) maxVal = value;
+    });
+
+    if (data.length === 0) {
+      throw new Error(`속성 "${attribute}"에 유효한 숫자 데이터가 없습니다.`);
+    }
+
+    const valueRange = maxVal - minVal || 1;
+
+    // 스케일 계산
+    data.forEach(d => {
+      const normalized = (d.value - minVal) / valueRange;
+      d.scale = minScale + normalized * (maxScale - minScale);
+    });
+
+    // 전체 중심점 계산
+    let totalX = 0, totalY = 0;
+    data.forEach(d => {
+      totalX += d.originalCenter[0];
+      totalY += d.originalCenter[1];
+    });
+    const globalCenter = [totalX / data.length, totalY / data.length];
+
+    // 스케일링 및 위치 조정 (전체 중심점 기준)
+    data.forEach(d => {
+      // 스케일링
+      d.geom = this.scaleGeometry(d.geom, d.originalCenter, d.scale);
+
+      // 전체 중심 방향으로 이동 (스케일에 반비례)
+      const dx = globalCenter[0] - d.originalCenter[0];
+      const dy = globalCenter[1] - d.originalCenter[1];
+      const moveFactor = (1 - d.scale) * 0.3; // 작은 폴리곤은 더 많이 이동
+
+      d.geom = this.translateGeometry(d.geom, dx * moveFactor, dy * moveFactor);
+      const newExtent = d.geom.getExtent();
+      d.currentCenter = getCenter(newExtent);
+    });
+
+    // Force-directed layout으로 폴리곤 밀착
+    this.applyPolygonForceLayout(data, iterations);
+
+    const colors = this.colorSchemes[colorScheme] || this.colorSchemes.blues;
+
+    // 새 피처 생성
+    const newFeatures = data.map(d => {
+      const normalized = (d.value - minVal) / valueRange;
+      const colorIndex = Math.floor(normalized * (colors.length - 1));
+      const color = colors[Math.min(colorIndex, colors.length - 1)];
+
+      const props = d.feature.getProperties();
+      delete props.geometry;
+
+      const newFeature = new Feature({
+        geometry: d.geom,
+        ...props
+      });
+
+      const style = new Style({
+        fill: new Fill({ color: this.hexToRgba(color, 0.7) }),
+        stroke: new Stroke({ color: '#333', width: 1 }),
+        text: showLabels ? new Text({
+          text: d.feature.get('name') || d.feature.get('NAME') || '',
+          font: '11px sans-serif',
+          fill: new Fill({ color: '#333' }),
+          stroke: new Stroke({ color: '#fff', width: 2 })
+        }) : undefined
+      });
+
+      newFeature.setStyle(style);
+      return newFeature;
+    });
+
+    // 새 레이어 생성
+    const vectorSource = new VectorSource({ features: newFeatures });
+    const vectorLayer = new VectorLayer({ source: vectorSource });
+
+    const newLayerId = layerManager.addLayer({
+      name: `${layer.name}_Contig_${attribute}`,
+      type: 'vector',
+      geometryType: layer.geometryType,
+      olLayer: vectorLayer,
+      source: vectorSource
+    });
+
+    // 범례 추가
+    this.addLegend(newLayerId, `Contiguous: ${attribute}`, minVal, maxVal, colors);
+
+    return newLayerId;
+  }
+
+  /**
+   * 폴리곤 Force-directed layout 적용
+   */
+  applyPolygonForceLayout(data, iterations) {
+    for (let iter = 0; iter < iterations; iter++) {
+      let totalMove = 0;
+
+      for (let i = 0; i < data.length; i++) {
+        for (let j = i + 1; j < data.length; j++) {
+          const d1 = data[i];
+          const d2 = data[j];
+
+          // 두 폴리곤 중심 간 거리
+          const dx = d2.currentCenter[0] - d1.currentCenter[0];
+          const dy = d2.currentCenter[1] - d1.currentCenter[1];
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 1) continue;
+
+          // 두 폴리곤이 원래 인접했는지 확인 (중심 거리 기반 근사)
+          const origDx = d2.originalCenter[0] - d1.originalCenter[0];
+          const origDy = d2.originalCenter[1] - d1.originalCenter[1];
+          const origDist = Math.sqrt(origDx * origDx + origDy * origDy);
+
+          // 원래 인접했던 폴리곤들만 서로 당김
+          const avgScale = (d1.scale + d2.scale) / 2;
+          const targetDist = origDist * avgScale;
+
+          if (dist > targetDist) {
+            // 서로 당김
+            const pull = (dist - targetDist) * 0.1;
+            const moveX = (dx / dist) * pull;
+            const moveY = (dy / dist) * pull;
+
+            d1.geom = this.translateGeometry(d1.geom, moveX, moveY);
+            d2.geom = this.translateGeometry(d2.geom, -moveX, -moveY);
+
+            d1.currentCenter[0] += moveX;
+            d1.currentCenter[1] += moveY;
+            d2.currentCenter[0] -= moveX;
+            d2.currentCenter[1] -= moveY;
+
+            totalMove += Math.abs(pull);
+          }
+        }
+      }
+
+      // 수렴하면 종료
+      if (totalMove < 1) break;
+    }
+  }
+
+  /**
+   * 지오메트리 이동
+   */
+  translateGeometry(geom, dx, dy) {
+    const type = geom.getType();
+
+    if (type === 'Polygon') {
+      const coords = geom.getCoordinates();
+      const translatedCoords = coords.map(ring =>
+        ring.map(coord => [coord[0] + dx, coord[1] + dy])
+      );
+      geom.setCoordinates(translatedCoords);
+    } else if (type === 'MultiPolygon') {
+      const coords = geom.getCoordinates();
+      const translatedCoords = coords.map(polygon =>
+        polygon.map(ring =>
+          ring.map(coord => [coord[0] + dx, coord[1] + dy])
+        )
+      );
+      geom.setCoordinates(translatedCoords);
+    }
+
+    return geom;
+  }
+
+  /**
    * 지오메트리 스케일링
    */
   scaleGeometry(geom, center, scale) {
