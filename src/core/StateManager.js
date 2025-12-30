@@ -139,6 +139,11 @@ class StateManager {
   async saveLayer(layerInfo) {
     await this.waitForReady();
 
+    // 래스터 레이어는 저장하지 않음 (GeoJSON 변환 불가)
+    if (layerInfo.type === 'raster' || !layerInfo.source) {
+      return Promise.resolve(layerInfo.id);
+    }
+
     return new Promise((resolve, reject) => {
       try {
         const features = layerInfo.source.getFeatures();
