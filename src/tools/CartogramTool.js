@@ -99,9 +99,13 @@ class CartogramTool {
       const colorIndex = Math.floor((d.value - minVal) / valueRange * (colors.length - 1));
       const color = colors[Math.min(colorIndex, colors.length - 1)];
 
+      // 속성 복사 (geometry 제외)
+      const props = d.feature.getProperties();
+      delete props.geometry;
+
       const circleFeature = new Feature({
         geometry: new Point([d.x, d.y]),
-        ...d.feature.getProperties()
+        ...props
       });
 
       // 스타일 설정
@@ -244,9 +248,13 @@ class CartogramTool {
       const colorIndex = Math.floor(normalized * (colors.length - 1));
       const color = colors[Math.min(colorIndex, colors.length - 1)];
 
+      // 속성 복사 (geometry 제외)
+      const props = feature.getProperties();
+      delete props.geometry;
+
       const newFeature = new Feature({
         geometry: scaledGeom,
-        ...feature.getProperties()
+        ...props
       });
 
       const style = new Style({
