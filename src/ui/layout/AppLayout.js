@@ -69,6 +69,8 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="layer-label">라벨 설정</div>
                 <div class="dropdown-item" data-action="layer-field-calculator">필드 계산기</div>
                 <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="layer-export">레이어 내보내기</div>
+                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="layer-clear-all">모든 레이어 삭제</div>
               </div>
             </div>

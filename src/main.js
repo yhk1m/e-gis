@@ -32,6 +32,7 @@ import { isochronePanel } from './ui/panels/IsochronePanel.js';
 import { routingPanel } from './ui/panels/RoutingPanel.js';
 import { drawingPanel } from './ui/panels/DrawingPanel.js';
 import { cloudPanel } from './ui/panels/CloudPanel.js';
+import { layerExportPanel } from './ui/panels/LayerExportPanel.js';
 import { myPagePanel } from './ui/panels/MyPagePanel.js';
 import { supabaseManager } from './core/SupabaseManager.js';
 import { geocodingService } from './services/GeocodingService.js';
@@ -572,6 +573,9 @@ function handleMenuAction(action) {
       }
       break;
     }
+    case 'layer-export':
+      layerExportPanel.show();
+      break;
     case 'layer-clear-all':
       if (confirm('모든 레이어를 삭제하시겠습니까?')) {
         layerManager.clear();
