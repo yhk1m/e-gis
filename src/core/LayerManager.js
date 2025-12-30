@@ -193,6 +193,9 @@ class LayerManager {
       this.selectedLayerId = null;
     }
 
+    // 다중 선택에서도 제거
+    this.selectedLayerIds.delete(layerId);
+
     eventBus.emit(Events.LAYER_REMOVED, { layerId: layerId });
     return true;
   }

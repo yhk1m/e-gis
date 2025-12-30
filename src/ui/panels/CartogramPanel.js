@@ -250,8 +250,8 @@ class CartogramPanel {
       this.hide();
 
       // 레이어 삭제 시 범례도 제거
-      const removeHandler = (removedLayerId) => {
-        if (removedLayerId === newLayerId) {
+      const removeHandler = (data) => {
+        if (data && data.layerId === newLayerId) {
           cartogramTool.removeLegend(newLayerId);
           eventBus.off(Events.LAYER_REMOVED, removeHandler);
         }
