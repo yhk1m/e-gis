@@ -87,50 +87,96 @@ class DEMLoader {
     const bbox = image.getBoundingBox();
     const geoKeys = image.getGeoKeys();
 
-    // 좌표계 확인 (기본적으로 EPSG:4326으로 가정, 필요시 변환)
+    // 좌표계 확인
     let extent = bbox;
-    let sourceProj = 'EPSG:4326';
+    let sourceProj = null;
 
     // GeoKeys에서 투영 정보 확인
     if (geoKeys && geoKeys.ProjectedCSTypeGeoKey) {
-      sourceProj = `EPSG:${geoKeys.ProjectedCSTypeGeoKey}`;
+      const epsgCode = geoKeys.ProjectedCSTypeGeoKey;
+      // 32767은 "사용자 정의" 또는 "정의되지 않음"을 의미
+      if (epsgCode !== 32767) {
+        sourceProj = `EPSG:${epsgCode}`;
+      }
     } else if (geoKeys && geoKeys.GeographicTypeGeoKey) {
-      sourceProj = `EPSG:${geoKeys.GeographicTypeGeoKey}`;
+      const epsgCode = geoKeys.GeographicTypeGeoKey;
+      if (epsgCode !== 32767) {
+        sourceProj = `EPSG:${epsgCode}`;
+      }
     }
 
-    console.log('DEM 좌표계:', sourceProj, 'bbox:', bbox);
+    console.log('DEM 좌표계:', sourceProj || '정의되지 않음', 'bbox:', bbox);
 
-    // EPSG:3857로 변환 (웹 지도용)
-    try {
-      // 좌표계가 이미 EPSG:3857인지 확인
-      if (sourceProj === 'EPSG:3857') {
-        extent = bbox;
-      } else {
-        extent = transformExtent(bbox, sourceProj, 'EPSG:3857');
+    // bbox 값을 분석하여 좌표계 추측
+    const guessProjection = (bbox) => {
+      const [minX, minY, maxX, maxY] = bbox;
+
+      // EPSG:4326 범위: 경도 -180~180, 위도 -90~90
+      if (minX >= -180 && maxX <= 180 && minY >= -90 && maxY <= 90) {
+        return 'EPSG:4326';
       }
-    } catch (e) {
-      console.warn('좌표계 변환 실패, EPSG:4326으로 시도:', e);
+
+      // EPSG:3857 범위: 약 -20037508 ~ 20037508
+      if (Math.abs(minX) > 180 && Math.abs(maxX) < 20037509 &&
+          Math.abs(minY) > 90 && Math.abs(maxY) < 20037509) {
+        return 'EPSG:3857';
+      }
+
+      // UTM 좌표계 범위 추측 (일반적으로 100000 ~ 900000 사이의 X값)
+      if (minX > 100000 && maxX < 1000000 && minY > 0) {
+        return 'UTM';
+      }
+
+      return null;
+    };
+
+    // 수동 좌표 변환 함수
+    const toMercator = (lon, lat) => {
+      const x = lon * 20037508.34 / 180;
+      let y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
+      y = y * 20037508.34 / 180;
+      return [x, y];
+    };
+
+    // 좌표계가 없거나 정의되지 않은 경우 bbox로 추측
+    if (!sourceProj) {
+      const guessed = guessProjection(bbox);
+      console.log('좌표계 추측 결과:', guessed);
+
+      if (guessed === 'EPSG:3857') {
+        extent = bbox;
+      } else if (guessed === 'EPSG:4326') {
+        const min = toMercator(bbox[0], bbox[1]);
+        const max = toMercator(bbox[2], bbox[3]);
+        extent = [min[0], min[1], max[0], max[1]];
+      } else {
+        // UTM이나 기타 좌표계 - bbox를 그대로 사용하되 경고
+        console.warn('알 수 없는 좌표계, bbox 그대로 사용');
+        extent = bbox;
+      }
+    } else {
+      // EPSG:3857로 변환 시도
       try {
-        extent = transformExtent(bbox, 'EPSG:4326', 'EPSG:3857');
-      } catch (e2) {
-        console.warn('EPSG:4326 변환도 실패, bbox 그대로 사용:', e2);
-        // bbox가 이미 EPSG:3857 범위처럼 보이면 그대로 사용
-        if (Math.abs(bbox[0]) > 180 || Math.abs(bbox[2]) > 180) {
-          extent = bbox; // 이미 미터 단위로 보임
+        if (sourceProj === 'EPSG:3857') {
+          extent = bbox;
         } else {
-          // 수동으로 EPSG:4326 -> EPSG:3857 변환
-          const toMercator = (lon, lat) => {
-            const x = lon * 20037508.34 / 180;
-            let y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
-            y = y * 20037508.34 / 180;
-            return [x, y];
-          };
+          extent = transformExtent(bbox, sourceProj, 'EPSG:3857');
+        }
+      } catch (e) {
+        console.warn('좌표계 변환 실패:', e);
+        // bbox 값으로 좌표계 추측 후 변환
+        const guessed = guessProjection(bbox);
+        if (guessed === 'EPSG:4326') {
           const min = toMercator(bbox[0], bbox[1]);
           const max = toMercator(bbox[2], bbox[3]);
           extent = [min[0], min[1], max[0], max[1]];
+        } else {
+          extent = bbox;
         }
       }
     }
+
+    console.log('최종 extent:', extent);
 
     // 최소/최대 고도 값 계산 (nodata 값 제외)
     let minVal = Infinity;
