@@ -372,6 +372,16 @@
   background: var(--bg-hover);
 }
 
+/* 비활성화된 메뉴 */
+.menu-item.disabled .menu-button {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.menu-item.disabled .menu-button:hover {
+  background: transparent;
+}
+
 /* 드롭다운 아이템 */
 .dropdown-item {
   padding: var(--spacing-sm) var(--spacing-md);

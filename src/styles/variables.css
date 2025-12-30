@@ -78,6 +78,7 @@
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
+  --text-disabled: #cbd5e1;
   --text-inverse: #ffffff;
 
   /* 테두리 */
@@ -120,6 +121,7 @@
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
+  --text-disabled: #475569;
   --text-inverse: #0f172a;
 
   /* 테두리 */

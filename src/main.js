@@ -32,7 +32,6 @@ import { isochronePanel } from './ui/panels/IsochronePanel.js';
 import { routingPanel } from './ui/panels/RoutingPanel.js';
 import { drawingPanel } from './ui/panels/DrawingPanel.js';
 import { cloudPanel } from './ui/panels/CloudPanel.js';
-import { rasterAnalysisPanel } from './ui/panels/RasterAnalysisPanel.js';
 import { myPagePanel } from './ui/panels/MyPagePanel.js';
 import { supabaseManager } from './core/SupabaseManager.js';
 import { geocodingService } from './services/GeocodingService.js';
@@ -627,18 +626,9 @@ function handleMenuAction(action) {
       routingPanel.show();
       break;
 
-    // ===== 래스터 분석 메뉴 =====
-    case 'raster-elevation':
-      rasterAnalysisPanel.showHillshade();
-      break;
-    case 'raster-slope':
-      rasterAnalysisPanel.showSlope();
-      break;
-    case 'raster-aspect':
-      rasterAnalysisPanel.showAspect();
-      break;
-    case 'raster-contour':
-      rasterAnalysisPanel.showContour();
+    // ===== 래스터 분석 메뉴 (준비중) =====
+    case 'raster-coming-soon':
+      showComingSoonModal('래스터 분석');
       break;
 
     default:
@@ -686,6 +676,51 @@ function showStatusMessage(message) {
       statusMessage.textContent = '준비';
     }, 3000);
   }
+}
+
+/**
+ * 준비중 모달 표시
+ */
+function showComingSoonModal(featureName) {
+  // 기존 모달이 있으면 제거
+  const existingModal = document.getElementById('coming-soon-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  const modalHtml = `
+    <div class="modal-overlay active" id="coming-soon-modal">
+      <div class="modal" style="width: 300px;">
+        <div class="modal-header">
+          <h3>${featureName}</h3>
+          <button class="modal-close" id="coming-soon-close">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: var(--spacing-lg); text-align: center;">
+          <p style="margin: 0; color: var(--text-secondary);">준비중입니다.</p>
+        </div>
+        <div class="modal-footer" style="padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); text-align: right;">
+          <button class="btn btn-primary btn-sm" id="coming-soon-ok">확인</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const modal = document.getElementById('coming-soon-modal');
+  const closeBtn = document.getElementById('coming-soon-close');
+  const okBtn = document.getElementById('coming-soon-ok');
+
+  const closeModal = () => {
+    modal.classList.remove('active');
+    setTimeout(() => modal.remove(), 200);
+  };
+
+  closeBtn.addEventListener('click', closeModal);
+  okBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
 }
 
 /**
