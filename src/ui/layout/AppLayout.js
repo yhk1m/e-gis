@@ -89,6 +89,7 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="analysis-choropleth">단계구분도</div>
                 <div class="dropdown-item" data-action="analysis-chart-map">도형표현도</div>
                 <div class="dropdown-item" data-action="analysis-heatmap">히트맵</div>
+                <div class="dropdown-item" data-action="analysis-cartogram">카토그램</div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="analysis-buffer">버퍼 분석</div>
                 <div class="dropdown-item" data-action="analysis-spatial-ops">공간 연산</div>
