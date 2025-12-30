@@ -102,14 +102,18 @@ class LayerManager {
       return "Polygon";
     };
 
+    console.log('addLayer 호출:', { type, hasExistingLayer: !!existingLayer, name });
+
     // 래스터 레이어 처리
     if (type === 'raster' && existingLayer) {
+      console.log('래스터 레이어로 처리');
       olLayer = existingLayer;
       geometryType = options.geometryType || 'Raster';
       featureCount = 0;
     }
     // 기존 레이어가 전달된 경우 (히트맵 등)
     else if (existingLayer) {
+      console.log('기존 레이어로 처리 (히트맵 등)');
       olLayer = existingLayer;
       vectorSource = olLayer.getSource && olLayer.getSource();
       if (vectorSource && typeof vectorSource.getFeatures === 'function') {
@@ -117,6 +121,7 @@ class LayerManager {
         featureCount = vectorSource.getFeatures().length;
       }
     } else {
+      console.log('새 벡터 레이어 생성');
       if (source) {
         vectorSource = source;
       } else {
