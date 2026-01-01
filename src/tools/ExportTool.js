@@ -90,17 +90,17 @@ class ExportTool {
 
     // 제목
     if (overlays.title) {
-      this.drawTitle(ctx, overlays.title, width, s);
+      this.drawTitle(ctx, overlays.title, width, height, s);
     }
 
     // 축척 바
     if (overlays.scaleBar) {
-      this.drawScaleBar(ctx, width, height, s);
+      this.drawScaleBar(ctx, overlays.scaleBar, width, height, s);
     }
 
     // 방위표
     if (overlays.compass) {
-      this.drawCompass(ctx, overlays.compass, width, s);
+      this.drawCompass(ctx, overlays.compass, width, height, s);
     }
 
     // 범례
@@ -119,28 +119,72 @@ class ExportTool {
   /**
    * 제목 그리기
    */
-  drawTitle(ctx, options, width, scale) {
-    const { text, fontSize = 24 } = options;
+  drawTitle(ctx, options, width, height, scale) {
+    const {
+      text,
+      fontSize = 24,
+      fontWeight = 'bold',
+      fontFamily = 'Malgun Gothic',
+      color = '#333333',
+      shadow = false,
+      shadowColor = 'rgba(0,0,0,0.3)',
+      stroke = false,
+      strokeColor = '#ffffff',
+      strokeWidth = 2,
+      x = 0.5,
+      y = 0.08
+    } = options;
+
     const scaledFontSize = fontSize * scale;
+    const posX = x * width;
+    const posY = y * height;
 
     ctx.save();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillRect(0, 0, width, (scaledFontSize + 20 * scale));
 
-    ctx.fillStyle = '#333';
-    ctx.font = `bold ${scaledFontSize}px "Malgun Gothic", sans-serif`;
+    // 배경
+    ctx.font = `${fontWeight} ${scaledFontSize}px "${fontFamily}", sans-serif`;
+    const textWidth = ctx.measureText(text).width + 40 * scale;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillRect(posX - textWidth / 2, posY - scaledFontSize / 2 - 10 * scale, textWidth, scaledFontSize + 20 * scale);
+
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, width / 2, (scaledFontSize / 2) + 10 * scale);
+
+    // 그림자
+    if (shadow) {
+      ctx.shadowColor = shadowColor;
+      ctx.shadowBlur = 6 * scale;
+      ctx.shadowOffsetX = 3 * scale;
+      ctx.shadowOffsetY = 3 * scale;
+    }
+
+    // 테두리
+    if (stroke) {
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth * scale;
+      ctx.strokeText(text, posX, posY);
+    }
+
+    ctx.fillStyle = color;
+    ctx.fillText(text, posX, posY);
+
     ctx.restore();
   }
 
   /**
    * 축척 바 그리기
    */
-  drawScaleBar(ctx, width, height, scale) {
+  drawScaleBar(ctx, options, width, height, scale) {
     const map = mapManager.getMap();
     if (!map) return;
+
+    const {
+      fontSize = 12,
+      fontFamily = 'Malgun Gothic',
+      color = '#333333',
+      x = 0.05,
+      y = 0.92
+    } = options;
 
     // 현재 뷰에서 축척 계산
     const view = map.getView();
@@ -163,41 +207,42 @@ class ExportTool {
       }
     }
 
-    const x = 20 * scale;
-    const y = height - 30 * scale;
+    const posX = x * width;
+    const posY = y * height;
     const barHeight = 8 * scale;
+    const scaledFontSize = fontSize * scale;
 
     // 배경
     ctx.save();
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillRect(x - 5 * scale, y - 25 * scale, barWidth + 20 * scale, 45 * scale);
+    ctx.fillRect(posX - 5 * scale, posY - 25 * scale, barWidth + 20 * scale, 45 * scale);
 
     // 축척 바
     ctx.fillStyle = '#333';
-    ctx.fillRect(x, y, barWidth, barHeight);
+    ctx.fillRect(posX, posY, barWidth, barHeight);
     ctx.fillStyle = '#fff';
-    ctx.fillRect(x, y, barWidth / 2, barHeight);
+    ctx.fillRect(posX, posY, barWidth / 2, barHeight);
     ctx.strokeStyle = '#333';
     ctx.lineWidth = scale;
-    ctx.strokeRect(x, y, barWidth, barHeight);
+    ctx.strokeRect(posX, posY, barWidth, barHeight);
 
     // 눈금
     ctx.beginPath();
-    ctx.moveTo(x, y - 3 * scale);
-    ctx.lineTo(x, y + barHeight + 3 * scale);
-    ctx.moveTo(x + barWidth / 2, y - 3 * scale);
-    ctx.lineTo(x + barWidth / 2, y + barHeight + 3 * scale);
-    ctx.moveTo(x + barWidth, y - 3 * scale);
-    ctx.lineTo(x + barWidth, y + barHeight + 3 * scale);
+    ctx.moveTo(posX, posY - 3 * scale);
+    ctx.lineTo(posX, posY + barHeight + 3 * scale);
+    ctx.moveTo(posX + barWidth / 2, posY - 3 * scale);
+    ctx.lineTo(posX + barWidth / 2, posY + barHeight + 3 * scale);
+    ctx.moveTo(posX + barWidth, posY - 3 * scale);
+    ctx.lineTo(posX + barWidth, posY + barHeight + 3 * scale);
     ctx.stroke();
 
     // 레이블
-    ctx.fillStyle = '#333';
-    ctx.font = `${12 * scale}px "Malgun Gothic", sans-serif`;
+    ctx.fillStyle = color;
+    ctx.font = `${scaledFontSize}px "${fontFamily}", sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('0', x, y - 8 * scale);
-    ctx.fillText(this.formatDistance(scaleValue / 2), x + barWidth / 2, y - 8 * scale);
-    ctx.fillText(this.formatDistance(scaleValue), x + barWidth, y - 8 * scale);
+    ctx.fillText('0', posX, posY - 8 * scale);
+    ctx.fillText(this.formatDistance(scaleValue / 2), posX + barWidth / 2, posY - 8 * scale);
+    ctx.fillText(this.formatDistance(scaleValue), posX + barWidth, posY - 8 * scale);
 
     ctx.restore();
   }
@@ -215,11 +260,16 @@ class ExportTool {
   /**
    * 방위표 그리기
    */
-  drawCompass(ctx, options, width, scale) {
-    const { size = 50 } = options;
+  drawCompass(ctx, options, width, height, scale) {
+    const {
+      size = 50,
+      x = 0.92,
+      y = 0.12
+    } = options;
+
     const scaledSize = size * scale;
-    const cx = width - scaledSize - 20 * scale;
-    const cy = scaledSize + 20 * scale;
+    const cx = x * width;
+    const cy = y * height;
 
     ctx.save();
 
@@ -284,48 +334,57 @@ class ExportTool {
    * 범례 그리기
    */
   drawLegend(ctx, options, width, height, scale) {
-    const { layers } = options;
+    const {
+      layers,
+      fontSize = 12,
+      fontFamily = 'Malgun Gothic',
+      color = '#333333',
+      x = 0.85,
+      y = 0.35
+    } = options;
+
     if (!layers || layers.length === 0) return;
 
     const padding = 10 * scale;
+    const scaledFontSize = fontSize * scale;
     const itemHeight = 20 * scale;
     const legendWidth = 120 * scale;
     const legendHeight = (layers.length * itemHeight) + padding * 3;
 
-    const x = width - legendWidth - 20 * scale;
-    const y = 100 * scale;
+    const posX = x * width;
+    const posY = y * height;
 
     ctx.save();
 
     // 배경
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(x, y, legendWidth, legendHeight);
+    ctx.fillRect(posX, posY, legendWidth, legendHeight);
     ctx.strokeStyle = '#999';
     ctx.lineWidth = scale;
-    ctx.strokeRect(x, y, legendWidth, legendHeight);
+    ctx.strokeRect(posX, posY, legendWidth, legendHeight);
 
     // 제목
-    ctx.fillStyle = '#333';
-    ctx.font = `bold ${12 * scale}px "Malgun Gothic", sans-serif`;
+    ctx.fillStyle = color;
+    ctx.font = `bold ${scaledFontSize}px "${fontFamily}", sans-serif`;
     ctx.textAlign = 'left';
-    ctx.fillText('범례', x + padding, y + padding + 10 * scale);
+    ctx.fillText('범례', posX + padding, posY + padding + 10 * scale);
 
     // 레이어 항목
     layers.forEach((layer, index) => {
-      const itemY = y + padding * 2 + 10 * scale + (index * itemHeight);
+      const itemY = posY + padding * 2 + 10 * scale + (index * itemHeight);
 
       // 색상 박스
       ctx.fillStyle = layer.color;
-      ctx.fillRect(x + padding, itemY, 14 * scale, 14 * scale);
+      ctx.fillRect(posX + padding, itemY, 14 * scale, 14 * scale);
       ctx.strokeStyle = '#666';
-      ctx.strokeRect(x + padding, itemY, 14 * scale, 14 * scale);
+      ctx.strokeRect(posX + padding, itemY, 14 * scale, 14 * scale);
 
       // 레이어 이름
-      ctx.fillStyle = '#333';
-      ctx.font = `${11 * scale}px "Malgun Gothic", sans-serif`;
+      ctx.fillStyle = color;
+      ctx.font = `${(fontSize - 1) * scale}px "${fontFamily}", sans-serif`;
       ctx.fillText(
         layer.name.length > 10 ? layer.name.substring(0, 10) + '...' : layer.name,
-        x + padding + 18 * scale,
+        posX + padding + 18 * scale,
         itemY + 11 * scale
       );
     });
@@ -337,38 +396,64 @@ class ExportTool {
    * 텍스트 박스 그리기
    */
   drawTextBox(ctx, options, width, height, scale) {
-    const { text } = options;
+    const {
+      text,
+      fontSize = 12,
+      fontWeight = 'normal',
+      fontFamily = 'Malgun Gothic',
+      color = '#333333',
+      shadow = false,
+      stroke = false,
+      strokeColor = '#ffffff',
+      strokeWidth = 1,
+      x = 0.05,
+      y = 0.75
+    } = options;
+
     if (!text) return;
 
     const padding = 10 * scale;
     const lines = text.split('\n');
-    const lineHeight = 16 * scale;
+    const scaledFontSize = fontSize * scale;
+    const lineHeight = (fontSize + 4) * scale;
     const boxWidth = Math.min(200 * scale, width * 0.4);
     const boxHeight = (lines.length * lineHeight) + padding * 2;
 
-    const x = 20 * scale;
-    const y = height - boxHeight - 60 * scale;
+    const posX = x * width;
+    const posY = y * height;
 
     ctx.save();
 
     // 배경
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(x, y, boxWidth, boxHeight);
+    ctx.fillRect(posX, posY, boxWidth, boxHeight);
     ctx.strokeStyle = '#999';
     ctx.lineWidth = scale;
-    ctx.strokeRect(x, y, boxWidth, boxHeight);
+    ctx.strokeRect(posX, posY, boxWidth, boxHeight);
 
-    // 텍스트
-    ctx.fillStyle = '#333';
-    ctx.font = `${12 * scale}px "Malgun Gothic", sans-serif`;
+    ctx.font = `${fontWeight} ${scaledFontSize}px "${fontFamily}", sans-serif`;
     ctx.textAlign = 'left';
 
+    // 그림자
+    if (shadow) {
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 4 * scale;
+      ctx.shadowOffsetX = 2 * scale;
+      ctx.shadowOffsetY = 2 * scale;
+    }
+
+    // 텍스트
     lines.forEach((line, index) => {
-      ctx.fillText(
-        line.substring(0, 30),
-        x + padding,
-        y + padding + lineHeight * (index + 0.8)
-      );
+      const lineY = posY + padding + lineHeight * (index + 0.8);
+
+      if (stroke) {
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeWidth * scale;
+        ctx.strokeText(line.substring(0, 30), posX + padding, lineY);
+      }
+
+      ctx.fillStyle = color;
+      ctx.fillText(line.substring(0, 30), posX + padding, lineY);
     });
 
     ctx.restore();

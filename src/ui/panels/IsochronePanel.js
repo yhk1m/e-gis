@@ -74,6 +74,7 @@ class IsochronePanel {
           <div class="api-key-input-group">
             <input type="password" id="ors-api-key" value="${apiKey}" placeholder="API 키 입력">
             <button type="button" class="btn btn-sm" id="toggle-api-key">보기</button>
+            <button type="button" class="btn btn-sm btn-primary" id="save-api-key">저장</button>
           </div>
           <small class="form-hint">
             <a href="https://openrouteservice.org/dev/#/signup" target="_blank">openrouteservice.org</a>에서 무료 API 키를 발급받으세요
@@ -115,26 +116,8 @@ class IsochronePanel {
         <div class="form-group">
           <label id="intervals-label">시간 간격 (분)</label>
           <div class="intervals-input">
-            <div class="interval-checkboxes" id="interval-checkboxes">
-              <label class="interval-checkbox">
-                <input type="checkbox" value="5" checked> <span>5분</span>
-              </label>
-              <label class="interval-checkbox">
-                <input type="checkbox" value="10" checked> <span>10분</span>
-              </label>
-              <label class="interval-checkbox">
-                <input type="checkbox" value="15" checked> <span>15분</span>
-              </label>
-              <label class="interval-checkbox">
-                <input type="checkbox" value="20"> <span>20분</span>
-              </label>
-              <label class="interval-checkbox">
-                <input type="checkbox" value="30"> <span>30분</span>
-              </label>
-              <label class="interval-checkbox">
-                <input type="checkbox" value="60"> <span>60분</span>
-              </label>
-            </div>
+            <input type="text" id="intervals-input" value="5, 10, 15" placeholder="예: 5, 10, 15, 30">
+            <small class="form-hint" id="intervals-hint">쉼표로 구분하여 원하는 시간(분)을 입력하세요</small>
           </div>
         </div>
 
@@ -185,9 +168,23 @@ class IsochronePanel {
       }
     });
 
+    const saveApiKeyBtn = document.getElementById('save-api-key');
+    saveApiKeyBtn.addEventListener('click', () => {
+      const key = apiKeyInput.value.trim();
+      if (key) {
+        isochroneTool.setApiKey(key);
+        alert('API 키가 저장되었습니다.');
+      } else {
+        alert('API 키를 입력해주세요.');
+      }
+    });
+
     rangeTypeSelect.addEventListener('change', () => {
       this.updateIntervalLabels();
     });
+
+    const intervalsInput = document.getElementById('intervals-input');
+    intervalsInput.addEventListener('input', () => this.updateAnalyzeButton());
 
     layerSelect.addEventListener('change', () => {
       this.selectedLayerId = layerSelect.value;
@@ -196,11 +193,6 @@ class IsochronePanel {
 
     featureSelect.addEventListener('change', () => {
       this.onFeatureSelected();
-    });
-
-    // 체크박스 이벤트
-    document.querySelectorAll('#interval-checkboxes input').forEach(cb => {
-      cb.addEventListener('change', () => this.updateAnalyzeButton());
     });
 
     // 초기 레이어 선택
@@ -311,26 +303,19 @@ class IsochronePanel {
   updateIntervalLabels() {
     const rangeType = document.getElementById('range-type').value;
     const label = document.getElementById('intervals-label');
-    const checkboxes = document.querySelectorAll('#interval-checkboxes .interval-checkbox');
+    const input = document.getElementById('intervals-input');
+    const hint = document.getElementById('intervals-hint');
 
     if (rangeType === 'time') {
       label.textContent = '시간 간격 (분)';
-      const timeValues = [5, 10, 15, 20, 30, 60];
-      checkboxes.forEach((cb, i) => {
-        const input = cb.querySelector('input');
-        const span = cb.querySelector('span');
-        input.value = timeValues[i];
-        span.textContent = `${timeValues[i]}분`;
-      });
+      input.placeholder = '예: 5, 10, 15, 30';
+      hint.textContent = '쉼표로 구분하여 원하는 시간(분)을 입력하세요';
+      input.value = '5, 10, 15';
     } else {
       label.textContent = '거리 간격 (km)';
-      const distValues = [1, 2, 3, 5, 10, 20];
-      checkboxes.forEach((cb, i) => {
-        const input = cb.querySelector('input');
-        const span = cb.querySelector('span');
-        input.value = distValues[i];
-        span.textContent = `${distValues[i]}km`;
-      });
+      input.placeholder = '예: 1, 2, 5, 10';
+      hint.textContent = '쉼표로 구분하여 원하는 거리(km)를 입력하세요';
+      input.value = '1, 2, 5';
     }
   }
 
@@ -352,9 +337,14 @@ class IsochronePanel {
    * 선택된 간격 가져오기
    */
   getSelectedIntervals() {
-    const checkboxes = document.querySelectorAll('#interval-checkboxes input:checked');
-    return Array.from(checkboxes)
-      .map(cb => parseInt(cb.value))
+    const input = document.getElementById('intervals-input');
+    const value = input.value.trim();
+
+    if (!value) return [];
+
+    return value.split(',')
+      .map(v => parseFloat(v.trim()))
+      .filter(v => !isNaN(v) && v > 0)
       .sort((a, b) => a - b);
   }
 

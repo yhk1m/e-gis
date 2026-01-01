@@ -45,11 +45,33 @@ class IsochroneTool {
   constructor() {
     this.apiKey = localStorage.getItem('ors_api_key') || '';
     this.baseUrl = 'https://api.openrouteservice.org/v2/isochrones';
-    this.isochroneLayer = null;
+    this.isochroneLayers = []; // 개별 등시선 레이어들
+    this.isochroneLayerIds = []; // LayerManager에 등록된 레이어 ID들
     this.markerLayer = null;
     this.legend = null;
     this.isSelecting = false;
     this.clickHandler = null;
+
+    // 레이어 삭제 이벤트 리스너
+    eventBus.on(Events.LAYER_REMOVED, (data) => {
+      this.onLayerRemoved(data.layerId);
+    });
+  }
+
+  /**
+   * 레이어 삭제 시 범례 업데이트
+   */
+  onLayerRemoved(layerId) {
+    const index = this.isochroneLayerIds.indexOf(layerId);
+    if (index !== -1) {
+      this.isochroneLayerIds.splice(index, 1);
+      this.isochroneLayers.splice(index, 1);
+
+      // 모든 등시선 레이어가 삭제되면 범례도 제거
+      if (this.isochroneLayerIds.length === 0) {
+        this.removeLegend();
+      }
+    }
   }
 
   /**
@@ -234,9 +256,17 @@ class IsochroneTool {
     // 역순으로 정렬 (큰 영역부터 그려야 작은 영역이 위에 표시됨)
     features.reverse();
 
-    // 스타일 적용
+    const profileName = TRAVEL_PROFILES[profile] || profile;
+    const unit = rangeType === 'time' ? '분' : 'km';
+    let fullExtent = null;
+
+    // 각 피처를 개별 레이어로 생성
     features.forEach((feature, index) => {
       const colorIndex = Math.min(index, ISOCHRONE_COLORS.length - 1);
+      const intervalIndex = features.length - 1 - index;
+      const interval = intervals[intervalIndex];
+
+      // 스타일 적용
       feature.setStyle(new Style({
         fill: new Fill({ color: ISOCHRONE_COLORS[colorIndex] }),
         stroke: new Stroke({
@@ -246,30 +276,57 @@ class IsochroneTool {
       }));
 
       // 속성에 시간/거리 정보 추가
-      const intervalIndex = features.length - 1 - index;
-      feature.set('interval', intervals[intervalIndex]);
+      feature.set('interval', interval);
       feature.set('rangeType', rangeType);
-    });
 
-    // 레이어 생성
-    const source = new VectorSource({ features });
-    this.isochroneLayer = new VectorLayer({
-      source: source,
-      zIndex: 100
-    });
+      // 개별 레이어 생성
+      const source = new VectorSource({ features: [feature] });
+      const layer = new VectorLayer({
+        source: source,
+        zIndex: 100 + index
+      });
 
-    map.addLayer(this.isochroneLayer);
+      this.isochroneLayers.push(layer);
+
+      // LayerManager에 등록
+      const layerName = `등시선 ${profileName} ${interval}${unit}`;
+      const layerId = layerManager.addLayer({
+        name: layerName,
+        type: 'vector',
+        geometryType: 'Polygon',
+        features: [feature.clone()],
+        style: {
+          fill: { color: ISOCHRONE_COLORS[colorIndex] },
+          stroke: { color: STROKE_COLORS[colorIndex], width: 2 }
+        }
+      });
+
+      this.isochroneLayerIds.push(layerId);
+
+      // extent 병합
+      const layerExtent = source.getExtent();
+      if (!fullExtent) {
+        fullExtent = layerExtent.slice();
+      } else {
+        fullExtent[0] = Math.min(fullExtent[0], layerExtent[0]);
+        fullExtent[1] = Math.min(fullExtent[1], layerExtent[1]);
+        fullExtent[2] = Math.max(fullExtent[2], layerExtent[2]);
+        fullExtent[3] = Math.max(fullExtent[3], layerExtent[3]);
+      }
+    });
 
     // 범례 생성
     this.createLegend(intervals, rangeType, profile);
 
     // 등시선 영역으로 지도 이동
-    const extent = source.getExtent();
-    map.getView().fit(extent, { padding: [50, 50, 50, 50], maxZoom: 15 });
+    if (fullExtent) {
+      map.getView().fit(fullExtent, { padding: [50, 50, 50, 50], maxZoom: 15 });
+    }
 
     return {
       featureCount: features.length,
-      intervals: intervals
+      intervals: intervals,
+      layerIds: this.isochroneLayerIds
     };
   }
 
@@ -325,40 +382,26 @@ class IsochroneTool {
    * 등시선 레이어 제거
    */
   removeIsochrones() {
-    if (this.isochroneLayer) {
-      const map = mapManager.getMap();
-      if (map) {
-        map.removeLayer(this.isochroneLayer);
-      }
-      this.isochroneLayer = null;
-    }
+    // LayerManager에서 등록된 레이어들 제거
+    this.isochroneLayerIds.forEach(layerId => {
+      layerManager.removeLayer(layerId);
+    });
+
+    this.isochroneLayers = [];
+    this.isochroneLayerIds = [];
     this.removeLegend();
   }
 
   /**
-   * 레이어로 저장
+   * 레이어로 저장 (이미 자동으로 레이어 추가됨)
    */
   saveAsLayer(name = '등시선 분석 결과') {
-    if (!this.isochroneLayer) {
+    if (this.isochroneLayerIds.length === 0) {
       throw new Error('저장할 등시선 결과가 없습니다.');
     }
 
-    const source = this.isochroneLayer.getSource();
-    const features = source.getFeatures();
-
-    if (features.length === 0) {
-      throw new Error('등시선 피처가 없습니다.');
-    }
-
-    // LayerManager에 새 레이어로 등록
-    const layerId = layerManager.addLayer({
-      name: name,
-      type: 'vector',
-      geometryType: 'Polygon',
-      features: features.map(f => f.clone())
-    });
-
-    return layerId;
+    // 이미 LayerManager에 등록되어 있으므로 ID들 반환
+    return this.isochroneLayerIds;
   }
 
   /**

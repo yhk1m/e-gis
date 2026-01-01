@@ -1911,7 +1911,7 @@ input:focus, select:focus, textarea:focus {
 
 .isochrone-modal .modal-content,
 .isochrone-content {
-  max-width: 450px;
+  max-width: 550px;
   background: var(--bg-panel);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
@@ -2060,6 +2060,27 @@ input:focus, select:focus, textarea:focus {
   font-weight: 500;
 }
 
+.intervals-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.intervals-input input[type="text"] {
+  width: 100%;
+  padding: var(--spacing-sm);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.intervals-input input[type="text"]:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
 .isochrone-info {
   padding: var(--spacing-sm);
   background: var(--bg-app);
@@ -2137,7 +2158,7 @@ input:focus, select:focus, textarea:focus {
 
 .routing-modal .modal-content,
 .routing-content {
-  max-width: 450px;
+  max-width: 550px;
   background: var(--bg-panel);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);

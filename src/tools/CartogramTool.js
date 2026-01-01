@@ -291,7 +291,8 @@ class CartogramTool {
   }
 
   /**
-   * Contiguous 카토그램 생성 (연속형 - 폴리곤 붙이기)
+   * Contiguous 카토그램 생성 (Gastner-Newman 스타일)
+   * 공간 자체를 왜곡하여 면적이 값에 비례하도록 변형
    * @param {string} layerId - 원본 레이어 ID
    * @param {string} attribute - 크기를 결정할 속성
    * @param {Object} options - 옵션
@@ -310,14 +311,13 @@ class CartogramTool {
 
     const {
       colorScheme = 'blues',
-      minScale = 0.5,
-      maxScale = 1.5,
       showLabels = false,
-      iterations = 50
+      iterations = 50  // 더 많은 반복
     } = options;
 
     // 속성값 수집
     let minVal = Infinity, maxVal = -Infinity;
+    let totalValue = 0;
     const data = [];
 
     features.forEach(feature => {
@@ -327,17 +327,17 @@ class CartogramTool {
       const geom = feature.getGeometry();
       if (!geom) return;
 
-      const center = getCenter(geom.getExtent());
+      const area = this.calculateGeometryArea(geom);
+      if (area <= 0) return;
 
       data.push({
         feature,
         value,
-        originalCenter: center,
-        currentCenter: [...center],
-        scale: 1,
+        originalArea: area,
         geom: geom.clone()
       });
 
+      totalValue += value;
       if (value < minVal) minVal = value;
       if (value > maxVal) maxVal = value;
     });
@@ -346,43 +346,77 @@ class CartogramTool {
       throw new Error(`속성 "${attribute}"에 유효한 숫자 데이터가 없습니다.`);
     }
 
+    // 총 면적 계산
+    const totalArea = data.reduce((sum, d) => sum + d.originalArea, 0);
+
+    // 목표 면적 계산 (값에 비례)
+    data.forEach(d => {
+      d.targetArea = (d.value / totalValue) * totalArea;
+      d.desiredRadius = Math.sqrt(d.targetArea / Math.PI);
+    });
+
+    // 전체 바운딩 박스 계산
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    data.forEach(d => {
+      const ext = d.geom.getExtent();
+      minX = Math.min(minX, ext[0]);
+      minY = Math.min(minY, ext[1]);
+      maxX = Math.max(maxX, ext[2]);
+      maxY = Math.max(maxY, ext[3]);
+    });
+    const mapWidth = maxX - minX;
+    const mapHeight = maxY - minY;
+
+    // 강력한 Gastner-Newman 스타일 변형 적용
+    for (let iter = 0; iter < iterations; iter++) {
+      // 현재 상태 업데이트
+      data.forEach(d => {
+        d.currentArea = this.calculateGeometryArea(d.geom);
+        d.center = this.calculateCentroid(d.geom);
+        d.currentRadius = Math.sqrt(d.currentArea / Math.PI);
+        // 면적 비율 계산
+        d.sizeRatio = Math.sqrt(d.targetArea / Math.max(d.currentArea, 0.0001));
+      });
+
+      // 점진적 강도 (처음엔 강하게, 나중엔 약하게)
+      const strength = 0.4 * (1 - iter / iterations * 0.7);
+
+      // 모든 정점에 대해 변형 적용
+      data.forEach((d, idx) => {
+        const type = d.geom.getType();
+
+        if (type === 'Polygon') {
+          const coords = d.geom.getCoordinates();
+          const newCoords = coords.map(ring =>
+            this.transformRingGastner(ring, data, idx, strength, mapWidth, mapHeight)
+          );
+          d.geom.setCoordinates(newCoords);
+        } else if (type === 'MultiPolygon') {
+          const coords = d.geom.getCoordinates();
+          const newCoords = coords.map(polygon =>
+            polygon.map(ring =>
+              this.transformRingGastner(ring, data, idx, strength, mapWidth, mapHeight)
+            )
+          );
+          d.geom.setCoordinates(newCoords);
+        }
+      });
+
+      // 중첩 해소 단계
+      this.resolveOverlaps(data, strength * 0.5);
+    }
+
+    // 최종 스무딩 (부드러운 블롭 형태로)
+    for (let s = 0; s < 3; s++) {
+      data.forEach(d => {
+        d.geom = this.smoothPolygonAdvanced(d.geom, 0.3);
+      });
+    }
+
+    // 색상 적용 및 피처 생성
     const valueRange = maxVal - minVal || 1;
-
-    // 스케일 계산
-    data.forEach(d => {
-      const normalized = (d.value - minVal) / valueRange;
-      d.scale = minScale + normalized * (maxScale - minScale);
-    });
-
-    // 전체 중심점 계산
-    let totalX = 0, totalY = 0;
-    data.forEach(d => {
-      totalX += d.originalCenter[0];
-      totalY += d.originalCenter[1];
-    });
-    const globalCenter = [totalX / data.length, totalY / data.length];
-
-    // 스케일링 및 위치 조정 (전체 중심점 기준)
-    data.forEach(d => {
-      // 스케일링
-      d.geom = this.scaleGeometry(d.geom, d.originalCenter, d.scale);
-
-      // 전체 중심 방향으로 이동 (스케일에 반비례)
-      const dx = globalCenter[0] - d.originalCenter[0];
-      const dy = globalCenter[1] - d.originalCenter[1];
-      const moveFactor = (1 - d.scale) * 0.3; // 작은 폴리곤은 더 많이 이동
-
-      d.geom = this.translateGeometry(d.geom, dx * moveFactor, dy * moveFactor);
-      const newExtent = d.geom.getExtent();
-      d.currentCenter = getCenter(newExtent);
-    });
-
-    // Force-directed layout으로 폴리곤 밀착
-    this.applyPolygonForceLayout(data, iterations);
-
     const colors = this.colorSchemes[colorScheme] || this.colorSchemes.blues;
 
-    // 새 피처 생성
     const newFeatures = data.map(d => {
       const normalized = (d.value - minVal) / valueRange;
       const colorIndex = Math.floor(normalized * (colors.length - 1));
@@ -397,13 +431,13 @@ class CartogramTool {
       });
 
       const style = new Style({
-        fill: new Fill({ color: this.hexToRgba(color, 0.7) }),
-        stroke: new Stroke({ color: '#333', width: 1 }),
+        fill: new Fill({ color: this.hexToRgba(color, 0.8) }),
+        stroke: new Stroke({ color: '#333', width: 1.5 }),
         text: showLabels ? new Text({
           text: d.feature.get('name') || d.feature.get('NAME') || '',
-          font: '11px sans-serif',
+          font: 'bold 11px sans-serif',
           fill: new Fill({ color: '#333' }),
-          stroke: new Stroke({ color: '#fff', width: 2 })
+          stroke: new Stroke({ color: '#fff', width: 3 })
         }) : undefined
       });
 
@@ -411,7 +445,6 @@ class CartogramTool {
       return newFeature;
     });
 
-    // 새 레이어 생성
     const vectorSource = new VectorSource({ features: newFeatures });
     const vectorLayer = new VectorLayer({ source: vectorSource });
 
@@ -423,62 +456,247 @@ class CartogramTool {
       source: vectorSource
     });
 
-    // 범례 추가
     this.addLegend(newLayerId, `Contiguous: ${attribute}`, minVal, maxVal, colors);
 
     return newLayerId;
   }
 
   /**
-   * 폴리곤 Force-directed layout 적용
+   * Gastner-Newman 스타일 링 변형
+   * 각 정점을 폴리곤 면적 비율에 따라 이동
    */
-  applyPolygonForceLayout(data, iterations) {
-    for (let iter = 0; iter < iterations; iter++) {
-      let totalMove = 0;
+  transformRingGastner(ring, data, selfIdx, strength, mapWidth, mapHeight) {
+    const newRing = [];
+    const self = data[selfIdx];
 
-      for (let i = 0; i < data.length; i++) {
-        for (let j = i + 1; j < data.length; j++) {
-          const d1 = data[i];
-          const d2 = data[j];
+    for (let i = 0; i < ring.length; i++) {
+      const vertex = ring[i];
+      let dx = 0;
+      let dy = 0;
 
-          // 두 폴리곤 중심 간 거리
-          const dx = d2.currentCenter[0] - d1.currentCenter[0];
-          const dy = d2.currentCenter[1] - d1.currentCenter[1];
-          const dist = Math.sqrt(dx * dx + dy * dy);
+      // 자기 자신의 폴리곤에 대한 스케일링 (가장 강한 영향)
+      const selfCx = self.center[0];
+      const selfCy = self.center[1];
+      const selfDistX = vertex[0] - selfCx;
+      const selfDistY = vertex[1] - selfCy;
 
-          if (dist < 1) continue;
+      // 자기 폴리곤의 스케일링
+      const selfScale = self.sizeRatio - 1;
+      dx += selfDistX * selfScale * strength * 1.5;
+      dy += selfDistY * selfScale * strength * 1.5;
 
-          // 두 폴리곤이 원래 인접했는지 확인 (중심 거리 기반 근사)
-          const origDx = d2.originalCenter[0] - d1.originalCenter[0];
-          const origDy = d2.originalCenter[1] - d1.originalCenter[1];
-          const origDist = Math.sqrt(origDx * origDx + origDy * origDy);
+      // 다른 폴리곤들의 영향 (밀어내기/당기기)
+      for (let j = 0; j < data.length; j++) {
+        if (j === selfIdx) continue;
 
-          // 원래 인접했던 폴리곤들만 서로 당김
-          const avgScale = (d1.scale + d2.scale) / 2;
-          const targetDist = origDist * avgScale;
+        const other = data[j];
+        const cx = other.center[0];
+        const cy = other.center[1];
 
-          if (dist > targetDist) {
-            // 서로 당김
-            const pull = (dist - targetDist) * 0.1;
-            const moveX = (dx / dist) * pull;
-            const moveY = (dy / dist) * pull;
+        const distX = vertex[0] - cx;
+        const distY = vertex[1] - cy;
+        const dist = Math.sqrt(distX * distX + distY * distY);
 
-            d1.geom = this.translateGeometry(d1.geom, moveX, moveY);
-            d2.geom = this.translateGeometry(d2.geom, -moveX, -moveY);
+        if (dist < 0.0001) continue;
 
-            d1.currentCenter[0] += moveX;
-            d1.currentCenter[1] += moveY;
-            d2.currentCenter[0] -= moveX;
-            d2.currentCenter[1] -= moveY;
+        // 영향력: 폴리곤 반경 기반으로 거리에 따라 감소
+        const influenceRadius = other.currentRadius * 2;
+        const influence = Math.max(0, 1 - dist / influenceRadius);
 
-            totalMove += Math.abs(pull);
-          }
-        }
+        if (influence <= 0) continue;
+
+        // 다른 폴리곤의 스케일링에 따른 공간 왜곡
+        const otherScale = other.sizeRatio - 1;
+        const forceMagnitude = otherScale * influence * influence * strength;
+
+        // 방향 벡터 (중심에서 멀어지는 방향)
+        const nx = distX / dist;
+        const ny = distY / dist;
+
+        dx += nx * forceMagnitude * other.currentRadius;
+        dy += ny * forceMagnitude * other.currentRadius;
       }
 
-      // 수렴하면 종료
-      if (totalMove < 1) break;
+      newRing.push([
+        vertex[0] + dx,
+        vertex[1] + dy
+      ]);
     }
+
+    return newRing;
+  }
+
+  /**
+   * 폴리곤 중첩 해소
+   */
+  resolveOverlaps(data, strength) {
+    for (let i = 0; i < data.length; i++) {
+      for (let j = i + 1; j < data.length; j++) {
+        const ext1 = data[i].geom.getExtent();
+        const ext2 = data[j].geom.getExtent();
+
+        // 바운딩 박스 중첩 확인
+        const overlapX = Math.min(ext1[2], ext2[2]) - Math.max(ext1[0], ext2[0]);
+        const overlapY = Math.min(ext1[3], ext2[3]) - Math.max(ext1[1], ext2[1]);
+
+        if (overlapX > 0 && overlapY > 0) {
+          // 중첩 발생 - 밀어내기
+          const c1 = data[i].center;
+          const c2 = data[j].center;
+
+          const dx = c2[0] - c1[0];
+          const dy = c2[1] - c1[1];
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+          // 중첩 크기에 비례하여 밀어내기
+          const overlap = Math.sqrt(overlapX * overlapY);
+          const pushForce = overlap * strength;
+
+          const nx = dx / dist;
+          const ny = dy / dist;
+
+          // 두 폴리곤을 반대 방향으로 이동
+          data[i].geom = this.translateGeometry(data[i].geom, -nx * pushForce, -ny * pushForce);
+          data[j].geom = this.translateGeometry(data[j].geom, nx * pushForce, ny * pushForce);
+
+          // 중심 업데이트
+          data[i].center = this.calculateCentroid(data[i].geom);
+          data[j].center = this.calculateCentroid(data[j].geom);
+        }
+      }
+    }
+  }
+
+  /**
+   * 고급 폴리곤 스무딩 (블롭 형태)
+   */
+  smoothPolygonAdvanced(geom, factor) {
+    const type = geom.getType();
+
+    if (type === 'Polygon') {
+      const coords = geom.getCoordinates();
+      const smoothedCoords = coords.map(ring => this.smoothRingAdvanced(ring, factor));
+      geom.setCoordinates(smoothedCoords);
+    } else if (type === 'MultiPolygon') {
+      const coords = geom.getCoordinates();
+      const smoothedCoords = coords.map(poly =>
+        poly.map(ring => this.smoothRingAdvanced(ring, factor))
+      );
+      geom.setCoordinates(smoothedCoords);
+    }
+
+    return geom;
+  }
+
+  /**
+   * 고급 링 스무딩 (Chaikin 알고리즘 변형)
+   */
+  smoothRingAdvanced(ring, factor) {
+    if (ring.length < 4) return ring;
+
+    const n = ring.length - 1;
+    const smoothed = [];
+
+    for (let i = 0; i < n; i++) {
+      const prev = ring[(i - 1 + n) % n];
+      const curr = ring[i];
+      const next = ring[(i + 1) % n];
+      const next2 = ring[(i + 2) % n];
+
+      // 4점 평균으로 더 부드럽게
+      const weight = factor;
+      smoothed.push([
+        curr[0] * (1 - weight) + (prev[0] + next[0]) * (weight / 2),
+        curr[1] * (1 - weight) + (prev[1] + next[1]) * (weight / 2)
+      ]);
+    }
+
+    // 폐합
+    smoothed.push([...smoothed[0]]);
+
+    return smoothed;
+  }
+
+  /**
+   * 폴리곤 중심점 계산 (무게중심)
+   */
+  calculateCentroid(geom) {
+    const type = geom.getType();
+    let sumX = 0, sumY = 0, sumArea = 0;
+
+    if (type === 'Polygon') {
+      const coords = geom.getCoordinates()[0];
+      const result = this.calculateRingCentroid(coords);
+      return result.centroid;
+    } else if (type === 'MultiPolygon') {
+      const polys = geom.getCoordinates();
+      polys.forEach(poly => {
+        const result = this.calculateRingCentroid(poly[0]);
+        const area = Math.abs(result.area);
+        sumX += result.centroid[0] * area;
+        sumY += result.centroid[1] * area;
+        sumArea += area;
+      });
+      return sumArea > 0 ? [sumX / sumArea, sumY / sumArea] : getCenter(geom.getExtent());
+    }
+
+    return getCenter(geom.getExtent());
+  }
+
+  /**
+   * 링의 무게중심 계산
+   */
+  calculateRingCentroid(ring) {
+    let signedArea = 0;
+    let cx = 0;
+    let cy = 0;
+
+    for (let i = 0; i < ring.length - 1; i++) {
+      const x0 = ring[i][0];
+      const y0 = ring[i][1];
+      const x1 = ring[i + 1][0];
+      const y1 = ring[i + 1][1];
+
+      const a = x0 * y1 - x1 * y0;
+      signedArea += a;
+      cx += (x0 + x1) * a;
+      cy += (y0 + y1) * a;
+    }
+
+    signedArea *= 0.5;
+    const factor = 1 / (6 * signedArea);
+
+    return {
+      centroid: [cx * factor, cy * factor],
+      area: signedArea
+    };
+  }
+
+  /**
+   * 지오메트리 면적 계산
+   */
+  calculateGeometryArea(geom) {
+    const type = geom.getType();
+    if (type === 'Polygon') {
+      return Math.abs(this.calculatePolygonArea(geom.getCoordinates()[0]));
+    } else if (type === 'MultiPolygon') {
+      return geom.getCoordinates().reduce((sum, polygon) => {
+        return sum + Math.abs(this.calculatePolygonArea(polygon[0]));
+      }, 0);
+    }
+    return 0;
+  }
+
+  /**
+   * 폴리곤 면적 계산 (Shoelace formula)
+   */
+  calculatePolygonArea(coords) {
+    let area = 0;
+    for (let i = 0; i < coords.length - 1; i++) {
+      area += coords[i][0] * coords[i + 1][1];
+      area -= coords[i + 1][0] * coords[i][1];
+    }
+    return area / 2;
   }
 
   /**

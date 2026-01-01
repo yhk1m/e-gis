@@ -72,6 +72,7 @@ class RoutingPanel {
           <div class="api-key-input-group">
             <input type="password" id="routing-api-key" value="${apiKey}" placeholder="API 키 입력">
             <button type="button" class="btn btn-sm" id="routing-toggle-api-key">보기</button>
+            <button type="button" class="btn btn-sm btn-primary" id="routing-save-api-key">저장</button>
           </div>
           <small class="form-hint">
             <a href="https://openrouteservice.org/dev/#/signup" target="_blank">openrouteservice.org</a>에서 무료 API 키를 발급받으세요
@@ -185,6 +186,17 @@ class RoutingPanel {
       } else {
         apiKeyInput.type = 'password';
         toggleApiKeyBtn.textContent = '보기';
+      }
+    });
+
+    const saveApiKeyBtn = document.getElementById('routing-save-api-key');
+    saveApiKeyBtn.addEventListener('click', () => {
+      const key = apiKeyInput.value.trim();
+      if (key) {
+        routingTool.setApiKey(key);
+        alert('API 키가 저장되었습니다.');
+      } else {
+        alert('API 키를 입력해주세요.');
       }
     });
 

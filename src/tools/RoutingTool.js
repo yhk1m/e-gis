@@ -13,6 +13,7 @@ import LineString from 'ol/geom/LineString';
 import { transform } from 'ol/proj';
 import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
+import { eventBus, Events } from '../utils/EventBus.js';
 
 // 이동 수단
 const TRAVEL_PROFILES = {
@@ -33,6 +34,7 @@ class RoutingTool {
     this.apiKey = localStorage.getItem('ors_api_key') || '';
     this.baseUrl = 'https://api.openrouteservice.org/v2/directions';
     this.routeLayer = null;
+    this.routeLayerId = null; // LayerManager에 등록된 레이어 ID
     this.markersLayer = null;
     this.isSelecting = false;
     this.clickHandler = null;
@@ -42,6 +44,15 @@ class RoutingTool {
     this.endPoint = null;
     this.waypoints = [];
     this.lastRouteInfo = null;
+
+    // 레이어 삭제 이벤트 리스너
+    eventBus.on(Events.LAYER_REMOVED, (data) => {
+      if (data.layerId === this.routeLayerId) {
+        this.routeLayerId = null;
+        this.routeLayer = null;
+        this.lastRouteInfo = null;
+      }
+    });
   }
 
   /**
@@ -289,6 +300,12 @@ class RoutingTool {
       featureProjection: 'EPSG:3857'
     });
 
+    // 경로 정보 추출 먼저 (레이어 이름에 사용)
+    const routeInfo = this.extractRouteInfo(geojsonData, profile);
+    this.lastRouteInfo = routeInfo;
+
+    const profileName = TRAVEL_PROFILES[profile] || profile;
+
     // 경로 스타일 적용
     features.forEach(feature => {
       feature.setStyle(new Style({
@@ -299,20 +316,26 @@ class RoutingTool {
       }));
     });
 
-    // 레이어 생성
-    const source = new VectorSource({ features });
-    this.routeLayer = new VectorLayer({
-      source: source,
-      zIndex: 500
+    // LayerManager에 레이어 등록
+    const layerName = `최단경로 ${profileName} (${routeInfo.distanceText})`;
+    this.routeLayerId = layerManager.addLayer({
+      name: layerName,
+      type: 'vector',
+      geometryType: 'LineString',
+      features: features.map(f => f.clone()),
+      style: {
+        stroke: { color: '#3b82f6', width: 5 }
+      }
     });
 
-    map.addLayer(this.routeLayer);
-
-    // 경로 정보 추출
-    const routeInfo = this.extractRouteInfo(geojsonData, profile);
-    this.lastRouteInfo = routeInfo;
+    // LayerManager가 생성한 레이어 참조 저장
+    const layerInfo = layerManager.getLayer(this.routeLayerId);
+    if (layerInfo) {
+      this.routeLayer = layerInfo.layer;
+    }
 
     // 경로 범위로 지도 이동
+    const source = new VectorSource({ features });
     const extent = source.getExtent();
     map.getView().fit(extent, { padding: [50, 50, 50, 50], maxZoom: 16 });
 
@@ -373,40 +396,24 @@ class RoutingTool {
    * 경로 레이어 제거
    */
   removeRoute() {
-    if (this.routeLayer) {
-      const map = mapManager.getMap();
-      if (map) {
-        map.removeLayer(this.routeLayer);
-      }
-      this.routeLayer = null;
+    if (this.routeLayerId) {
+      layerManager.removeLayer(this.routeLayerId);
+      this.routeLayerId = null;
     }
+    this.routeLayer = null;
     this.lastRouteInfo = null;
   }
 
   /**
-   * 레이어로 저장
+   * 레이어로 저장 (이미 자동으로 레이어 추가됨)
    */
   saveAsLayer(name = '최단경로 분석 결과') {
-    if (!this.routeLayer) {
+    if (!this.routeLayerId) {
       throw new Error('저장할 경로 결과가 없습니다.');
     }
 
-    const source = this.routeLayer.getSource();
-    const features = source.getFeatures();
-
-    if (features.length === 0) {
-      throw new Error('경로 피처가 없습니다.');
-    }
-
-    // LayerManager에 새 레이어로 등록
-    const layerId = layerManager.addLayer({
-      name: name,
-      type: 'vector',
-      geometryType: 'LineString',
-      features: features.map(f => f.clone())
-    });
-
-    return layerId;
+    // 이미 LayerManager에 등록되어 있으므로 ID 반환
+    return this.routeLayerId;
   }
 
   /**
@@ -440,7 +447,7 @@ class RoutingTool {
       startPoint: this.startPoint,
       endPoint: this.endPoint,
       waypoints: this.waypoints,
-      hasRoute: !!this.routeLayer,
+      hasRoute: !!this.routeLayerId,
       routeInfo: this.lastRouteInfo
     };
   }

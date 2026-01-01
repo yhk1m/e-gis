@@ -28,6 +28,26 @@
   flex-shrink: 0;
 }
 
+.menu-left {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 4px 8px;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0066cc;
+  letter-spacing: -0.5px;
+}
+
 .menu-right {
   display: flex;
   align-items: center;
