@@ -15,7 +15,6 @@ import { toolManager } from './tools/ToolManager.js';
 import { attributeTable } from './ui/panels/AttributeTable.js';
 import { coordinateSystem } from './core/CoordinateSystem.js';
 import { projectManager } from './core/ProjectManager.js';
-import { historyManager } from './core/HistoryManager.js';
 import { autoSaveManager } from './core/AutoSaveManager.js';
 import { choroplethPanel } from './ui/panels/ChoroplethPanel.js';
 import { tableJoinPanel } from './ui/panels/TableJoinPanel.js';
@@ -46,9 +45,6 @@ import { demLoader } from './loaders/DEMLoader.js';
  */
 function initApp() {
   console.log('eGIS 시작!');
-
-  // 0. 히스토리 관리자 초기화
-  historyManager.init();
 
   // 1. 좌표계 시스템 초기화
   coordinateSystem.init();
@@ -108,28 +104,19 @@ function initApp() {
       activeEl.isContentEditable
     );
 
-    // Ctrl+Z: 실행 취소
-    if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      if (historyManager.undo()) {
-        showStatusMessage('실행 취소되었습니다.');
-      }
-    }
-    // Ctrl+Shift+Z: 다시 실행
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z') {
-      e.preventDefault();
-      if (historyManager.redo()) {
-        showStatusMessage('다시 실행되었습니다.');
-      }
-    }
-    // Delete: 선택된 레이어 삭제
+    // Delete: 선택된 레이어 삭제 (다중 선택 지원)
     if (e.key === 'Delete' && !isInputField) {
-      const selectedLayerId = layerManager.getSelectedLayerId();
-      if (selectedLayerId) {
-        const layer = layerManager.getLayer(selectedLayerId);
-        if (layer && confirm(`"${layer.name}" 레이어를 삭제하시겠습니까?`)) {
-          layerManager.removeLayer(selectedLayerId);
-          showStatusMessage('레이어가 삭제되었습니다.');
+      const selectedIds = layerManager.getSelectedLayerIds();
+      if (selectedIds.length > 0) {
+        const layers = selectedIds.map(id => layerManager.getLayer(id)).filter(Boolean);
+        const layerNames = layers.map(l => l.name).join(', ');
+        const message = selectedIds.length === 1
+          ? `"${layerNames}" 레이어를 삭제하시겠습니까?`
+          : `${selectedIds.length}개 레이어를 삭제하시겠습니까?\n(${layerNames})`;
+
+        if (confirm(message)) {
+          selectedIds.forEach(id => layerManager.removeLayer(id));
+          showStatusMessage(`${selectedIds.length}개 레이어가 삭제되었습니다.`);
         }
       }
     }
@@ -437,20 +424,6 @@ function handleMenuAction(action) {
       break;
 
     // ===== 편집 메뉴 =====
-    case 'edit-undo':
-      if (historyManager.undo()) {
-        showStatusMessage('실행 취소되었습니다.');
-      } else {
-        showStatusMessage('취소할 작업이 없습니다.');
-      }
-      break;
-    case 'edit-redo':
-      if (historyManager.redo()) {
-        showStatusMessage('다시 실행되었습니다.');
-      } else {
-        showStatusMessage('다시 실행할 작업이 없습니다.');
-      }
-      break;
     case 'edit-delete': {
       // 선택 도구 활성화 후 삭제
       toolManager.activateTool('select');

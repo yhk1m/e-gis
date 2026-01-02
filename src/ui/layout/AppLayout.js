@@ -40,9 +40,6 @@ export class AppLayout {
             <div class="menu-item dropdown" data-menu="edit">
               <button class="menu-button">편집</button>
               <div class="dropdown-menu" id="menu-edit">
-                <div class="dropdown-item" data-action="edit-undo">실행 취소</div>
-                <div class="dropdown-item" data-action="edit-redo">다시 실행</div>
-                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="edit-delete">선택 피처 삭제</div>
                 <div class="dropdown-item" data-action="edit-select-all">모두 선택</div>
                 <div class="dropdown-item" data-action="edit-deselect">선택 해제</div>
