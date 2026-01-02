@@ -34,6 +34,23 @@ class ChoroplethTool {
     this.numClasses = 5;
     this.originalStyles = new Map();
     this.legends = new Map();
+
+    // 레이어 삭제 이벤트 리스너
+    eventBus.on(Events.LAYER_REMOVED, (data) => {
+      this.onLayerRemoved(data.layerId);
+    });
+  }
+
+  /**
+   * 레이어 삭제 시 범례 제거
+   */
+  onLayerRemoved(layerId) {
+    this.removeLegend(layerId);
+    this.originalStyles.delete(layerId);
+    if (this.currentLayerId === layerId) {
+      this.currentLayerId = null;
+      this.currentAttribute = null;
+    }
   }
 
   getNumericAttributes(layerId) {
