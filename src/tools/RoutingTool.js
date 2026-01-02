@@ -318,14 +318,18 @@ class RoutingTool {
 
     // LayerManager에 레이어 등록
     const layerName = `최단경로 ${profileName} (${routeInfo.distanceText})`;
+    const routeStyle = new Style({
+      stroke: new Stroke({
+        color: '#3b82f6',
+        width: 5
+      })
+    });
     this.routeLayerId = layerManager.addLayer({
       name: layerName,
       type: 'vector',
       geometryType: 'LineString',
       features: features.map(f => f.clone()),
-      style: {
-        stroke: { color: '#3b82f6', width: 5 }
-      }
+      style: routeStyle
     });
 
     // LayerManager가 생성한 레이어 참조 저장

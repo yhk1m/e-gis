@@ -290,15 +290,19 @@ class IsochroneTool {
 
       // LayerManager에 등록
       const layerName = `등시선 ${profileName} ${interval}${unit}`;
+      const isoStyle = new Style({
+        fill: new Fill({ color: ISOCHRONE_COLORS[colorIndex] }),
+        stroke: new Stroke({
+          color: STROKE_COLORS[colorIndex],
+          width: 2
+        })
+      });
       const layerId = layerManager.addLayer({
         name: layerName,
         type: 'vector',
         geometryType: 'Polygon',
         features: [feature.clone()],
-        style: {
-          fill: { color: ISOCHRONE_COLORS[colorIndex] },
-          stroke: { color: STROKE_COLORS[colorIndex], width: 2 }
-        }
+        style: isoStyle
       });
 
       this.isochroneLayerIds.push(layerId);
