@@ -58,6 +58,13 @@ class RoutingTool {
         this.waypoints = [];
       }
     });
+
+    // 레이어 가시성 변경 이벤트 리스너
+    eventBus.on(Events.LAYER_VISIBILITY_CHANGED, (data) => {
+      if (data.layerId === this.routeLayerId && this.markersLayer) {
+        this.markersLayer.setVisible(data.visible);
+      }
+    });
   }
 
   /**
