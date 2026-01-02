@@ -41,9 +41,21 @@ class LayerManager {
 
   hexToRgba(hex, alpha) {
     if (alpha === undefined) alpha = 1;
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
+    // 유효하지 않은 hex 값 처리
+    if (!hex || typeof hex !== 'string') {
+      return "rgba(128, 128, 128, " + alpha + ")";
+    }
+    // 이미 rgba 형식인 경우 그대로 반환
+    if (hex.startsWith('rgba') || hex.startsWith('rgb')) {
+      return hex;
+    }
+    // # 없으면 추가
+    if (!hex.startsWith('#')) {
+      hex = '#' + hex;
+    }
+    const r = parseInt(hex.slice(1, 3), 16) || 0;
+    const g = parseInt(hex.slice(3, 5), 16) || 0;
+    const b = parseInt(hex.slice(5, 7), 16) || 0;
     return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
   }
 
@@ -513,7 +525,9 @@ class LayerManager {
     }
 
     // 레이어 소스 변경 알림 (렌더링 강제)
-    layerInfo.source.changed();
+    if (layerInfo.source && typeof layerInfo.source.changed === 'function') {
+      layerInfo.source.changed();
+    }
 
     eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId: layerId });
     eventBus.emit(Events.LAYER_ADDED, { layer: layerInfo });
