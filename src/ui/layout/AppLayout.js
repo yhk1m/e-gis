@@ -131,11 +131,6 @@ export class AppLayout {
       <!-- 툴바 -->
       <div id="toolbar">
         <div class="toolbar-group" data-group="navigation">
-          <button class="btn-icon" data-tool="pan" title="이동">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>
-            </svg>
-          </button>
           <button class="btn-icon" data-tool="zoom-in" title="확대">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>

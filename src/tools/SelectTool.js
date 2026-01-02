@@ -4,7 +4,7 @@
 
 import Select from 'ol/interaction/Select';
 import Modify from 'ol/interaction/Modify';
-import { click, platformModifierKeyOnly } from 'ol/events/condition';
+import { click, shiftKeyOnly, platformModifierKeyOnly } from 'ol/events/condition';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
@@ -57,6 +57,8 @@ class SelectTool {
     // Select 인터랙션 생성
     this.select = new Select({
       condition: click,
+      toggleCondition: shiftKeyOnly, // Shift+클릭으로 다중 선택
+      multi: true, // 다중 선택 허용
       style: SELECT_STYLE,
       // 배경지도 레이어 제외
       filter: (feature, layer) => {
@@ -101,7 +103,7 @@ class SelectTool {
     // 상태 메시지
     const statusEl = document.getElementById('status-message');
     if (statusEl) {
-      statusEl.textContent = '피처를 클릭하여 선택하세요';
+      statusEl.textContent = '피처를 클릭하여 선택 (Shift+클릭: 다중 선택)';
     }
 
     // 키보드 이벤트 등록 (Delete 키로 삭제)
@@ -117,6 +119,7 @@ class SelectTool {
   handleSelect(event) {
     const selected = event.selected;
     const deselected = event.deselected;
+    const totalSelected = this.selectedFeatures ? this.selectedFeatures.getLength() : 0;
 
     if (selected.length > 0) {
       const feature = selected[0];
@@ -124,13 +127,18 @@ class SelectTool {
 
       eventBus.emit(Events.FEATURE_SELECTED, {
         feature,
-        geometryType: geometry.getType()
+        geometryType: geometry.getType(),
+        count: totalSelected
       });
 
       // 상태 메시지 업데이트
       const statusEl = document.getElementById('status-message');
       if (statusEl) {
-        statusEl.textContent = `선택됨 (Delete로 삭제, 꼭짓점 드래그로 수정)`;
+        if (totalSelected > 1) {
+          statusEl.textContent = `${totalSelected}개 선택됨 (Delete로 삭제)`;
+        } else {
+          statusEl.textContent = `선택됨 (Delete로 삭제, 꼭짓점 드래그로 수정)`;
+        }
       }
     }
 
@@ -139,10 +147,19 @@ class SelectTool {
         features: deselected
       });
 
-      if (selected.length === 0) {
+      if (totalSelected === 0) {
         const statusEl = document.getElementById('status-message');
         if (statusEl) {
-          statusEl.textContent = '피처를 클릭하여 선택하세요';
+          statusEl.textContent = '피처를 클릭하여 선택 (Shift+클릭: 다중 선택)';
+        }
+      } else {
+        const statusEl = document.getElementById('status-message');
+        if (statusEl) {
+          if (totalSelected > 1) {
+            statusEl.textContent = `${totalSelected}개 선택됨 (Delete로 삭제)`;
+          } else {
+            statusEl.textContent = `선택됨 (Delete로 삭제, 꼭짓점 드래그로 수정)`;
+          }
         }
       }
     }
