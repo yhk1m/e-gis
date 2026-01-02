@@ -221,6 +221,9 @@ export class AppLayout {
 
         <div class="toolbar-spacer"></div>
 
+        <!-- 카피라이트 -->
+        <span class="toolbar-copyright">ⓒ 2025 충남삼성고등학교 김용현T | cnsageo@cnsa.hs.kr</span>
+
         <!-- 위치 검색 -->
         <div class="toolbar-search" id="toolbar-search">
           <div class="search-input-wrapper">
@@ -375,6 +378,13 @@ export class AppLayout {
       /* 툴바 스타일 */
       .toolbar-spacer {
         flex: 1;
+      }
+
+      .toolbar-copyright {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-right: 12px;
+        white-space: nowrap;
       }
 
       /* 파일 드롭 존 */
