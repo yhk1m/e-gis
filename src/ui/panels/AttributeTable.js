@@ -333,8 +333,17 @@ export class AttributeTable {
   bindWindowEvents(win, layerId, features, columns) {
     const self = this;
 
-    win.onload = function() {
+    // 피처 ID를 문자열로 저장하는 맵 생성
+    const featureMap = new Map();
+    features.forEach(f => {
+      featureMap.set(String(f.ol_uid), f);
+    });
+
+    // document.write 후 즉시 이벤트 바인딩 (setTimeout으로 DOM 렌더링 대기)
+    setTimeout(function() {
       const doc = win.document;
+      if (!doc || !doc.body) return;
+
       let selectedFeatureId = null;
       let sortColumn = null;
       let sortAsc = true;
@@ -342,12 +351,12 @@ export class AttributeTable {
       // 행 클릭 - 선택
       doc.querySelectorAll('tbody tr').forEach(tr => {
         tr.addEventListener('click', function() {
-          const featureId = parseInt(this.dataset.featureId);
+          const featureId = this.dataset.featureId;
           selectFeature(featureId);
         });
 
         tr.addEventListener('dblclick', function() {
-          const featureId = parseInt(this.dataset.featureId);
+          const featureId = this.dataset.featureId;
           selectFeature(featureId);
           zoomToSelected();
         });
@@ -369,12 +378,18 @@ export class AttributeTable {
       });
 
       // 선택 피처로 이동 버튼
-      doc.getElementById('btn-zoom-selected').addEventListener('click', zoomToSelected);
+      const btnZoom = doc.getElementById('btn-zoom-selected');
+      if (btnZoom) {
+        btnZoom.addEventListener('click', zoomToSelected);
+      }
 
       // 새로고침 버튼
-      doc.getElementById('btn-refresh').addEventListener('click', function() {
-        self.refreshWindow(layerId);
-      });
+      const btnRefresh = doc.getElementById('btn-refresh');
+      if (btnRefresh) {
+        btnRefresh.addEventListener('click', function() {
+          self.refreshWindow(layerId);
+        });
+      }
 
       function selectFeature(featureId) {
         selectedFeatureId = featureId;
@@ -382,13 +397,13 @@ export class AttributeTable {
         // UI 업데이트
         doc.querySelectorAll('tbody tr').forEach(tr => {
           tr.classList.remove('selected');
-          if (parseInt(tr.dataset.featureId) === featureId) {
+          if (tr.dataset.featureId === featureId) {
             tr.classList.add('selected');
           }
         });
 
         // 지도 하이라이트
-        const feature = features.find(f => f.ol_uid === featureId);
+        const feature = featureMap.get(featureId);
         if (feature) {
           const highlightSelect = self.highlightSelects.get(layerId);
           if (highlightSelect) {
@@ -405,42 +420,53 @@ export class AttributeTable {
           return;
         }
 
-        const feature = features.find(f => f.ol_uid === selectedFeatureId);
+        const feature = featureMap.get(selectedFeatureId);
         if (feature) {
           const geometry = feature.getGeometry();
-          const extent = geometry.getExtent();
-          mapManager.fitExtent(extent, {
-            padding: [100, 100, 100, 100],
-            maxZoom: 15
-          });
+          if (geometry) {
+            const extent = geometry.getExtent();
+            mapManager.fitExtent(extent, {
+              padding: [100, 100, 100, 100],
+              maxZoom: 15
+            });
+          }
         }
       }
 
       function sortTable(column, ascending) {
         const tbody = doc.querySelector('tbody');
+        if (!tbody) return;
+
         const rows = Array.from(tbody.querySelectorAll('tr'));
 
         rows.sort((a, b) => {
-          const aFeatureId = parseInt(a.dataset.featureId);
-          const bFeatureId = parseInt(b.dataset.featureId);
-          const aFeature = features.find(f => f.ol_uid === aFeatureId);
-          const bFeature = features.find(f => f.ol_uid === bFeatureId);
+          const aFeatureId = a.dataset.featureId;
+          const bFeatureId = b.dataset.featureId;
+          const aFeature = featureMap.get(aFeatureId);
+          const bFeature = featureMap.get(bFeatureId);
 
           const valA = aFeature ? aFeature.get(column) : '';
           const valB = bFeature ? bFeature.get(column) : '';
 
-          if (typeof valA === 'number' && typeof valB === 'number') {
-            return ascending ? valA - valB : valB - valA;
+          // 숫자 비교
+          const numA = parseFloat(valA);
+          const numB = parseFloat(valB);
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return ascending ? numA - numB : numB - numA;
           }
 
+          // 문자열 비교
           const strA = String(valA || '').toLowerCase();
           const strB = String(valB || '').toLowerCase();
           return ascending ? strA.localeCompare(strB) : strB.localeCompare(strA);
         });
 
-        // 행 번호 재정렬
+        // 행 번호 재정렬 및 DOM 업데이트
         rows.forEach((row, index) => {
-          row.querySelector('.row-num').textContent = index + 1;
+          const rowNum = row.querySelector('.row-num');
+          if (rowNum) {
+            rowNum.textContent = index + 1;
+          }
           tbody.appendChild(row);
         });
       }
@@ -453,7 +479,7 @@ export class AttributeTable {
           }
         });
       }
-    };
+    }, 100);
   }
 
   /**
