@@ -31,11 +31,8 @@ import { chartMapPanel } from './ui/panels/ChartMapPanel.js';
 import { isochronePanel } from './ui/panels/IsochronePanel.js';
 import { routingPanel } from './ui/panels/RoutingPanel.js';
 import { drawingPanel } from './ui/panels/DrawingPanel.js';
-import { cloudPanel } from './ui/panels/CloudPanel.js';
 import { layerExportPanel } from './ui/panels/LayerExportPanel.js';
 import { cartogramPanel } from './ui/panels/CartogramPanel.js';
-import { myPagePanel } from './ui/panels/MyPagePanel.js';
-import { supabaseManager } from './core/SupabaseManager.js';
 import { geocodingService } from './services/GeocodingService.js';
 import { fromLonLat } from 'ol/proj';
 import { transformExtent } from 'ol/proj';
@@ -71,14 +68,6 @@ function initApp() {
 
   // 4.5 자동 저장 관리자 초기화 (지도 초기화 후)
   autoSaveManager.init();
-
-  // 4.6 Supabase 클라우드 관리자 초기화
-  supabaseManager.init().then(() => {
-    updateHeaderAuth();
-  });
-
-  // 4.7 헤더 로그인 버튼 이벤트
-  initHeaderAuth();
 
   // 5. 패널 초기화
   new LayerPanel('layer-list');
@@ -424,9 +413,6 @@ function handleMenuAction(action) {
       }
       break;
     }
-    case 'project-cloud':
-      cloudPanel.show();
-      break;
     case 'project-export':
       exportPanel.show();
       break;
@@ -729,56 +715,6 @@ function showComingSoonModal(featureName) {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();
   });
-}
-
-/**
- * 헤더 인증 버튼 초기화
- */
-function initHeaderAuth() {
-  const headerAuth = document.getElementById('header-auth');
-  if (!headerAuth) return;
-
-  headerAuth.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-
-    if (btn.id === 'header-login-btn') {
-      cloudPanel.show();
-    } else if (btn.id === 'header-mypage-btn') {
-      myPagePanel.show();
-    } else if (btn.id === 'header-logout-btn') {
-      supabaseManager.signOut().then(() => {
-        updateHeaderAuth();
-        showStatusMessage('로그아웃되었습니다.');
-      });
-    }
-  });
-
-  // 인증 상태 변경 이벤트 구독
-  eventBus.on('auth:login', () => updateHeaderAuth());
-  eventBus.on('auth:logout', () => updateHeaderAuth());
-}
-
-/**
- * 헤더 인증 상태 업데이트
- */
-function updateHeaderAuth() {
-  const headerAuth = document.getElementById('header-auth');
-  if (!headerAuth) return;
-
-  if (supabaseManager.isLoggedIn()) {
-    const user = supabaseManager.getUser();
-    const isAdmin = supabaseManager.isAdmin();
-    headerAuth.innerHTML = `
-      <span class="header-user-email">${user.email}${isAdmin ? ' <span class="admin-badge">관리자</span>' : ''}</span>
-      <button class="btn btn-sm btn-primary" id="header-mypage-btn">마이페이지</button>
-      <button class="btn btn-sm btn-secondary" id="header-logout-btn">로그아웃</button>
-    `;
-  } else {
-    headerAuth.innerHTML = `
-      <button class="btn btn-sm btn-primary" id="header-login-btn">로그인</button>
-    `;
-  }
 }
 
 /**

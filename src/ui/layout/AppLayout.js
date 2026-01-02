@@ -34,8 +34,6 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="project-open">열기...</div>
                 <div class="dropdown-item" data-action="project-save">저장</div>
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-item" data-action="project-cloud">클라우드 저장/불러오기</div>
-                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="project-export">지도 내보내기</div>
               </div>
             </div>
@@ -112,9 +110,6 @@ export class AppLayout {
         </div>
         <div class="menu-right">
           <span class="copyright">ⓒ 2025 충남삼성고등학교 김용현T | cnsageo@cnsa.hs.kr</span>
-          <div class="header-auth" id="header-auth">
-            <button class="btn btn-sm btn-primary" id="header-login-btn">로그인</button>
-          </div>
           <button id="theme-toggle" class="theme-toggle" title="테마 전환">
             <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="5"></circle>
