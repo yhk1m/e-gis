@@ -184,6 +184,12 @@ export class AttributeTable {
       margin-left: 8px;
     }
 
+    .selection-count {
+      color: #4a90d9;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
     .header-actions {
       display: flex;
       gap: 8px;
@@ -211,6 +217,20 @@ export class AttributeTable {
 
     .btn-primary:hover {
       background: #3a80c9;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .table-container {
@@ -270,6 +290,26 @@ export class AttributeTable {
       white-space: nowrap;
     }
 
+    td.editable:hover {
+      background: ${isDark ? '#3a3a5c' : '#f0f0f0'};
+      cursor: text;
+    }
+
+    td.editing {
+      padding: 2px;
+    }
+
+    td.editing input {
+      width: 100%;
+      padding: 4px 8px;
+      border: 2px solid #4a90d9;
+      border-radius: 3px;
+      font-size: 12px;
+      background: ${isDark ? '#1a1a2e' : '#ffffff'};
+      color: ${isDark ? '#e4e4e7' : '#333333'};
+      outline: none;
+    }
+
     .row-num {
       width: 50px;
       text-align: center;
@@ -294,6 +334,14 @@ export class AttributeTable {
       text-align: center;
       color: ${isDark ? '#808090' : '#999'};
     }
+
+    .help-text {
+      font-size: 11px;
+      color: ${isDark ? '#808090' : '#999'};
+      padding: 8px 16px;
+      background: ${isDark ? '#1a1a2e' : '#fafafa'};
+      border-bottom: 1px solid ${isDark ? '#3a3a5c' : '#e0e0e0'};
+    }
   </style>
 </head>
 <body>
@@ -301,12 +349,15 @@ export class AttributeTable {
     <div>
       <span class="header-title">${layerInfo.name}</span>
       <span class="header-count">(${features.length}개 피처)</span>
+      <span class="selection-count" id="selection-count"></span>
     </div>
     <div class="header-actions">
-      <button class="btn" id="btn-zoom-selected" title="선택한 피처로 이동">선택 피처로 이동</button>
+      <button class="btn" id="btn-zoom-selected" title="선택한 피처로 이동">선택으로 이동</button>
+      <button class="btn btn-danger" id="btn-delete-selected" title="선택한 피처 삭제" disabled>선택 삭제</button>
       <button class="btn" id="btn-refresh">새로고침</button>
     </div>
   </div>
+  <div class="help-text">Ctrl+클릭: 다중 선택 | Shift+클릭: 범위 선택 | 더블클릭: 셀 편집 | Delete: 선택 삭제</div>
   <div class="table-container">
     ${features.length > 0 ? `
     <table>
@@ -344,21 +395,46 @@ export class AttributeTable {
       const doc = win.document;
       if (!doc || !doc.body) return;
 
-      let selectedFeatureId = null;
+      let selectedFeatureIds = new Set();
+      let lastSelectedIndex = -1;
       let sortColumn = null;
       let sortAsc = true;
+      let editingCell = null;
+
+      const btnDelete = doc.getElementById('btn-delete-selected');
+      const selectionCountEl = doc.getElementById('selection-count');
 
       // 행 클릭 - 선택
-      doc.querySelectorAll('tbody tr').forEach(tr => {
-        tr.addEventListener('click', function() {
+      doc.querySelectorAll('tbody tr').forEach((tr, index) => {
+        tr.addEventListener('click', function(e) {
           const featureId = this.dataset.featureId;
-          selectFeature(featureId);
-        });
+          const rowIndex = getRowIndex(this);
 
-        tr.addEventListener('dblclick', function() {
-          const featureId = this.dataset.featureId;
-          selectFeature(featureId);
-          zoomToSelected();
+          if (e.ctrlKey || e.metaKey) {
+            // Ctrl+클릭: 토글 선택
+            toggleSelection(featureId);
+            lastSelectedIndex = rowIndex;
+          } else if (e.shiftKey && lastSelectedIndex >= 0) {
+            // Shift+클릭: 범위 선택
+            rangeSelect(lastSelectedIndex, rowIndex);
+          } else {
+            // 일반 클릭: 단일 선택
+            clearSelection();
+            addSelection(featureId);
+            lastSelectedIndex = rowIndex;
+          }
+
+          updateSelectionUI();
+          updateMapHighlight();
+        });
+      });
+
+      // 셀 더블클릭 - 편집
+      doc.querySelectorAll('tbody td:not(.row-num)').forEach((td, cellIndex) => {
+        td.classList.add('editable');
+        td.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          startEditing(this);
         });
       });
 
@@ -383,6 +459,11 @@ export class AttributeTable {
         btnZoom.addEventListener('click', zoomToSelected);
       }
 
+      // 선택 삭제 버튼
+      if (btnDelete) {
+        btnDelete.addEventListener('click', deleteSelected);
+      }
+
       // 새로고침 버튼
       const btnRefresh = doc.getElementById('btn-refresh');
       if (btnRefresh) {
@@ -391,46 +472,269 @@ export class AttributeTable {
         });
       }
 
-      function selectFeature(featureId) {
-        selectedFeatureId = featureId;
+      // Delete 키 단축키
+      doc.addEventListener('keydown', function(e) {
+        if (e.key === 'Delete' && selectedFeatureIds.size > 0 && !editingCell) {
+          deleteSelected();
+        }
+        // Escape: 편집 취소
+        if (e.key === 'Escape' && editingCell) {
+          cancelEditing();
+        }
+      });
 
-        // UI 업데이트
+      function getRowIndex(tr) {
+        const rows = Array.from(doc.querySelectorAll('tbody tr'));
+        return rows.indexOf(tr);
+      }
+
+      function getAllRows() {
+        return Array.from(doc.querySelectorAll('tbody tr'));
+      }
+
+      function toggleSelection(featureId) {
+        if (selectedFeatureIds.has(featureId)) {
+          selectedFeatureIds.delete(featureId);
+        } else {
+          selectedFeatureIds.add(featureId);
+        }
+      }
+
+      function addSelection(featureId) {
+        selectedFeatureIds.add(featureId);
+      }
+
+      function clearSelection() {
+        selectedFeatureIds.clear();
+      }
+
+      function rangeSelect(startIndex, endIndex) {
+        const rows = getAllRows();
+        const minIndex = Math.min(startIndex, endIndex);
+        const maxIndex = Math.max(startIndex, endIndex);
+
+        for (let i = minIndex; i <= maxIndex; i++) {
+          const row = rows[i];
+          if (row) {
+            selectedFeatureIds.add(row.dataset.featureId);
+          }
+        }
+      }
+
+      function updateSelectionUI() {
         doc.querySelectorAll('tbody tr').forEach(tr => {
-          tr.classList.remove('selected');
-          if (tr.dataset.featureId === featureId) {
+          if (selectedFeatureIds.has(tr.dataset.featureId)) {
             tr.classList.add('selected');
+          } else {
+            tr.classList.remove('selected');
           }
         });
 
-        // 지도 하이라이트
-        const feature = featureMap.get(featureId);
-        if (feature) {
-          const highlightSelect = self.highlightSelects.get(layerId);
-          if (highlightSelect) {
-            highlightSelect.getFeatures().clear();
-            highlightSelect.getFeatures().push(feature);
+        // 선택 개수 표시
+        if (selectionCountEl) {
+          if (selectedFeatureIds.size > 0) {
+            selectionCountEl.textContent = `(${selectedFeatureIds.size}개 선택됨)`;
+          } else {
+            selectionCountEl.textContent = '';
           }
-          eventBus.emit(Events.FEATURE_SELECTED, { feature });
+        }
+
+        // 삭제 버튼 활성화/비활성화
+        if (btnDelete) {
+          btnDelete.disabled = selectedFeatureIds.size === 0;
+        }
+      }
+
+      function updateMapHighlight() {
+        const highlightSelect = self.highlightSelects.get(layerId);
+        if (highlightSelect) {
+          highlightSelect.getFeatures().clear();
+          selectedFeatureIds.forEach(fid => {
+            const feature = featureMap.get(fid);
+            if (feature) {
+              highlightSelect.getFeatures().push(feature);
+            }
+          });
+        }
+
+        // 단일 선택 시 이벤트 발생
+        if (selectedFeatureIds.size === 1) {
+          const fid = selectedFeatureIds.values().next().value;
+          const feature = featureMap.get(fid);
+          if (feature) {
+            eventBus.emit(Events.FEATURE_SELECTED, { feature });
+          }
         }
       }
 
       function zoomToSelected() {
-        if (!selectedFeatureId) {
+        if (selectedFeatureIds.size === 0) {
           win.alert('먼저 피처를 선택하세요.');
           return;
         }
 
-        const feature = featureMap.get(selectedFeatureId);
-        if (feature) {
-          const geometry = feature.getGeometry();
-          if (geometry) {
-            const extent = geometry.getExtent();
-            mapManager.fitExtent(extent, {
-              padding: [100, 100, 100, 100],
-              maxZoom: 15
-            });
+        // 선택된 모든 피처의 extent 계산
+        let fullExtent = null;
+        selectedFeatureIds.forEach(fid => {
+          const feature = featureMap.get(fid);
+          if (feature) {
+            const geometry = feature.getGeometry();
+            if (geometry) {
+              const extent = geometry.getExtent();
+              if (!fullExtent) {
+                fullExtent = extent.slice();
+              } else {
+                fullExtent[0] = Math.min(fullExtent[0], extent[0]);
+                fullExtent[1] = Math.min(fullExtent[1], extent[1]);
+                fullExtent[2] = Math.max(fullExtent[2], extent[2]);
+                fullExtent[3] = Math.max(fullExtent[3], extent[3]);
+              }
+            }
           }
+        });
+
+        if (fullExtent) {
+          mapManager.fitExtent(fullExtent, {
+            padding: [100, 100, 100, 100],
+            maxZoom: 15
+          });
         }
+      }
+
+      function deleteSelected() {
+        if (selectedFeatureIds.size === 0) return;
+
+        const count = selectedFeatureIds.size;
+        const message = count === 1
+          ? '선택한 피처를 삭제하시겠습니까?'
+          : `선택한 ${count}개의 피처를 삭제하시겠습니까?`;
+
+        if (!win.confirm(message)) return;
+
+        const layerInfo = layerManager.getLayer(layerId);
+        if (!layerInfo || !layerInfo.source) return;
+
+        // 피처 삭제
+        selectedFeatureIds.forEach(fid => {
+          const feature = featureMap.get(fid);
+          if (feature) {
+            layerInfo.source.removeFeature(feature);
+            featureMap.delete(fid);
+          }
+        });
+
+        // 테이블에서 행 제거
+        selectedFeatureIds.forEach(fid => {
+          const row = doc.querySelector(`tbody tr[data-feature-id="${fid}"]`);
+          if (row) row.remove();
+        });
+
+        // 행 번호 재정렬
+        doc.querySelectorAll('tbody tr').forEach((tr, index) => {
+          const rowNum = tr.querySelector('.row-num');
+          if (rowNum) rowNum.textContent = index + 1;
+        });
+
+        // 피처 개수 업데이트
+        const countEl = doc.querySelector('.header-count');
+        if (countEl) {
+          const newCount = featureMap.size;
+          countEl.textContent = `(${newCount}개 피처)`;
+        }
+
+        // 하이라이트 클리어
+        const highlightSelect = self.highlightSelects.get(layerId);
+        if (highlightSelect) {
+          highlightSelect.getFeatures().clear();
+        }
+
+        clearSelection();
+        updateSelectionUI();
+
+        eventBus.emit(Events.FEATURE_DELETED, { layerId, count });
+      }
+
+      function startEditing(td) {
+        if (editingCell) {
+          saveEditing();
+        }
+
+        const tr = td.closest('tr');
+        const featureId = tr.dataset.featureId;
+        const feature = featureMap.get(featureId);
+        if (!feature) return;
+
+        // 컬럼 인덱스 찾기
+        const cells = Array.from(tr.querySelectorAll('td'));
+        const cellIndex = cells.indexOf(td) - 1; // row-num 셀 제외
+        if (cellIndex < 0 || cellIndex >= columns.length) return;
+
+        const column = columns[cellIndex];
+        const currentValue = feature.get(column);
+
+        editingCell = {
+          td: td,
+          featureId: featureId,
+          column: column,
+          originalValue: currentValue
+        };
+
+        td.classList.add('editing');
+        const input = doc.createElement('input');
+        input.type = 'text';
+        input.value = currentValue !== undefined && currentValue !== null ? currentValue : '';
+        td.innerHTML = '';
+        td.appendChild(input);
+        input.focus();
+        input.select();
+
+        input.addEventListener('blur', function() {
+          saveEditing();
+        });
+
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            saveEditing();
+          } else if (e.key === 'Escape') {
+            cancelEditing();
+          }
+          e.stopPropagation();
+        });
+      }
+
+      function saveEditing() {
+        if (!editingCell) return;
+
+        const { td, featureId, column, originalValue } = editingCell;
+        const input = td.querySelector('input');
+        const newValue = input ? input.value : originalValue;
+
+        const feature = featureMap.get(featureId);
+        if (feature && newValue !== originalValue) {
+          // 숫자 변환 시도
+          const numValue = parseFloat(newValue);
+          const finalValue = !isNaN(numValue) && newValue.trim() !== '' ? numValue : newValue;
+          feature.set(column, finalValue);
+        }
+
+        td.classList.remove('editing');
+        td.innerHTML = '';
+        td.textContent = newValue;
+        td.title = newValue;
+
+        editingCell = null;
+      }
+
+      function cancelEditing() {
+        if (!editingCell) return;
+
+        const { td, originalValue } = editingCell;
+        td.classList.remove('editing');
+        td.innerHTML = '';
+        td.textContent = originalValue !== undefined && originalValue !== null ? originalValue : '';
+        td.title = td.textContent;
+
+        editingCell = null;
       }
 
       function sortTable(column, ascending) {
