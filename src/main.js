@@ -100,6 +100,14 @@ function initApp() {
 
   // 12. 키보드 단축키 설정
   document.addEventListener('keydown', (e) => {
+    // 입력 필드에서는 단축키 무시
+    const activeEl = document.activeElement;
+    const isInputField = activeEl && (
+      activeEl.tagName === 'INPUT' ||
+      activeEl.tagName === 'TEXTAREA' ||
+      activeEl.isContentEditable
+    );
+
     // Ctrl+Z: 실행 취소
     if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
       e.preventDefault();
@@ -112,6 +120,17 @@ function initApp() {
       e.preventDefault();
       if (historyManager.redo()) {
         showStatusMessage('다시 실행되었습니다.');
+      }
+    }
+    // Delete: 선택된 레이어 삭제
+    if (e.key === 'Delete' && !isInputField) {
+      const selectedLayerId = layerManager.getSelectedLayerId();
+      if (selectedLayerId) {
+        const layer = layerManager.getLayer(selectedLayerId);
+        if (layer && confirm(`"${layer.name}" 레이어를 삭제하시겠습니까?`)) {
+          layerManager.removeLayer(selectedLayerId);
+          showStatusMessage('레이어가 삭제되었습니다.');
+        }
       }
     }
   });
