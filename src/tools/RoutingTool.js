@@ -51,6 +51,11 @@ class RoutingTool {
         this.routeLayerId = null;
         this.routeLayer = null;
         this.lastRouteInfo = null;
+        // 마커도 함께 제거
+        this.removeMarkers();
+        this.startPoint = null;
+        this.endPoint = null;
+        this.waypoints = [];
       }
     });
   }
