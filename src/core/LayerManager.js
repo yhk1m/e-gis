@@ -517,6 +517,11 @@ class LayerManager {
 
     // 라벨이 적용된 레이어의 경우 _originalStyle을 업데이트하고 라벨 스타일 유지
     const layer = layerInfo.olLayer;
+    if (!layer) {
+      console.warn('레이어 객체가 없습니다:', layerId);
+      return;
+    }
+
     if (layer._hasLabel && layer._originalStyle) {
       layer._originalStyle = newStyle;
       eventBus.emit('label:refresh', { layerId: layerId });
@@ -524,7 +529,12 @@ class LayerManager {
       layer.setStyle(newStyle);
     }
 
-    // 레이어 소스 변경 알림 (렌더링 강제)
+    // 레이어 변경 알림 (렌더링 강제)
+    if (typeof layer.changed === 'function') {
+      layer.changed();
+    }
+
+    // 레이어 소스 변경 알림
     if (layerInfo.source && typeof layerInfo.source.changed === 'function') {
       layerInfo.source.changed();
     }
