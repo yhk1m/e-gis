@@ -4,6 +4,7 @@
  */
 
 import Draw from 'ol/interaction/Draw';
+import { click } from 'ol/events/condition';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
@@ -63,10 +64,16 @@ class DrawTool {
     const baseType = this.isMultiMode ? type.replace('Multi', '') : type;
     this.multiFeatures = [];
 
+    // 좌클릭만 허용하는 조건
+    const leftClickCondition = (event) => {
+      return event.originalEvent.button === 0;
+    };
+
     this.draw = new Draw({
       source: this.tempSource,
       type: baseType,
-      style: DRAW_STYLE
+      style: DRAW_STYLE,
+      condition: leftClickCondition
     });
 
     this.draw.on('drawend', (event) => {
