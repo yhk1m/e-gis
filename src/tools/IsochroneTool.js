@@ -288,21 +288,13 @@ class IsochroneTool {
 
       this.isochroneLayers.push(layer);
 
-      // LayerManager에 등록
+      // LayerManager에 등록 (스타일은 LayerManager가 관리)
       const layerName = `등시선 ${profileName} ${interval}${unit}`;
-      const isoStyle = new Style({
-        fill: new Fill({ color: ISOCHRONE_COLORS[colorIndex] }),
-        stroke: new Stroke({
-          color: STROKE_COLORS[colorIndex],
-          width: 2
-        })
-      });
       const layerId = layerManager.addLayer({
         name: layerName,
         type: 'vector',
         geometryType: 'Polygon',
-        features: [feature.clone()],
-        style: isoStyle
+        features: [feature.clone()]
       });
 
       this.isochroneLayerIds.push(layerId);

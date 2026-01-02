@@ -318,30 +318,13 @@ class RoutingTool {
 
     const profileName = TRAVEL_PROFILES[profile] || profile;
 
-    // 경로 스타일 적용
-    features.forEach(feature => {
-      feature.setStyle(new Style({
-        stroke: new Stroke({
-          color: '#3b82f6',
-          width: 5
-        })
-      }));
-    });
-
-    // LayerManager에 레이어 등록
+    // LayerManager에 레이어 등록 (스타일은 LayerManager가 관리)
     const layerName = `최단경로 ${profileName} (${routeInfo.distanceText})`;
-    const routeStyle = new Style({
-      stroke: new Stroke({
-        color: '#3b82f6',
-        width: 5
-      })
-    });
     this.routeLayerId = layerManager.addLayer({
       name: layerName,
       type: 'vector',
       geometryType: 'LineString',
-      features: features.map(f => f.clone()),
-      style: routeStyle
+      features: features.map(f => f.clone())
     });
 
     // LayerManager가 생성한 레이어 참조 저장
