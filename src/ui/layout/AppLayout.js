@@ -72,7 +72,7 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="layer-rename">이름 변경</div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="layer-attribute-table">속성 테이블</div>
-                <div class="dropdown-item" data-action="layer-table-join">테이블 조인</div>
+                <div class="dropdown-item" data-action="layer-table-join">테이블 결합</div>
                 <div class="dropdown-item" data-action="layer-label">라벨 설정</div>
                 <div class="dropdown-item" data-action="layer-field-calculator">필드 계산기</div>
                 <div class="dropdown-divider"></div>
@@ -105,7 +105,7 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="analysis-routing">최단경로 분석</div>
               </div>
             </div>
-            <div class="menu-item disabled" data-menu="raster-analysis">
+            <div class="menu-item disabled" data-menu="raster-analysis" title="준비중입니다.">
               <button class="menu-button" data-action="raster-coming-soon">래스터 분석</button>
             </div>
             <button class="btn-help" id="btn-help" title="사용 설명서">❓</button>

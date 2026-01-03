@@ -1,5 +1,5 @@
 /**
- * TableJoinPanel - 테이블 조인 설정 패널
+ * TableJoinPanel - 테이블 결합 설정 패널
  */
 
 import { tableJoinTool } from "../../tools/TableJoinTool.js";
@@ -54,7 +54,7 @@ class TableJoinPanel {
 
     return '<div class="choropleth-content" style="width: 420px;">' +
       '<div class="choropleth-header">' +
-        '<h3>테이블 조인</h3>' +
+        '<h3>테이블 결합</h3>' +
         '<button class="choropleth-close" id="join-close">&times;</button>' +
       '</div>' +
       '<div class="choropleth-body">' +
@@ -296,7 +296,7 @@ class TableJoinPanel {
       );
 
       alert(
-        "테이블 조인 완료!\n" +
+        "테이블 결합 완료!\n" +
         "- 조인된 피처: " + result.joinedCount + "/" + result.totalFeatures + "\n" +
         "- 추가된 필드: " + result.fieldsAdded.join(", ")
       );

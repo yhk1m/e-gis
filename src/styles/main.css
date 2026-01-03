@@ -565,7 +565,7 @@ input:focus, select:focus, textarea:focus {
   background: var(--color-primary-dark);
 }
 
-/* ===== 테이블 조인 패널 스타일 ===== */
+/* ===== 테이블 결합 패널 스타일 ===== */
 .file-upload-area {
   border: 2px dashed var(--border-color);
   border-radius: var(--radius-md);

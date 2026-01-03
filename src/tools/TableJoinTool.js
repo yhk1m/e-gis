@@ -1,5 +1,5 @@
 /**
- * TableJoinTool - 테이블 조인 도구
+ * TableJoinTool - 테이블 결합 도구
  * CSV/XLSX 파일의 데이터를 레이어 피처에 결합
  */
 
@@ -206,7 +206,7 @@ class TableJoinTool {
   }
 
   /**
-   * 테이블 조인 실행
+   * 테이블 결합 실행
    */
   join(layerId, layerField, csvData, csvField, selectedFields) {
     const layerInfo = layerManager.getLayer(layerId);

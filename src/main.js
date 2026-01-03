@@ -1182,7 +1182,9 @@ function showUserManual() {
             <li><strong>점(Point):</strong> 툴바에서 점 도구 선택 → 지도에서 클릭</li>
             <li><strong>선(Line):</strong> 툴바에서 선 도구 선택 → 클릭으로 꼭짓점 추가, 더블클릭으로 완료</li>
             <li><strong>폴리곤(Polygon):</strong> 툴바에서 폴리곤 도구 선택 → 클릭으로 꼭짓점 추가, 더블클릭으로 완료</li>
-            <li><strong>원(Circle):</strong> 툴바에서 원 도구 선택 → 중심 클릭 후 드래그</li>
+            <li><strong>멀티포인트(MultiPoint):</strong> 툴바에서 멀티포인트 도구 선택 → 여러 점 클릭, 더블클릭으로 완료</li>
+            <li><strong>멀티라인(MultiLine):</strong> 툴바에서 멀티라인 도구 선택 → 여러 선 그리기, 더블클릭으로 각 선 완료</li>
+            <li><strong>멀티폴리곤(MultiPolygon):</strong> 툴바에서 멀티폴리곤 도구 선택 → 여러 폴리곤 그리기, 더블클릭으로 각 폴리곤 완료</li>
           </ul>
 
           <h4 style="margin-top: 24px; color: var(--primary-color);">🔍 6. 피처 선택 및 편집</h4>
@@ -1223,11 +1225,11 @@ function showUserManual() {
           </ul>
 
           <h4 style="margin-top: 24px; color: var(--primary-color);">🔧 10. 공간 분석</h4>
-          <p style="color: var(--text-secondary); font-style: italic; margin-bottom: 8px;">※ 버퍼, 테이블 조인, 필드 계산기는 먼저 레이어를 선택해야 합니다.</p>
+          <p style="color: var(--text-secondary); font-style: italic; margin-bottom: 8px;">※ 버퍼, 테이블 결합, 필드 계산기는 먼저 레이어를 선택해야 합니다.</p>
           <ul>
             <li><strong>버퍼:</strong> 레이어 선택 → 메뉴 → 벡터 분석 → 버퍼 분석</li>
             <li><strong>공간 연산:</strong> 메뉴 → 벡터 분석 → 공간 연산 (합집합, 교집합, 차집합, 클리핑)</li>
-            <li><strong>테이블 조인:</strong> 레이어 선택 → 메뉴 → 레이어 → 테이블 조인</li>
+            <li><strong>테이블 결합:</strong> 레이어 선택 → 메뉴 → 레이어 → 테이블 결합</li>
             <li><strong>필드 계산기:</strong> 레이어 선택 → 메뉴 → 레이어 → 필드 계산기</li>
           </ul>
 

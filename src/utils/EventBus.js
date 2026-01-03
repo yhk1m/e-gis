@@ -98,6 +98,6 @@ export const Events = {
   // 측정 관련
   MEASUREMENT_CLEAR: 'measurement:clear',
 
-  // 테이블 조인 관련
+  // 테이블 결합 관련
   TABLE_JOINED: 'table:joined'
 };
