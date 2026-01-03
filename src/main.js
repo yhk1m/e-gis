@@ -16,6 +16,8 @@ import { attributeTable } from './ui/panels/AttributeTable.js';
 import { coordinateSystem } from './core/CoordinateSystem.js';
 import { projectManager } from './core/ProjectManager.js';
 import { autoSaveManager } from './core/AutoSaveManager.js';
+import { historyManager } from './core/HistoryManager.js';
+import { selectTool } from './tools/SelectTool.js';
 import { choroplethPanel } from './ui/panels/ChoroplethPanel.js';
 import { tableJoinPanel } from './ui/panels/TableJoinPanel.js';
 import { labelPanel } from './ui/panels/LabelPanel.js';
@@ -38,6 +40,7 @@ import { supabaseManager } from './core/SupabaseManager.js';
 import { geocodingService } from './services/GeocodingService.js';
 import { fromLonLat } from 'ol/proj';
 import { transformExtent } from 'ol/proj';
+import GeoJSON from 'ol/format/GeoJSON';
 import { geojsonLoader } from './loaders/GeoJSONLoader.js';
 import { shapefileLoader } from './loaders/ShapefileLoader.js';
 import { geopackageLoader } from './loaders/GeoPackageLoader.js';
@@ -48,6 +51,9 @@ import { demLoader } from './loaders/DEMLoader.js';
  */
 function initApp() {
   console.log('eGIS 시작!');
+
+  // 0. 히스토리 관리자 초기화
+  historyManager.init();
 
   // 1. 좌표계 시스템 초기화
   coordinateSystem.init();
@@ -103,7 +109,14 @@ function initApp() {
   // 11. 위치 검색 초기화
   initLocationSearch();
 
+  // 11.5 도움말 버튼 이벤트
+  const btnHelp = document.getElementById('btn-help');
+  if (btnHelp) {
+    btnHelp.addEventListener('click', () => showUserManual());
+  }
 
+  // 11.6 최근 파일 목록 초기화
+  updateRecentFilesUI();
 
   // 12. 키보드 단축키 설정
   document.addEventListener('keydown', (e) => {
@@ -114,6 +127,48 @@ function initApp() {
       activeEl.tagName === 'TEXTAREA' ||
       activeEl.isContentEditable
     );
+
+    // Ctrl+Z: 실행 취소
+    if (e.ctrlKey && e.key === 'z' && !e.shiftKey && !isInputField) {
+      e.preventDefault();
+      if (historyManager.undo()) {
+        showStatusMessage('실행 취소되었습니다.');
+      }
+      return;
+    }
+
+    // Ctrl+Shift+Z 또는 Ctrl+Y: 다시 실행
+    if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z') || (e.ctrlKey && e.key === 'y')) {
+      e.preventDefault();
+      if (!isInputField && historyManager.redo()) {
+        showStatusMessage('다시 실행되었습니다.');
+      }
+      return;
+    }
+
+    // Ctrl+A: 전체 선택
+    if (e.ctrlKey && e.key === 'a' && !isInputField) {
+      e.preventDefault();
+      selectTool.selectAll();
+      return;
+    }
+
+    // Ctrl+C: 복사
+    if (e.ctrlKey && e.key === 'c' && !isInputField) {
+      const selectedFeatures = selectTool.getSelectedFeatures();
+      if (selectedFeatures.length > 0) {
+        e.preventDefault();
+        copyFeaturesToClipboard(selectedFeatures);
+      }
+      return;
+    }
+
+    // Ctrl+V: 붙여넣기
+    if (e.ctrlKey && e.key === 'v' && !isInputField) {
+      e.preventDefault();
+      pasteFromClipboard();
+      return;
+    }
 
     // Delete: 선택된 레이어 삭제 (다중 선택 지원)
     if (e.key === 'Delete' && !isInputField) {
@@ -151,6 +206,9 @@ function initApp() {
             showStatusMessage('로딩 중: ' + file.name);
             await loadFileByExtension(file);
             showStatusMessage(file.name + ' 로드 완료');
+            // 최근 파일에 추가
+            const ext = file.name.split('.').pop().toLowerCase();
+            addRecentFile(file.name, ext);
           } catch (error) {
             console.error('파일 로드 실패:', error);
             showStatusMessage('파일 로드 실패: ' + error.message);
@@ -946,6 +1004,283 @@ function updateHeaderAuth() {
       <button class="btn btn-sm btn-primary" id="header-login-btn">로그인</button>
     `;
   }
+}
+
+// 클립보드 (피처 복사/붙여넣기용)
+let featureClipboard = [];
+
+// 최근 파일 관리 (최대 5개)
+const RECENT_FILES_KEY = 'egis_recent_files';
+const MAX_RECENT_FILES = 5;
+
+/**
+ * 최근 파일 목록 가져오기
+ */
+function getRecentFiles() {
+  try {
+    const stored = localStorage.getItem(RECENT_FILES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 최근 파일 추가
+ */
+function addRecentFile(fileName, fileType) {
+  const recentFiles = getRecentFiles();
+
+  // 동일한 파일이 있으면 제거
+  const filtered = recentFiles.filter(f => f.name !== fileName);
+
+  // 앞에 추가
+  filtered.unshift({
+    name: fileName,
+    type: fileType,
+    timestamp: Date.now()
+  });
+
+  // 최대 개수 제한
+  const limited = filtered.slice(0, MAX_RECENT_FILES);
+
+  localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(limited));
+  updateRecentFilesUI();
+}
+
+/**
+ * 최근 파일 UI 업데이트
+ */
+function updateRecentFilesUI() {
+  const recentFilesList = document.getElementById('recent-files-list');
+  if (!recentFilesList) return;
+
+  const recentFiles = getRecentFiles();
+
+  if (recentFiles.length === 0) {
+    recentFilesList.innerHTML = '<div class="dropdown-item disabled">최근 파일 없음</div>';
+    return;
+  }
+
+  recentFilesList.innerHTML = recentFiles.map((file, index) => `
+    <div class="dropdown-item" data-action="recent-file" data-index="${index}" title="${file.name}">
+      ${file.name}
+    </div>
+  `).join('');
+}
+
+/**
+ * 피처를 클립보드에 복사
+ */
+function copyFeaturesToClipboard(features) {
+  if (!features || features.length === 0) {
+    showStatusMessage('복사할 피처가 없습니다.');
+    return;
+  }
+
+  // GeoJSON 형식으로 피처 복사
+  const geojsonFormat = new GeoJSON();
+  featureClipboard = features.map(feature => {
+    return geojsonFormat.writeFeatureObject(feature, {
+      featureProjection: 'EPSG:3857'
+    });
+  });
+
+  showStatusMessage(`${features.length}개 피처가 복사되었습니다.`);
+}
+
+/**
+ * 클립보드에서 피처 붙여넣기
+ */
+function pasteFromClipboard() {
+  if (featureClipboard.length === 0) {
+    showStatusMessage('붙여넣을 피처가 없습니다.');
+    return;
+  }
+
+  const selectedLayerId = layerManager.getSelectedLayerId();
+  if (!selectedLayerId) {
+    showStatusMessage('붙여넣을 레이어를 먼저 선택하세요.');
+    return;
+  }
+
+  const layerInfo = layerManager.getLayer(selectedLayerId);
+  if (!layerInfo) return;
+
+  const geojsonFormat = new GeoJSON();
+
+  featureClipboard.forEach(featureObj => {
+    // 약간 오프셋을 주어 구분 가능하게 함
+    const clonedObj = JSON.parse(JSON.stringify(featureObj));
+
+    const feature = geojsonFormat.readFeature(clonedObj, {
+      featureProjection: 'EPSG:3857'
+    });
+
+    // 새 ID 부여
+    feature.setId(Date.now() + '_' + Math.random().toString(36).substr(2, 9));
+
+    layerInfo.source.addFeature(feature);
+  });
+
+  layerInfo.featureCount = layerInfo.source.getFeatures().length;
+  eventBus.emit(Events.LAYER_ADDED, {});
+
+  showStatusMessage(`${featureClipboard.length}개 피처가 붙여넣기 되었습니다.`);
+}
+
+/**
+ * 상세 사용 설명서 표시
+ */
+function showUserManual() {
+  const existingModal = document.getElementById('manual-modal');
+  if (existingModal) existingModal.remove();
+
+  const modalHtml = `
+    <div class="modal-overlay active" id="manual-modal">
+      <div class="modal" style="width: 800px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+          <h3>e-GIS 사용 설명서</h3>
+          <button class="modal-close" id="manual-close">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: var(--spacing-lg); line-height: 2.0;">
+          <style>
+            #manual-modal ul, #manual-modal p { padding-left: 24px; margin: 8px 0; }
+            #manual-modal li { margin: 4px 0; }
+          </style>
+
+          <h4 style="margin-top: 0; color: var(--primary-color);">📍 1. 시작하기</h4>
+          <p>e-GIS는 교육용 GIS 웹 애플리케이션입니다. 별도의 설치 없이 웹 브라우저에서 바로 사용할 수 있습니다.</p>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">📂 2. 파일 불러오기</h4>
+          <ul>
+            <li><strong>지원 형식:</strong> GeoJSON(.geojson, .json), Shapefile(.zip), GeoPackage(.gpkg), DEM(.tif, .tiff, .img)</li>
+            <li><strong>방법 1:</strong> 좌측 패널의 "+" 버튼 클릭 → 파일 선택</li>
+            <li><strong>방법 2:</strong> 좌측 "파일 브라우저" 탭에서 파일 드래그 앤 드롭</li>
+            <li><strong>방법 3:</strong> 메뉴 → 프로젝트 → 열기로 프로젝트 파일(.egis) 불러오기</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">🗺️ 3. 지도 조작</h4>
+          <ul>
+            <li><strong>이동:</strong> 마우스 드래그 또는 화살표 키</li>
+            <li><strong>확대/축소:</strong> 마우스 휠 또는 툴바의 +/- 버튼</li>
+            <li><strong>전체 보기:</strong> 툴바의 지구본 버튼</li>
+            <li><strong>위치 검색:</strong> 상단 검색창에 주소나 장소명 입력</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">📋 4. 레이어 관리</h4>
+          <ul>
+            <li><strong>선택:</strong> 레이어 패널에서 레이어 클릭 (Shift+클릭으로 다중 선택)</li>
+            <li><strong>표시/숨기기:</strong> 레이어 이름 왼쪽 눈 아이콘 클릭</li>
+            <li><strong>순서 변경:</strong> 레이어를 드래그하여 순서 변경</li>
+            <li><strong>삭제:</strong> 레이어 선택 후 Delete 키</li>
+            <li><strong>속성 편집:</strong> 레이어 선택 후 메뉴 → 레이어 → 속성 테이블</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">✏️ 5. 도형 그리기</h4>
+          <ul>
+            <li><strong>점(Point):</strong> 툴바에서 점 도구 선택 → 지도에서 클릭</li>
+            <li><strong>선(Line):</strong> 툴바에서 선 도구 선택 → 클릭으로 꼭짓점 추가, 더블클릭으로 완료</li>
+            <li><strong>폴리곤(Polygon):</strong> 툴바에서 폴리곤 도구 선택 → 클릭으로 꼭짓점 추가, 더블클릭으로 완료</li>
+            <li><strong>원(Circle):</strong> 툴바에서 원 도구 선택 → 중심 클릭 후 드래그</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">🔍 6. 피처 선택 및 편집</h4>
+          <ul>
+            <li><strong>선택:</strong> 툴바에서 선택 도구 → 피처 클릭</li>
+            <li><strong>다중 선택:</strong> Shift+클릭</li>
+            <li><strong>전체 선택:</strong> Ctrl+A</li>
+            <li><strong>수정:</strong> 선택 후 꼭짓점 드래그</li>
+            <li><strong>삭제:</strong> 선택 후 Delete 키</li>
+            <li><strong>복사/붙여넣기:</strong> Ctrl+C / Ctrl+V</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">📊 7. 속성 테이블</h4>
+          <ul>
+            <li><strong>열기:</strong> 레이어 선택 → 메뉴 → 레이어 → 속성 테이블</li>
+            <li><strong>행 선택:</strong> 행 클릭 (Shift+클릭으로 범위 선택, Ctrl+클릭으로 개별 추가)</li>
+            <li><strong>전체 선택:</strong> 체크박스 헤더 클릭</li>
+            <li><strong>셀 편집:</strong> 셀 더블클릭 → 값 입력 → Enter</li>
+            <li><strong>피처 삭제:</strong> 행 선택 후 삭제 버튼</li>
+            <li><strong>지도에서 보기:</strong> 행 선택 후 "지도에서 보기" 버튼</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">📐 8. 측정</h4>
+          <ul>
+            <li><strong>거리 측정:</strong> 메뉴 → 측정 → 거리 측정 → 지도에서 클릭</li>
+            <li><strong>면적 측정:</strong> 메뉴 → 측정 → 면적 측정 → 폴리곤 그리기</li>
+            <li><strong>측정 삭제:</strong> 메뉴 → 측정 → 측정 결과 지우기</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">🎨 9. 시각화</h4>
+          <p style="color: var(--text-secondary); font-style: italic; margin-bottom: 8px;">※ 아래 기능들은 먼저 좌측 레이어 패널에서 대상 레이어를 선택한 후 실행해야 합니다.</p>
+          <ul>
+            <li><strong>단계구분도:</strong> 레이어 선택 → 메뉴 → 벡터 분석 → 단계구분도 (수치 속성 기반 색상 표현)</li>
+            <li><strong>도형표현도:</strong> 레이어 선택 → 메뉴 → 벡터 분석 → 도형표현도 (파이/막대 차트 오버레이)</li>
+            <li><strong>히트맵:</strong> 메뉴 → 벡터 분석 → 히트맵 (점 데이터 밀도 시각화)</li>
+            <li><strong>카토그램:</strong> 메뉴 → 벡터 분석 → 카토그램 (면적 왜곡 시각화)</li>
+            <li><strong>라벨:</strong> 레이어 선택 → 메뉴 → 레이어 → 라벨 설정</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">🔧 10. 공간 분석</h4>
+          <p style="color: var(--text-secondary); font-style: italic; margin-bottom: 8px;">※ 버퍼, 테이블 조인, 필드 계산기는 먼저 레이어를 선택해야 합니다.</p>
+          <ul>
+            <li><strong>버퍼:</strong> 레이어 선택 → 메뉴 → 벡터 분석 → 버퍼 분석</li>
+            <li><strong>공간 연산:</strong> 메뉴 → 벡터 분석 → 공간 연산 (합집합, 교집합, 차집합, 클리핑)</li>
+            <li><strong>테이블 조인:</strong> 레이어 선택 → 메뉴 → 레이어 → 테이블 조인</li>
+            <li><strong>필드 계산기:</strong> 레이어 선택 → 메뉴 → 레이어 → 필드 계산기</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">🛣️ 11. 경로 분석</h4>
+          <ul>
+            <li><strong>등시선 분석:</strong> 메뉴 → 벡터 분석 → 등시선 분석 (이동 시간 영역)</li>
+            <li><strong>최단경로 분석:</strong> 메뉴 → 벡터 분석 → 최단경로 분석</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">💾 12. 저장 및 내보내기</h4>
+          <ul>
+            <li><strong>프로젝트 저장:</strong> 메뉴 → 프로젝트 → 저장 (.egis 파일)</li>
+            <li><strong>레이어 내보내기:</strong> 레이어 선택 → 메뉴 → 레이어 → 레이어 내보내기 (GeoJSON, Shapefile)</li>
+            <li><strong>지도 이미지 내보내기:</strong> 메뉴 → 프로젝트 → 지도 내보내기</li>
+          </ul>
+
+          <h4 style="margin-top: 24px; color: var(--primary-color);">💡 13. 팁</h4>
+          <ul>
+            <li>상태 표시줄에서 현재 좌표와 축척을 확인할 수 있습니다.</li>
+            <li>축척 입력란에 직접 숫자를 입력하여 원하는 축척으로 이동할 수 있습니다.</li>
+            <li>좌표계는 상태 표시줄 우측에서 변경할 수 있습니다 (WGS84, UTM-K 등).</li>
+            <li>다크 모드는 우측 상단의 테마 버튼으로 전환합니다.</li>
+            <li>북마크 기능으로 자주 사용하는 위치를 저장할 수 있습니다.</li>
+          </ul>
+
+          <div style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
+            <strong>문의:</strong> cnsageo@cnsa.hs.kr<br>
+            <strong>버전:</strong> e-GIS v0.1.0
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); text-align: right;">
+          <button class="btn btn-primary" id="manual-ok">닫기</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const modal = document.getElementById('manual-modal');
+  const closeBtn = document.getElementById('manual-close');
+  const okBtn = document.getElementById('manual-ok');
+
+  const closeModal = () => {
+    modal.classList.remove('active');
+    setTimeout(() => modal.remove(), 200);
+  };
+
+  closeBtn.addEventListener('click', closeModal);
+  okBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
 }
 
 // DOM 로드 완료 후 앱 초기화

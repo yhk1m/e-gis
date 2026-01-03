@@ -48,6 +48,24 @@
   letter-spacing: -0.5px;
 }
 
+.btn-help {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+  line-height: 1;
+}
+
+.btn-help:hover {
+  transform: scale(1.15);
+}
+
 .menu-right {
   display: flex;
   align-items: center;
@@ -420,6 +438,40 @@
   height: 1px;
   background: var(--border-color);
   margin: var(--spacing-xs) 0;
+}
+
+.dropdown-item.disabled {
+  color: var(--text-muted);
+  cursor: default;
+  pointer-events: none;
+}
+
+.dropdown-item.submenu-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: default;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-top: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+}
+
+.dropdown-item.submenu-label:hover {
+  background: transparent;
+}
+
+.recent-files-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.recent-files-list .dropdown-item {
+  font-size: 12px;
+  padding-left: calc(var(--spacing-md) + 8px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 패널 숨기기 */

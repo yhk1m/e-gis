@@ -34,6 +34,11 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="project-open">열기...</div>
                 <div class="dropdown-item" data-action="project-save">저장</div>
                 <div class="dropdown-divider"></div>
+                <div class="dropdown-item submenu-label">최근 파일</div>
+                <div class="recent-files-list" id="recent-files-list">
+                  <div class="dropdown-item disabled">최근 파일 없음</div>
+                </div>
+                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="project-export">지도 내보내기</div>
               </div>
             </div>
@@ -103,6 +108,7 @@ export class AppLayout {
             <div class="menu-item disabled" data-menu="raster-analysis">
               <button class="menu-button" data-action="raster-coming-soon">래스터 분석</button>
             </div>
+            <button class="btn-help" id="btn-help" title="사용 설명서">❓</button>
           </div>
         </div>
         <div class="menu-right">
