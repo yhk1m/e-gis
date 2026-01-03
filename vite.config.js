@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: '/e-gis/',
   publicDir: 'public',
   server: {
     port: 3000,
