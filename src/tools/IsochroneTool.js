@@ -56,6 +56,11 @@ class IsochroneTool {
     eventBus.on(Events.LAYER_REMOVED, (data) => {
       this.onLayerRemoved(data.layerId);
     });
+
+    // 레이어 스타일 변경 이벤트 리스너 (범례 색상 동기화)
+    eventBus.on(Events.LAYER_STYLE_CHANGED, (data) => {
+      this.onLayerStyleChanged(data.layerId);
+    });
   }
 
   /**
@@ -67,10 +72,24 @@ class IsochroneTool {
       this.isochroneLayerIds.splice(index, 1);
       this.isochroneLayers.splice(index, 1);
 
-      // 모든 등시선 레이어가 삭제되면 범례도 제거
+      // 모든 등시선 레이어가 삭제되면 범례와 마커도 제거
       if (this.isochroneLayerIds.length === 0) {
         this.removeLegend();
+        this.removeMarker();
+      } else {
+        // 남은 레이어로 범례 업데이트
+        this.updateLegend();
       }
+    }
+  }
+
+  /**
+   * 레이어 스타일 변경 시 범례 업데이트
+   */
+  onLayerStyleChanged(layerId) {
+    const index = this.isochroneLayerIds.indexOf(layerId);
+    if (index !== -1) {
+      this.updateLegend();
     }
   }
 
@@ -360,6 +379,42 @@ class IsochroneTool {
       mapContainer.appendChild(legendEl);
       this.legend = legendEl;
     }
+  }
+
+  /**
+   * 범례 업데이트 (레이어 색상 변경 시)
+   */
+  updateLegend() {
+    if (!this.legend || this.isochroneLayerIds.length === 0) return;
+
+    const legendItems = this.legend.querySelector('.isochrone-legend-items');
+    if (!legendItems) return;
+
+    // 현재 레이어 색상으로 범례 업데이트
+    this.isochroneLayerIds.forEach((layerId, i) => {
+      const layerInfo = layerManager.getLayer(layerId);
+      if (layerInfo) {
+        const legendItem = legendItems.children[this.isochroneLayerIds.length - 1 - i];
+        if (legendItem) {
+          const colorSpan = legendItem.querySelector('.isochrone-legend-color');
+          if (colorSpan) {
+            const color = layerInfo.color || layerInfo.fillColor;
+            colorSpan.style.background = this.hexToRgba(color, 0.6);
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * HEX to RGBA 변환
+   */
+  hexToRgba(hex, alpha) {
+    if (!hex) return 'rgba(0,128,0,' + alpha + ')';
+    const r = parseInt(hex.slice(1, 3), 16) || 0;
+    const g = parseInt(hex.slice(3, 5), 16) || 0;
+    const b = parseInt(hex.slice(5, 7), 16) || 0;
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
   }
 
   /**

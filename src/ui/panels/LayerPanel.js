@@ -28,6 +28,7 @@ export class LayerPanel {
     eventBus.on(Events.LAYER_VISIBILITY_CHANGED, () => this.render());
     eventBus.on(Events.LAYER_SELECTED, () => this.render());
     eventBus.on(Events.LAYER_ORDER_CHANGED, () => this.render());
+    eventBus.on(Events.LAYER_STYLE_CHANGED, () => this.render());
 
     // 컨테이너 클릭 이벤트 위임
     this.container.addEventListener('click', (e) => this.handleClick(e));
