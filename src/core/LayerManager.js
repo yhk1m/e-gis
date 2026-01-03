@@ -472,6 +472,14 @@ class LayerManager {
     this.updateLayerStyle(layerId);
   }
 
+  setLayerStrokeWidth(layerId, strokeWidth) {
+    const layerInfo = this.layers.get(layerId);
+    if (!layerInfo) return;
+
+    layerInfo.strokeWidth = strokeWidth;
+    this.updateLayerStyle(layerId);
+  }
+
   updateLayerStyle(layerId) {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;

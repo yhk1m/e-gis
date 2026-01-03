@@ -364,6 +364,7 @@ export class LayerPanel {
     const currentStrokeOpacity = layer.strokeOpacity !== undefined ? layer.strokeOpacity : 1.0;
     const currentStrokeColor = layer.strokeColor || layer.color;
     const currentFillColor = layer.fillColor || layer.color;
+    const currentStrokeWidth = layer.strokeWidth !== undefined ? layer.strokeWidth : 2;
 
     let html = "<div class=\"color-picker-header\">스타일 편집</div>";
 
@@ -388,6 +389,10 @@ export class LayerPanel {
       html += "<div class=\"style-section\"><label>선 색상:</label><div class=\"color-picker-grid\">" + strokeColorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentStrokeColor + "\" class=\"stroke-color-input\"></div></div>";
 
+      // 선 두께
+      html += "<div class=\"style-section\"><label>선 두께: <span class=\"stroke-width-value\">" + currentStrokeWidth + "px</span></label>";
+      html += "<input type=\"range\" class=\"stroke-width-slider\" min=\"1\" max=\"10\" value=\"" + currentStrokeWidth + "\"></div>";
+
       // 선 스타일
       html += "<div class=\"style-section\"><label>선 스타일:</label><div class=\"stroke-style-options\">";
       html += "<button class=\"stroke-btn" + (currentStrokeDash === "solid" ? " active" : "") + "\" data-stroke=\"solid\" title=\"실선\">━━━</button>";
@@ -407,6 +412,10 @@ export class LayerPanel {
       // 선 투명도
       html += "<div class=\"style-section\"><label>선 투명도: <span class=\"stroke-opacity-value\">" + Math.round(currentStrokeOpacity * 100) + "%</span></label>";
       html += "<input type=\"range\" class=\"opacity-slider stroke-opacity-slider\" min=\"0\" max=\"100\" value=\"" + Math.round(currentStrokeOpacity * 100) + "\"></div>";
+
+      // 선 두께
+      html += "<div class=\"style-section\"><label>선 두께: <span class=\"stroke-width-value\">" + currentStrokeWidth + "px</span></label>";
+      html += "<input type=\"range\" class=\"stroke-width-slider\" min=\"1\" max=\"10\" value=\"" + currentStrokeWidth + "\"></div>";
 
       // 선 스타일
       html += "<div class=\"style-section\"><label>선 스타일:</label><div class=\"stroke-style-options\">";
@@ -535,6 +544,16 @@ export class LayerPanel {
         var label = picker.querySelector(".stroke-opacity-value");
         if (label) label.textContent = e.target.value + "%";
         layerManager.setLayerStrokeOpacity(layerId, opacity);
+      });
+    }
+
+    var strokeWidthSlider = picker.querySelector(".stroke-width-slider");
+    if (strokeWidthSlider) {
+      strokeWidthSlider.addEventListener("input", function(e) {
+        var width = parseInt(e.target.value);
+        var label = picker.querySelector(".stroke-width-value");
+        if (label) label.textContent = width + "px";
+        layerManager.setLayerStrokeWidth(layerId, width);
       });
     }
 

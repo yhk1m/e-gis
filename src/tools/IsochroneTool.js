@@ -266,18 +266,13 @@ class IsochroneTool {
       const intervalIndex = features.length - 1 - index;
       const interval = intervals[intervalIndex];
 
-      // 스타일 적용
-      feature.setStyle(new Style({
-        fill: new Fill({ color: ISOCHRONE_COLORS[colorIndex] }),
-        stroke: new Stroke({
-          color: STROKE_COLORS[colorIndex],
-          width: 2
-        })
-      }));
-
       // 속성에 시간/거리 정보 추가
       feature.set('interval', interval);
       feature.set('rangeType', rangeType);
+
+      // 피처 스타일 제거 (LayerManager가 스타일 관리하도록)
+      const clonedFeature = feature.clone();
+      clonedFeature.setStyle(null);
 
       // 개별 레이어 생성
       const source = new VectorSource({ features: [feature] });
@@ -289,12 +284,15 @@ class IsochroneTool {
       this.isochroneLayers.push(layer);
 
       // LayerManager에 등록 (스타일은 LayerManager가 관리)
+      // 색상 정보를 hex로 변환하여 전달
+      const fillColorHex = ['#008000', '#90EE90', '#FFFF00', '#FFA500', '#FF4500', '#FF0000'][colorIndex];
       const layerName = `등시선 ${profileName} ${interval}${unit}`;
       const layerId = layerManager.addLayer({
         name: layerName,
         type: 'vector',
         geometryType: 'Polygon',
-        features: [feature.clone()]
+        features: [clonedFeature],
+        color: fillColorHex
       });
 
       this.isochroneLayerIds.push(layerId);

@@ -77,9 +77,11 @@ class LabelPanel {
             <input type="range" id="label-halo-width" min="0" max="5" value="2" class="form-range">
             <span id="label-halo-width-value">2px</span>
           </div>
+
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" id="label-remove-btn">라벨 제거</button>
+          <button class="btn btn-info" id="label-edit-position-btn">위치 편집</button>
           <button class="btn btn-primary" id="label-apply-btn">적용</button>
         </div>
       </div>
@@ -122,6 +124,29 @@ class LabelPanel {
 
     // 라벨 제거 버튼
     this.modal.querySelector('#label-remove-btn').addEventListener('click', () => this.removeLabel());
+
+    // 위치 편집 버튼
+    this.modal.querySelector('#label-edit-position-btn').addEventListener('click', () => this.toggleEditMode());
+  }
+
+  /**
+   * 라벨 위치 편집 모드 토글
+   */
+  toggleEditMode() {
+    if (!labelTool.hasLabel(this.currentLayerId)) {
+      alert('먼저 라벨을 적용한 후 위치를 편집할 수 있습니다.');
+      return;
+    }
+
+    if (labelTool.isEditMode()) {
+      labelTool.stopEditMode();
+      this.modal.querySelector('#label-edit-position-btn').textContent = '위치 편집';
+      this.modal.querySelector('#label-edit-position-btn').classList.remove('active');
+    } else {
+      labelTool.startEditMode(this.currentLayerId);
+      this.modal.querySelector('#label-edit-position-btn').textContent = '편집 완료';
+      this.modal.querySelector('#label-edit-position-btn').classList.add('active');
+    }
   }
 
   /**

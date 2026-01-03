@@ -55,6 +55,8 @@ class MeasureTool {
     this.sketch = null;
     this.listener = null;
     this.isActive = false;
+    this.rightClickHandler = null;
+    this.contextMenuHandler = null;
   }
 
   init() {
@@ -89,6 +91,25 @@ class MeasureTool {
     });
 
     this.map.addInteraction(this.draw);
+
+    // 우클릭으로 측정 완료 (더블클릭 대신)
+    this.rightClickHandler = (e) => {
+      if (e.button === 2 && this.sketch) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.draw.finishDrawing();
+      }
+    };
+    
+    // 우클릭 컨텍스트 메뉴 방지
+    this.contextMenuHandler = (e) => {
+      if (this.isActive) {
+        e.preventDefault();
+      }
+    };
+    
+    this.map.getViewport().addEventListener('mousedown', this.rightClickHandler);
+    this.map.getViewport().addEventListener('contextmenu', this.contextMenuHandler);
 
     this.createTooltip();
 
@@ -145,6 +166,16 @@ class MeasureTool {
     if (this.listener) {
       unByKey(this.listener);
       this.listener = null;
+    }
+    
+    // 우클릭 이벤트 핸들러 제거
+    if (this.rightClickHandler) {
+      this.map.getViewport().removeEventListener('mousedown', this.rightClickHandler);
+      this.rightClickHandler = null;
+    }
+    if (this.contextMenuHandler) {
+      this.map.getViewport().removeEventListener('contextmenu', this.contextMenuHandler);
+      this.contextMenuHandler = null;
     }
     
     this.sketch = null;
@@ -250,9 +281,9 @@ class MeasureTool {
     if (!statusEl) return;
 
     if (type === "distance") {
-      statusEl.textContent = "거리 측정: 클릭하여 경로를 그리세요. 더블클릭으로 완료.";
+      statusEl.textContent = "거리 측정: 좌클릭으로 점 추가, 우클릭 또는 더블클릭으로 완료";
     } else {
-      statusEl.textContent = "면적 측정: 클릭하여 영역을 그리세요. 더블클릭으로 완료.";
+      statusEl.textContent = "면적 측정: 좌클릭으로 점 추가, 우클릭 또는 더블클릭으로 완료";
     }
   }
 

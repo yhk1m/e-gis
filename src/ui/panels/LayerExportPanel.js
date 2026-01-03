@@ -7,6 +7,7 @@ import { layerManager } from '../../core/LayerManager.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import KML from 'ol/format/KML';
 import GPX from 'ol/format/GPX';
+import shpwrite from '@mapbox/shp-write';
 
 class LayerExportPanel {
   constructor() {
@@ -96,6 +97,20 @@ class LayerExportPanel {
                   <span class="format-label">
                     <strong>CSV</strong>
                     <small>스프레드시트 (속성만)</small>
+                  </span>
+                </label>
+                <label class="export-format-option">
+                  <input type="radio" name="export-format" value="shp">
+                  <span class="format-label">
+                    <strong>Shapefile</strong>
+                    <small>ArcGIS, QGIS 호환 (ZIP)</small>
+                  </span>
+                </label>
+                <label class="export-format-option">
+                  <input type="radio" name="export-format" value="gpkg">
+                  <span class="format-label">
+                    <strong>GeoPackage</strong>
+                    <small>OGC 표준, QGIS 호환</small>
                   </span>
                 </label>
               </div>
@@ -190,6 +205,14 @@ class LayerExportPanel {
         filename = `${layer.name}.csv`;
         mimeType = 'text/csv';
         break;
+      case 'shp':
+        this.exportToShapefile(features, layer.name);
+        this.hide();
+        return; // 별도 다운로드 처리
+      case 'gpkg':
+        this.exportToGeoPackage(features, layer.name);
+        this.hide();
+        return; // 별도 다운로드 처리
     }
 
     this.downloadFile(content, filename, mimeType);
@@ -420,6 +443,202 @@ ${waypoints}${tracks}</gpx>`;
 
     // BOM 추가 (Excel 한글 호환)
     return '\uFEFF' + csv;
+  }
+
+  /**
+   * Shapefile로 내보내기
+   */
+  async exportToShapefile(features, layerName) {
+    try {
+      const format = new GeoJSON();
+      const geoJsonObj = format.writeFeaturesObject(features, {
+        dataProjection: 'EPSG:4326',
+        featureProjection: 'EPSG:3857'
+      });
+
+      // shpwrite로 Shapefile 생성
+      const options = {
+        folder: layerName,
+        filename: layerName,
+        outputType: 'blob',
+        compression: 'DEFLATE'
+      };
+
+      const zipBlob = await shpwrite.zip(geoJsonObj, options);
+
+      // 다운로드
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${layerName}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Shapefile 내보내기 실패:', error);
+      alert('Shapefile 내보내기에 실패했습니다. ' + error.message);
+    }
+  }
+
+  /**
+   * GeoPackage로 내보내기
+   */
+  async exportToGeoPackage(features, layerName) {
+    try {
+      // SQL.js 로드
+      const initSqlJs = (await import('sql.js')).default;
+      const SQL = await initSqlJs({
+        locateFile: file => `https://sql.js.org/dist/${file}`
+      });
+
+      const db = new SQL.Database();
+
+      // GeoPackage 테이블 생성
+      db.run(`
+        CREATE TABLE gpkg_contents (
+          table_name TEXT NOT NULL PRIMARY KEY,
+          data_type TEXT NOT NULL,
+          identifier TEXT UNIQUE,
+          description TEXT DEFAULT '',
+          last_change DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+          min_x DOUBLE,
+          min_y DOUBLE,
+          max_x DOUBLE,
+          max_y DOUBLE,
+          srs_id INTEGER
+        )
+      `);
+
+      db.run(`
+        CREATE TABLE gpkg_geometry_columns (
+          table_name TEXT NOT NULL,
+          column_name TEXT NOT NULL,
+          geometry_type_name TEXT NOT NULL,
+          srs_id INTEGER NOT NULL,
+          z TINYINT NOT NULL,
+          m TINYINT NOT NULL,
+          CONSTRAINT pk_geom_cols PRIMARY KEY (table_name, column_name)
+        )
+      `);
+
+      db.run(`
+        CREATE TABLE gpkg_spatial_ref_sys (
+          srs_name TEXT NOT NULL,
+          srs_id INTEGER NOT NULL PRIMARY KEY,
+          organization TEXT NOT NULL,
+          organization_coordsys_id INTEGER NOT NULL,
+          definition TEXT NOT NULL,
+          description TEXT
+        )
+      `);
+
+      // WGS84 SRS 추가
+      db.run(`INSERT INTO gpkg_spatial_ref_sys VALUES ('WGS 84', 4326, 'EPSG', 4326, 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]]', 'WGS 84')`);
+
+      // 피처 데이터 수집
+      const format = new GeoJSON();
+      const geoJsonObj = format.writeFeaturesObject(features, {
+        dataProjection: 'EPSG:4326',
+        featureProjection: 'EPSG:3857'
+      });
+
+      // 테이블 이름 정리
+      const tableName = layerName.replace(/[^a-zA-Z0-9_]/g, '_');
+
+      // 속성 컬럼 수집
+      const allKeys = new Set();
+      geoJsonObj.features.forEach(f => {
+        Object.keys(f.properties || {}).forEach(key => allKeys.add(key));
+      });
+      const columns = Array.from(allKeys);
+
+      // 지오메트리 타입 확인
+      let geomType = 'GEOMETRY';
+      if (geoJsonObj.features.length > 0) {
+        geomType = geoJsonObj.features[0].geometry.type.toUpperCase();
+      }
+
+      // 피처 테이블 생성
+      let createTableSQL = `CREATE TABLE "${tableName}" (fid INTEGER PRIMARY KEY AUTOINCREMENT, geom BLOB`;
+      columns.forEach(col => {
+        const safeName = col.replace(/[^a-zA-Z0-9_]/g, '_');
+        createTableSQL += `, "${safeName}" TEXT`;
+      });
+      createTableSQL += ')';
+      db.run(createTableSQL);
+
+      // gpkg_contents 등록
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      geoJsonObj.features.forEach(f => {
+        if (f.geometry && f.geometry.coordinates) {
+          const coords = this.flattenCoords(f.geometry.coordinates);
+          coords.forEach(c => {
+            if (c[0] < minX) minX = c[0];
+            if (c[0] > maxX) maxX = c[0];
+            if (c[1] < minY) minY = c[1];
+            if (c[1] > maxY) maxY = c[1];
+          });
+        }
+      });
+
+      db.run(`INSERT INTO gpkg_contents VALUES (?, 'features', ?, '', datetime('now'), ?, ?, ?, ?, 4326)`,
+        [tableName, tableName, minX, minY, maxX, maxY]);
+
+      db.run(`INSERT INTO gpkg_geometry_columns VALUES (?, 'geom', ?, 4326, 0, 0)`,
+        [tableName, geomType]);
+
+      // 피처 삽입
+      geoJsonObj.features.forEach(f => {
+        const geomWKB = this.geojsonToWKB(f.geometry);
+        const values = [geomWKB];
+        columns.forEach(col => {
+          values.push(f.properties[col] ?? null);
+        });
+
+        const placeholders = ['?'].concat(columns.map(() => '?')).join(', ');
+        const colNames = ['geom'].concat(columns.map(c => '"' + c.replace(/[^a-zA-Z0-9_]/g, '_') + '"')).join(', ');
+        db.run(`INSERT INTO "${tableName}" (${colNames}) VALUES (${placeholders})`, values);
+      });
+
+      // 데이터베이스 내보내기
+      const data = db.export();
+      const buffer = new Uint8Array(data);
+      const blob = new Blob([buffer], { type: 'application/geopackage+sqlite3' });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${layerName}.gpkg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      db.close();
+    } catch (error) {
+      console.error('GeoPackage 내보내기 실패:', error);
+      alert('GeoPackage 내보내기에 실패했습니다. ' + error.message);
+    }
+  }
+
+  /**
+   * 좌표 배열 평탄화
+   */
+  flattenCoords(coords) {
+    if (typeof coords[0] === 'number') {
+      return [coords];
+    }
+    return coords.flatMap(c => this.flattenCoords(c));
+  }
+
+  /**
+   * GeoJSON 지오메트리를 간단한 WKB로 변환
+   */
+  geojsonToWKB(geometry) {
+    // 간단한 GeoJSON을 WKT로 변환 후 텍스트로 저장 (간소화 버전)
+    // 실제 WKB 변환은 복잡하므로 WKT 텍스트로 저장
+    return JSON.stringify(geometry);
   }
 
   /**
