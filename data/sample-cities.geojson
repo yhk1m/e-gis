@@ -1,0 +1,51 @@
+{
+  "type": "FeatureCollection",
+  "name": "주요 도시",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "서울", "population": 9700000, "type": "특별시" },
+      "geometry": { "type": "Point", "coordinates": [126.9780, 37.5665] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "부산", "population": 3400000, "type": "광역시" },
+      "geometry": { "type": "Point", "coordinates": [129.0756, 35.1796] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "인천", "population": 2900000, "type": "광역시" },
+      "geometry": { "type": "Point", "coordinates": [126.7052, 37.4563] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "대구", "population": 2400000, "type": "광역시" },
+      "geometry": { "type": "Point", "coordinates": [128.6014, 35.8714] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "대전", "population": 1500000, "type": "광역시" },
+      "geometry": { "type": "Point", "coordinates": [127.3845, 36.3504] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "광주", "population": 1500000, "type": "광역시" },
+      "geometry": { "type": "Point", "coordinates": [126.8526, 35.1595] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "울산", "population": 1100000, "type": "광역시" },
+      "geometry": { "type": "Point", "coordinates": [129.3114, 35.5384] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "세종", "population": 380000, "type": "특별자치시" },
+      "geometry": { "type": "Point", "coordinates": [127.2494, 36.4800] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "제주", "population": 680000, "type": "특별자치도" },
+      "geometry": { "type": "Point", "coordinates": [126.5312, 33.4996] }
+    }
+  ]
+}
