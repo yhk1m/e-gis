@@ -538,3 +538,409 @@
   border-bottom: 1px solid var(--border-color);
   margin-bottom: var(--spacing-xs);
 }
+
+/* ===== 개인정보처리방침 모달 ===== */
+.privacy-modal .privacy-content {
+  max-width: 600px;
+  max-height: 80vh;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+.privacy-modal .modal-header {
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.privacy-body {
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--bg-panel);
+  padding: var(--spacing-md);
+}
+
+.privacy-modal .modal-footer {
+  background: var(--bg-toolbar);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  padding: var(--spacing-md);
+}
+
+#privacy-download-pdf {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+#privacy-download-pdf:hover {
+  background: var(--bg-active);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+#privacy-download-pdf svg {
+  flex-shrink: 0;
+}
+
+.privacy-meta {
+  display: flex;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.privacy-intro {
+  font-size: var(--font-size-sm);
+  line-height: 1.7;
+  color: var(--text-secondary);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.privacy-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.privacy-section h4 {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.privacy-section-content {
+  font-size: var(--font-size-sm);
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.privacy-section-content strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ===== 회원가입 개인정보 동의 ===== */
+.privacy-consent-section {
+  margin: var(--spacing-md) 0;
+}
+
+.privacy-consent-box {
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.privacy-consent-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.privacy-required-badge {
+  background: var(--color-danger);
+  color: white;
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.privacy-consent-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.privacy-consent-item {
+  display: flex;
+  font-size: var(--font-size-xs);
+}
+
+.consent-label {
+  width: 70px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.consent-value {
+  color: var(--text-primary);
+}
+
+.privacy-full-link {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  padding: 0;
+  text-decoration: underline;
+}
+
+.privacy-full-link:hover {
+  color: var(--color-primary-dark);
+}
+
+.privacy-full-btn.btn-outline {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.privacy-full-btn.btn-outline:hover {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+}
+
+.privacy-consent-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.privacy-consent-checkbox:hover {
+  background: var(--bg-hover);
+}
+
+.privacy-consent-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.privacy-consent-checkbox em {
+  color: var(--color-danger);
+  font-style: normal;
+  font-size: var(--font-size-xs);
+}
+
+/* ===== 마이페이지 개인정보 관리 탭 ===== */
+.privacy-management {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.privacy-section-card {
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.privacy-section-card h4 {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.privacy-description {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* 동의 내역 */
+.consent-info-card {
+  background: var(--bg-panel);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+}
+
+.consent-info-card.empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.consent-status {
+  margin-bottom: var(--spacing-sm);
+}
+
+.consent-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.consent-badge.active {
+  background: var(--color-success);
+  color: white;
+}
+
+.consent-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.consent-detail-item {
+  display: flex;
+  font-size: var(--font-size-xs);
+}
+
+.detail-label {
+  width: 80px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.detail-value {
+  color: var(--text-primary);
+}
+
+/* 개인정보 관리 액션 */
+.privacy-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.privacy-action-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm);
+  background: var(--bg-panel);
+  border-radius: var(--radius-sm);
+}
+
+.privacy-action-item.danger {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.action-info strong {
+  display: block;
+  font-size: var(--font-size-sm);
+  margin-bottom: 2px;
+}
+
+.action-info p {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* 개인정보 보호책임자 */
+.privacy-officer-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.officer-item {
+  display: flex;
+  font-size: var(--font-size-sm);
+}
+
+.officer-label {
+  width: 60px;
+  color: var(--text-muted);
+}
+
+.officer-value {
+  color: var(--text-primary);
+}
+
+a.officer-value {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a.officer-value:hover {
+  text-decoration: underline;
+}
+
+.privacy-help-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ===== 개인정보 열람 모달 ===== */
+.data-modal .data-content {
+  width: 300px;
+  max-width: 90vw;
+  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.my-data-modal h4 {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.data-section {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--bg-app);
+  border-radius: var(--radius-sm);
+}
+
+.data-section h5 {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs) 0;
+}
+
+.data-item:not(:last-child) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-label {
+  color: var(--text-muted);
+}
+
+.data-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}

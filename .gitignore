@@ -70,3 +70,5 @@ claude_desktop_config.json
 *.gpkg
 !public/sample-data/**
 
+
+.vercel

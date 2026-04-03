@@ -4,8 +4,9 @@
   "description": "교육용 GIS 웹 애플리케이션",
   "type": "module",
   "scripts": {
+    "catalog": "node scripts/generate-catalog.cjs",
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run catalog && vite build",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist"
   },

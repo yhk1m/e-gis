@@ -1,0 +1,70 @@
+[
+  {
+    "id": "korea_sido",
+    "name": "korea sido",
+    "description": "17개 피처 (MultiPolygon/Polygon)",
+    "file": "korea_sido.geojson",
+    "featureCount": 17,
+    "geometryType": "MultiPolygon/Polygon",
+    "properties": [
+      "code",
+      "name",
+      "name_eng",
+      "base_year"
+    ],
+    "source": "KOSTAT (통계청)",
+    "tags": [
+      "code",
+      "name",
+      "name_eng",
+      "base_year"
+    ]
+  },
+  {
+    "id": "korea_sigungu",
+    "name": "korea sigungu",
+    "description": "251개 피처 (Polygon/MultiPolygon)",
+    "file": "korea_sigungu.geojson",
+    "featureCount": 251,
+    "geometryType": "Polygon/MultiPolygon",
+    "properties": [
+      "code",
+      "name",
+      "name_eng",
+      "base_year"
+    ],
+    "source": "KOSTAT (통계청)",
+    "tags": [
+      "code",
+      "name",
+      "name_eng",
+      "base_year"
+    ]
+  },
+  {
+    "id": "world_countries",
+    "name": "world countries",
+    "description": "177개 피처 (MultiPolygon/Polygon)",
+    "file": "world_countries.geojson",
+    "featureCount": 177,
+    "geometryType": "MultiPolygon/Polygon",
+    "properties": [
+      "NAME",
+      "NAME_KO",
+      "ISO_A2",
+      "ISO_A3",
+      "CONTINENT",
+      "SUBREGION",
+      "POP_EST",
+      "GDP_MD"
+    ],
+    "source": "Natural Earth",
+    "tags": [
+      "NAME",
+      "NAME_KO",
+      "ISO_A2",
+      "ISO_A3",
+      "CONTINENT"
+    ]
+  }
+]

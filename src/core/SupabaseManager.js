@@ -196,6 +196,46 @@ class SupabaseManager {
     return true;
   }
 
+  /**
+   * 사용자 메타데이터 업데이트 (동의 정보 등)
+   */
+  async updateUserMetadata(metadata) {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const { data, error } = await this.supabase.auth.updateUser({
+      data: metadata
+    });
+
+    if (error) throw error;
+
+    // 로컬 user 객체도 업데이트
+    if (data.user) {
+      this.user = data.user;
+    }
+
+    return data;
+  }
+
+  /**
+   * 회원가입 (동의 정보 포함)
+   */
+  async signUpWithConsent(email, password, consentData) {
+    if (!this.supabase) throw new Error('Supabase가 설정되지 않았습니다.');
+
+    const { data, error } = await this.supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: consentData
+      }
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
   // ==================== 프로필 관리 ====================
 
   /**
@@ -371,6 +411,40 @@ class SupabaseManager {
       .eq('user_id', this.user.id);
 
     if (error) throw error;
+    return true;
+  }
+
+  /**
+   * 사용자의 모든 프로젝트 삭제 (회원 탈퇴용)
+   */
+  async deleteAllProjects() {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const { error } = await this.supabase
+      .from('projects')
+      .delete()
+      .eq('user_id', this.user.id);
+
+    if (error) throw error;
+    return true;
+  }
+
+  /**
+   * 사용자 프로필 삭제 (회원 탈퇴용)
+   */
+  async deleteProfile() {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const { error } = await this.supabase
+      .from('user_profiles')
+      .delete()
+      .eq('user_id', this.user.id);
+
+    if (error && error.code !== 'PGRST116') throw error;
     return true;
   }
 

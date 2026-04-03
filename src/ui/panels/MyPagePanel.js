@@ -1,9 +1,11 @@
 /**
  * MyPagePanel - 마이페이지 패널
- * 프로필 관리, 비밀번호 변경, 학교 통계
+ * 프로필 관리, 비밀번호 변경, 학교 통계, 개인정보 관리
  */
 
 import { supabaseManager } from '../../core/SupabaseManager.js';
+import { consentManager } from '../../core/ConsentManager.js';
+import { privacyPolicyPanel, PRIVACY_POLICY_CONTENT } from './PrivacyPolicyPanel.js';
 
 // 시도 목록 (짧은 이름)
 const REGIONS = [
@@ -58,6 +60,7 @@ class MyPagePanel {
             <button class="mypage-tab active" data-tab="profile">프로필</button>
             <button class="mypage-tab" data-tab="password">비밀번호 변경</button>
             <button class="mypage-tab" data-tab="school-stats">학교 통계</button>
+            <button class="mypage-tab" data-tab="privacy">개인정보 관리</button>
             ${supabaseManager.isAdmin() ? '<button class="mypage-tab" data-tab="admin">관리자 설정</button>' : ''}
           </div>
 
@@ -123,6 +126,72 @@ class MyPagePanel {
             </div>
           </div>
 
+          <!-- 개인정보 관리 탭 -->
+          <div class="mypage-tab-content" id="privacy-tab" style="display:none;">
+            <div class="privacy-management">
+              <!-- 개인정보처리방침 -->
+              <div class="privacy-section-card">
+                <h4>개인정보처리방침</h4>
+                <p class="privacy-description">e-GIS의 개인정보처리방침을 확인할 수 있습니다.</p>
+                <button class="btn btn-secondary" id="view-privacy-policy">전문 보기</button>
+              </div>
+
+              <!-- 나의 동의 내역 -->
+              <div class="privacy-section-card">
+                <h4>나의 동의 내역</h4>
+                <div id="consent-history" class="consent-history">
+                  <div class="loading">동의 정보 로딩 중...</div>
+                </div>
+              </div>
+
+              <!-- 개인정보 관리 -->
+              <div class="privacy-section-card">
+                <h4>개인정보 관리</h4>
+                <div class="privacy-actions">
+                  <div class="privacy-action-item">
+                    <div class="action-info">
+                      <strong>개인정보 열람</strong>
+                      <p>저장된 개인정보를 확인합니다.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="view-my-data">열람</button>
+                  </div>
+                  <div class="privacy-action-item">
+                    <div class="action-info">
+                      <strong>개인정보 정정</strong>
+                      <p>프로필 탭에서 정보를 수정할 수 있습니다.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="go-to-profile">프로필로 이동</button>
+                  </div>
+                  <div class="privacy-action-item danger">
+                    <div class="action-info">
+                      <strong>회원 탈퇴 (동의 철회)</strong>
+                      <p>모든 데이터가 삭제되며 복구할 수 없습니다.</p>
+                    </div>
+                    <button class="btn btn-danger btn-sm" id="withdraw-consent">탈퇴하기</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 개인정보 보호책임자 -->
+              <div class="privacy-section-card">
+                <h4>개인정보 보호책임자</h4>
+                <div class="privacy-officer-info">
+                  <div class="officer-item">
+                    <span class="officer-label">담당자</span>
+                    <span class="officer-value">김용현</span>
+                  </div>
+                  <div class="officer-item">
+                    <span class="officer-label">이메일</span>
+                    <a href="mailto:bgnlkim@gmail.com" class="officer-value">bgnlkim@gmail.com</a>
+                  </div>
+                </div>
+                <p class="privacy-help-text">
+                  개인정보 관련 문의사항이 있으시면 위 연락처로 문의해주세요.
+                </p>
+              </div>
+            </div>
+          </div>
+
           ${supabaseManager.isAdmin() ? `
           <!-- 관리자 설정 탭 -->
           <div class="mypage-tab-content" id="admin-tab" style="display:none;">
@@ -172,6 +241,27 @@ class MyPagePanel {
     if (resetSupabaseBtn) {
       resetSupabaseBtn.addEventListener('click', () => this.resetSupabase());
     }
+
+    // 개인정보 관리 탭 이벤트
+    const viewPrivacyBtn = document.getElementById('view-privacy-policy');
+    if (viewPrivacyBtn) {
+      viewPrivacyBtn.addEventListener('click', () => privacyPolicyPanel.show());
+    }
+
+    const viewMyDataBtn = document.getElementById('view-my-data');
+    if (viewMyDataBtn) {
+      viewMyDataBtn.addEventListener('click', () => this.showMyData());
+    }
+
+    const goToProfileBtn = document.getElementById('go-to-profile');
+    if (goToProfileBtn) {
+      goToProfileBtn.addEventListener('click', () => this.switchTab('profile'));
+    }
+
+    const withdrawConsentBtn = document.getElementById('withdraw-consent');
+    if (withdrawConsentBtn) {
+      withdrawConsentBtn.addEventListener('click', () => this.handleWithdrawConsent());
+    }
   }
 
   /**
@@ -207,6 +297,11 @@ class MyPagePanel {
     // 학교 통계 탭 선택 시 데이터 로드
     if (tabName === 'school-stats') {
       this.loadSchoolStats();
+    }
+
+    // 개인정보 관리 탭 선택 시 동의 정보 로드
+    if (tabName === 'privacy') {
+      this.loadConsentHistory();
     }
   }
 
@@ -319,6 +414,155 @@ class MyPagePanel {
       console.error('학교 통계 로드 실패:', error);
       mySchoolInfo.innerHTML = '<div class="error">정보를 불러올 수 없습니다.</div>';
       schoolRanking.innerHTML = '<div class="error">순위를 불러올 수 없습니다.</div>';
+    }
+  }
+
+  /**
+   * 동의 내역 로드
+   */
+  async loadConsentHistory() {
+    const consentHistoryDiv = document.getElementById('consent-history');
+    if (!consentHistoryDiv) return;
+
+    try {
+      const consent = await consentManager.getUserConsent();
+
+      if (consent) {
+        consentHistoryDiv.innerHTML = `
+          <div class="consent-info-card">
+            <div class="consent-status">
+              <span class="consent-badge active">동의함</span>
+            </div>
+            <div class="consent-details">
+              <div class="consent-detail-item">
+                <span class="detail-label">동의 항목</span>
+                <span class="detail-value">개인정보 수집·이용 동의</span>
+              </div>
+              <div class="consent-detail-item">
+                <span class="detail-label">동의 일시</span>
+                <span class="detail-value">${consentManager.formatConsentDate(consent.privacy_consent_at)}</span>
+              </div>
+              <div class="consent-detail-item">
+                <span class="detail-label">방침 버전</span>
+                <span class="detail-value">${consent.privacy_policy_version || '-'}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        consentHistoryDiv.innerHTML = `
+          <div class="consent-info-card empty">
+            <p>동의 내역을 찾을 수 없습니다.</p>
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('동의 내역 로드 실패:', error);
+      consentHistoryDiv.innerHTML = '<div class="error">동의 정보를 불러올 수 없습니다.</div>';
+    }
+  }
+
+  /**
+   * 내 데이터 보기
+   */
+  async showMyData() {
+    const user = supabaseManager.getUser();
+    const profile = this.profile;
+
+    let dataHtml = `
+      <div class="my-data-modal">
+        <h4>저장된 개인정보</h4>
+        <div class="data-section">
+          <h5>계정 정보</h5>
+          <div class="data-item">
+            <span class="data-label">이메일</span>
+            <span class="data-value">${user?.email || '-'}</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">가입일</span>
+            <span class="data-value">${user?.created_at ? new Date(user.created_at).toLocaleDateString('ko-KR') : '-'}</span>
+          </div>
+        </div>
+        <div class="data-section">
+          <h5>프로필 정보</h5>
+          <div class="data-item">
+            <span class="data-label">이름</span>
+            <span class="data-value">${profile?.name || '(미등록)'}</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">닉네임</span>
+            <span class="data-value">${profile?.nickname || '(미등록)'}</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">지역</span>
+            <span class="data-value">${profile?.region || '(미등록)'}</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">학교</span>
+            <span class="data-value">${profile?.school || '(미등록)'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 간단한 alert 대신 커스텀 모달 표시
+    const dataModal = document.createElement('div');
+    dataModal.className = 'modal-overlay data-modal active';
+    dataModal.innerHTML = `
+      <div class="modal-content data-content">
+        <div class="modal-header">
+          <h3>개인정보 열람</h3>
+          <button class="modal-close" id="data-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          ${dataHtml}
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="data-modal-confirm">확인</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dataModal);
+
+    const closeDataModal = () => dataModal.remove();
+    dataModal.querySelector('#data-modal-close').addEventListener('click', closeDataModal);
+    dataModal.querySelector('#data-modal-confirm').addEventListener('click', closeDataModal);
+    dataModal.addEventListener('click', (e) => {
+      if (e.target === dataModal) closeDataModal();
+    });
+  }
+
+  /**
+   * 회원 탈퇴 (동의 철회) 처리
+   */
+  async handleWithdrawConsent() {
+    const confirmFirst = confirm(
+      '정말로 회원 탈퇴를 진행하시겠습니까?\n\n' +
+      '탈퇴 시 다음 데이터가 모두 삭제됩니다:\n' +
+      '• 프로필 정보\n' +
+      '• 저장된 프로젝트\n' +
+      '• 모든 개인정보\n\n' +
+      '이 작업은 되돌릴 수 없습니다.'
+    );
+
+    if (!confirmFirst) return;
+
+    const confirmSecond = confirm(
+      '마지막 확인입니다.\n\n' +
+      '회원 탈퇴를 진행하면 모든 데이터가 영구적으로 삭제됩니다.\n' +
+      '정말로 진행하시겠습니까?'
+    );
+
+    if (!confirmSecond) return;
+
+    try {
+      await consentManager.withdrawConsent();
+      alert('회원 탈퇴가 완료되었습니다.\n이용해주셔서 감사합니다.');
+      this.close();
+      window.location.reload();
+    } catch (error) {
+      alert('회원 탈퇴 처리 중 오류가 발생했습니다: ' + error.message);
     }
   }
 

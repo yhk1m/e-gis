@@ -45,6 +45,8 @@ import { geojsonLoader } from './loaders/GeoJSONLoader.js';
 import { shapefileLoader } from './loaders/ShapefileLoader.js';
 import { geopackageLoader } from './loaders/GeoPackageLoader.js';
 import { demLoader } from './loaders/DEMLoader.js';
+import { visitorTracker } from './core/VisitorTracker.js';
+import { builtinDataDialog } from './ui/dialogs/BuiltinDataDialog.js';
 
 /**
  * 앱 초기화
@@ -77,6 +79,7 @@ function initApp() {
   // 4.6 Supabase 클라우드 관리자 초기화
   supabaseManager.init().then(() => {
     updateHeaderAuth();
+    visitorTracker.init();
   });
 
   // 4.7 헤더 로그인 버튼 이벤트
@@ -416,6 +419,13 @@ function initMenubar() {
   menubar.addEventListener('click', (e) => {
     const menuButton = e.target.closest('.menu-button');
     if (menuButton) {
+      // 데이터 불러오기 버튼은 바로 실행 (드롭다운 아님)
+      const action = menuButton.dataset.action;
+      if (action === 'builtin-data') {
+        handleMenuAction(action);
+        return;
+      }
+
       const menuItem = menuButton.closest('.menu-item');
 
       // 다른 드롭다운 닫기
@@ -684,6 +694,11 @@ function handleMenuAction(action) {
     // ===== 래스터 분석 메뉴 (준비중) =====
     case 'raster-coming-soon':
       showComingSoonModal('래스터 분석');
+      break;
+
+    // ===== 내장 데이터 =====
+    case 'builtin-data':
+      builtinDataDialog.show();
       break;
 
     default:
@@ -1256,7 +1271,7 @@ function showUserManual() {
           </ul>
 
           <div style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
-            <strong>문의:</strong> cnsageo@cnsa.hs.kr<br>
+            <strong>문의:</strong> bgmlkim@gmail.com<br>
             <strong>버전:</strong> e-GIS v0.1.0
           </div>
         </div>

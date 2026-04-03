@@ -66,10 +66,48 @@
   transform: scale(1.15);
 }
 
+.btn-community {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  margin-left: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  transition: color 0.2s, background 0.2s;
+}
+
+.btn-community:hover {
+  color: var(--primary-color);
+  background: var(--bg-hover);
+}
+
 .menu-right {
   display: flex;
   align-items: center;
   margin-left: auto;
+  gap: 8px;
+}
+
+.header-privacy-link {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.header-privacy-link:hover {
+  color: var(--primary-color);
+  background: var(--bg-hover);
 }
 
 /* 툴바 */
@@ -264,6 +302,28 @@
 
 .statusbar-spacer {
   flex: 1;
+}
+
+.visitor-counter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 12px;
+  font-size: 11px;
+}
+
+.visitor-label {
+  color: var(--text-secondary);
+}
+
+.visitor-value {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.visitor-sep {
+  color: var(--border-color);
+  margin: 0 2px;
 }
 
 /* 속성 테이블 패널 (하단) */

@@ -5,6 +5,8 @@
 
 import { supabaseManager } from '../../core/SupabaseManager.js';
 import { eventBus } from '../../utils/EventBus.js';
+import { privacyPolicyPanel } from './PrivacyPolicyPanel.js';
+import { consentManager } from '../../core/ConsentManager.js';
 
 class CloudPanel {
   constructor() {
@@ -116,6 +118,38 @@ class CloudPanel {
               <label for="signup-password-confirm">비밀번호 확인</label>
               <input type="password" id="signup-password-confirm" placeholder="비밀번호 확인">
             </div>
+
+            <!-- 개인정보 수집·이용 동의 -->
+            <div class="privacy-consent-section">
+              <div class="privacy-consent-box">
+                <div class="privacy-consent-header">
+                  <span class="privacy-required-badge">필수</span>
+                  <span>개인정보 수집·이용 동의</span>
+                </div>
+                <div class="privacy-consent-summary">
+                  <div class="privacy-consent-item">
+                    <span class="consent-label">수집 항목</span>
+                    <span class="consent-value">이메일 주소</span>
+                  </div>
+                  <div class="privacy-consent-item">
+                    <span class="consent-label">수집 목적</span>
+                    <span class="consent-value">회원 식별, 클라우드 저장 서비스 제공</span>
+                  </div>
+                  <div class="privacy-consent-item">
+                    <span class="consent-label">보유 기간</span>
+                    <span class="consent-value">회원 탈퇴 시까지</span>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-link privacy-full-link" id="show-privacy-full">
+                  개인정보처리방침 전문 보기
+                </button>
+              </div>
+              <label class="privacy-consent-checkbox">
+                <input type="checkbox" id="privacy-consent-check">
+                <span>개인정보 수집·이용에 동의합니다 <em>(필수)</em></span>
+              </label>
+            </div>
+
             <button class="btn btn-primary btn-full" id="signup-btn">회원가입</button>
           </div>
         </div>
@@ -156,6 +190,12 @@ class CloudPanel {
     const signupBtn = document.getElementById('signup-btn');
     if (signupBtn) {
       signupBtn.addEventListener('click', () => this.handleSignup());
+    }
+
+    // 개인정보처리방침 전문 보기
+    const showPrivacyBtn = document.getElementById('show-privacy-full');
+    if (showPrivacyBtn) {
+      showPrivacyBtn.addEventListener('click', () => privacyPolicyPanel.show());
     }
 
     // Enter 키로 로그인/회원가입
@@ -232,6 +272,7 @@ class CloudPanel {
     const email = document.getElementById('signup-email').value.trim();
     const password = document.getElementById('signup-password').value;
     const passwordConfirm = document.getElementById('signup-password-confirm').value;
+    const privacyConsent = document.getElementById('privacy-consent-check')?.checked;
 
     if (!email || !password) {
       alert('이메일과 비밀번호를 입력해주세요.');
@@ -248,8 +289,16 @@ class CloudPanel {
       return;
     }
 
+    // 개인정보 동의 확인
+    if (!privacyConsent) {
+      alert('개인정보 수집·이용에 동의해주세요.');
+      return;
+    }
+
     try {
-      await supabaseManager.signUp(email, password);
+      // 동의 정보와 함께 회원가입
+      const consentData = consentManager.createConsentData();
+      await supabaseManager.signUpWithConsent(email, password, consentData);
       alert('회원가입 완료! 로그인해주세요.');
       this.switchTab('login');
     } catch (error) {

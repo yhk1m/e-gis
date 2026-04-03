@@ -790,6 +790,146 @@ input:focus, select:focus, textarea:focus {
   border-top: 1px solid var(--border-color);
 }
 
+/* ===== 내장 데이터 다이얼로그 ===== */
+.builtin-category {
+  padding: 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.builtin-category:last-child {
+  border-bottom: none;
+}
+
+.builtin-category-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--transition-fast);
+}
+
+.builtin-category-header:hover {
+  background: var(--bg-hover);
+}
+
+.builtin-chevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.builtin-category.open .builtin-chevron {
+  transform: rotate(180deg);
+}
+
+.builtin-category-body {
+  display: none;
+}
+
+.builtin-category.open .builtin-category-body {
+  display: block;
+}
+
+.builtin-dataset-card {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: background var(--transition-fast);
+}
+
+.builtin-dataset-card:hover {
+  background: var(--bg-hover);
+}
+
+.builtin-dataset-card:active {
+  background: var(--bg-active, var(--bg-hover));
+}
+
+.builtin-dataset-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.builtin-dataset-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.builtin-dataset-meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.builtin-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 10px;
+  background: var(--bg-badge, rgba(59,130,246,0.1));
+  color: var(--primary-color);
+}
+
+.builtin-dataset-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.builtin-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: builtin-spin 0.6s linear infinite;
+}
+
+@keyframes builtin-spin {
+  to { transform: rotate(360deg); }
+}
+
+.builtin-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.builtin-preview-table th {
+  background: var(--bg-hover, #f1f5f9);
+  padding: 5px 8px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.builtin-preview-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.builtin-preview-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
 .form-control {
   width: 100%;
   padding: var(--spacing-sm);

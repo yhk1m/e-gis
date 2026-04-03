@@ -108,10 +108,23 @@ export class AppLayout {
             <div class="menu-item disabled" data-menu="raster-analysis" title="준비중입니다.">
               <button class="menu-button" data-action="raster-coming-soon">래스터 분석</button>
             </div>
+            <div class="menu-item" data-menu="builtin-data">
+              <button class="menu-button" data-action="builtin-data" style="color: var(--primary-color); font-weight: 600;">📂 데이터 불러오기</button>
+            </div>
             <button class="btn-help" id="btn-help" title="사용 설명서">❓</button>
+            <a href="https://cafe.naver.com/egiskr" class="btn-community" target="_blank" title="e-GIS 커뮤니티">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              커뮤니티
+            </a>
           </div>
         </div>
         <div class="menu-right">
+          <a href="/privacy" class="header-privacy-link" target="_blank" title="개인정보 처리방침">개인정보 처리방침</a>
           <div class="header-auth" id="header-auth">
             <button class="btn btn-sm btn-primary" id="header-login-btn">로그인</button>
           </div>
@@ -223,7 +236,7 @@ export class AppLayout {
         <div class="toolbar-spacer"></div>
 
         <!-- 카피라이트 -->
-        <span class="toolbar-copyright">ⓒ 2025 충남삼성고등학교 김용현T | cnsageo@cnsa.hs.kr</span>
+        <span class="toolbar-copyright">ⓒ 2025 양정고등학교 김용현T | bgmlkim@gmail.com</span>
 
         <!-- 위치 검색 -->
         <div class="toolbar-search" id="toolbar-search">
@@ -291,6 +304,13 @@ export class AppLayout {
           <span class="crs-value">EPSG:4326</span>
         </div>
         <div class="statusbar-spacer"></div>
+        <div class="statusbar-item visitor-counter" title="방문자 수">
+          <span class="visitor-label">Today</span>
+          <span class="visitor-value" id="visitor-today">-</span>
+          <span class="visitor-sep">|</span>
+          <span class="visitor-label">Total</span>
+          <span class="visitor-value" id="visitor-total">-</span>
+        </div>
         <div class="statusbar-item">
           <span id="status-message">준비</span>
         </div>
