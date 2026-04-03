@@ -2,10 +2,10 @@
   {
     "id": "korea_sido",
     "name": "korea sido",
-    "description": "17개 피처 (MultiPolygon/Polygon)",
+    "description": "17개 피처 (Polygon/MultiPolygon)",
     "file": "korea_sido.geojson",
     "featureCount": 17,
-    "geometryType": "MultiPolygon/Polygon",
+    "geometryType": "Polygon/MultiPolygon",
     "properties": [
       "code",
       "name",
@@ -23,21 +23,23 @@
   {
     "id": "korea_sigungu",
     "name": "korea sigungu",
-    "description": "251개 피처 (Polygon/MultiPolygon)",
+    "description": "252개 피처 (Polygon/MultiPolygon)",
     "file": "korea_sigungu.geojson",
-    "featureCount": 251,
+    "featureCount": 252,
     "geometryType": "Polygon/MultiPolygon",
     "properties": [
       "code",
       "name",
-      "name_eng",
+      "sido",
+      "sido_name",
       "base_year"
     ],
     "source": "KOSTAT (통계청)",
     "tags": [
       "code",
       "name",
-      "name_eng",
+      "sido",
+      "sido_name",
       "base_year"
     ]
   },
