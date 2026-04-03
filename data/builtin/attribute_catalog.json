@@ -1,0 +1,36 @@
+[
+  {
+    "id": "korea_sido_grdp",
+    "name": "시도별 GRDP",
+    "description": "17행 × 5열",
+    "file": "xlsx/korea_sido_grdp.xlsx",
+    "columns": [
+      "시도명",
+      "code",
+      "GRDP_조원",
+      "1인당GRDP_만원",
+      "성장률"
+    ],
+    "keyColumn": "code",
+    "rowCount": 17,
+    "source": ""
+  },
+  {
+    "id": "korea_sido_population",
+    "name": "시도별 인구",
+    "description": "17행 × 7열",
+    "file": "xlsx/korea_sido_population.xlsx",
+    "columns": [
+      "시도명",
+      "code",
+      "총인구",
+      "남자",
+      "여자",
+      "세대수",
+      "인구밀도"
+    ],
+    "keyColumn": "code",
+    "rowCount": 17,
+    "source": ""
+  }
+]
