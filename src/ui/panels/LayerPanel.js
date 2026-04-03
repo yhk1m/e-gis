@@ -77,7 +77,7 @@ export class LayerPanel {
                  class="layer-visibility"
                  ${layer.visible ? 'checked' : ''}
                  title="표시/숨김">
-          <span class="layer-color" style="background-color: ${layer.color}"></span>
+          <span class="layer-color" style="background-color: ${layer.fillColor || layer.color}; border: 2px solid ${layer.strokeColor || layer.color}"></span>
           <span class="layer-name" title="${layer.name}">${layer.name}</span>
           <span class="layer-count">(${layer.featureCount})</span>
           <button class="layer-menu-btn" title="메뉴">
@@ -498,6 +498,8 @@ export class LayerPanel {
         layerManager.setLayerStrokeColor(layerId, strokeColorItem.dataset.strokeColor);
         var strokeInput = picker.querySelector(".stroke-color-input");
         if (strokeInput) strokeInput.value = strokeColorItem.dataset.strokeColor;
+        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
+        if (indicator) indicator.style.borderColor = strokeColorItem.dataset.strokeColor;
       }
 
       var strokeBtn = e.target.closest(".stroke-btn");
@@ -533,6 +535,8 @@ export class LayerPanel {
       strokeColorInput.addEventListener("input", function(e) {
         picker.querySelectorAll(".color-item[data-stroke-color]").forEach(function(i) { i.classList.remove("active"); });
         layerManager.setLayerStrokeColor(layerId, e.target.value);
+        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
+        if (indicator) indicator.style.borderColor = e.target.value;
       });
     }
 
