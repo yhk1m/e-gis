@@ -378,8 +378,8 @@ export class LayerPanel {
       html += "<div class=\"style-section\"><label>면 색상:</label><div class=\"color-picker-grid\">" + fillColorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentFillColor + "\" class=\"fill-color-input\"></div></div>";
 
-      // 면 투명도
-      html += "<div class=\"style-section\"><label>면 투명도: <span class=\"fill-opacity-value\">" + Math.round(currentFillOpacity * 100) + "%</span></label>";
+      // 면 불투명도
+      html += "<div class=\"style-section\"><label>면 불투명도: <span class=\"fill-opacity-value\">" + Math.round(currentFillOpacity * 100) + "%</span></label>";
       html += "<input type=\"range\" class=\"opacity-slider fill-opacity-slider\" min=\"0\" max=\"100\" value=\"" + Math.round(currentFillOpacity * 100) + "\"></div>";
 
       // 선 색상
