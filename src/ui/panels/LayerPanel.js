@@ -476,6 +476,8 @@ export class LayerPanel {
         layerManager.setLayerColor(layerId, colorItem.dataset.color);
         var colorInput = picker.querySelector(".color-input");
         if (colorInput) colorInput.value = colorItem.dataset.color;
+        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
+        if (indicator) indicator.style.backgroundColor = colorItem.dataset.color;
       }
 
       var fillColorItem = e.target.closest(".color-item[data-fill-color]");
@@ -485,6 +487,8 @@ export class LayerPanel {
         layerManager.setLayerFillColor(layerId, fillColorItem.dataset.fillColor);
         var fillInput = picker.querySelector(".fill-color-input");
         if (fillInput) fillInput.value = fillColorItem.dataset.fillColor;
+        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
+        if (indicator) indicator.style.backgroundColor = fillColorItem.dataset.fillColor;
       }
 
       var strokeColorItem = e.target.closest(".color-item[data-stroke-color]");
@@ -509,6 +513,8 @@ export class LayerPanel {
       colorInput.addEventListener("input", function(e) {
         picker.querySelectorAll(".color-item[data-color]").forEach(function(i) { i.classList.remove("active"); });
         layerManager.setLayerColor(layerId, e.target.value);
+        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
+        if (indicator) indicator.style.backgroundColor = e.target.value;
       });
     }
 
@@ -517,6 +523,8 @@ export class LayerPanel {
       fillColorInput.addEventListener("input", function(e) {
         picker.querySelectorAll(".color-item[data-fill-color]").forEach(function(i) { i.classList.remove("active"); });
         layerManager.setLayerFillColor(layerId, e.target.value);
+        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
+        if (indicator) indicator.style.backgroundColor = e.target.value;
       });
     }
 
