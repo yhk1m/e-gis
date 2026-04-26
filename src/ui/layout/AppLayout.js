@@ -236,7 +236,7 @@ export class AppLayout {
         <div class="toolbar-spacer"></div>
 
         <!-- 카피라이트 -->
-        <span class="toolbar-copyright">ⓒ 2025 양정고등학교 김용현T | bgmlkim@gmail.com</span>
+        <span class="toolbar-copyright">ⓒ 2025 양정고등학교 김용현T | bgnlkim@gmail.com</span>
 
         <!-- 위치 검색 -->
         <div class="toolbar-search" id="toolbar-search">

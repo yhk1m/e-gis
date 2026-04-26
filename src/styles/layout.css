@@ -6,7 +6,9 @@
 #app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100vh; /* fallback */
+  height: 100svh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   background: var(--bg-app);
@@ -537,4 +539,94 @@
 /* 패널 숨기기 */
 #left-panel.hidden {
   display: none;
+}
+
+/* ===== 태블릿 최적화 ===== */
+/* 터치 디바이스(iPad 등)에서 헤더/툴바/사이드바/상태바와 아이콘을 키워 한 화면에 모두 표시 */
+@media (pointer: coarse) and (max-width: 1366px),
+       (max-width: 1024px) {
+  :root {
+    --menubar-height: 44px;
+    --toolbar-height: 52px;
+    --statusbar-height: 34px;
+    --panel-width: 280px;
+    --panel-min-width: 220px;
+    --font-size-xs: 12px;
+    --font-size-sm: 13px;
+    --font-size-md: 14px;
+  }
+
+  /* 메뉴바 로고/버튼 크기 확대 */
+  .app-logo .logo-image { height: 32px !important; }
+  .logo-text { font-size: 22px; }
+  .btn-help { font-size: 18px; padding: 6px 10px; }
+  .btn-community { font-size: 13px; padding: 6px 10px; }
+  .btn-community svg { width: 18px; height: 18px; }
+  .header-privacy-link { font-size: 13px; padding: 6px 10px; }
+  .menu-button { font-size: 14px !important; padding: 6px 12px !important; }
+
+  /* 툴바 아이콘 버튼 확대 */
+  .btn-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .btn-icon svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+  .toolbar-group { gap: 4px; padding: 0 var(--spacing-sm); }
+  .toolbar-copyright { font-size: 11px; }
+
+  /* 테마 토글 버튼 확대 */
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+  }
+  .theme-toggle svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* 위치 검색창 */
+  #location-search-input {
+    height: 36px;
+    font-size: 14px;
+    width: 200px;
+  }
+
+  /* 왼쪽 패널 탭 */
+  .panel-tab {
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+  }
+  .panel-tab svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* 패널 헤더 키우기 */
+  .panel-header {
+    height: 40px;
+    font-size: 13px;
+  }
+  .panel-header .btn-icon,
+  .panel-header .btn-icon.btn-small {
+    width: 32px;
+    height: 32px;
+  }
+  .panel-header .btn-icon svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* 상태표시줄 글자/입력 키우기 */
+  #statusbar { font-size: 12px; gap: var(--spacing-md); }
+  .scale-input { font-size: 12px; padding: 4px 6px; width: 100px; }
+  .visitor-counter { font-size: 12px; }
+}
+
+/* 좁은 태블릿/모바일에서 카피라이트 숨겨 툴바 공간 확보 */
+@media (max-width: 900px) {
+  .toolbar-copyright { display: none; }
+  #location-search-input { width: 160px; }
 }

@@ -1271,7 +1271,7 @@ function showUserManual() {
           </ul>
 
           <div style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
-            <strong>문의:</strong> bgmlkim@gmail.com<br>
+            <strong>문의:</strong> bgnlkim@gmail.com<br>
             <strong>버전:</strong> e-GIS v0.1.0
           </div>
         </div>
