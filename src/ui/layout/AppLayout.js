@@ -287,6 +287,11 @@ export class AppLayout {
         <!-- 지도 컨테이너 -->
         <main id="map-container">
           <div id="map"></div>
+          <button id="sidebar-toggle" class="sidebar-toggle" title="사이드바 접기/펴기" aria-label="사이드바 접기/펴기">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
         </main>
       </div>
 
@@ -320,6 +325,7 @@ export class AppLayout {
     this.addStyles();
     this.initResizer();
     this.initTabs();
+    this.initSidebarToggle();
     this.setFavicon();
   }
 
@@ -557,6 +563,22 @@ export class AppLayout {
         // 지도 크기 갱신 이벤트 발생
         window.dispatchEvent(new Event('resize'));
       }
+    });
+  }
+
+  /**
+   * 사이드바 접기/펴기 토글
+   */
+  initSidebarToggle() {
+    const btn = document.getElementById('sidebar-toggle');
+    const leftPanel = document.getElementById('left-panel');
+    const resizer = document.getElementById('panel-resizer');
+
+    btn.addEventListener('click', () => {
+      const collapsed = leftPanel.classList.toggle('hidden');
+      if (resizer) resizer.style.display = collapsed ? 'none' : '';
+      btn.classList.toggle('collapsed', collapsed);
+      window.dispatchEvent(new Event('resize'));
     });
   }
 }

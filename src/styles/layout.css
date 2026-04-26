@@ -541,6 +541,42 @@
   display: none;
 }
 
+/* 사이드바 접기/펴기 버튼 */
+.sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 56px;
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-left: none;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: var(--z-panel);
+  box-shadow: var(--shadow-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-toggle svg {
+  transition: transform var(--transition-normal);
+}
+
+.sidebar-toggle.collapsed svg {
+  transform: rotate(180deg);
+}
+
 /* ===== 태블릿 최적화 ===== */
 /* 터치 디바이스(iPad 등)에서 헤더/툴바/사이드바/상태바와 아이콘을 키워 한 화면에 모두 표시 */
 @media (pointer: coarse) and (max-width: 1366px),
@@ -629,4 +665,23 @@
 @media (max-width: 900px) {
   .toolbar-copyright { display: none; }
   #location-search-input { width: 160px; }
+}
+
+/* 태블릿: OL 줌 버튼도 터치 친화적으로 확대 */
+@media (pointer: coarse) and (max-width: 1366px),
+       (max-width: 1024px) {
+  .ol-zoom button {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 20px !important;
+  }
+
+  .sidebar-toggle {
+    width: 28px;
+    height: 72px;
+  }
+  .sidebar-toggle svg {
+    width: 22px;
+    height: 22px;
+  }
 }

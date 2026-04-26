@@ -219,6 +219,73 @@ input:focus, select:focus, textarea:focus {
   left: auto !important;
 }
 
+/* 나침반 / GPS 컨트롤 (줌 아래로 배치) */
+.egis-compass,
+.egis-geolocate {
+  position: absolute;
+  right: var(--spacing-sm);
+  left: auto;
+}
+
+.egis-compass { top: 76px; }
+.egis-geolocate { top: 116px; }
+
+.egis-compass button,
+.egis-geolocate button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  cursor: pointer;
+  padding: 0;
+}
+
+.egis-compass button:hover,
+.egis-geolocate button:hover {
+  background: var(--bg-hover) !important;
+}
+
+.egis-compass svg {
+  transition: transform 0.2s ease;
+  transform-origin: center;
+}
+
+.egis-geolocate button.loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.egis-geolocate button.loading svg {
+  animation: egis-pulse 1s ease-in-out infinite;
+}
+
+@keyframes egis-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* 태블릿에서 컨트롤 키우기 */
+@media (pointer: coarse) and (max-width: 1366px),
+       (max-width: 1024px) {
+  .egis-compass { top: 100px; }
+  .egis-geolocate { top: 152px; }
+  .egis-compass button,
+  .egis-geolocate button {
+    width: 44px;
+    height: 44px;
+  }
+  .egis-compass svg,
+  .egis-geolocate svg {
+    width: 26px;
+    height: 26px;
+  }
+}
+
 .ol-scale-line {
   background: var(--map-overlay-bg) !important;
   border-radius: var(--radius-sm) !important;

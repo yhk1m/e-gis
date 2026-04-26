@@ -7,9 +7,146 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import XYZ from 'ol/source/XYZ';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
 import { fromLonLat, toLonLat } from 'ol/proj';
+import Control from 'ol/control/Control';
 import { defaults as defaultControls, ScaleLine, Attribution } from 'ol/control';
 import { eventBus, Events } from '../utils/EventBus.js';
+
+/**
+ * 나침반 컨트롤 - 지도 회전 표시 및 정북 복귀
+ */
+class CompassControl extends Control {
+  constructor() {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.title = '정북 방향으로';
+    button.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <polygon points="12,4 9,13 12,11 15,13" fill="#e60012" stroke="#e60012"/>
+        <polygon points="12,20 9,11 12,13 15,11" fill="currentColor"/>
+      </svg>
+    `;
+    const element = document.createElement('div');
+    element.className = 'ol-control egis-compass';
+    element.appendChild(button);
+
+    super({ element });
+
+    this.button = button;
+    this.iconEl = button.querySelector('svg');
+
+    button.addEventListener('click', () => this.handleClick());
+  }
+
+  setMap(map) {
+    super.setMap(map);
+    if (map) {
+      this.rotationListener = map.getView().on('change:rotation', () => this.updateRotation());
+      this.updateRotation();
+    }
+  }
+
+  updateRotation() {
+    const rotation = this.getMap()?.getView().getRotation() || 0;
+    if (this.iconEl) {
+      this.iconEl.style.transform = `rotate(${-rotation}rad)`;
+    }
+  }
+
+  handleClick() {
+    const view = this.getMap().getView();
+    view.animate({ rotation: 0, duration: 300 });
+  }
+}
+
+/**
+ * GPS 위치 이동 컨트롤
+ */
+class GeolocateControl extends Control {
+  constructor() {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.title = '내 위치로 이동';
+    button.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <line x1="12" y1="2" x2="12" y2="5"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="2" y1="12" x2="5" y2="12"/>
+        <line x1="19" y1="12" x2="22" y2="12"/>
+      </svg>
+    `;
+    const element = document.createElement('div');
+    element.className = 'ol-control egis-geolocate';
+    element.appendChild(button);
+
+    super({ element });
+
+    this.button = button;
+    this.locationLayer = null;
+    this.locationFeature = null;
+
+    button.addEventListener('click', () => this.handleClick());
+  }
+
+  ensureLayer() {
+    if (this.locationLayer) return;
+    this.locationFeature = new Feature();
+    const source = new VectorSource({ features: [this.locationFeature] });
+    this.locationLayer = new VectorLayer({
+      source,
+      style: new Style({
+        image: new CircleStyle({
+          radius: 8,
+          fill: new Fill({ color: 'rgba(0, 102, 204, 0.9)' }),
+          stroke: new Stroke({ color: '#ffffff', width: 3 })
+        })
+      }),
+      properties: { name: 'my-location', type: 'system' },
+      zIndex: 9999
+    });
+    this.getMap().addLayer(this.locationLayer);
+  }
+
+  handleClick() {
+    if (!navigator.geolocation) {
+      alert('이 브라우저에서는 위치 서비스를 지원하지 않습니다.');
+      return;
+    }
+
+    this.button.classList.add('loading');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.button.classList.remove('loading');
+        const { longitude, latitude } = pos.coords;
+        this.ensureLayer();
+        const coord = fromLonLat([longitude, latitude]);
+        this.locationFeature.setGeometry(new Point(coord));
+        this.getMap().getView().animate({
+          center: coord,
+          zoom: Math.max(this.getMap().getView().getZoom(), 14),
+          duration: 500
+        });
+      },
+      (err) => {
+        this.button.classList.remove('loading');
+        const messages = {
+          1: '위치 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요.',
+          2: '위치를 확인할 수 없습니다.',
+          3: '위치 요청이 시간 초과되었습니다.'
+        };
+        alert(messages[err.code] || '위치를 가져올 수 없습니다.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }
+}
 
 // 기본 배경지도 옵션
 const BASEMAPS = {
@@ -94,7 +231,9 @@ export class MapManager {
         new Attribution({
           collapsible: true,
           collapsed: true
-        })
+        }),
+        new CompassControl(),
+        new GeolocateControl()
       ])
     });
 
