@@ -109,10 +109,26 @@ export class LayerPanel {
       infoEl.className = 'layer-multi-select-info';
       this.container.parentElement.insertBefore(infoEl, this.container);
     }
-    infoEl.innerHTML = `<span>${count}개 레이어 선택됨</span><button class="clear-selection-btn" title="선택 해제">✕</button>`;
+    infoEl.innerHTML = `
+      <span>${count}개 레이어 선택됨</span>
+      <div class="multi-select-actions">
+        <button class="delete-selection-btn" title="선택 레이어 삭제">🗑</button>
+        <button class="clear-selection-btn" title="선택 해제">✕</button>
+      </div>
+    `;
 
     const clearBtn = infoEl.querySelector('.clear-selection-btn');
     clearBtn.onclick = () => layerManager.clearSelection();
+
+    const deleteBtn = infoEl.querySelector('.delete-selection-btn');
+    deleteBtn.onclick = () => {
+      const selectedIds = Array.from(layerManager.selectedLayerIds);
+      if (selectedIds.length === 0) return;
+      if (confirm(`${selectedIds.length}개의 레이어를 삭제하시겠습니까?`)) {
+        selectedIds.forEach(id => layerManager.removeLayer(id));
+        layerManager.clearSelection();
+      }
+    };
   }
 
   /**

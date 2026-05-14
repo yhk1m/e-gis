@@ -5,33 +5,75 @@
 
 import Overlay from 'ol/Overlay';
 import { getCenter } from 'ol/extent';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
 import { layerManager } from '../core/LayerManager.js';
 import { mapManager } from '../core/MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 
 class ChartMapTool {
   constructor() {
-    this.overlays = new Map(); // layerId -> overlay[]
-    this.legends = new Map(); // layerId -> legend element
+    this.overlays = new Map();          // derivedLayerId -> overlay[]
+    this.legends = new Map();           // derivedLayerId -> legend element
+    this.derivedBySource = new Map();   // sourceLayerId -> derivedLayerId
+    this.sourceByDerived = new Map();   // derivedLayerId -> sourceLayerId
     this.colors = [
       '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
       '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
       '#f97316', '#14b8a6', '#a855f7', '#f43f5e'
     ];
 
-    // 레이어 삭제 시 차트도 함께 삭제
     this.initEventListeners();
   }
 
   /**
    * 이벤트 리스너 초기화
+   * - 파생 레이어 삭제: 오버레이/범례 제거
+   * - 원본 레이어 삭제: 연결된 파생 레이어도 제거
+   * - 파생 레이어 가시성 토글: 오버레이 표시/숨김
    */
   initEventListeners() {
     eventBus.on(Events.LAYER_REMOVED, (data) => {
-      if (data && data.layerId) {
-        this.removeChartMap(data.layerId);
+      if (!data || !data.layerId) return;
+      const { layerId } = data;
+
+      if (this.sourceByDerived.has(layerId)) {
+        // 파생 레이어가 삭제됨 → 오버레이 정리
+        const sourceId = this.sourceByDerived.get(layerId);
+        this.sourceByDerived.delete(layerId);
+        if (this.derivedBySource.get(sourceId) === layerId) {
+          this.derivedBySource.delete(sourceId);
+        }
+        this.cleanupOverlays(layerId);
+      } else if (this.derivedBySource.has(layerId)) {
+        // 원본이 삭제됨 → 파생 레이어도 제거
+        const derivedId = this.derivedBySource.get(layerId);
+        this.derivedBySource.delete(layerId);
+        this.sourceByDerived.delete(derivedId);
+        layerManager.removeLayer(derivedId);
       }
     });
+
+    eventBus.on(Events.LAYER_VISIBILITY_CHANGED, (data) => {
+      if (!data || !data.layerId) return;
+      const overlays = this.overlays.get(data.layerId);
+      if (overlays) {
+        overlays.forEach(o => {
+          const el = o.getElement();
+          if (el) el.style.display = data.visible ? '' : 'none';
+        });
+      }
+    });
+  }
+
+  cleanupOverlays(derivedLayerId) {
+    const overlays = this.overlays.get(derivedLayerId);
+    if (overlays) {
+      const map = mapManager.getMap();
+      overlays.forEach(o => map && map.removeOverlay(o));
+      this.overlays.delete(derivedLayerId);
+    }
+    this.removeLegend(derivedLayerId);
   }
 
   /**
@@ -52,7 +94,7 @@ class ChartMapTool {
       throw new Error('레이어를 찾을 수 없습니다.');
     }
 
-    // 기존 차트 제거
+    // 같은 원본에서 만든 기존 파생 레이어 제거 (재적용 시 교체)
     this.removeChartMap(layerId);
 
     const source = layerInfo.olLayer.getSource();
@@ -141,13 +183,29 @@ class ChartMapTool {
       overlays.push(overlay);
     });
 
-    this.overlays.set(layerId, overlays);
+    // 파생 레이어 등록 (가시성/삭제 제어용 placeholder)
+    const placeholderSource = new VectorSource();
+    const placeholderLayer = new VectorLayer({ source: placeholderSource });
 
-    // 범례 생성
-    this.createLegend(layerId, layerInfo.name, chartType, fields, globalMaxValues);
+    const derivedLayerId = layerManager.addLayer({
+      name: `${layerInfo.name}_도형표현_${chartType === 'pie' ? '파이' : '막대'}`,
+      type: 'chartmap',
+      geometryType: 'Point',
+      olLayer: placeholderLayer,
+      source: placeholderSource,
+      visible: true
+    });
+
+    this.overlays.set(derivedLayerId, overlays);
+    this.derivedBySource.set(layerId, derivedLayerId);
+    this.sourceByDerived.set(derivedLayerId, layerId);
+
+    // 범례 생성 (파생 레이어 기준)
+    this.createLegend(derivedLayerId, layerInfo.name, chartType, fields, globalMaxValues);
 
     return {
-      layerId,
+      layerId: derivedLayerId,
+      sourceLayerId: layerId,
       chartCount: overlays.length,
       chartType
     };
@@ -294,39 +352,25 @@ class ChartMapTool {
   }
 
   /**
-   * 도형표현도 제거
+   * 도형표현도 제거 — 원본 또는 파생 layerId 모두 허용
    */
   removeChartMap(layerId) {
-    const overlays = this.overlays.get(layerId);
-    if (overlays) {
-      const map = mapManager.getMap();
-      overlays.forEach(overlay => {
-        map.removeOverlay(overlay);
-      });
-      this.overlays.delete(layerId);
+    let derivedId = this.derivedBySource.get(layerId);
+    if (!derivedId && this.sourceByDerived.has(layerId)) {
+      derivedId = layerId;
     }
+    if (!derivedId) return;
 
-    // 범례도 제거
-    this.removeLegend(layerId);
+    // LayerManager에서 제거하면 이벤트 리스너가 오버레이/범례 정리
+    layerManager.removeLayer(derivedId);
   }
 
   /**
    * 모든 도형표현도 제거
    */
   clearAll() {
-    const map = mapManager.getMap();
-    this.overlays.forEach((overlays) => {
-      overlays.forEach(overlay => {
-        map.removeOverlay(overlay);
-      });
-    });
-    this.overlays.clear();
-
-    // 모든 범례 제거
-    this.legends.forEach((legendEl) => {
-      legendEl.remove();
-    });
-    this.legends.clear();
+    const derivedIds = Array.from(this.sourceByDerived.keys());
+    derivedIds.forEach(id => layerManager.removeLayer(id));
   }
 
   /**
@@ -334,7 +378,7 @@ class ChartMapTool {
    */
   getCompatibleLayers() {
     return layerManager.getAllLayers().filter(layer => {
-      return layer.geometryType && layer.type !== 'heatmap';
+      return layer.geometryType && layer.type !== 'heatmap' && layer.type !== 'chartmap';
     });
   }
 

@@ -4,6 +4,8 @@
  */
 
 import { Style, Fill, Stroke } from "ol/style";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
 import { layerManager } from "../core/LayerManager.js";
 import { eventBus, Events } from "../utils/EventBus.js";
 
@@ -32,8 +34,9 @@ class ChoroplethTool {
     this.currentColorRamp = "blues";
     this.currentMethod = "equalInterval";
     this.numClasses = 5;
-    this.originalStyles = new Map();
-    this.legends = new Map();
+    this.legends = new Map();              // derivedLayerId -> legend element
+    this.derivedBySource = new Map();      // sourceLayerId -> derivedLayerId
+    this.sourceByDerived = new Map();      // derivedLayerId -> sourceLayerId
 
     // 레이어 삭제 이벤트 리스너
     eventBus.on(Events.LAYER_REMOVED, (data) => {
@@ -42,11 +45,26 @@ class ChoroplethTool {
   }
 
   /**
-   * 레이어 삭제 시 범례 제거
+   * 레이어 삭제 시 정리
+   * - 파생(단계구분도) 레이어 삭제: 범례 제거
+   * - 원본 레이어 삭제: 연결된 파생 레이어도 함께 제거
    */
   onLayerRemoved(layerId) {
-    this.removeLegend(layerId);
-    this.originalStyles.delete(layerId);
+    if (this.sourceByDerived.has(layerId)) {
+      const sourceId = this.sourceByDerived.get(layerId);
+      this.sourceByDerived.delete(layerId);
+      if (this.derivedBySource.get(sourceId) === layerId) {
+        this.derivedBySource.delete(sourceId);
+      }
+      this.removeLegend(layerId);
+      return;
+    }
+    if (this.derivedBySource.has(layerId)) {
+      const derivedId = this.derivedBySource.get(layerId);
+      this.derivedBySource.delete(layerId);
+      this.sourceByDerived.delete(derivedId);
+      layerManager.removeLayer(derivedId);
+    }
     if (this.currentLayerId === layerId) {
       this.currentLayerId = null;
       this.currentAttribute = null;
@@ -142,11 +160,9 @@ class ChoroplethTool {
   apply(layerId, attribute, colorRamp, method, numClasses, options = {}) {
     const { reverse = false, customColors = null } = options;
 
-    const layerInfo = layerManager.getLayer(layerId);
-    if (!layerInfo) return false;
-    if (!this.originalStyles.has(layerId)) {
-      this.originalStyles.set(layerId, layerInfo.olLayer.getStyle());
-    }
+    const sourceLayer = layerManager.getLayer(layerId);
+    if (!sourceLayer) return false;
+
     this.currentLayerId = layerId;
     this.currentAttribute = attribute;
     this.currentColorRamp = colorRamp;
@@ -191,13 +207,47 @@ class ChoroplethTool {
       });
     };
 
-    layerInfo.olLayer.setStyle(styleFunction);
-    eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
+    // 같은 원본에서 만든 기존 파생 레이어 제거 (재적용 시 교체)
+    if (this.derivedBySource.has(layerId)) {
+      const prevDerivedId = this.derivedBySource.get(layerId);
+      this.derivedBySource.delete(layerId);
+      this.sourceByDerived.delete(prevDerivedId);
+      layerManager.removeLayer(prevDerivedId);
+    }
 
-    // 범례 생성
-    this.createLegend(layerId, layerInfo.name, attribute, breaks, selectedColors);
+    // 피처 복제 → 새 벡터 레이어로 등록
+    const clonedFeatures = sourceLayer.source.getFeatures().map(f => f.clone());
+    const newSource = new VectorSource({ features: clonedFeatures });
+    const newOlLayer = new VectorLayer({ source: newSource, style: styleFunction });
 
-    return { breaks, colors: selectedColors };
+    const newLayerId = layerManager.addLayer({
+      name: `${sourceLayer.name}_단계구분_${attribute}`,
+      type: 'choropleth',
+      geometryType: sourceLayer.geometryType,
+      olLayer: newOlLayer,
+      source: newSource,
+      visible: true
+    });
+
+    this.derivedBySource.set(layerId, newLayerId);
+    this.sourceByDerived.set(newLayerId, layerId);
+
+    // 단계구분도 설정을 layerInfo에 저장 → LayerManager가 투명도 변경 시 재구성
+    const newLayerInfo = layerManager.getLayer(newLayerId);
+    if (newLayerInfo) {
+      newLayerInfo._choroplethConfig = {
+        attribute,
+        breaks,
+        colors: selectedColors,
+        tool: this
+      };
+      newLayerInfo.fillOpacity = 0.7;
+    }
+
+    // 범례는 파생 레이어 기준으로 생성
+    this.createLegend(newLayerId, sourceLayer.name, attribute, breaks, selectedColors);
+
+    return { breaks, colors: selectedColors, layerId: newLayerId };
   }
 
   /**
@@ -260,19 +310,24 @@ class ChoroplethTool {
   }
 
   reset(layerId) {
-    const layerInfo = layerManager.getLayer(layerId);
-    if (!layerInfo) return;
-    if (this.originalStyles.has(layerId)) {
-      layerInfo.olLayer.setStyle(this.originalStyles.get(layerId));
-      this.originalStyles.delete(layerId);
+    // 원본 layerId 또는 파생 layerId 모두 허용
+    let sourceId = layerId;
+    let derivedId = this.derivedBySource.get(layerId);
+    if (!derivedId && this.sourceByDerived.has(layerId)) {
+      derivedId = layerId;
+      sourceId = this.sourceByDerived.get(layerId);
     }
-    if (this.currentLayerId === layerId) {
+    if (!derivedId) return;
+
+    this.derivedBySource.delete(sourceId);
+    this.sourceByDerived.delete(derivedId);
+    this.removeLegend(derivedId);
+    layerManager.removeLayer(derivedId);
+
+    if (this.currentLayerId === sourceId) {
       this.currentLayerId = null;
       this.currentAttribute = null;
     }
-    // 범례 제거
-    this.removeLegend(layerId);
-    eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
   }
 
   hexToRgba(hex, alpha) {

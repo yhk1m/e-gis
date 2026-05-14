@@ -15,6 +15,16 @@ class ExportPanel {
     this.previewCtx = null;
     this.dragging = null;
     this.dragOffset = { x: 0, y: 0 };
+    this.includeBasemap = true;
+    this.mapPreviewCanvas = null;
+    this.mapPreviewBasemap = null;
+    this.capturingPreview = false;
+    this.mapElements = {
+      showLegend: true,
+      showScaleBar: true,
+      legendPosition: 'bottom-left',
+      legendFontSize: 12
+    };
 
     // 기본 위치 및 스타일 설정
     this.elements = {
@@ -27,19 +37,14 @@ class ExportPanel {
         fontWeight: 'bold',
         fontFamily: 'Malgun Gothic',
         color: '#333333',
+        background: true,
+        backgroundColor: '#ffffff',
+        backgroundOpacity: 0.85,
         shadow: false,
         shadowColor: '#000000',
         stroke: false,
         strokeColor: '#ffffff',
         strokeWidth: 2
-      },
-      scaleBar: {
-        enabled: true,
-        x: 0.05,
-        y: 0.92,
-        fontSize: 12,
-        fontFamily: 'Malgun Gothic',
-        color: '#333333'
       },
       compass: {
         enabled: true,
@@ -47,23 +52,18 @@ class ExportPanel {
         y: 0.12,
         size: 50
       },
-      legend: {
-        enabled: false,
-        x: 0.85,
-        y: 0.35,
-        fontSize: 12,
-        fontFamily: 'Malgun Gothic',
-        color: '#333333'
-      },
       textBox: {
         enabled: false,
         text: '',
-        x: 0.05,
-        y: 0.75,
+        x: 0.5,
+        y: 0.85,
         fontSize: 12,
         fontWeight: 'normal',
         fontFamily: 'Malgun Gothic',
         color: '#333333',
+        background: true,
+        backgroundColor: '#ffffff',
+        backgroundOpacity: 0.9,
         shadow: false,
         stroke: false,
         strokeColor: '#ffffff',
@@ -83,6 +83,53 @@ class ExportPanel {
 
   show() {
     this.render();
+    this.applyMapElements();
+    this.refreshMapCapture();
+  }
+
+  /**
+   * 지도 위 범례·축척바 DOM에 현재 설정 반영
+   */
+  applyMapElements() {
+    const legendSelector = '.choropleth-legend, .chart-map-legend, .heatmap-legend, .cartogram-legend';
+    const legends = document.querySelectorAll(legendSelector);
+    const positions = {
+      'bottom-left':  { top: 'auto', bottom: '40px', left: '10px',  right: 'auto' },
+      'bottom-right': { top: 'auto', bottom: '40px', left: 'auto',  right: '10px' },
+      'top-left':     { top: '10px', bottom: 'auto', left: '10px',  right: 'auto' },
+      'top-right':    { top: '10px', bottom: 'auto', left: 'auto',  right: '10px' }
+    };
+    const pos = positions[this.mapElements.legendPosition] || positions['bottom-left'];
+
+    legends.forEach(el => {
+      el.style.display = this.mapElements.showLegend ? '' : 'none';
+      el.style.top = pos.top;
+      el.style.bottom = pos.bottom;
+      el.style.left = pos.left;
+      el.style.right = pos.right;
+      el.style.fontSize = this.mapElements.legendFontSize + 'px';
+    });
+
+    const scaleLines = document.querySelectorAll('.ol-scale-line, .ol-scale-bar');
+    scaleLines.forEach(el => {
+      el.style.display = this.mapElements.showScaleBar ? '' : 'none';
+    });
+  }
+
+  async refreshMapCapture() {
+    if (this.capturingPreview) return;
+    this.capturingPreview = true;
+    this.updatePreview();
+    try {
+      const canvas = await exportTool.captureMap({ scale: 0.4, includeBasemap: this.includeBasemap });
+      this.mapPreviewCanvas = canvas;
+      this.mapPreviewBasemap = this.includeBasemap;
+    } catch (err) {
+      console.warn('Map preview capture failed:', err);
+    } finally {
+      this.capturingPreview = false;
+      this.updatePreview();
+    }
   }
 
   render() {
@@ -104,15 +151,6 @@ class ExportPanel {
     const formatOptions = formats.map(f =>
       '<option value="' + f.value + '">' + f.label + '</option>'
     ).join('');
-
-    const layers = layerManager.getAllLayers().filter(l => l.type === 'vector');
-    const layerCheckboxes = layers.map(l =>
-      `<label class="legend-layer-item">
-        <input type="checkbox" value="${l.id}" checked>
-        <span class="layer-color" style="background: ${l.color || l.fillColor || '#4292c6'}"></span>
-        <span>${l.name}</span>
-      </label>`
-    ).join('') || '<p class="no-layers">표시할 레이어가 없습니다</p>';
 
     return `
       <div class="export-content export-content-large">
@@ -146,6 +184,13 @@ class ExportPanel {
                   <option value="3">3x (초고해상도)</option>
                 </select>
               </div>
+              <div class="export-form-group basemap-toggle-group">
+                <label class="basemap-toggle">
+                  <input type="checkbox" id="opt-basemap" checked>
+                  <span>웹 배경지도 포함</span>
+                </label>
+                <p class="basemap-hint">해제하면 OSM/카토 등 타일 배경 없이 업로드한 레이어만 내보냅니다.</p>
+              </div>
             </div>
 
             <div class="export-section">
@@ -163,17 +208,6 @@ class ExportPanel {
                 </div>
               </div>
 
-              <!-- 축척 -->
-              <div class="export-element-group">
-                <label class="export-toggle">
-                  <input type="checkbox" id="opt-scale-bar" checked>
-                  <span>축척 바</span>
-                </label>
-                <div class="element-options" id="scale-options">
-                  ${this.getBasicStyleHTML('scale')}
-                </div>
-              </div>
-
               <!-- 방위표 -->
               <div class="export-element-group">
                 <label class="export-toggle">
@@ -188,17 +222,37 @@ class ExportPanel {
                 </div>
               </div>
 
-              <!-- 범례 -->
+              <!-- 지도 위 범례 / 축척바 -->
               <div class="export-element-group">
                 <label class="export-toggle">
-                  <input type="checkbox" id="opt-legend">
-                  <span>범례</span>
+                  <span>지도 위 범례 · 축척바</span>
                 </label>
-                <div class="element-options legend-options" id="legend-options" style="display:none;">
-                  <div class="legend-layers">
-                    ${layerCheckboxes}
+                <div class="element-options" id="map-elements-options">
+                  <div class="style-row">
+                    <label class="checkbox-inline">
+                      <input type="checkbox" id="opt-map-legend" checked>
+                      <span>범례 표시</span>
+                    </label>
                   </div>
-                  ${this.getBasicStyleHTML('legend')}
+                  <div class="style-row">
+                    <label class="checkbox-inline">
+                      <input type="checkbox" id="opt-map-scalebar" checked>
+                      <span>축척바 표시</span>
+                    </label>
+                  </div>
+                  <div class="style-row">
+                    <label>범례 위치</label>
+                    <select id="map-legend-position">
+                      <option value="bottom-left">좌하</option>
+                      <option value="bottom-right">우하</option>
+                      <option value="top-left">좌상</option>
+                      <option value="top-right">우상</option>
+                    </select>
+                  </div>
+                  <div class="style-row">
+                    <label>범례 글자</label>
+                    <input type="number" id="map-legend-fontsize" min="8" max="24">
+                  </div>
                 </div>
               </div>
 
@@ -264,6 +318,15 @@ class ExportPanel {
         </div>
         <div class="style-row">
           <label class="checkbox-inline">
+            <input type="checkbox" id="${prefix}-background">
+            <span>배경</span>
+          </label>
+          <input type="color" id="${prefix}-background-color" style="width:30px;">
+          <input type="range" id="${prefix}-background-opacity" min="0" max="1" step="0.05" style="flex:1;">
+          <span id="${prefix}-background-opacity-value" style="font-size:11px; width:30px; text-align:right;"></span>
+        </div>
+        <div class="style-row">
+          <label class="checkbox-inline">
             <input type="checkbox" id="${prefix}-shadow">
             <span>그림자</span>
           </label>
@@ -300,6 +363,15 @@ class ExportPanel {
           <label>색상</label>
           <input type="color" id="${prefix}-color">
         </div>
+        <div class="style-row">
+          <label class="checkbox-inline">
+            <input type="checkbox" id="${prefix}-background">
+            <span>배경</span>
+          </label>
+          <input type="color" id="${prefix}-background-color" style="width:30px;">
+          <input type="range" id="${prefix}-background-opacity" min="0" max="1" step="0.05" style="flex:1;">
+          <span id="${prefix}-background-opacity-value" style="font-size:11px; width:30px; text-align:right;"></span>
+        </div>
       </div>
     `;
   }
@@ -316,6 +388,11 @@ class ExportPanel {
     this.setValue('title-size', titleEl.fontSize);
     this.setValue('title-weight', titleEl.fontWeight);
     this.setValue('title-color', titleEl.color);
+    this.setChecked('title-background', titleEl.background);
+    this.setValue('title-background-color', titleEl.backgroundColor);
+    this.setValue('title-background-opacity', titleEl.backgroundOpacity);
+    this.updateOpacityLabel('title', titleEl.backgroundOpacity);
+    this.toggleBgControls('title', titleEl.background);
     this.setChecked('title-shadow', titleEl.shadow);
     this.setValue('title-shadow-color', titleEl.shadowColor);
     this.setChecked('title-stroke', titleEl.stroke);
@@ -323,25 +400,16 @@ class ExportPanel {
     this.setValue('title-stroke-width', titleEl.strokeWidth);
     document.getElementById('title-options').style.display = titleEl.enabled ? 'block' : 'none';
 
-    // 축척
-    const scaleEl = this.elements.scaleBar;
-    this.setChecked('opt-scale-bar', scaleEl.enabled);
-    this.setValue('scale-font', scaleEl.fontFamily);
-    this.setValue('scale-size', scaleEl.fontSize);
-    this.setValue('scale-color', scaleEl.color);
-
     // 방위표
     const compassEl = this.elements.compass;
     this.setChecked('opt-compass', compassEl.enabled);
     this.setValue('compass-size', compassEl.size);
 
-    // 범례
-    const legendEl = this.elements.legend;
-    this.setChecked('opt-legend', legendEl.enabled);
-    this.setValue('legend-font', legendEl.fontFamily);
-    this.setValue('legend-size', legendEl.fontSize);
-    this.setValue('legend-color', legendEl.color);
-    document.getElementById('legend-options').style.display = legendEl.enabled ? 'block' : 'none';
+    // 지도 위 요소
+    this.setChecked('opt-map-legend', this.mapElements.showLegend);
+    this.setChecked('opt-map-scalebar', this.mapElements.showScaleBar);
+    this.setValue('map-legend-position', this.mapElements.legendPosition);
+    this.setValue('map-legend-fontsize', this.mapElements.legendFontSize);
 
     // 텍스트 박스
     const textBoxEl = this.elements.textBox;
@@ -351,6 +419,11 @@ class ExportPanel {
     this.setValue('textbox-size', textBoxEl.fontSize);
     this.setValue('textbox-weight', textBoxEl.fontWeight);
     this.setValue('textbox-color', textBoxEl.color);
+    this.setChecked('textbox-background', textBoxEl.background);
+    this.setValue('textbox-background-color', textBoxEl.backgroundColor);
+    this.setValue('textbox-background-opacity', textBoxEl.backgroundOpacity);
+    this.updateOpacityLabel('textbox', textBoxEl.backgroundOpacity);
+    this.toggleBgControls('textbox', textBoxEl.background);
     this.setChecked('textbox-shadow', textBoxEl.shadow);
     this.setChecked('textbox-stroke', textBoxEl.stroke);
     this.setValue('textbox-stroke-color', textBoxEl.strokeColor);
@@ -366,6 +439,32 @@ class ExportPanel {
   setChecked(id, checked) {
     const el = document.getElementById(id);
     if (el) el.checked = checked;
+  }
+
+  toggleBgControls(prefix, enabled) {
+    const color = document.getElementById(`${prefix}-background-color`);
+    const opacity = document.getElementById(`${prefix}-background-opacity`);
+    const label = document.getElementById(`${prefix}-background-opacity-value`);
+    [color, opacity].forEach(el => {
+      if (!el) return;
+      el.disabled = !enabled;
+      el.style.opacity = enabled ? '1' : '0.4';
+    });
+    if (label) label.style.opacity = enabled ? '1' : '0.4';
+  }
+
+  updateOpacityLabel(prefix, value) {
+    const label = document.getElementById(`${prefix}-background-opacity-value`);
+    if (label) label.textContent = Math.round(value * 100) + '%';
+  }
+
+  hexToRgba(hex, alpha) {
+    const a = (alpha == null || isNaN(alpha)) ? 1 : alpha;
+    if (!hex || hex[0] !== '#') return `rgba(255,255,255,${a})`;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${a})`;
   }
 
   bindEvents() {
@@ -390,16 +489,20 @@ class ExportPanel {
       qualityValue.textContent = Math.round(e.target.value * 100) + '%';
     });
 
+    // 배경지도 토글
+    const basemapToggle = document.getElementById('opt-basemap');
+    if (basemapToggle) {
+      basemapToggle.checked = this.includeBasemap;
+      basemapToggle.addEventListener('change', (e) => {
+        this.includeBasemap = e.target.checked;
+        this.refreshMapCapture();
+      });
+    }
+
     // 제목 토글
     document.getElementById('opt-title').addEventListener('change', (e) => {
       this.elements.title.enabled = e.target.checked;
       document.getElementById('title-options').style.display = e.target.checked ? 'block' : 'none';
-      this.updatePreview();
-    });
-
-    // 축척 토글
-    document.getElementById('opt-scale-bar').addEventListener('change', (e) => {
-      this.elements.scaleBar.enabled = e.target.checked;
       this.updatePreview();
     });
 
@@ -409,12 +512,39 @@ class ExportPanel {
       this.updatePreview();
     });
 
-    // 범례 토글
-    document.getElementById('opt-legend').addEventListener('change', (e) => {
-      this.elements.legend.enabled = e.target.checked;
-      document.getElementById('legend-options').style.display = e.target.checked ? 'block' : 'none';
-      this.updatePreview();
-    });
+    // 지도 위 범례·축척바
+    const mapLegendCb = document.getElementById('opt-map-legend');
+    if (mapLegendCb) {
+      mapLegendCb.addEventListener('change', (e) => {
+        this.mapElements.showLegend = e.target.checked;
+        this.applyMapElements();
+        this.refreshMapCapture();
+      });
+    }
+    const mapScaleCb = document.getElementById('opt-map-scalebar');
+    if (mapScaleCb) {
+      mapScaleCb.addEventListener('change', (e) => {
+        this.mapElements.showScaleBar = e.target.checked;
+        this.applyMapElements();
+        this.refreshMapCapture();
+      });
+    }
+    const mapLegendPos = document.getElementById('map-legend-position');
+    if (mapLegendPos) {
+      mapLegendPos.addEventListener('change', (e) => {
+        this.mapElements.legendPosition = e.target.value;
+        this.applyMapElements();
+        this.refreshMapCapture();
+      });
+    }
+    const mapLegendFs = document.getElementById('map-legend-fontsize');
+    if (mapLegendFs) {
+      mapLegendFs.addEventListener('change', (e) => {
+        this.mapElements.legendFontSize = parseInt(e.target.value) || 12;
+        this.applyMapElements();
+        this.refreshMapCapture();
+      });
+    }
 
     // 텍스트 박스 토글
     document.getElementById('opt-textbox').addEventListener('change', (e) => {
@@ -429,24 +559,15 @@ class ExportPanel {
     this.bindInput('title-size', 'title', 'fontSize', true);
     this.bindInput('title-weight', 'title', 'fontWeight');
     this.bindInput('title-color', 'title', 'color');
+    this.bindBackground('title');
     this.bindCheckbox('title-shadow', 'title', 'shadow');
     this.bindInput('title-shadow-color', 'title', 'shadowColor');
     this.bindCheckbox('title-stroke', 'title', 'stroke');
     this.bindInput('title-stroke-color', 'title', 'strokeColor');
     this.bindInput('title-stroke-width', 'title', 'strokeWidth', true);
 
-    // 축척 스타일
-    this.bindInput('scale-font', 'scaleBar', 'fontFamily');
-    this.bindInput('scale-size', 'scaleBar', 'fontSize', true);
-    this.bindInput('scale-color', 'scaleBar', 'color');
-
     // 방위표 크기
     this.bindInput('compass-size', 'compass', 'size', true);
-
-    // 범례 스타일
-    this.bindInput('legend-font', 'legend', 'fontFamily');
-    this.bindInput('legend-size', 'legend', 'fontSize', true);
-    this.bindInput('legend-color', 'legend', 'color');
 
     // 텍스트 박스 스타일
     this.bindInput('textbox-content', 'textBox', 'text');
@@ -454,12 +575,13 @@ class ExportPanel {
     this.bindInput('textbox-size', 'textBox', 'fontSize', true);
     this.bindInput('textbox-weight', 'textBox', 'fontWeight');
     this.bindInput('textbox-color', 'textBox', 'color');
+    this.bindBackground('textbox', 'textBox');
     this.bindCheckbox('textbox-shadow', 'textBox', 'shadow');
     this.bindCheckbox('textbox-stroke', 'textBox', 'stroke');
     this.bindInput('textbox-stroke-color', 'textBox', 'strokeColor');
     this.bindInput('textbox-stroke-width', 'textBox', 'strokeWidth', true);
 
-    refreshBtn.addEventListener('click', () => this.updatePreview());
+    refreshBtn.addEventListener('click', () => this.refreshMapCapture());
     resetBtn.addEventListener('click', () => this.resetPositions());
     applyBtn.addEventListener('click', () => this.doExport());
 
@@ -481,6 +603,34 @@ class ExportPanel {
 
     el.addEventListener('input', handler);
     el.addEventListener('change', handler);
+  }
+
+  bindBackground(prefix, objKey = prefix) {
+    const checkbox = document.getElementById(`${prefix}-background`);
+    const color = document.getElementById(`${prefix}-background-color`);
+    const opacity = document.getElementById(`${prefix}-background-opacity`);
+
+    if (checkbox) {
+      checkbox.addEventListener('change', (e) => {
+        this.elements[objKey].background = e.target.checked;
+        this.toggleBgControls(prefix, e.target.checked);
+        this.updatePreview();
+      });
+    }
+    if (color) {
+      color.addEventListener('input', (e) => {
+        this.elements[objKey].backgroundColor = e.target.value;
+        this.updatePreview();
+      });
+    }
+    if (opacity) {
+      opacity.addEventListener('input', (e) => {
+        const v = parseFloat(e.target.value);
+        this.elements[objKey].backgroundOpacity = v;
+        this.updateOpacityLabel(prefix, v);
+        this.updatePreview();
+      });
+    }
   }
 
   bindCheckbox(elementId, objKey, propKey) {
@@ -551,7 +701,7 @@ class ExportPanel {
     const w = canvas.width;
     const h = canvas.height;
 
-    const elements = ['title', 'scaleBar', 'compass', 'legend', 'textBox'];
+    const elements = ['title', 'compass', 'textBox'];
 
     for (const key of elements) {
       const el = this.elements[key];
@@ -565,18 +715,12 @@ class ExportPanel {
         case 'title':
           hitBox = { x: elX - 100, y: elY - 20, w: 200, h: 40 };
           break;
-        case 'scaleBar':
-          hitBox = { x: elX - 10, y: elY - 30, w: 100, h: 40 };
-          break;
         case 'compass':
           const size = el.size * 0.4;
           hitBox = { x: elX - size, y: elY - size, w: size * 2, h: size * 2 };
           break;
-        case 'legend':
-          hitBox = { x: elX - 10, y: elY - 10, w: 80, h: 70 };
-          break;
         case 'textBox':
-          hitBox = { x: elX - 10, y: elY - 10, w: 100, h: 50 };
+          hitBox = { x: elX - 50, y: elY - 25, w: 100, h: 50 };
           break;
       }
 
@@ -592,14 +736,10 @@ class ExportPanel {
   resetPositions() {
     this.elements.title.x = 0.5;
     this.elements.title.y = 0.08;
-    this.elements.scaleBar.x = 0.05;
-    this.elements.scaleBar.y = 0.92;
     this.elements.compass.x = 0.92;
     this.elements.compass.y = 0.12;
-    this.elements.legend.x = 0.85;
-    this.elements.legend.y = 0.35;
-    this.elements.textBox.x = 0.05;
-    this.elements.textBox.y = 0.75;
+    this.elements.textBox.x = 0.5;
+    this.elements.textBox.y = 0.85;
     this.updatePreview();
   }
 
@@ -622,9 +762,55 @@ class ExportPanel {
     ctx.fillStyle = '#e8e8e8';
     ctx.fillRect(0, 0, previewWidth, previewHeight);
 
-    // 지도 영역
-    ctx.fillStyle = '#c5d8e8';
-    ctx.fillRect(8, 8, previewWidth - 16, previewHeight - 16);
+    const mapX = 8;
+    const mapY = 8;
+    const mapW = previewWidth - 16;
+    const mapH = previewHeight - 16;
+
+    // 지도 영역 - 캡처된 지도 또는 fallback
+    const hasCachedMap = this.mapPreviewCanvas && this.mapPreviewBasemap === this.includeBasemap;
+
+    if (!this.includeBasemap) {
+      // 투명 배경 표현 (체크무늬)
+      const tile = 8;
+      for (let y = mapY; y < mapY + mapH; y += tile) {
+        for (let x = mapX; x < mapX + mapW; x += tile) {
+          const isAlt = ((x + y) / tile) % 2 === 0;
+          ctx.fillStyle = isAlt ? '#ffffff' : '#f0f0f0';
+          ctx.fillRect(
+            x,
+            y,
+            Math.min(tile, mapX + mapW - x),
+            Math.min(tile, mapY + mapH - y)
+          );
+        }
+      }
+    } else {
+      ctx.fillStyle = '#c5d8e8';
+      ctx.fillRect(mapX, mapY, mapW, mapH);
+    }
+
+    if (hasCachedMap) {
+      // 캡처된 지도 그리기 (aspect-fit)
+      const src = this.mapPreviewCanvas;
+      const srcRatio = src.width / src.height;
+      const dstRatio = mapW / mapH;
+      let dw, dh, dx, dy;
+      if (srcRatio > dstRatio) {
+        dw = mapW; dh = mapW / srcRatio;
+        dx = mapX; dy = mapY + (mapH - dh) / 2;
+      } else {
+        dh = mapH; dw = mapH * srcRatio;
+        dy = mapY; dx = mapX + (mapW - dw) / 2;
+      }
+      ctx.drawImage(src, dx, dy, dw, dh);
+    } else if (this.capturingPreview) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.font = '12px "Malgun Gothic", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('지도 캡처 중...', mapX + mapW / 2, mapY + mapH / 2);
+    }
 
     // 요소 그리기
     this.drawPreviewElements(ctx, previewWidth, previewHeight);
@@ -634,14 +820,8 @@ class ExportPanel {
     if (this.elements.title.enabled) {
       this.drawPreviewTitle(ctx, width, height);
     }
-    if (this.elements.scaleBar.enabled) {
-      this.drawPreviewScaleBar(ctx, width, height);
-    }
     if (this.elements.compass.enabled) {
       this.drawPreviewCompass(ctx, width, height);
-    }
-    if (this.elements.legend.enabled) {
-      this.drawPreviewLegend(ctx, width, height);
     }
     if (this.elements.textBox.enabled && this.elements.textBox.text) {
       this.drawPreviewTextBox(ctx, width, height);
@@ -660,8 +840,10 @@ class ExportPanel {
     const textWidth = ctx.measureText(el.text || '지도 제목').width + 20;
 
     // 배경
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillRect(x - textWidth / 2, y - fontSize, textWidth, fontSize * 1.8);
+    if (el.background) {
+      ctx.fillStyle = this.hexToRgba(el.backgroundColor, el.backgroundOpacity);
+      ctx.fillRect(x - textWidth / 2, y - fontSize, textWidth, fontSize * 1.8);
+    }
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -685,7 +867,7 @@ class ExportPanel {
     ctx.restore();
   }
 
-  drawPreviewScaleBar(ctx, width, height) {
+  drawPreviewScaleBar_unused(ctx, width, height) {
     const el = this.elements.scaleBar;
     const x = el.x * width;
     const y = el.y * height;
@@ -693,8 +875,10 @@ class ExportPanel {
 
     ctx.save();
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillRect(x - 5, y - 20, 70, 30);
+    if (el.background) {
+      ctx.fillStyle = this.hexToRgba(el.backgroundColor, el.backgroundOpacity);
+      ctx.fillRect(x - 5, y - 20, 70, 30);
+    }
 
     ctx.fillStyle = '#333';
     ctx.fillRect(x, y, 50, 4);
@@ -775,7 +959,7 @@ class ExportPanel {
     ctx.restore();
   }
 
-  drawPreviewLegend(ctx, width, height) {
+  drawPreviewLegend_unused(ctx, width, height) {
     const el = this.elements.legend;
     const x = el.x * width;
     const y = el.y * height;
@@ -783,11 +967,13 @@ class ExportPanel {
 
     ctx.save();
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(x, y, 70, 55);
-    ctx.strokeStyle = '#999';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(x, y, 70, 55);
+    if (el.background) {
+      ctx.fillStyle = this.hexToRgba(el.backgroundColor, el.backgroundOpacity);
+      ctx.fillRect(x, y, 70, 55);
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(x, y, 70, 55);
+    }
 
     ctx.fillStyle = el.color;
     ctx.font = `bold ${fontSize}px "${el.fontFamily}", sans-serif`;
@@ -811,20 +997,25 @@ class ExportPanel {
     const x = el.x * width;
     const y = el.y * height;
     const fontSize = Math.max(6, el.fontSize * 0.5);
-    const lines = el.text.split('\n').slice(0, 3);
+    const lines = el.text.split('\n').slice(0, 3).map(l => l.substring(0, 20));
 
     ctx.save();
 
-    const boxWidth = 90;
-    const boxHeight = lines.length * (fontSize + 4) + 10;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(x, y, boxWidth, boxHeight);
-    ctx.strokeStyle = '#999';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(x, y, boxWidth, boxHeight);
-
     ctx.font = `${el.fontWeight} ${fontSize}px "${el.fontFamily}", sans-serif`;
-    ctx.textAlign = 'left';
+    const lineHeight = fontSize + 4;
+    const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const boxWidth = maxLineWidth + 16;
+    const boxHeight = lines.length * lineHeight + 8;
+    const boxX = x - boxWidth / 2;
+    const boxY = y - boxHeight / 2;
+
+    if (el.background) {
+      ctx.fillStyle = this.hexToRgba(el.backgroundColor, el.backgroundOpacity);
+      ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
     if (el.shadow) {
       ctx.shadowColor = 'rgba(0,0,0,0.3)';
@@ -833,17 +1024,19 @@ class ExportPanel {
       ctx.shadowOffsetY = 1;
     }
 
+    const firstLineY = y - (lines.length - 1) * lineHeight / 2;
+
     lines.forEach((line, i) => {
-      const lineY = y + 8 + (i + 1) * (fontSize + 2);
+      const lineY = firstLineY + i * lineHeight;
 
       if (el.stroke) {
         ctx.strokeStyle = el.strokeColor;
         ctx.lineWidth = el.strokeWidth * 0.3;
-        ctx.strokeText(line.substring(0, 15), x + 5, lineY);
+        ctx.strokeText(line, x, lineY);
       }
 
       ctx.fillStyle = el.color;
-      ctx.fillText(line.substring(0, 15), x + 5, lineY);
+      ctx.fillText(line, x, lineY);
     });
 
     ctx.restore();
@@ -855,29 +1048,13 @@ class ExportPanel {
     const quality = parseFloat(document.getElementById('export-quality').value);
     const scale = parseInt(document.getElementById('export-scale').value);
 
-    // 디버그 로그
-    console.log('Export settings:', {
-      title: this.elements.title,
-      scaleBar: this.elements.scaleBar,
-      compass: this.elements.compass,
-      legend: this.elements.legend,
-      textBox: this.elements.textBox
-    });
-
     const overlayOptions = {
       title: this.elements.title.enabled ? { ...this.elements.title } : null,
-      scaleBar: this.elements.scaleBar.enabled ? { ...this.elements.scaleBar } : null,
       compass: this.elements.compass.enabled ? { ...this.elements.compass } : null,
-      legend: this.elements.legend.enabled ? {
-        ...this.elements.legend,
-        ...this.getLegendConfig()
-      } : null,
       textBox: (this.elements.textBox.enabled && this.elements.textBox.text)
         ? { ...this.elements.textBox }
         : null
     };
-
-    console.log('Overlay options being passed:', overlayOptions);
 
     const applyBtn = document.getElementById('export-apply');
     applyBtn.disabled = true;
@@ -889,7 +1066,8 @@ class ExportPanel {
         format,
         quality,
         scale,
-        overlays: overlayOptions
+        overlays: overlayOptions,
+        includeBasemap: this.includeBasemap
       });
 
       this.close();
@@ -901,23 +1079,6 @@ class ExportPanel {
     }
   }
 
-  getLegendConfig() {
-    const checkboxes = document.querySelectorAll('#legend-options input[type="checkbox"][value]:checked');
-    const layers = [];
-
-    checkboxes.forEach(cb => {
-      const layer = layerManager.getLayer(cb.value);
-      if (layer) {
-        layers.push({
-          id: layer.id,
-          name: layer.name,
-          color: layer.color || layer.fillColor || '#4292c6'
-        });
-      }
-    });
-
-    return { layers };
-  }
 
   addStyles() {
     if (document.getElementById('export-panel-styles-v4')) return;
@@ -1028,6 +1189,35 @@ class ExportPanel {
         border: 1px solid var(--border-color, #e0e0e0);
         border-radius: var(--radius-sm, 4px);
         font-size: var(--font-size-sm, 13px);
+      }
+
+      .basemap-toggle-group {
+        background: var(--bg-tertiary, #f5f5f5);
+        border: 1px solid var(--border-color, #e0e0e0);
+        border-radius: var(--radius-sm, 4px);
+        padding: var(--spacing-sm, 8px);
+      }
+
+      .basemap-toggle-group label.basemap-toggle {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm, 8px);
+        cursor: pointer;
+        font-size: var(--font-size-sm, 13px);
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      .basemap-toggle-group .basemap-toggle input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+      }
+
+      .basemap-toggle-group .basemap-hint {
+        margin: 0 0 0 22px;
+        font-size: var(--font-size-xs, 11px);
+        color: var(--text-secondary, #666);
+        line-height: 1.4;
       }
 
       .export-element-group {

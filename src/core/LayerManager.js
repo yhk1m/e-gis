@@ -418,6 +418,9 @@ class LayerManager {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
 
+    // 단계구분도는 색상 변경 무시 (색상은 분류별로 고정)
+    if (layerInfo.type === 'choropleth') return;
+
     layerInfo.color = newColor;
     layerInfo.strokeColor = newColor;
     layerInfo.fillColor = newColor;
@@ -428,6 +431,8 @@ class LayerManager {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
 
+    if (layerInfo.type === 'choropleth') return;
+
     layerInfo.strokeColor = strokeColor;
     this.updateLayerStyle(layerId);
   }
@@ -435,6 +440,8 @@ class LayerManager {
   setLayerFillColor(layerId, fillColor) {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
+
+    if (layerInfo.type === 'choropleth') return;
 
     layerInfo.fillColor = fillColor;
     this.updateLayerStyle(layerId);
@@ -483,6 +490,37 @@ class LayerManager {
   updateLayerStyle(layerId) {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
+
+    // 단계구분도: 분류별 색상 유지, 투명도/테두리 굵기만 반영
+    if (layerInfo.type === 'choropleth' && layerInfo._choroplethConfig) {
+      const cfg = layerInfo._choroplethConfig;
+      const fillOpacity = layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 0.7;
+      const strokeWidth = layerInfo.strokeWidth || 1;
+      const styleFn = function(feature) {
+        const val = parseFloat(feature.get(cfg.attribute));
+        if (isNaN(val)) {
+          return new Style({
+            fill: new Fill({ color: 'rgba(128,128,128,' + fillOpacity + ')' }),
+            stroke: new Stroke({ color: '#666', width: strokeWidth })
+          });
+        }
+        const colorIdx = cfg.tool.getColorIndex(val, cfg.breaks);
+        const color = cfg.colors[colorIdx] || cfg.colors[0];
+        return new Style({
+          fill: new Fill({ color: cfg.tool.hexToRgba(color, fillOpacity) }),
+          stroke: new Stroke({ color: cfg.tool.darkenColor(color), width: strokeWidth })
+        });
+      };
+      const olLayer = layerInfo.olLayer;
+      if (olLayer && olLayer._hasLabel && olLayer._originalStyle) {
+        olLayer._originalStyle = styleFn;
+        eventBus.emit('label:refresh', { layerId });
+      } else if (olLayer) {
+        olLayer.setStyle(styleFn);
+      }
+      eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
+      return;
+    }
 
     const lineDash = this.getLineDash(layerInfo.strokeDash || "solid");
     const fillOpacity = layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 0.3;

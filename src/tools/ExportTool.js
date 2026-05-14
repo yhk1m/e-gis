@@ -26,12 +26,22 @@ class ExportTool {
       filename = 'e-GIS_map',
       quality = 0.92,
       scale = 2,
-      overlays = {}
+      overlays = {},
+      includeBasemap = true
     } = options;
 
     const mapElement = document.getElementById('map');
     if (!mapElement) {
       throw new Error('지도 요소를 찾을 수 없습니다.');
+    }
+
+    const map = mapManager.getMap();
+    const baseLayer = mapManager.baseLayer;
+    const restoreBasemap = !includeBasemap && baseLayer && baseLayer.getVisible();
+
+    if (restoreBasemap) {
+      baseLayer.setVisible(false);
+      if (map) map.renderSync();
     }
 
     // 지도 렌더링 완료 대기
@@ -44,7 +54,7 @@ class ExportTool {
         allowTaint: true,
         scale: scale,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: includeBasemap ? '#ffffff' : null
       });
 
       // 오버레이 그리기
@@ -69,6 +79,11 @@ class ExportTool {
     } catch (error) {
       console.error('내보내기 실패:', error);
       throw error;
+    } finally {
+      if (restoreBasemap) {
+        baseLayer.setVisible(true);
+        if (map) map.renderSync();
+      }
     }
   }
 
@@ -93,19 +108,9 @@ class ExportTool {
       this.drawTitle(ctx, overlays.title, width, height, s);
     }
 
-    // 축척 바
-    if (overlays.scaleBar) {
-      this.drawScaleBar(ctx, overlays.scaleBar, width, height, s);
-    }
-
     // 방위표
     if (overlays.compass) {
       this.drawCompass(ctx, overlays.compass, width, height, s);
-    }
-
-    // 범례
-    if (overlays.legend) {
-      this.drawLegend(ctx, overlays.legend, width, height, s);
     }
 
     // 텍스트 박스
@@ -126,6 +131,9 @@ class ExportTool {
       fontWeight = 'bold',
       fontFamily = 'Malgun Gothic',
       color = '#333333',
+      background = true,
+      backgroundColor = '#ffffff',
+      backgroundOpacity = 0.85,
       shadow = false,
       shadowColor = 'rgba(0,0,0,0.3)',
       stroke = false,
@@ -143,9 +151,11 @@ class ExportTool {
 
     // 배경
     ctx.font = `${fontWeight} ${scaledFontSize}px "${fontFamily}", sans-serif`;
-    const textWidth = ctx.measureText(text).width + 40 * scale;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillRect(posX - textWidth / 2, posY - scaledFontSize / 2 - 10 * scale, textWidth, scaledFontSize + 20 * scale);
+    if (background) {
+      const textWidth = ctx.measureText(text).width + 40 * scale;
+      ctx.fillStyle = this.hexToRgba(backgroundColor, backgroundOpacity);
+      ctx.fillRect(posX - textWidth / 2, posY - scaledFontSize / 2 - 10 * scale, textWidth, scaledFontSize + 20 * scale);
+    }
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -182,6 +192,9 @@ class ExportTool {
       fontSize = 12,
       fontFamily = 'Malgun Gothic',
       color = '#333333',
+      background = true,
+      backgroundColor = '#ffffff',
+      backgroundOpacity = 0.85,
       x = 0.05,
       y = 0.92
     } = options;
@@ -214,8 +227,10 @@ class ExportTool {
 
     // 배경
     ctx.save();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillRect(posX - 5 * scale, posY - 25 * scale, barWidth + 20 * scale, 45 * scale);
+    if (background) {
+      ctx.fillStyle = this.hexToRgba(backgroundColor, backgroundOpacity);
+      ctx.fillRect(posX - 5 * scale, posY - 25 * scale, barWidth + 20 * scale, 45 * scale);
+    }
 
     // 축척 바
     ctx.fillStyle = '#333';
@@ -245,6 +260,48 @@ class ExportTool {
     ctx.fillText(this.formatDistance(scaleValue), posX + barWidth, posY - 8 * scale);
 
     ctx.restore();
+  }
+
+  /**
+   * 미리보기용 지도 캡처
+   */
+  async captureMap({ scale = 0.4, includeBasemap = true } = {}) {
+    const mapElement = document.getElementById('map');
+    if (!mapElement) return null;
+
+    const map = mapManager.getMap();
+    const baseLayer = mapManager.baseLayer;
+    const restoreBasemap = !includeBasemap && baseLayer && baseLayer.getVisible();
+
+    if (restoreBasemap) {
+      baseLayer.setVisible(false);
+      if (map) map.renderSync();
+    }
+
+    await this.waitForMapRender();
+
+    try {
+      return await html2canvas(mapElement, {
+        useCORS: true,
+        allowTaint: true,
+        scale,
+        logging: false,
+        backgroundColor: includeBasemap ? '#ffffff' : null
+      });
+    } finally {
+      if (restoreBasemap) {
+        baseLayer.setVisible(true);
+        if (map) map.renderSync();
+      }
+    }
+  }
+
+  hexToRgba(hex, alpha) {
+    if (!hex || hex[0] !== '#') return `rgba(255,255,255,${alpha})`;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
   }
 
   /**
@@ -339,6 +396,9 @@ class ExportTool {
       fontSize = 12,
       fontFamily = 'Malgun Gothic',
       color = '#333333',
+      background = true,
+      backgroundColor = '#ffffff',
+      backgroundOpacity = 0.9,
       x = 0.85,
       y = 0.35
     } = options;
@@ -357,11 +417,13 @@ class ExportTool {
     ctx.save();
 
     // 배경
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(posX, posY, legendWidth, legendHeight);
-    ctx.strokeStyle = '#999';
-    ctx.lineWidth = scale;
-    ctx.strokeRect(posX, posY, legendWidth, legendHeight);
+    if (background) {
+      ctx.fillStyle = this.hexToRgba(backgroundColor, backgroundOpacity);
+      ctx.fillRect(posX, posY, legendWidth, legendHeight);
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = scale;
+      ctx.strokeRect(posX, posY, legendWidth, legendHeight);
+    }
 
     // 제목
     ctx.fillStyle = color;
@@ -402,37 +464,45 @@ class ExportTool {
       fontWeight = 'normal',
       fontFamily = 'Malgun Gothic',
       color = '#333333',
+      background = true,
+      backgroundColor = '#ffffff',
+      backgroundOpacity = 0.9,
       shadow = false,
       stroke = false,
       strokeColor = '#ffffff',
       strokeWidth = 1,
-      x = 0.05,
-      y = 0.75
+      x = 0.5,
+      y = 0.85
     } = options;
 
     if (!text) return;
 
     const padding = 10 * scale;
-    const lines = text.split('\n');
+    const lines = text.split('\n').map(l => l.substring(0, 60));
     const scaledFontSize = fontSize * scale;
     const lineHeight = (fontSize + 4) * scale;
-    const boxWidth = Math.min(200 * scale, width * 0.4);
-    const boxHeight = (lines.length * lineHeight) + padding * 2;
 
     const posX = x * width;
     const posY = y * height;
 
     ctx.save();
 
-    // 배경
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(posX, posY, boxWidth, boxHeight);
-    ctx.strokeStyle = '#999';
-    ctx.lineWidth = scale;
-    ctx.strokeRect(posX, posY, boxWidth, boxHeight);
-
     ctx.font = `${fontWeight} ${scaledFontSize}px "${fontFamily}", sans-serif`;
-    ctx.textAlign = 'left';
+
+    const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const boxWidth = maxLineWidth + padding * 2;
+    const boxHeight = lines.length * lineHeight + padding;
+    const boxX = posX - boxWidth / 2;
+    const boxY = posY - boxHeight / 2;
+
+    // 배경
+    if (background) {
+      ctx.fillStyle = this.hexToRgba(backgroundColor, backgroundOpacity);
+      ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
     // 그림자
     if (shadow) {
@@ -442,22 +512,25 @@ class ExportTool {
       ctx.shadowOffsetY = 2 * scale;
     }
 
+    const firstLineY = posY - (lines.length - 1) * lineHeight / 2;
+
     // 텍스트
     lines.forEach((line, index) => {
-      const lineY = posY + padding + lineHeight * (index + 0.8);
+      const lineY = firstLineY + index * lineHeight;
 
       if (stroke) {
         ctx.strokeStyle = strokeColor;
         ctx.lineWidth = strokeWidth * scale;
-        ctx.strokeText(line.substring(0, 30), posX + padding, lineY);
+        ctx.strokeText(line, posX, lineY);
       }
 
       ctx.fillStyle = color;
-      ctx.fillText(line.substring(0, 30), posX + padding, lineY);
+      ctx.fillText(line, posX, lineY);
     });
 
     ctx.restore();
   }
+
 
   /**
    * 지도 내보내기 (기본 버전 - 하위 호환)
