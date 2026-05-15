@@ -971,3 +971,31 @@ a.officer-value:hover {
   color: var(--text-primary);
   font-weight: 500;
 }
+
+/* 지도 내보내기 모달 열린 동안: 지도 위 범례·축척바 드래그 힌트 */
+.export-draggable {
+  outline: 2px dashed rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.export-draggable:hover {
+  outline-color: rgba(59, 130, 246, 1);
+}
+
+#export-position-bar {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-panel, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: var(--radius-md, 6px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  z-index: 10001;
+}

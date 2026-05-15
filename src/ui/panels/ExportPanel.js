@@ -84,7 +84,105 @@ class ExportPanel {
   show() {
     this.render();
     this.applyMapElements();
+    this.enableMapElementDrag();
     this.refreshMapCapture();
+  }
+
+  /**
+   * 지도 위 범례·축척바에 드래그 핸들러 부착
+   */
+  enableMapElementDrag() {
+    this.disableMapElementDrag();
+    const selector = '.choropleth-legend, .chart-map-legend, .heatmap-legend, .cartogram-legend, .ol-scale-line';
+    const elements = document.querySelectorAll(selector);
+    this.dragHandlers = [];
+    elements.forEach(el => {
+      el.style.cursor = 'move';
+      el.style.userSelect = 'none';
+      el.classList.add('export-draggable');
+      const handler = (e) => this.startMapElementDrag(e, el);
+      el.addEventListener('mousedown', handler);
+      this.dragHandlers.push({ el, handler });
+    });
+  }
+
+  disableMapElementDrag() {
+    if (!this.dragHandlers) return;
+    this.dragHandlers.forEach(({ el, handler }) => {
+      el.style.cursor = '';
+      el.style.userSelect = '';
+      el.classList.remove('export-draggable');
+      el.removeEventListener('mousedown', handler);
+    });
+    this.dragHandlers = null;
+  }
+
+  enterPositionEditMode() {
+    if (!this.modal) return;
+    this.modal.style.display = 'none';
+    this.enableMapElementDrag();
+
+    // 완료 플로팅 버튼
+    let bar = document.getElementById('export-position-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'export-position-bar';
+      bar.innerHTML = `
+        <span>지도 위 요소를 드래그해 옮기세요</span>
+        <button class="btn btn-primary btn-sm" id="exit-position-edit">완료</button>
+      `;
+      document.body.appendChild(bar);
+      document.getElementById('exit-position-edit').addEventListener('click', () => this.exitPositionEditMode());
+    } else {
+      bar.style.display = '';
+    }
+  }
+
+  exitPositionEditMode() {
+    const bar = document.getElementById('export-position-bar');
+    if (bar) bar.style.display = 'none';
+    if (this.modal) this.modal.style.display = '';
+    this.refreshMapCapture();
+  }
+
+  startMapElementDrag(e, el) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const mapEl = document.getElementById('map');
+    if (!mapEl) return;
+
+    const mapRect = mapEl.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initX = elRect.left - mapRect.left;
+    const initY = elRect.top - mapRect.top;
+
+    // 절대 좌표로 전환 (bottom/right preset 해제)
+    el.style.bottom = 'auto';
+    el.style.right = 'auto';
+    el.style.left = initX + 'px';
+    el.style.top = initY + 'px';
+
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      const newX = Math.max(0, Math.min(mapRect.width - elRect.width, initX + dx));
+      const newY = Math.max(0, Math.min(mapRect.height - elRect.height, initY + dy));
+      el.style.left = newX + 'px';
+      el.style.top = newY + 'px';
+    };
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      this.refreshMapCapture();
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
   }
 
   /**
@@ -103,12 +201,15 @@ class ExportPanel {
 
     legends.forEach(el => {
       el.style.display = this.mapElements.showLegend ? '' : 'none';
+      // preset 적용 시 드래그로 설정된 left/top 초기화
       el.style.top = pos.top;
       el.style.bottom = pos.bottom;
       el.style.left = pos.left;
       el.style.right = pos.right;
       el.style.fontSize = this.mapElements.legendFontSize + 'px';
     });
+    // 드래그 가능 상태 유지 (위치 변경 후 다시 활성화)
+    if (this.modal) this.enableMapElementDrag();
 
     const scaleLines = document.querySelectorAll('.ol-scale-line, .ol-scale-bar');
     scaleLines.forEach(el => {
@@ -227,6 +328,8 @@ class ExportPanel {
                 <label class="export-toggle">
                   <span>지도 위 범례 · 축척바</span>
                 </label>
+                <p class="help-text" style="margin: 0 0 6px; font-weight: normal;">아래 버튼을 누르면 모달이 잠시 사라지고, 지도의 범례·축척바를 드래그해 위치를 옮길 수 있습니다.</p>
+                <button class="btn btn-secondary btn-sm" id="map-edit-positions" style="margin-bottom: 8px;">📍 위치 편집 모드</button>
                 <div class="element-options" id="map-elements-options">
                   <div class="style-row">
                     <label class="checkbox-inline">
@@ -513,6 +616,11 @@ class ExportPanel {
     });
 
     // 지도 위 범례·축척바
+    const editBtn = document.getElementById('map-edit-positions');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => this.enterPositionEditMode());
+    }
+
     const mapLegendCb = document.getElementById('opt-map-legend');
     if (mapLegendCb) {
       mapLegendCb.addEventListener('change', (e) => {
@@ -1374,6 +1482,9 @@ class ExportPanel {
   }
 
   close() {
+    this.disableMapElementDrag();
+    const bar = document.getElementById('export-position-bar');
+    if (bar) bar.remove();
     if (this.modal) {
       this.modal.remove();
       this.modal = null;

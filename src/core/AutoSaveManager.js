@@ -8,6 +8,7 @@ import { mapManager } from './MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import VectorSource from 'ol/source/Vector';
+import { choroplethTool } from '../tools/ChoroplethTool.js';
 
 class AutoSaveManager {
   constructor() {
@@ -238,6 +239,24 @@ class AutoSaveManager {
       restoredLayer.strokeOpacity = layerData.strokeOpacity;
       restoredLayer.strokeWidth = layerData.strokeWidth;
       restoredLayer.pointRadius = layerData.pointRadius;
+
+      // 단계구분도 설정 복원
+      if (layerData.choroplethConfig && layerData.type === 'choropleth') {
+        restoredLayer._choroplethConfig = {
+          ...layerData.choroplethConfig,
+          tool: choroplethTool
+        };
+        // ChoroplethTool 내부 맵에도 등록 (범례 갱신 등 대응)
+        choroplethTool.sourceByDerived.set(layerId, null);
+        // 범례 재생성
+        choroplethTool.createLegend(
+          layerId,
+          layerData.name.replace(/_단계구분_.*$/, ''),
+          layerData.choroplethConfig.attribute,
+          layerData.choroplethConfig.breaks,
+          layerData.choroplethConfig.colors
+        );
+      }
 
       // 스타일 적용
       layerManager.updateLayerStyle(layerId);

@@ -149,6 +149,17 @@ class StateManager {
         const features = layerInfo.source.getFeatures();
         const geoJSONFormat = new GeoJSON();
 
+        // 단계구분도 설정 직렬화 (tool 참조 제외)
+        let choroplethConfig = null;
+        if (layerInfo._choroplethConfig) {
+          const cfg = layerInfo._choroplethConfig;
+          choroplethConfig = {
+            attribute: cfg.attribute,
+            breaks: cfg.breaks,
+            colors: cfg.colors
+          };
+        }
+
         const layerData = {
           id: layerInfo.id,
           name: layerInfo.name,
@@ -163,6 +174,7 @@ class StateManager {
           strokeWidth: layerInfo.strokeWidth,
           pointRadius: layerInfo.pointRadius,
           visible: layerInfo.visible,
+          choroplethConfig,
           features: geoJSONFormat.writeFeaturesObject(features),
           timestamp: Date.now()
         };
