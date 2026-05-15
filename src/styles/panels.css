@@ -983,6 +983,49 @@ a.officer-value:hover {
   outline-color: rgba(59, 130, 246, 1);
 }
 
+.map-draggable {
+  pointer-events: auto !important;
+}
+
+.map-scale-bar {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  font-size: 11px;
+  color: #333;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: 'Malgun Gothic', sans-serif;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.map-scale-bar-track {
+  height: 8px;
+  border-left: 1px solid #333;
+  border-right: 1px solid #333;
+  border-bottom: 1px solid #333;
+  position: relative;
+}
+
+.map-scale-bar-fill {
+  height: 4px;
+  background: #333;
+  width: 0;
+  margin-top: 4px;
+}
+
+.map-scale-bar-label {
+  font-size: 11px;
+  text-align: center;
+  line-height: 1;
+}
+
 .map-draggable,
 .map-draggable * {
   cursor: grab !important;
@@ -991,6 +1034,212 @@ a.officer-value:hover {
 .map-draggable.map-dragging,
 .map-draggable.map-dragging * {
   cursor: grabbing !important;
+}
+
+.map-draggable [contenteditable] {
+  cursor: text !important;
+  outline: none;
+  border-radius: 3px;
+  padding: 1px 3px;
+  transition: background 0.15s;
+}
+
+.map-draggable [contenteditable]:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.map-draggable [contenteditable]:focus {
+  background: rgba(59, 130, 246, 0.12);
+  outline: 1px dashed rgba(59, 130, 246, 0.6);
+}
+
+.map-draggable input,
+.map-draggable input:hover {
+  cursor: text !important;
+}
+
+.choropleth-legend-unit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: var(--font-size-xs, 11px);
+}
+
+/* 내보내기 캡처 중에는 편집 컨트롤 숨김 */
+body.exporting .choropleth-legend-unit-row {
+  display: none !important;
+}
+
+/* 내보내기 미리보기 크게 보기 모달 */
+.export-zoom-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 10100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.export-zoom-content {
+  background: #fff;
+  border-radius: 8px;
+  width: 92vw;
+  height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.export-zoom-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.export-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#zoom-modal-value {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  min-width: 44px;
+  text-align: center;
+}
+
+.export-zoom-body {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg-tertiary, #f5f5f5);
+  padding: 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.export-zoom-body canvas {
+  display: block;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* 지도 위 이미지 오버레이 */
+.map-image-overlay {
+  position: absolute;
+  z-index: 6;
+  border: 1px dashed transparent;
+  display: inline-block;
+  line-height: 0;
+}
+
+.map-image-overlay:hover {
+  border-color: rgba(59, 130, 246, 0.6);
+}
+
+.map-image-overlay img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.map-image-resize {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 1.5px solid #3b82f6;
+  border-radius: 2px;
+  cursor: nwse-resize;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 2;
+}
+
+.map-image-overlay:hover .map-image-resize {
+  opacity: 1;
+}
+
+.map-image-delete {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #ef4444;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 2;
+}
+
+.map-image-overlay:hover .map-image-delete {
+  opacity: 1;
+}
+
+.map-image-delete:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* 내보내기 캡처 중에는 핸들/삭제 버튼 숨김 */
+body.exporting .map-image-resize,
+body.exporting .map-image-delete,
+body.exporting .map-image-overlay {
+  border-color: transparent !important;
+}
+body.exporting .map-image-resize,
+body.exporting .map-image-delete {
+  display: none !important;
+}
+
+.choropleth-legend-unit-row:first-of-type {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-color, #e0e0e0);
+}
+
+.choropleth-legend-unit-row label {
+  width: 40px;
+  flex-shrink: 0;
+  color: var(--text-secondary, #666);
+}
+
+.choropleth-legend-unit-row select,
+.choropleth-legend-unit-row input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 2px 6px;
+  border: 1px solid var(--border-color, #d0d0d0);
+  border-radius: 3px;
+  font-size: var(--font-size-xs, 11px);
+  background: #fff;
+  height: 22px;
+  line-height: 1;
 }
 
 #export-position-bar {

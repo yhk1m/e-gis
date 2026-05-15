@@ -46,6 +46,7 @@ class ExportTool {
 
     // 지도 렌더링 완료 대기
     await this.waitForMapRender();
+    document.body.classList.add('exporting');
 
     try {
       // html2canvas로 지도 캡처
@@ -80,6 +81,7 @@ class ExportTool {
       console.error('내보내기 실패:', error);
       throw error;
     } finally {
+      document.body.classList.remove('exporting');
       if (restoreBasemap) {
         baseLayer.setVisible(true);
         if (map) map.renderSync();
@@ -279,6 +281,7 @@ class ExportTool {
     }
 
     await this.waitForMapRender();
+    document.body.classList.add('exporting');
 
     try {
       return await html2canvas(mapElement, {
@@ -289,6 +292,7 @@ class ExportTool {
         backgroundColor: includeBasemap ? '#ffffff' : null
       });
     } finally {
+      document.body.classList.remove('exporting');
       if (restoreBasemap) {
         baseLayer.setVisible(true);
         if (map) map.renderSync();
@@ -318,73 +322,196 @@ class ExportTool {
    * 방위표 그리기
    */
   drawCompass(ctx, options, width, height, scale) {
-    const {
-      size = 50,
-      x = 0.92,
-      y = 0.12
-    } = options;
-
-    const scaledSize = size * scale;
+    const { size = 50, x = 0.92, y = 0.12, style = 'basic' } = options;
+    const s = size * scale;
     const cx = x * width;
     const cy = y * height;
 
     ctx.save();
 
-    // 배경 원
+    if (style === 'arrow') {
+      this._drawCompassArrow(ctx, cx, cy, s, scale);
+    } else if (style === 'rose') {
+      this._drawCompassRose(ctx, cx, cy, s, scale);
+    } else if (style === 'classic') {
+      this._drawCompassClassic(ctx, cx, cy, s, scale);
+    } else {
+      this._drawCompassBasic(ctx, cx, cy, s, scale);
+    }
+
+    ctx.restore();
+  }
+
+  _drawCompassBasic(ctx, cx, cy, s, scale) {
     ctx.beginPath();
-    ctx.arc(cx, cy, scaledSize, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.arc(cx, cy, s, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.fill();
     ctx.strokeStyle = '#666';
     ctx.lineWidth = 2 * scale;
     ctx.stroke();
 
-    // 북쪽 화살표 (빨강)
     ctx.beginPath();
-    ctx.moveTo(cx, cy - scaledSize * 0.7);
-    ctx.lineTo(cx - scaledSize * 0.2, cy);
-    ctx.lineTo(cx, cy - scaledSize * 0.1);
+    ctx.moveTo(cx, cy - s * 0.7);
+    ctx.lineTo(cx - s * 0.2, cy);
+    ctx.lineTo(cx, cy - s * 0.1);
     ctx.closePath();
-    ctx.fillStyle = '#d32f2f';
-    ctx.fill();
+    ctx.fillStyle = '#d32f2f'; ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s * 0.7);
+    ctx.lineTo(cx + s * 0.2, cy);
+    ctx.lineTo(cx, cy - s * 0.1);
+    ctx.closePath();
+    ctx.fillStyle = '#b71c1c'; ctx.fill();
 
     ctx.beginPath();
-    ctx.moveTo(cx, cy - scaledSize * 0.7);
-    ctx.lineTo(cx + scaledSize * 0.2, cy);
-    ctx.lineTo(cx, cy - scaledSize * 0.1);
+    ctx.moveTo(cx, cy + s * 0.7);
+    ctx.lineTo(cx - s * 0.2, cy);
+    ctx.lineTo(cx, cy + s * 0.1);
     ctx.closePath();
-    ctx.fillStyle = '#b71c1c';
-    ctx.fill();
-
-    // 남쪽 화살표 (흰색)
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#333'; ctx.lineWidth = scale;
+    ctx.fill(); ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(cx, cy + scaledSize * 0.7);
-    ctx.lineTo(cx - scaledSize * 0.2, cy);
-    ctx.lineTo(cx, cy + scaledSize * 0.1);
+    ctx.moveTo(cx, cy + s * 0.7);
+    ctx.lineTo(cx + s * 0.2, cy);
+    ctx.lineTo(cx, cy + s * 0.1);
     ctx.closePath();
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = scale;
-    ctx.fill();
-    ctx.stroke();
+    ctx.fillStyle = '#eee'; ctx.fill(); ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(cx, cy + scaledSize * 0.7);
-    ctx.lineTo(cx + scaledSize * 0.2, cy);
-    ctx.lineTo(cx, cy + scaledSize * 0.1);
-    ctx.closePath();
-    ctx.fillStyle = '#eee';
-    ctx.fill();
-    ctx.stroke();
-
-    // N 글자
     ctx.fillStyle = '#333';
     ctx.font = `bold ${14 * scale}px "Malgun Gothic", sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('N', cx, cy - s - 10 * scale);
+  }
+
+  _drawCompassArrow(ctx, cx, cy, s, scale) {
+    // 굵은 화살표 + N
+    ctx.fillStyle = '#222';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s);
+    ctx.lineTo(cx - s * 0.35, cy + s * 0.6);
+    ctx.lineTo(cx, cy + s * 0.3);
+    ctx.lineTo(cx + s * 0.35, cy + s * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5 * scale;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${s * 0.5}px "Malgun Gothic", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('N', cx, cy - scaledSize - 10 * scale);
+    ctx.fillText('N', cx, cy - s * 0.35);
+  }
 
-    ctx.restore();
+  _drawCompassRose(ctx, cx, cy, s, scale) {
+    // 8방위 별
+    ctx.beginPath();
+    ctx.arc(cx, cy, s, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = scale;
+    ctx.stroke();
+
+    const tips = 8;
+    for (let i = 0; i < tips; i++) {
+      const ang = (i * Math.PI * 2) / tips - Math.PI / 2;
+      const ang1 = ang - Math.PI / tips;
+      const ang2 = ang + Math.PI / tips;
+      const long = i % 2 === 0 ? s * 0.95 : s * 0.55;
+      const short = s * 0.18;
+      const tipX = cx + Math.cos(ang) * long;
+      const tipY = cy + Math.sin(ang) * long;
+      const sxA = cx + Math.cos(ang1) * short;
+      const syA = cy + Math.sin(ang1) * short;
+      const sxB = cx + Math.cos(ang2) * short;
+      const syB = cy + Math.sin(ang2) * short;
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(sxA, syA);
+      ctx.lineTo(cx, cy);
+      ctx.lineTo(sxB, syB);
+      ctx.closePath();
+      ctx.fillStyle = i === 0 ? '#d32f2f' : (i % 2 === 0 ? '#333' : '#aaa');
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 0.5 * scale;
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#222';
+    ctx.font = `bold ${12 * scale}px "Malgun Gothic", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', cx, cy - s - 8 * scale);
+  }
+
+  _drawCompassClassic(ctx, cx, cy, s, scale) {
+    // 두 겹 원 + 4방위 화살표 + 눈금
+    ctx.beginPath();
+    ctx.arc(cx, cy, s, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2 * scale;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, s * 0.78, 0, Math.PI * 2);
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = scale;
+    ctx.stroke();
+
+    // 4방위 다이아몬드
+    const dirs = [
+      { ang: -Math.PI / 2, color: '#c0392b' },
+      { ang: 0, color: '#444' },
+      { ang: Math.PI / 2, color: '#999' },
+      { ang: Math.PI, color: '#444' }
+    ];
+    dirs.forEach(d => {
+      const tipX = cx + Math.cos(d.ang) * s * 0.85;
+      const tipY = cy + Math.sin(d.ang) * s * 0.85;
+      const left = d.ang + Math.PI / 2;
+      const lxA = cx + Math.cos(left) * s * 0.12;
+      const lyA = cy + Math.sin(left) * s * 0.12;
+      const lxB = cx - Math.cos(left) * s * 0.12;
+      const lyB = cy - Math.sin(left) * s * 0.12;
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(lxA, lyA);
+      ctx.lineTo(cx, cy);
+      ctx.lineTo(lxB, lyB);
+      ctx.closePath();
+      ctx.fillStyle = d.color;
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 0.5 * scale;
+      ctx.stroke();
+    });
+
+    // 작은 눈금
+    for (let i = 0; i < 16; i++) {
+      const ang = (i * Math.PI * 2) / 16;
+      const inner = s * 0.78;
+      const outer = i % 4 === 0 ? s * 0.95 : s * 0.86;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(ang) * inner, cy + Math.sin(ang) * inner);
+      ctx.lineTo(cx + Math.cos(ang) * outer, cy + Math.sin(ang) * outer);
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 0.7 * scale;
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#222';
+    ctx.font = `bold ${11 * scale}px "Malgun Gothic", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', cx, cy - s * 1.05 - 6 * scale);
+    ctx.fillText('S', cx, cy + s * 1.05 + 6 * scale);
+    ctx.fillText('E', cx + s * 1.05 + 6 * scale, cy);
+    ctx.fillText('W', cx - s * 1.05 - 6 * scale, cy);
   }
 
   /**

@@ -10,12 +10,14 @@ export function makeDraggable(el, boundsElGetter) {
   el.classList.add('map-draggable');
   el.style.userSelect = 'none';
   el.style.touchAction = 'none';
+  el.style.pointerEvents = 'auto';
   el.title = '드래그해 위치 옮기기';
 
   const onDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
     const tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'button' || tag === 'select' || tag === 'textarea' || tag === 'a') return;
+    if (e.target.isContentEditable) return;
 
     const boundsEl = typeof boundsElGetter === 'function' ? boundsElGetter() : boundsElGetter;
     if (!boundsEl) return;

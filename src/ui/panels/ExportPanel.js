@@ -24,6 +24,7 @@ class ExportPanel {
       showScaleBar: true,
       legendFontSize: 12
     };
+    this.previewZoom = 1;
 
     // 기본 위치 및 스타일 설정
     this.elements = {
@@ -49,7 +50,8 @@ class ExportPanel {
         enabled: true,
         x: 0.92,
         y: 0.12,
-        size: 50
+        size: 50,
+        style: 'basic'
       },
       textBox: {
         enabled: false,
@@ -98,8 +100,8 @@ class ExportPanel {
       el.style.fontSize = this.mapElements.legendFontSize + 'px';
     });
 
-    const scaleLines = document.querySelectorAll('.ol-scale-line, .ol-scale-bar');
-    scaleLines.forEach(el => {
+    const scaleBars = document.querySelectorAll('.map-scale-bar, .ol-scale-line');
+    scaleBars.forEach(el => {
       el.style.display = this.mapElements.showScaleBar ? '' : 'none';
     });
   }
@@ -204,6 +206,15 @@ class ExportPanel {
                 </label>
                 <div class="element-options" id="compass-options">
                   <div class="style-row">
+                    <label>스타일</label>
+                    <select id="compass-style">
+                      <option value="basic">기본 (N/S 화살표)</option>
+                      <option value="arrow">간단 화살표</option>
+                      <option value="rose">8방위 별</option>
+                      <option value="classic">고전 나침반</option>
+                    </select>
+                  </div>
+                  <div class="style-row">
                     <label>크기</label>
                     <input type="number" id="compass-size" min="30" max="100">
                   </div>
@@ -257,6 +268,8 @@ class ExportPanel {
               <canvas id="preview-canvas"></canvas>
             </div>
             <div class="preview-actions">
+              <button class="btn btn-secondary btn-sm" id="preview-expand" title="크게 보기">🔍 크게 보기</button>
+              <span style="flex:1;"></span>
               <button class="btn btn-secondary btn-sm" id="reset-positions">위치 초기화</button>
               <button class="btn btn-secondary btn-sm" id="refresh-preview">새로고침</button>
             </div>
@@ -384,6 +397,7 @@ class ExportPanel {
     const compassEl = this.elements.compass;
     this.setChecked('opt-compass', compassEl.enabled);
     this.setValue('compass-size', compassEl.size);
+    this.setValue('compass-style', compassEl.style || 'basic');
 
     // 지도 위 요소
     this.setChecked('opt-map-legend', this.mapElements.showLegend);
@@ -537,8 +551,9 @@ class ExportPanel {
     this.bindInput('title-stroke-color', 'title', 'strokeColor');
     this.bindInput('title-stroke-width', 'title', 'strokeWidth', true);
 
-    // 방위표 크기
+    // 방위표 크기·스타일
     this.bindInput('compass-size', 'compass', 'size', true);
+    this.bindInput('compass-style', 'compass', 'style');
 
     // 텍스트 박스 스타일
     this.bindInput('textbox-content', 'textBox', 'text');
@@ -553,6 +568,9 @@ class ExportPanel {
     this.bindInput('textbox-stroke-width', 'textBox', 'strokeWidth', true);
 
     refreshBtn.addEventListener('click', () => this.refreshMapCapture());
+
+    const expandBtn = document.getElementById('preview-expand');
+    if (expandBtn) expandBtn.addEventListener('click', () => this.openZoomedPreview());
     resetBtn.addEventListener('click', () => this.resetPositions());
     applyBtn.addEventListener('click', () => this.doExport());
 
@@ -714,6 +732,107 @@ class ExportPanel {
     this.updatePreview();
   }
 
+  openZoomedPreview() {
+    // 기존 큰 미리보기 모달이 있다면 제거
+    document.getElementById('export-zoom-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'export-zoom-modal';
+    modal.className = 'export-zoom-modal';
+    modal.innerHTML = `
+      <div class="export-zoom-content">
+        <div class="export-zoom-header">
+          <span>미리보기 크게 보기</span>
+          <div class="export-zoom-controls">
+            <button class="btn btn-secondary btn-sm" data-zoom="out">−</button>
+            <span id="zoom-modal-value">100%</span>
+            <button class="btn btn-secondary btn-sm" data-zoom="in">+</button>
+            <button class="btn btn-secondary btn-sm" data-zoom="reset">↺</button>
+            <button class="btn btn-secondary btn-sm" id="zoom-modal-close">닫기</button>
+          </div>
+        </div>
+        <div class="export-zoom-body" id="zoom-modal-body">
+          <canvas id="zoom-preview-canvas"></canvas>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    let zoom = 1;
+    const canvas = modal.querySelector('#zoom-preview-canvas');
+    const body = modal.querySelector('#zoom-modal-body');
+    const valueLabel = modal.querySelector('#zoom-modal-value');
+
+    const render = () => {
+      const bodyW = body.clientWidth - 16;
+      const bodyH = body.clientHeight - 16;
+      // 4:3 비율로 큰 미리보기
+      const baseW = Math.max(600, bodyW);
+      const baseH = Math.round(baseW * 0.67);
+      canvas.width = baseW;
+      canvas.height = baseH;
+      const ctx = canvas.getContext('2d');
+      this._renderPreviewInto(ctx, baseW, baseH);
+      canvas.style.width = (baseW * zoom) + 'px';
+      canvas.style.height = 'auto';
+      if (valueLabel) valueLabel.textContent = Math.round(zoom * 100) + '%';
+    };
+
+    modal.querySelectorAll('[data-zoom]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dir = btn.dataset.zoom;
+        if (dir === 'in') zoom = Math.min(4, zoom * 1.25);
+        else if (dir === 'out') zoom = Math.max(0.5, zoom / 1.25);
+        else zoom = 1;
+        render();
+      });
+    });
+    modal.querySelector('#zoom-modal-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+
+    setTimeout(render, 10);
+  }
+
+  /**
+   * 별도 캔버스에 미리보기 렌더 (지도 + 오버레이 요소)
+   */
+  _renderPreviewInto(ctx, w, h) {
+    ctx.fillStyle = '#e8e8e8';
+    ctx.fillRect(0, 0, w, h);
+    const mapX = 8, mapY = 8, mapW = w - 16, mapH = h - 16;
+
+    const hasCachedMap = this.mapPreviewCanvas && this.mapPreviewBasemap === this.includeBasemap;
+    if (!this.includeBasemap) {
+      const tile = 12;
+      for (let y = mapY; y < mapY + mapH; y += tile) {
+        for (let x = mapX; x < mapX + mapW; x += tile) {
+          ctx.fillStyle = ((x + y) / tile) % 2 === 0 ? '#ffffff' : '#f0f0f0';
+          ctx.fillRect(x, y, Math.min(tile, mapX + mapW - x), Math.min(tile, mapY + mapH - y));
+        }
+      }
+    } else {
+      ctx.fillStyle = '#c5d8e8';
+      ctx.fillRect(mapX, mapY, mapW, mapH);
+    }
+    if (hasCachedMap) {
+      const src = this.mapPreviewCanvas;
+      const srcRatio = src.width / src.height;
+      const dstRatio = mapW / mapH;
+      let dw, dh, dx, dy;
+      if (srcRatio > dstRatio) {
+        dw = mapW; dh = mapW / srcRatio;
+        dx = mapX; dy = mapY + (mapH - dh) / 2;
+      } else {
+        dh = mapH; dw = mapH * srcRatio;
+        dy = mapY; dx = mapX + (mapW - dw) / 2;
+      }
+      ctx.drawImage(src, dx, dy, dw, dh);
+    }
+    this.drawPreviewElements(ctx, w, h);
+  }
+
   updatePreview() {
     const container = document.getElementById('export-preview');
     const canvas = document.getElementById('preview-canvas');
@@ -869,65 +988,8 @@ class ExportPanel {
   }
 
   drawPreviewCompass(ctx, width, height) {
-    const el = this.elements.compass;
-    const cx = el.x * width;
-    const cy = el.y * height;
-    const size = el.size * 0.3;
-
-    ctx.save();
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, size, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fill();
-    ctx.strokeStyle = '#666';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // 북쪽 화살표
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - size * 0.7);
-    ctx.lineTo(cx - size * 0.2, cy);
-    ctx.lineTo(cx, cy - size * 0.1);
-    ctx.closePath();
-    ctx.fillStyle = '#d32f2f';
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - size * 0.7);
-    ctx.lineTo(cx + size * 0.2, cy);
-    ctx.lineTo(cx, cy - size * 0.1);
-    ctx.closePath();
-    ctx.fillStyle = '#b71c1c';
-    ctx.fill();
-
-    // 남쪽 화살표
-    ctx.beginPath();
-    ctx.moveTo(cx, cy + size * 0.7);
-    ctx.lineTo(cx - size * 0.2, cy);
-    ctx.lineTo(cx, cy + size * 0.1);
-    ctx.closePath();
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 0.5;
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy + size * 0.7);
-    ctx.lineTo(cx + size * 0.2, cy);
-    ctx.lineTo(cx, cy + size * 0.1);
-    ctx.closePath();
-    ctx.fillStyle = '#eee';
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = '#333';
-    ctx.font = `bold ${size * 0.4}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('N', cx, cy - size - 3);
-
-    ctx.restore();
+    // ExportTool과 동일한 스타일을 작은 스케일로 렌더
+    exportTool.drawCompass(ctx, this.elements.compass, width, height, 0.4);
   }
 
   drawPreviewLegend_unused(ctx, width, height) {
@@ -1310,21 +1372,28 @@ class ExportPanel {
         border-radius: var(--radius-sm, 4px);
         background: var(--bg-tertiary, #f5f5f5);
         min-height: 220px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
+        max-height: 480px;
+        overflow: auto;
+        display: block;
+        position: relative;
       }
 
       .export-preview canvas {
-        max-width: 100%;
-        height: auto;
+        display: block;
+        margin: 0 auto;
       }
 
       .preview-actions {
         display: flex;
         gap: var(--spacing-sm, 8px);
-        justify-content: flex-end;
+        align-items: center;
+      }
+
+      #preview-zoom-value {
+        font-size: 11px;
+        color: var(--text-secondary, #666);
+        min-width: 36px;
+        text-align: center;
       }
 
       .export-footer {

@@ -401,6 +401,12 @@ function initToolbar() {
       case 'zoom-extent':
         view.animate({ center: view.getCenter(), zoom: 7, duration: 500 });
         return;
+      case 'upload-image': {
+        import('./ui/MapImageOverlay.js').then(({ triggerImageUpload }) => {
+          triggerImageUpload(document.getElementById('map'));
+        });
+        return;
+      }
     }
 
     // 그리기/선택 도구

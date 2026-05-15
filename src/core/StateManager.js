@@ -156,7 +156,11 @@ class StateManager {
           choroplethConfig = {
             attribute: cfg.attribute,
             breaks: cfg.breaks,
-            colors: cfg.colors
+            colors: cfg.colors,
+            title: cfg.title,
+            unit: cfg.unit,
+            format: cfg.format,
+            rounding: cfg.rounding
           };
         }
 

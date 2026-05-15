@@ -240,7 +240,11 @@ class ChoroplethTool {
         attribute,
         breaks,
         colors: selectedColors,
-        tool: this
+        tool: this,
+        title: `${sourceLayer.name} (${attribute})`,
+        unit: '',
+        format: 'comma',
+        rounding: 0
       };
       newLayerInfo.fillOpacity = 0.7;
     }
@@ -257,47 +261,163 @@ class ChoroplethTool {
   createLegend(layerId, layerName, attribute, breaks, colors) {
     this.removeLegend(layerId);
 
+    const layerInfo = layerManager.getLayer(layerId);
+    const cfg = (layerInfo && layerInfo._choroplethConfig) || {};
+    const title = cfg.title !== undefined ? cfg.title : `${layerName} (${attribute})`;
+    const unit = cfg.unit || '';
+    const format = cfg.format || 'comma';
+    const rounding = cfg.rounding || 0;
+
     const legendEl = document.createElement('div');
     legendEl.className = 'choropleth-legend';
     legendEl.id = `choropleth-legend-${layerId}`;
 
-    let legendHTML = `<div class="choropleth-legend-title">${layerName}</div>`;
-    legendHTML += `<div class="choropleth-legend-subtitle">${attribute}</div>`;
-    legendHTML += '<div class="choropleth-legend-items">';
+    let html = `<div class="choropleth-legend-title" contenteditable="plaintext-only" spellcheck="false" data-field="title">${this.escapeHtml(title)}</div>`;
+    html += '<div class="choropleth-legend-items"></div>';
+    html += `<div class="choropleth-legend-unit-row">
+      <label>형식</label>
+      <select class="choropleth-legend-format">
+        <option value="comma">1,234,567</option>
+        <option value="short">1.2K / 1.5M</option>
+        <option value="decimal2">소수점 2자리</option>
+      </select>
+    </div>`;
+    html += `<div class="choropleth-legend-unit-row">
+      <label>반올림</label>
+      <select class="choropleth-legend-rounding">
+        <option value="0">자동</option>
+        <option value="1">1의 자리</option>
+        <option value="10">10의 자리</option>
+        <option value="100">100의 자리</option>
+        <option value="1000">1,000의 자리</option>
+        <option value="10000">10,000의 자리</option>
+        <option value="100000">100,000의 자리</option>
+        <option value="1000000">1,000,000의 자리</option>
+      </select>
+    </div>`;
+    html += `<div class="choropleth-legend-unit-row">
+      <label>단위</label>
+      <input type="text" class="choropleth-legend-unit" value="${this.escapeHtml(unit)}" placeholder="예: 원, 명, %">
+    </div>`;
+    legendEl.innerHTML = html;
 
-    for (let i = 0; i < breaks.length - 1; i++) {
-      const minVal = this.formatNumber(breaks[i]);
-      const maxVal = this.formatNumber(breaks[i + 1]);
-      legendHTML += `
-        <div class="choropleth-legend-item">
-          <span class="choropleth-legend-color" style="background:${colors[i]}"></span>
-          <span class="choropleth-legend-label">${minVal} - ${maxVal}</span>
-        </div>`;
-    }
+    const formatSel = legendEl.querySelector('.choropleth-legend-format');
+    if (formatSel) formatSel.value = format;
+    const roundingSel = legendEl.querySelector('.choropleth-legend-rounding');
+    if (roundingSel) roundingSel.value = String(rounding);
 
-    legendHTML += '</div>';
-    legendEl.innerHTML = legendHTML;
+    this.renderLegendItems(legendEl, breaks, colors, unit, format, rounding);
 
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
       mapContainer.appendChild(legendEl);
       this.legends.set(layerId, legendEl);
       makeDraggable(legendEl, () => mapContainer);
+      this.attachLegendEditors(legendEl, layerId);
+    }
+  }
+
+  renderLegendItems(legendEl, breaks, colors, unit, format, rounding = 0) {
+    const itemsEl = legendEl.querySelector('.choropleth-legend-items');
+    if (!itemsEl) return;
+    let html = '';
+    for (let i = 0; i < breaks.length - 1; i++) {
+      const minVal = this.formatNumber(breaks[i], format, rounding);
+      const maxVal = this.formatNumber(breaks[i + 1], format, rounding);
+      const range = `${minVal} - ${maxVal}`;
+      html += `
+        <div class="choropleth-legend-item">
+          <span class="choropleth-legend-color" style="background:${colors[i]}"></span>
+          <span class="choropleth-legend-label">${range}${unit ? ' ' + this.escapeHtml(unit) : ''}</span>
+        </div>`;
+    }
+    itemsEl.innerHTML = html;
+  }
+
+  escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  attachLegendEditors(legendEl, layerId) {
+    const layerInfo = layerManager.getLayer(layerId);
+    if (!layerInfo) return;
+    const persist = () => {
+      eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
+    };
+
+    legendEl.querySelectorAll('[contenteditable]').forEach(el => {
+      el.addEventListener('input', () => {
+        const field = el.getAttribute('data-field');
+        if (!layerInfo._choroplethConfig) return;
+        layerInfo._choroplethConfig[field] = el.textContent;
+        persist();
+      });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+      });
+    });
+
+    const rerenderItems = () => {
+      const cfg = layerInfo._choroplethConfig;
+      if (!cfg) return;
+      this.renderLegendItems(legendEl, cfg.breaks, cfg.colors, cfg.unit || '', cfg.format || 'comma', cfg.rounding || 0);
+    };
+
+    const unitInput = legendEl.querySelector('.choropleth-legend-unit');
+    if (unitInput) {
+      unitInput.addEventListener('input', () => {
+        if (!layerInfo._choroplethConfig) return;
+        layerInfo._choroplethConfig.unit = unitInput.value;
+        rerenderItems();
+        persist();
+      });
+    }
+
+    const formatSel = legendEl.querySelector('.choropleth-legend-format');
+    if (formatSel) {
+      formatSel.addEventListener('change', () => {
+        if (!layerInfo._choroplethConfig) return;
+        layerInfo._choroplethConfig.format = formatSel.value;
+        rerenderItems();
+        persist();
+      });
+    }
+
+    const roundingSel = legendEl.querySelector('.choropleth-legend-rounding');
+    if (roundingSel) {
+      roundingSel.addEventListener('change', () => {
+        if (!layerInfo._choroplethConfig) return;
+        layerInfo._choroplethConfig.rounding = parseFloat(roundingSel.value) || 0;
+        rerenderItems();
+        persist();
+      });
     }
   }
 
   /**
    * 숫자 포맷
+   * - 'comma'   : 1,234,567 (정수면 콤마, 소수면 콤마+소수점)
+   * - 'short'   : 1.2K / 1.5M
+   * - 'decimal2': 1,234.56 (항상 소수점 2자리)
    */
-  formatNumber(num) {
-    if (Math.abs(num) >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (Math.abs(num) >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    } else if (Number.isInteger(num)) {
-      return num.toString();
+  formatNumber(num, format = 'comma', rounding = 0) {
+    let n = Number(num);
+    if (rounding && rounding > 0) {
+      n = Math.round(n / rounding) * rounding;
     }
-    return num.toFixed(2);
+    if (format === 'short') {
+      if (Math.abs(n) >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+      if (Math.abs(n) >= 1000) return (n / 1000).toFixed(1) + 'K';
+      if (Number.isInteger(n)) return n.toString();
+      return n.toFixed(2);
+    }
+    if (format === 'decimal2') {
+      return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    // 'comma' — 항상 정수로 반올림
+    return Math.round(n).toLocaleString();
   }
 
   /**

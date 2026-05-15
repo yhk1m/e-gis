@@ -14,9 +14,9 @@ import Point from 'ol/geom/Point';
 import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import Control from 'ol/control/Control';
-import { defaults as defaultControls, ScaleLine, Attribution } from 'ol/control';
+import { defaults as defaultControls, Attribution } from 'ol/control';
 import { eventBus, Events } from '../utils/EventBus.js';
-import { makeDraggable } from '../utils/DraggableElement.js';
+import { MapScaleBar } from '../ui/MapScaleBar.js';
 
 /**
  * 나침반 컨트롤 - 지도 회전 표시 및 정북 복귀
@@ -226,9 +226,6 @@ export class MapManager {
         rotate: false,
         attribution: false
       }).extend([
-        new ScaleLine({
-          units: 'metric'
-        }),
         new Attribution({
           collapsible: true,
           collapsed: true
@@ -240,12 +237,8 @@ export class MapManager {
 
     this.currentBasemap = basemap;
 
-    // 축척바 드래그 가능하게
-    setTimeout(() => {
-      const mapEl = document.getElementById('map');
-      const scaleLine = mapEl && mapEl.querySelector('.ol-scale-line');
-      if (scaleLine) makeDraggable(scaleLine, () => mapEl);
-    }, 0);
+    // 자체 축척바 (드래그 가능)
+    this.scaleBar = new MapScaleBar(this.map);
 
     // 이벤트 바인딩
     this.bindEvents();
