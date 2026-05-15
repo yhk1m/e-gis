@@ -94,7 +94,7 @@ class LayerManager {
     const zIndex = options.zIndex !== undefined ? options.zIndex : null;
     const existingLayer = options.olLayer || null; // 기존 레이어 지원
 
-    const layerId = "layer-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
+    const layerId = options.id || ("layer-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9));
     const layerColor = color || this.getNextColor();
 
     let vectorSource = null;

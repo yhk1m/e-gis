@@ -11,6 +11,7 @@ import { getCenter } from 'ol/extent';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
+import { makeDraggable } from '../utils/DraggableElement.js';
 
 class CartogramTool {
   constructor() {
@@ -801,6 +802,8 @@ class CartogramTool {
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
       mapContainer.insertAdjacentHTML('beforeend', legendHtml);
+      const legendEl = document.getElementById(`legend-${layerId}`);
+      if (legendEl) makeDraggable(legendEl, () => mapContainer);
     }
 
     this.addLegendStyles();

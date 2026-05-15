@@ -189,8 +189,28 @@ class AutoSaveManager {
         }
       }
 
-      // 레이어 복원
-      const savedLayers = await stateManager.getAllLayers();
+      // 레이어 복원 — 같은 (이름, 타입, 피처수) 그룹에서 가장 최신만 남기고 중복 제거
+      const allSaved = await stateManager.getAllLayers();
+      const groups = new Map();
+      for (const rec of allSaved) {
+        const fc = rec.features && rec.features.features ? rec.features.features.length : 0;
+        const key = `${rec.name}|${rec.type || 'vector'}|${fc}`;
+        const prev = groups.get(key);
+        if (!prev || (rec.timestamp || 0) > (prev.timestamp || 0)) {
+          groups.set(key, rec);
+        }
+      }
+      const savedLayers = Array.from(groups.values());
+      const removedCount = allSaved.length - savedLayers.length;
+      if (removedCount > 0) {
+        const keepIds = new Set(savedLayers.map(l => l.id));
+        for (const rec of allSaved) {
+          if (!keepIds.has(rec.id)) {
+            await stateManager.deleteLayer(rec.id);
+          }
+        }
+        console.log(`중복 레이어 ${removedCount}개 정리`);
+      }
       console.log(`${savedLayers.length}개 레이어 복원 중...`);
 
       for (const layerData of savedLayers) {
@@ -219,8 +239,9 @@ class AutoSaveManager {
     // VectorSource 생성
     const source = new VectorSource({ features });
 
-    // 레이어 추가
+    // 레이어 추가 (저장된 ID 보존 — 중복 누적 방지)
     const layerId = layerManager.addLayer({
+      id: layerData.id,
       name: layerData.name,
       type: layerData.type || 'vector',
       source: source,

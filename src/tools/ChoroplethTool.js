@@ -8,6 +8,7 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { layerManager } from "../core/LayerManager.js";
 import { eventBus, Events } from "../utils/EventBus.js";
+import { makeDraggable } from "../utils/DraggableElement.js";
 
 // 색상 팔레트 정의
 const COLOR_RAMPS = {
@@ -281,6 +282,7 @@ class ChoroplethTool {
     if (mapContainer) {
       mapContainer.appendChild(legendEl);
       this.legends.set(layerId, legendEl);
+      makeDraggable(legendEl, () => mapContainer);
     }
   }
 

@@ -983,6 +983,16 @@ a.officer-value:hover {
   outline-color: rgba(59, 130, 246, 1);
 }
 
+.map-draggable,
+.map-draggable * {
+  cursor: grab !important;
+}
+
+.map-draggable.map-dragging,
+.map-draggable.map-dragging * {
+  cursor: grabbing !important;
+}
+
 #export-position-bar {
   position: fixed;
   top: 20px;

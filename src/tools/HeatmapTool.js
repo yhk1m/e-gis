@@ -8,6 +8,7 @@ import VectorSource from 'ol/source/Vector';
 import { layerManager } from '../core/LayerManager.js';
 import { mapManager } from '../core/MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
+import { makeDraggable } from '../utils/DraggableElement.js';
 
 class HeatmapTool {
   constructor() {
@@ -146,6 +147,7 @@ class HeatmapTool {
     if (mapContainer) {
       mapContainer.appendChild(legendEl);
       this.legends.set(layerId, legendEl);
+      makeDraggable(legendEl, () => mapContainer);
     }
   }
 
