@@ -70,10 +70,19 @@ class BuiltinDataManager {
       '경상북도', '경상남도', '제주특별자치도'
     ];
 
+    const provinceSet = new Set(PROVINCE_ORDER);
     const groups = {};
     for (const item of this.rasterCatalog) {
       const firstSpace = item.name.indexOf(' ');
-      const group = firstSpace > 0 ? item.name.substring(0, firstSpace) : '기타';
+      let group;
+      if (firstSpace > 0) {
+        group = item.name.substring(0, firstSpace);
+      } else if (provinceSet.has(item.name)) {
+        // 파일명이 광역자치단체명 그 자체 (예: "세종특별자치시")
+        group = item.name;
+      } else {
+        group = '기타';
+      }
       if (!groups[group]) groups[group] = [];
       groups[group].push(item);
     }
