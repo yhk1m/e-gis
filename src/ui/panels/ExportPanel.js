@@ -111,7 +111,7 @@ class ExportPanel {
     this.capturingPreview = true;
     this.updatePreview();
     try {
-      const canvas = await exportTool.captureMap({ scale: 0.4, includeBasemap: this.includeBasemap });
+      const canvas = await exportTool.captureMap({ scale: 1.5, includeBasemap: this.includeBasemap });
       this.mapPreviewCanvas = canvas;
       this.mapPreviewBasemap = this.includeBasemap;
     } catch (err) {
@@ -635,61 +635,64 @@ class ExportPanel {
   setupDragEvents() {
     const canvas = document.getElementById('preview-canvas');
     if (!canvas) return;
-
-    canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
-    canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
-    canvas.addEventListener('mouseup', () => this.onMouseUp());
-    canvas.addEventListener('mouseleave', () => this.onMouseUp());
+    this.attachCanvasDrag(canvas, () => this.updatePreview());
   }
 
-  onMouseDown(e) {
-    const canvas = document.getElementById('preview-canvas');
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-
-    const hitElement = this.hitTest(x, y);
-    if (hitElement) {
-      this.dragging = hitElement;
-      this.dragOffset = {
-        x: x - this.elements[hitElement].x * canvas.width,
-        y: y - this.elements[hitElement].y * canvas.height
+  /**
+   * 캔버스에 드래그 핸들러 부착 (작은 미리보기/줌 모달 공용)
+   * canvas.width(내부 버퍼) ↔ rect.width(표시) 비율로 좌표 변환하므로
+   * DPR 스케일이나 줌 배율에 관계없이 동일하게 동작
+   */
+  attachCanvasDrag(canvas, redraw) {
+    const toBufferCoords = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
       };
-      canvas.style.cursor = 'grabbing';
-    }
-  }
+    };
 
-  onMouseMove(e) {
-    const canvas = document.getElementById('preview-canvas');
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    canvas.addEventListener('mousedown', (e) => {
+      const { x, y } = toBufferCoords(e);
+      const hit = this.hitTestAt(x, y, canvas.width, canvas.height);
+      if (hit) {
+        this.dragging = hit;
+        this.dragOffset = {
+          x: x - this.elements[hit].x * canvas.width,
+          y: y - this.elements[hit].y * canvas.height
+        };
+        canvas.style.cursor = 'grabbing';
+      }
+    });
 
-    if (this.dragging) {
-      this.elements[this.dragging].x = Math.max(0.05, Math.min(0.95, (x - this.dragOffset.x) / canvas.width));
-      this.elements[this.dragging].y = Math.max(0.05, Math.min(0.95, (y - this.dragOffset.y) / canvas.height));
-      this.updatePreview();
-    } else {
-      const hitElement = this.hitTest(x, y);
-      canvas.style.cursor = hitElement ? 'grab' : 'default';
-    }
-  }
+    canvas.addEventListener('mousemove', (e) => {
+      const { x, y } = toBufferCoords(e);
+      if (this.dragging) {
+        this.elements[this.dragging].x = Math.max(0.05, Math.min(0.95, (x - this.dragOffset.x) / canvas.width));
+        this.elements[this.dragging].y = Math.max(0.05, Math.min(0.95, (y - this.dragOffset.y) / canvas.height));
+        redraw();
+      } else {
+        const hit = this.hitTestAt(x, y, canvas.width, canvas.height);
+        canvas.style.cursor = hit ? 'grab' : 'default';
+      }
+    });
 
-  onMouseUp() {
-    const canvas = document.getElementById('preview-canvas');
-    if (canvas) canvas.style.cursor = 'default';
-    this.dragging = null;
+    const endDrag = () => {
+      canvas.style.cursor = 'default';
+      this.dragging = null;
+    };
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
   }
 
   hitTest(x, y) {
     const canvas = document.getElementById('preview-canvas');
-    const w = canvas.width;
-    const h = canvas.height;
+    return this.hitTestAt(x, y, canvas.width, canvas.height);
+  }
 
+  hitTestAt(x, y, w, h) {
     const elements = ['title', 'compass', 'textBox'];
 
     for (const key of elements) {
@@ -765,13 +768,15 @@ class ExportPanel {
 
     const render = () => {
       const bodyW = body.clientWidth - 16;
-      const bodyH = body.clientHeight - 16;
-      // 4:3 비율로 큰 미리보기
-      const baseW = Math.max(600, bodyW);
+      const baseW = Math.max(900, bodyW);
       const baseH = Math.round(baseW * 0.67);
-      canvas.width = baseW;
-      canvas.height = baseH;
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      canvas.width = baseW * dpr;
+      canvas.height = baseH * dpr;
       const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       this._renderPreviewInto(ctx, baseW, baseH);
       canvas.style.width = (baseW * zoom) + 'px';
       canvas.style.height = 'auto';
@@ -787,12 +792,21 @@ class ExportPanel {
         render();
       });
     });
-    modal.querySelector('#zoom-modal-close').addEventListener('click', () => modal.remove());
+    const closeZoom = () => {
+      modal.remove();
+      // 줌 모달에서 옮긴 위치를 작은 미리보기에 반영
+      this.updatePreview();
+    };
+    modal.querySelector('#zoom-modal-close').addEventListener('click', closeZoom);
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
+      if (e.target === modal) closeZoom();
     });
 
-    setTimeout(render, 10);
+    setTimeout(() => {
+      render();
+      // 줌 캔버스에도 드래그 부착 — 작은 미리보기와 동일한 좌표/엘리먼트 사용
+      this.attachCanvasDrag(canvas, render);
+    }, 10);
   }
 
   /**
@@ -838,15 +852,23 @@ class ExportPanel {
     const canvas = document.getElementById('preview-canvas');
     if (!container || !canvas) return;
 
-    const previewWidth = container.clientWidth - 10 || 300;
-    const previewHeight = Math.round(previewWidth * 0.67);
+    const cssWidth = container.clientWidth - 10 || 300;
+    const cssHeight = Math.round(cssWidth * 0.67);
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
 
-    canvas.width = previewWidth;
-    canvas.height = previewHeight;
-    canvas.style.width = '100%';
-    canvas.style.height = 'auto';
+    // 실제 픽셀버퍼는 dpr 배수로
+    canvas.width = cssWidth * dpr;
+    canvas.height = cssHeight * dpr;
+    canvas.style.width = cssWidth + 'px';
+    canvas.style.height = cssHeight + 'px';
 
     const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    // 이하 코드에서 사용할 “논리적” 크기로 변수 덮어쓰기
+    const previewWidth = cssWidth;
+    const previewHeight = cssHeight;
 
     // 배경
     ctx.fillStyle = '#e8e8e8';
@@ -1170,7 +1192,8 @@ class ExportPanel {
 
       .export-body-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        /* minmax(0, 1fr): 자식 min-content(캔버스 명시폭)가 트랙을 밀어내지 못하게 */
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: var(--spacing-lg, 16px);
         padding: var(--spacing-lg, 16px);
         max-height: 65vh;

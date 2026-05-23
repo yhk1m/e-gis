@@ -13,6 +13,7 @@ import { Style, Stroke } from 'ol/style';
 import { layerManager } from '../core/LayerManager.js';
 import { mapManager } from '../core/MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
+import { makeDraggable } from '../utils/DraggableElement.js';
 
 class RasterAnalysisTool {
   constructor() {
@@ -306,31 +307,48 @@ class RasterAnalysisTool {
       });
     }
 
-    // 벡터 레이어 생성
-    const vectorSource = new VectorSource({ features });
+    // 초기 두께/색상 (주곡선/계곡선 비율 = 1.5/0.8 = 1.875)
+    const minorWidth = 0.8;
+    const majorRatio = 1.5 / 0.8;
+    const baseColor = '#A0522D';
 
+    const vectorSource = new VectorSource({ features });
+    const styleFor = (color, mw) => (feature) => {
+      const elev = feature.get('elevation');
+      const isMajor = elev % (interval * 5) === 0;
+      return new Style({
+        stroke: new Stroke({
+          color,
+          width: isMajor ? mw * majorRatio : mw
+        })
+      });
+    };
     const vectorLayer = new VectorLayer({
       source: vectorSource,
-      style: (feature) => {
-        const elev = feature.get('elevation');
-        const isMajor = elev % (interval * 5) === 0;
-
-        return new Style({
-          stroke: new Stroke({
-            color: isMajor ? '#8B4513' : '#A0522D',
-            width: isMajor ? 1.5 : 0.8
-          })
-        });
-      }
+      style: styleFor(baseColor, minorWidth)
     });
 
+    const contourName = `${layerInfo.name}_등고선_${interval}m`;
     const contourLayerId = layerManager.addLayer({
-      name: `${layerInfo.name}_등고선_${interval}m`,
+      name: contourName,
       type: 'vector',
       olLayer: vectorLayer,
       source: vectorSource,
-      geometryType: 'LineString'
+      geometryType: 'LineString',
+      color: baseColor
     });
+
+    // 사용자가 색상/두께를 바꿔도 LayerManager.updateLayerStyle이
+    // 주곡선/계곡선 비율을 유지하도록 설정 보존
+    const contourInfo = layerManager.getLayer(contourLayerId);
+    if (contourInfo) {
+      contourInfo._contourConfig = { interval, majorRatio };
+      contourInfo.strokeColor = baseColor;
+      contourInfo.strokeWidth = minorWidth;
+    }
+
+    // 등고선 범례
+    this.createLegend(contourLayerId, contourName, 'contour', { interval });
 
     return contourLayerId;
   }
@@ -514,9 +532,13 @@ class RasterAnalysisTool {
    * 분석 결과 렌더링
    */
   renderAnalysisResult(analysisData, viewExtent, size) {
+    // size는 OL이 부동소수점으로 전달할 수 있음 → 정수로 고정 (Uint8ClampedArray 비정수 인덱스 쓰기 무시 회피)
+    const w = Math.round(size[0]);
+    const h = Math.round(size[1]);
+
     const canvas = document.createElement('canvas');
-    canvas.width = size[0];
-    canvas.height = size[1];
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext('2d');
 
     const { data, width, height, extent, noDataValue, colorScheme, minVal, maxVal } = analysisData;
@@ -526,18 +548,18 @@ class RasterAnalysisTool {
     const viewWidth = viewExtent[2] - viewExtent[0];
     const viewHeight = viewExtent[3] - viewExtent[1];
 
-    const imageData = ctx.createImageData(size[0], size[1]);
+    const imageData = ctx.createImageData(w, h);
     const pixels = imageData.data;
 
-    for (let y = 0; y < size[1]; y++) {
-      for (let x = 0; x < size[0]; x++) {
-        const mapX = viewExtent[0] + (x / size[0]) * viewWidth;
-        const mapY = viewExtent[3] - (y / size[1]) * viewHeight;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const mapX = viewExtent[0] + (x / w) * viewWidth;
+        const mapY = viewExtent[3] - (y / h) * viewHeight;
 
         const demX = Math.floor(((mapX - extent[0]) / demWidth) * width);
         const demY = Math.floor(((extent[3] - mapY) / demHeight) * height);
 
-        const pixelIndex = (y * size[0] + x) * 4;
+        const pixelIndex = (y * w + x) * 4;
 
         if (demX >= 0 && demX < width && demY >= 0 && demY < height) {
           const dataIndex = demY * width + demX;
@@ -635,6 +657,9 @@ class RasterAnalysisTool {
       case 'aspect':
         legendHTML = this.getAspectLegendHTML(layerName);
         break;
+      case 'contour':
+        legendHTML = this.getContourLegendHTML(layerName, metadata);
+        break;
       default:
         return;
     }
@@ -646,6 +671,7 @@ class RasterAnalysisTool {
     if (mapContainer) {
       mapContainer.appendChild(legendEl);
       this.legends.set(layerId, legendEl);
+      makeDraggable(legendEl, () => mapContainer);
     }
   }
 
@@ -708,6 +734,27 @@ class RasterAnalysisTool {
           <div class="aspect-item"><span class="aspect-color" style="background:hsl(90,70%,50%)"></span>동 (90°)</div>
           <div class="aspect-item"><span class="aspect-color" style="background:hsl(180,70%,50%)"></span>남 (180°)</div>
           <div class="aspect-item"><span class="aspect-color" style="background:hsl(270,70%,50%)"></span>서 (270°)</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Contour 범례 HTML (주곡선/계곡선)
+   */
+  getContourLegendHTML(layerName, metadata = {}) {
+    const interval = metadata.interval || 100;
+    const majorInterval = interval * 5;
+    return `
+      <div class="raster-legend-title">${layerName}</div>
+      <div class="raster-legend-content">
+        <div class="contour-legend-row">
+          <span class="contour-legend-line major"></span>
+          <span>주곡선 (${majorInterval}m 간격)</span>
+        </div>
+        <div class="contour-legend-row">
+          <span class="contour-legend-line minor"></span>
+          <span>계곡선 (${interval}m 간격)</span>
         </div>
       </div>
     `;

@@ -267,7 +267,7 @@ class ExportTool {
   /**
    * 미리보기용 지도 캡처
    */
-  async captureMap({ scale = 0.4, includeBasemap = true } = {}) {
+  async captureMap({ scale = 1.5, includeBasemap = true } = {}) {
     const mapElement = document.getElementById('map');
     if (!mapElement) return null;
 

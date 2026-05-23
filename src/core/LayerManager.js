@@ -522,6 +522,38 @@ class LayerManager {
       return;
     }
 
+    // 등고선: 주곡선/계곡선 두께 비율 유지 (색상은 공통, 두께만 차등)
+    if (layerInfo._contourConfig) {
+      const cfg = layerInfo._contourConfig;
+      const strokeColor = layerInfo.strokeColor || layerInfo.color;
+      const strokeOpacity = layerInfo.strokeOpacity !== undefined ? layerInfo.strokeOpacity : 1.0;
+      const minorWidth = layerInfo.strokeWidth || 0.8;
+      const rgba = this.hexToRgba(strokeColor, strokeOpacity);
+      const lineDash = this.getLineDash(layerInfo.strokeDash || "solid");
+
+      const styleFn = function(feature) {
+        const elev = feature.get('elevation');
+        const isMajor = elev % (cfg.interval * 5) === 0;
+        return new Style({
+          stroke: new Stroke({
+            color: rgba,
+            width: isMajor ? minorWidth * cfg.majorRatio : minorWidth,
+            lineDash: lineDash
+          })
+        });
+      };
+
+      const olLayer = layerInfo.olLayer;
+      if (olLayer && olLayer._hasLabel && olLayer._originalStyle) {
+        olLayer._originalStyle = styleFn;
+        eventBus.emit('label:refresh', { layerId });
+      } else if (olLayer) {
+        olLayer.setStyle(styleFn);
+      }
+      eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
+      return;
+    }
+
     const lineDash = this.getLineDash(layerInfo.strokeDash || "solid");
     const fillOpacity = layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 0.3;
     const strokeOpacity = layerInfo.strokeOpacity !== undefined ? layerInfo.strokeOpacity : 1.0;

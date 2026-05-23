@@ -9,6 +9,8 @@ import ImageCanvasSource from 'ol/source/ImageCanvas';
 import { transformExtent } from 'ol/proj';
 import { layerManager } from '../core/LayerManager.js';
 import { mapManager } from '../core/MapManager.js';
+import { eventBus, Events } from '../utils/EventBus.js';
+import { makeDraggable } from '../utils/DraggableElement.js';
 
 // 기본 색상 램프 (저고도 -> 고고도)
 const DEFAULT_COLOR_RAMP = [
@@ -25,6 +27,12 @@ const DEFAULT_COLOR_RAMP = [
 class DEMLoader {
   constructor() {
     this.colorRamp = DEFAULT_COLOR_RAMP;
+    this.legends = new Map(); // layerId -> legend element
+
+    // 레이어 삭제 시 범례 정리
+    eventBus.on(Events.LAYER_REMOVED, (data) => {
+      if (data && data.layerId) this.removeLegend(data.layerId);
+    });
   }
 
   /**
@@ -236,62 +244,102 @@ class DEMLoader {
     // 해당 범위로 이동
     mapManager.fitExtent(extent);
 
+    // 색상 범례 추가
+    this.createLegend(layerId, name, minVal, maxVal);
+
     return layerId;
+  }
+
+  /**
+   * DEM 색상 범례 생성 (저고도 녹색 → 고고도 흰색)
+   */
+  createLegend(layerId, layerName, minVal, maxVal) {
+    this.removeLegend(layerId);
+
+    const legendEl = document.createElement('div');
+    legendEl.className = 'raster-analysis-legend dem-legend';
+    legendEl.id = `dem-legend-${layerId}`;
+
+    const fmt = (v) => Number.isFinite(v) ? `${Math.round(v)} m` : '—';
+
+    legendEl.innerHTML = `
+      <div class="raster-legend-title">${layerName}</div>
+      <div class="raster-legend-content">
+        <div class="dem-legend-gradient"></div>
+        <div class="raster-legend-labels">
+          <span>${fmt(minVal)}</span>
+          <span>${fmt((minVal + maxVal) / 2)}</span>
+          <span>${fmt(maxVal)}</span>
+        </div>
+      </div>
+    `;
+
+    const mapContainer = document.getElementById('map');
+    if (mapContainer) {
+      mapContainer.appendChild(legendEl);
+      this.legends.set(layerId, legendEl);
+      makeDraggable(legendEl, () => mapContainer);
+    }
+  }
+
+  removeLegend(layerId) {
+    const el = this.legends.get(layerId);
+    if (el) {
+      el.remove();
+      this.legends.delete(layerId);
+    }
   }
 
   /**
    * DEM 데이터를 캔버스에 렌더링
    */
   renderDEM(demData, viewExtent, resolution, size) {
+    // size는 OL이 부동소수점으로 전달할 수 있음 → 정수로 고정해야
+    // Uint8ClampedArray의 비정수 인덱스 쓰기 무시 문제를 피함
+    const w = Math.round(size[0]);
+    const h = Math.round(size[1]);
+
     const canvas = document.createElement('canvas');
-    canvas.width = size[0];
-    canvas.height = size[1];
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext('2d');
 
     const { data, width, height, extent, minVal, maxVal, noDataValue } = demData;
 
-    // DEM 범위와 뷰 범위의 교차 영역 계산
     const demWidth = extent[2] - extent[0];
     const demHeight = extent[3] - extent[1];
     const viewWidth = viewExtent[2] - viewExtent[0];
     const viewHeight = viewExtent[3] - viewExtent[1];
 
-    // 각 픽셀에 대해 고도 값 가져오기
-    const imageData = ctx.createImageData(size[0], size[1]);
+    const imageData = ctx.createImageData(w, h);
     const pixels = imageData.data;
 
-    for (let y = 0; y < size[1]; y++) {
-      for (let x = 0; x < size[0]; x++) {
-        // 캔버스 픽셀을 지도 좌표로 변환
-        const mapX = viewExtent[0] + (x / size[0]) * viewWidth;
-        const mapY = viewExtent[3] - (y / size[1]) * viewHeight;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const mapX = viewExtent[0] + (x / w) * viewWidth;
+        const mapY = viewExtent[3] - (y / h) * viewHeight;
 
-        // DEM 좌표로 변환
         const demX = Math.floor(((mapX - extent[0]) / demWidth) * width);
         const demY = Math.floor(((extent[3] - mapY) / demHeight) * height);
 
-        const pixelIndex = (y * size[0] + x) * 4;
+        const pixelIndex = (y * w + x) * 4;
 
-        // 범위 내인지 확인
         if (demX >= 0 && demX < width && demY >= 0 && demY < height) {
           const dataIndex = demY * width + demX;
           const value = data[dataIndex];
 
           if (value !== noDataValue && !isNaN(value) && isFinite(value)) {
-            // 정규화된 값 계산
             const normalized = (value - minVal) / (maxVal - minVal);
             const color = this.getColorForValue(normalized);
 
-            pixels[pixelIndex] = color[0];     // R
-            pixels[pixelIndex + 1] = color[1]; // G
-            pixels[pixelIndex + 2] = color[2]; // B
-            pixels[pixelIndex + 3] = 255;      // A
+            pixels[pixelIndex] = color[0];
+            pixels[pixelIndex + 1] = color[1];
+            pixels[pixelIndex + 2] = color[2];
+            pixels[pixelIndex + 3] = 255;
           } else {
-            // NoData - 투명
             pixels[pixelIndex + 3] = 0;
           }
         } else {
-          // 범위 외 - 투명
           pixels[pixelIndex + 3] = 0;
         }
       }

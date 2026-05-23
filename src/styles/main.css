@@ -3735,6 +3735,48 @@ input:focus, select:focus, textarea:focus {
   color: #cc0000;
 }
 
+/* DEM 색상 램프 범례 (DEMLoader의 DEFAULT_COLOR_RAMP와 동일 stops) */
+.dem-legend-gradient {
+  height: 16px;
+  border-radius: 2px;
+  background: linear-gradient(to right,
+    rgb(0, 97, 71) 0%,
+    rgb(34, 139, 34) 15%,
+    rgb(154, 205, 50) 30%,
+    rgb(255, 255, 0) 45%,
+    rgb(255, 165, 0) 60%,
+    rgb(255, 69, 0) 75%,
+    rgb(139, 69, 19) 90%,
+    rgb(255, 255, 255) 100%
+  );
+  border: 1px solid var(--border-color);
+}
+
+/* 등고선 범례 */
+.contour-legend-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.contour-legend-line {
+  display: inline-block;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.contour-legend-line.major {
+  height: 0;
+  border-top: 1.5px solid #A0522D;
+}
+
+.contour-legend-line.minor {
+  height: 0;
+  border-top: 0.8px solid #A0522D;
+}
+
 /* Aspect 범례 */
 .aspect-legend-compass {
   position: relative;

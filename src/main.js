@@ -34,6 +34,7 @@ import { routingPanel } from './ui/panels/RoutingPanel.js';
 import { drawingPanel } from './ui/panels/DrawingPanel.js';
 import { layerExportPanel } from './ui/panels/LayerExportPanel.js';
 import { cartogramPanel } from './ui/panels/CartogramPanel.js';
+import { rasterAnalysisPanel } from './ui/panels/RasterAnalysisPanel.js';
 import { cloudPanel } from './ui/panels/CloudPanel.js';
 import { myPagePanel } from './ui/panels/MyPagePanel.js';
 import { supabaseManager } from './core/SupabaseManager.js';
@@ -697,9 +698,18 @@ function handleMenuAction(action) {
       routingPanel.show();
       break;
 
-    // ===== 래스터 분석 메뉴 (준비중) =====
-    case 'raster-coming-soon':
-      showComingSoonModal('래스터 분석');
+    // ===== 래스터 분석 메뉴 =====
+    case 'analysis-hillshade':
+      rasterAnalysisPanel.showHillshade();
+      break;
+    case 'analysis-slope':
+      rasterAnalysisPanel.showSlope();
+      break;
+    case 'analysis-aspect':
+      rasterAnalysisPanel.showAspect();
+      break;
+    case 'analysis-contour':
+      rasterAnalysisPanel.showContour();
       break;
 
     // ===== 내장 데이터 =====

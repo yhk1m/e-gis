@@ -105,8 +105,15 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="analysis-routing">최단경로 분석</div>
               </div>
             </div>
-            <div class="menu-item disabled" data-menu="raster-analysis" title="준비중입니다.">
-              <button class="menu-button" data-action="raster-coming-soon">래스터 분석</button>
+            <div class="menu-item dropdown" data-menu="raster-analysis">
+              <button class="menu-button">래스터 분석</button>
+              <div class="dropdown-menu" id="menu-raster-analysis">
+                <div class="dropdown-item" data-action="analysis-hillshade">해발고도 (Hillshade)</div>
+                <div class="dropdown-item" data-action="analysis-slope">경사도 (Slope)</div>
+                <div class="dropdown-item" data-action="analysis-aspect">경사방향 (Aspect)</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="analysis-contour">등고선 생성</div>
+              </div>
             </div>
             <div class="menu-item" data-menu="builtin-data">
               <button class="menu-button" data-action="builtin-data" style="color: var(--primary-color); font-weight: 600;">📂 데이터 불러오기</button>
