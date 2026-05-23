@@ -6,6 +6,7 @@
 
 import { builtinDataManager } from '../../core/BuiltinDataManager.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { mapManager } from '../../core/MapManager.js';
 import { tableJoinTool } from '../../tools/TableJoinTool.js';
 
 class BuiltinDataDialog {
@@ -16,6 +17,8 @@ class BuiltinDataDialog {
     this._attrData = null;
     this._attrHeaders = null;
     this._attrDataset = null;
+    // 래스터 다중선택 상태
+    this._selectedRasterIds = new Set();
   }
 
   /**
@@ -33,6 +36,7 @@ class BuiltinDataDialog {
   _renderMain() {
     const spatialList = builtinDataManager.getSpatialCatalog();
     const attrList = builtinDataManager.getAttributeCatalog();
+    const rasterList = builtinDataManager.getRasterCatalog();
 
     const html = `
       <div class="modal-overlay active" id="builtin-data-overlay">
@@ -50,6 +54,7 @@ class BuiltinDataDialog {
             <!-- 데이터 목록 -->
             <div id="builtin-data-list" style="overflow-y: auto; max-height: calc(82vh - 160px);">
               ${this._renderSpatialSection(spatialList)}
+              ${this._renderRasterSection(rasterList)}
               ${this._renderAttributeSection(attrList)}
             </div>
           </div>
@@ -92,6 +97,66 @@ class BuiltinDataDialog {
               </div>
             </div>
           `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  _renderRasterSection(list) {
+    const groups = builtinDataManager.getRasterCatalogGrouped();
+    const totalCount = list.length;
+
+    const emptyMsg = totalCount === 0
+      ? '<div style="padding: 16px; color: var(--text-muted); font-size: 12px; text-align: center;">GeoTIFF 파일이 없습니다.<br><code>public/data/builtin/raster/</code>에 .tif 파일을 넣고<br><code>npm run catalog</code> 실행하세요.</div>'
+      : '';
+
+    const groupsHTML = groups.map(g => `
+      <div class="raster-group" data-group="${g.name}">
+        <div class="raster-group-header">
+          <input type="checkbox" class="raster-group-all" data-group="${g.name}" aria-label="${g.name} 전체 선택">
+          <button type="button" class="raster-group-name" data-toggle-group="${g.name}">
+            <svg class="raster-group-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            📁 ${g.name}
+            <span class="builtin-badge">${g.items.length}</span>
+          </button>
+        </div>
+        <div class="raster-group-body">
+          ${g.items.map(d => `
+            <label class="raster-card" data-id="${d.id}" data-group="${g.name}">
+              <input type="checkbox" class="raster-item-check" data-id="${d.id}" data-group="${g.name}">
+              <div class="raster-card-content">
+                <div class="raster-card-name">${builtinDataManager.stripProvincePrefix(d.name)}</div>
+                <div class="raster-card-desc">${d.description}</div>
+              </div>
+              <div class="raster-card-loading" style="display:none;">
+                <span class="builtin-spinner"></span>
+              </div>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="builtin-category" data-category="raster">
+        <div class="builtin-category-header" data-toggle="raster">
+          <span>🏔 래스터 (GeoTIFF)</span>
+          <span class="builtin-badge" style="margin-left:auto; margin-right:8px;">${totalCount}개</span>
+          <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="builtin-category-body">
+          ${emptyMsg}
+          ${totalCount > 0 ? `
+            <div class="raster-toolbar">
+              <button type="button" class="btn btn-primary btn-sm" id="raster-load-selected" disabled>
+                선택 0개 불러오기
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="raster-clear-selection" disabled>
+                선택 해제
+              </button>
+            </div>
+            ${groupsHTML}
+          ` : ''}
         </div>
       </div>
     `;
@@ -144,8 +209,27 @@ class BuiltinDataDialog {
 
     const listEl = document.getElementById('builtin-data-list');
 
-    // 카테고리 아코디언 토글
+    // 카테고리 / 래스터 그룹 아코디언 + 카드 클릭
     listEl.addEventListener('click', (e) => {
+      // 래스터 그룹 폴더 토글
+      const groupNameBtn = e.target.closest('.raster-group-name');
+      if (groupNameBtn) {
+        const grp = groupNameBtn.closest('.raster-group');
+        grp.classList.toggle('open');
+        return;
+      }
+
+      // 일괄 불러오기 버튼
+      if (e.target.closest('#raster-load-selected')) {
+        this._loadSelectedRasters();
+        return;
+      }
+      if (e.target.closest('#raster-clear-selection')) {
+        this._clearRasterSelection();
+        return;
+      }
+
+      // 카테고리 아코디언 (단, 래스터 내부 클릭은 위에서 처리됨)
       const header = e.target.closest('.builtin-category-header');
       if (header) {
         const category = header.closest('.builtin-category');
@@ -153,13 +237,25 @@ class BuiltinDataDialog {
         return;
       }
 
-      // 카드 클릭
+      // 비-래스터 카드 단일 로드 (spatial, attribute)
       const card = e.target.closest('.builtin-dataset-card');
       if (!card || this.loadingId) return;
       const type = card.dataset.type;
       const id = card.dataset.id;
       if (type === 'spatial') this._loadSpatial(id, card);
       else if (type === 'attribute') this._loadAttribute(id, card);
+    });
+
+    // 래스터 체크박스 변경 (이벤트 위임)
+    listEl.addEventListener('change', (e) => {
+      if (e.target.classList.contains('raster-item-check')) {
+        this._toggleRasterItem(e.target.dataset.id, e.target.checked);
+        this._syncGroupCheckbox(e.target.dataset.group);
+        this._updateRasterBulkUI();
+      } else if (e.target.classList.contains('raster-group-all')) {
+        this._toggleRasterGroup(e.target.dataset.group, e.target.checked);
+        this._updateRasterBulkUI();
+      }
     });
 
     // 검색
@@ -195,6 +291,110 @@ class BuiltinDataDialog {
     } finally {
       this.loadingId = null;
     }
+  }
+
+  // ============================
+  //  래스터(GeoTIFF) 다중선택 + 일괄 로드
+  // ============================
+
+  _toggleRasterItem(id, checked) {
+    if (checked) this._selectedRasterIds.add(id);
+    else this._selectedRasterIds.delete(id);
+  }
+
+  _toggleRasterGroup(group, checked) {
+    const items = this.overlay.querySelectorAll(`.raster-item-check[data-group="${group}"]`);
+    items.forEach(cb => {
+      cb.checked = checked;
+      this._toggleRasterItem(cb.dataset.id, checked);
+    });
+  }
+
+  /** 그룹 내 체크 상태를 보고 그룹 헤더 체크박스를 모두/일부/없음으로 동기화 */
+  _syncGroupCheckbox(group) {
+    const items = this.overlay.querySelectorAll(`.raster-item-check[data-group="${group}"]`);
+    const checked = [...items].filter(cb => cb.checked).length;
+    const groupCb = this.overlay.querySelector(`.raster-group-all[data-group="${group}"]`);
+    if (!groupCb) return;
+    if (checked === 0) {
+      groupCb.checked = false;
+      groupCb.indeterminate = false;
+    } else if (checked === items.length) {
+      groupCb.checked = true;
+      groupCb.indeterminate = false;
+    } else {
+      groupCb.checked = false;
+      groupCb.indeterminate = true;
+    }
+  }
+
+  _updateRasterBulkUI() {
+    const count = this._selectedRasterIds.size;
+    const loadBtn = this.overlay.querySelector('#raster-load-selected');
+    const clearBtn = this.overlay.querySelector('#raster-clear-selection');
+    if (loadBtn) {
+      loadBtn.textContent = `선택 ${count}개 불러오기`;
+      loadBtn.disabled = count === 0 || this.loadingId !== null;
+    }
+    if (clearBtn) clearBtn.disabled = count === 0;
+  }
+
+  _clearRasterSelection() {
+    this._selectedRasterIds.clear();
+    this.overlay.querySelectorAll('.raster-item-check').forEach(cb => { cb.checked = false; });
+    this.overlay.querySelectorAll('.raster-group-all').forEach(cb => {
+      cb.checked = false;
+      cb.indeterminate = false;
+    });
+    this._updateRasterBulkUI();
+  }
+
+  async _loadSelectedRasters() {
+    if (this._selectedRasterIds.size === 0 || this.loadingId) return;
+    const ids = [...this._selectedRasterIds];
+    const loadBtn = this.overlay.querySelector('#raster-load-selected');
+    const clearBtn = this.overlay.querySelector('#raster-clear-selection');
+    this.loadingId = '__batch__';
+    loadBtn.disabled = true;
+    clearBtn.disabled = true;
+
+    let success = 0, failed = 0;
+    const extents = [];
+
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      const cardEl = this.overlay.querySelector(`.raster-card[data-id="${id}"]`);
+      const loadingEl = cardEl?.querySelector('.raster-card-loading');
+      if (loadingEl) loadingEl.style.display = 'flex';
+      loadBtn.textContent = `불러오는 중... ${i + 1}/${ids.length}`;
+
+      try {
+        // 일괄 로드 중에는 개별 fit 끄고 마지막에 통합 fit
+        const layerId = await builtinDataManager.loadRaster(id, { fitExtent: false });
+        success++;
+        const info = layerManager.getLayer(layerId);
+        if (info && info.demData) extents.push(info.demData.extent);
+        if (loadingEl) loadingEl.innerHTML = '<span style="color: var(--success-color, #10b981);">✓</span>';
+      } catch (e) {
+        failed++;
+        if (loadingEl) loadingEl.innerHTML = `<span style="color: var(--danger-color, #ef4444);" title="${e.message}">✕</span>`;
+      }
+    }
+
+    // 모든 레이어를 포함하는 통합 extent로 fit
+    if (extents.length > 0) {
+      const union = extents.reduce((u, e) => [
+        Math.min(u[0], e[0]),
+        Math.min(u[1], e[1]),
+        Math.max(u[2], e[2]),
+        Math.max(u[3], e[3])
+      ]);
+      mapManager.fitExtent(union);
+    }
+
+    loadBtn.textContent = `✓ ${success}개 완료${failed > 0 ? ` · ✕ ${failed}` : ''}`;
+    this.loadingId = null;
+    setTimeout(() => this.close(), 900);
   }
 
   // ============================
@@ -366,13 +566,15 @@ class BuiltinDataDialog {
   //  검색 필터
   // ============================
   _filterDatasets(keyword) {
-    const cards = this.overlay.querySelectorAll('.builtin-dataset-card');
+    const cards = this.overlay.querySelectorAll('.builtin-dataset-card, .raster-card');
     const categories = this.overlay.querySelectorAll('.builtin-category');
+    const rasterGroups = this.overlay.querySelectorAll('.raster-group');
     const kw = keyword.toLowerCase().trim();
 
     if (!kw) {
       cards.forEach(c => c.style.display = '');
       categories.forEach(c => { c.style.display = ''; c.classList.remove('open'); });
+      rasterGroups.forEach(g => { g.style.display = ''; g.classList.remove('open'); });
       return;
     }
 
@@ -383,11 +585,22 @@ class BuiltinDataDialog {
       card.style.display = matchedIds.has(card.dataset.id) ? '' : 'none';
     });
 
+    // 래스터 그룹: 안에 매치된 카드가 있으면 펼치고 보이게
+    rasterGroups.forEach(grp => {
+      const visible = grp.querySelectorAll('.raster-card:not([style*="display: none"])');
+      if (visible.length > 0) {
+        grp.style.display = '';
+        grp.classList.add('open');
+      } else {
+        grp.style.display = 'none';
+      }
+    });
+
     categories.forEach(cat => {
-      const visibleCards = cat.querySelectorAll('.builtin-dataset-card:not([style*="display: none"])');
+      const visibleCards = cat.querySelectorAll('.builtin-dataset-card:not([style*="display: none"]), .raster-card:not([style*="display: none"])');
       if (visibleCards.length > 0) {
         cat.style.display = '';
-        cat.classList.add('open'); // 검색 결과 있으면 자동 펼침
+        cat.classList.add('open');
       } else {
         cat.style.display = 'none';
       }
@@ -410,6 +623,7 @@ class BuiltinDataDialog {
     this._attrData = null;
     this._attrHeaders = null;
     this._attrDataset = null;
+    this._selectedRasterIds.clear();
   }
 }
 

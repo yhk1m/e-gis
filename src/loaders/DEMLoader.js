@@ -70,12 +70,43 @@ class DEMLoader {
    * URL로부터 DEM 로드
    * @param {string} url - GeoTIFF URL
    * @param {string} name - 레이어 이름
+   * @param {Object} options - { fitExtent: true } 일괄 로드 시 false로 뷰 점프 방지
    * @returns {Promise<string>} 생성된 레이어 ID
    */
-  async loadFromUrl(url, name = 'DEM') {
+  async loadFromUrl(url, name = 'DEM', options = {}) {
     const tiff = await GeoTIFF.fromUrl(url);
     const image = await tiff.getImage();
-    return await this.createDEMLayer(image, name);
+    return await this.createDEMLayer(image, name, options);
+  }
+
+  /**
+   * 한국 Transverse Mercator 좌표계 추론 (EPSG 코드가 user-defined일 때)
+   * - 5186 중부원점: lon=127, lat=38, FE=200k, FN=600k, k=1
+   * - 5187 동부원점: lon=129, lat=38, FE=200k, FN=600k, k=1
+   * - 5188 서부원점: lon=125, lat=38, FE=200k, FN=600k, k=1
+   * - 5179 UTM-K:    lon=127.5, lat=38, FE=1M, FN=2M, k=0.9996
+   */
+  matchKoreanTM(geoKeys) {
+    // GRS80 타원체 (한국 좌표계의 공통)
+    const a = geoKeys.GeogSemiMajorAxisGeoKey;
+    if (a && Math.abs(a - 6378137) > 0.1) return null;
+
+    const lon = geoKeys.ProjNatOriginLongGeoKey;
+    const lat = geoKeys.ProjNatOriginLatGeoKey;
+    const fe = geoKeys.ProjFalseEastingGeoKey;
+    const fn = geoKeys.ProjFalseNorthingGeoKey;
+    const k = geoKeys.ProjScaleAtNatOriginGeoKey ?? 1;
+    const near = (x, target, tol = 0.001) => x !== undefined && Math.abs(x - target) < tol;
+
+    if (near(lat, 38) && near(fe, 200000) && near(fn, 600000) && near(k, 1)) {
+      if (near(lon, 127)) return 'EPSG:5186';
+      if (near(lon, 129)) return 'EPSG:5187';
+      if (near(lon, 125)) return 'EPSG:5188';
+    }
+    if (near(lat, 38) && near(lon, 127.5) && near(fe, 1000000) && near(fn, 2000000) && near(k, 0.9996)) {
+      return 'EPSG:5179';
+    }
+    return null;
   }
 
   /**
@@ -84,7 +115,8 @@ class DEMLoader {
    * @param {string} name - 레이어 이름
    * @returns {string} 레이어 ID
    */
-  async createDEMLayer(image, name) {
+  async createDEMLayer(image, name, options = {}) {
+    const { fitExtent: doFit = true } = options;
     // 래스터 데이터 읽기
     const rasters = await image.readRasters();
     const width = image.getWidth();
@@ -111,6 +143,12 @@ class DEMLoader {
       if (epsgCode !== 32767) {
         sourceProj = `EPSG:${epsgCode}`;
       }
+    }
+
+    // EPSG 코드가 user-defined(32767)면 TM 파라미터로 한국 좌표계 추론
+    // (정부 GeoTIFF에서 흔히 EPSG 코드를 비워두고 파라미터만 채우는 경우)
+    if (!sourceProj && geoKeys && geoKeys.ProjCoordTransGeoKey === 1) {
+      sourceProj = this.matchKoreanTM(geoKeys);
     }
 
     console.log('DEM 좌표계:', sourceProj || '정의되지 않음', 'bbox:', bbox);
@@ -241,8 +279,8 @@ class DEMLoader {
       layerInfo.featureCount = `${width}×${height}`;
     }
 
-    // 해당 범위로 이동
-    mapManager.fitExtent(extent);
+    // 해당 범위로 이동 (일괄 로드에서는 호출 측이 마지막에 통합 fit)
+    if (doFit) mapManager.fitExtent(extent);
 
     // 색상 범례 추가
     this.createLegend(layerId, name, minVal, maxVal);

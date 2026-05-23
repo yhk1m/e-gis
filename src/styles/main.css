@@ -969,6 +969,114 @@ input:focus, select:focus, textarea:focus {
   to { transform: rotate(360deg); }
 }
 
+/* ============================================
+ * 래스터(GeoTIFF) 카탈로그: 그룹 폴더 + 다중선택
+ * ============================================ */
+.raster-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary, var(--bg-panel));
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.raster-group {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.raster-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-hover, rgba(0,0,0,0.02));
+}
+
+.raster-group-header .raster-group-all {
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.raster-group-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  padding: 0;
+}
+
+.raster-group-chevron {
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.raster-group.open .raster-group-chevron {
+  transform: rotate(90deg);
+}
+
+.raster-group-body {
+  display: none;
+}
+
+.raster-group.open .raster-group-body {
+  display: block;
+}
+
+.raster-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 28px;
+  cursor: pointer;
+  border-top: 1px solid var(--border-color);
+  transition: background var(--transition-fast);
+}
+
+.raster-card:hover {
+  background: var(--bg-hover);
+}
+
+.raster-card .raster-item-check {
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.raster-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.raster-card-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.raster-card-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.raster-card-loading {
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  font-size: 11px;
+}
+
 .builtin-preview-table {
   width: 100%;
   border-collapse: collapse;

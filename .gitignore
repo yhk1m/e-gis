@@ -69,6 +69,8 @@ claude_desktop_config.json
 *.cpg
 *.gpkg
 !public/sample-data/**
+# 내장 데이터로 배포되는 .tif는 예외 (BuiltinDataDialog에서 사용)
+!public/data/builtin/raster/**
 
 
 .vercel

@@ -1,0 +1,475 @@
+[
+  {
+    "id": "서울특별시-강남구",
+    "name": "서울특별시 강남구",
+    "description": "GeoTIFF (34 KB)",
+    "file": "raster/서울특별시 강남구.tif",
+    "fileSize": 34530,
+    "source": "",
+    "tags": [
+      "서울특별시 강남구"
+    ]
+  },
+  {
+    "id": "서울특별시-강동구",
+    "name": "서울특별시 강동구",
+    "description": "GeoTIFF (23 KB)",
+    "file": "raster/서울특별시 강동구.tif",
+    "fileSize": 23326,
+    "source": "",
+    "tags": [
+      "서울특별시 강동구"
+    ]
+  },
+  {
+    "id": "서울특별시-강북구",
+    "name": "서울특별시 강북구",
+    "description": "GeoTIFF (23 KB)",
+    "file": "raster/서울특별시 강북구.tif",
+    "fileSize": 23122,
+    "source": "",
+    "tags": [
+      "서울특별시 강북구"
+    ]
+  },
+  {
+    "id": "서울특별시-강서구",
+    "name": "서울특별시 강서구",
+    "description": "GeoTIFF (35 KB)",
+    "file": "raster/서울특별시 강서구.tif",
+    "fileSize": 35748,
+    "source": "",
+    "tags": [
+      "서울특별시 강서구"
+    ]
+  },
+  {
+    "id": "서울특별시-관악구",
+    "name": "서울특별시 관악구",
+    "description": "GeoTIFF (26 KB)",
+    "file": "raster/서울특별시 관악구.tif",
+    "fileSize": 27062,
+    "source": "",
+    "tags": [
+      "서울특별시 관악구"
+    ]
+  },
+  {
+    "id": "서울특별시-광진구",
+    "name": "서울특별시 광진구",
+    "description": "GeoTIFF (17 KB)",
+    "file": "raster/서울특별시 광진구.tif",
+    "fileSize": 17648,
+    "source": "",
+    "tags": [
+      "서울특별시 광진구"
+    ]
+  },
+  {
+    "id": "서울특별시-구로구",
+    "name": "서울특별시 구로구",
+    "description": "GeoTIFF (22 KB)",
+    "file": "raster/서울특별시 구로구.tif",
+    "fileSize": 22324,
+    "source": "",
+    "tags": [
+      "서울특별시 구로구"
+    ]
+  },
+  {
+    "id": "서울특별시-금천구",
+    "name": "서울특별시 금천구",
+    "description": "GeoTIFF (15 KB)",
+    "file": "raster/서울특별시 금천구.tif",
+    "fileSize": 15594,
+    "source": "",
+    "tags": [
+      "서울특별시 금천구"
+    ]
+  },
+  {
+    "id": "서울특별시-노원구",
+    "name": "서울특별시 노원구",
+    "description": "GeoTIFF (30 KB)",
+    "file": "raster/서울특별시 노원구.tif",
+    "fileSize": 31046,
+    "source": "",
+    "tags": [
+      "서울특별시 노원구"
+    ]
+  },
+  {
+    "id": "서울특별시-도봉구",
+    "name": "서울특별시 도봉구",
+    "description": "GeoTIFF (21 KB)",
+    "file": "raster/서울특별시 도봉구.tif",
+    "fileSize": 21400,
+    "source": "",
+    "tags": [
+      "서울특별시 도봉구"
+    ]
+  },
+  {
+    "id": "서울특별시-동대문구",
+    "name": "서울특별시 동대문구",
+    "description": "GeoTIFF (16 KB)",
+    "file": "raster/서울특별시 동대문구.tif",
+    "fileSize": 15878,
+    "source": "",
+    "tags": [
+      "서울특별시 동대문구"
+    ]
+  },
+  {
+    "id": "서울특별시-동작구",
+    "name": "서울특별시 동작구",
+    "description": "GeoTIFF (17 KB)",
+    "file": "raster/서울특별시 동작구.tif",
+    "fileSize": 17864,
+    "source": "",
+    "tags": [
+      "서울특별시 동작구"
+    ]
+  },
+  {
+    "id": "서울특별시-마포구",
+    "name": "서울특별시 마포구",
+    "description": "GeoTIFF (23 KB)",
+    "file": "raster/서울특별시 마포구.tif",
+    "fileSize": 23640,
+    "source": "",
+    "tags": [
+      "서울특별시 마포구"
+    ]
+  },
+  {
+    "id": "서울특별시-서대문구",
+    "name": "서울특별시 서대문구",
+    "description": "GeoTIFF (19 KB)",
+    "file": "raster/서울특별시 서대문구.tif",
+    "fileSize": 19672,
+    "source": "",
+    "tags": [
+      "서울특별시 서대문구"
+    ]
+  },
+  {
+    "id": "서울특별시-서초구",
+    "name": "서울특별시 서초구",
+    "description": "GeoTIFF (39 KB)",
+    "file": "raster/서울특별시 서초구.tif",
+    "fileSize": 39922,
+    "source": "",
+    "tags": [
+      "서울특별시 서초구"
+    ]
+  },
+  {
+    "id": "서울특별시-성동구",
+    "name": "서울특별시 성동구",
+    "description": "GeoTIFF (17 KB)",
+    "file": "raster/서울특별시 성동구.tif",
+    "fileSize": 17838,
+    "source": "",
+    "tags": [
+      "서울특별시 성동구"
+    ]
+  },
+  {
+    "id": "서울특별시-성북구",
+    "name": "서울특별시 성북구",
+    "description": "GeoTIFF (25 KB)",
+    "file": "raster/서울특별시 성북구.tif",
+    "fileSize": 25136,
+    "source": "",
+    "tags": [
+      "서울특별시 성북구"
+    ]
+  },
+  {
+    "id": "서울특별시-송파구",
+    "name": "서울특별시 송파구",
+    "description": "GeoTIFF (29 KB)",
+    "file": "raster/서울특별시 송파구.tif",
+    "fileSize": 29742,
+    "source": "",
+    "tags": [
+      "서울특별시 송파구"
+    ]
+  },
+  {
+    "id": "서울특별시-양천구",
+    "name": "서울특별시 양천구",
+    "description": "GeoTIFF (19 KB)",
+    "file": "raster/서울특별시 양천구.tif",
+    "fileSize": 19758,
+    "source": "",
+    "tags": [
+      "서울특별시 양천구"
+    ]
+  },
+  {
+    "id": "서울특별시-영등포구",
+    "name": "서울특별시 영등포구",
+    "description": "GeoTIFF (22 KB)",
+    "file": "raster/서울특별시 영등포구.tif",
+    "fileSize": 22766,
+    "source": "",
+    "tags": [
+      "서울특별시 영등포구"
+    ]
+  },
+  {
+    "id": "서울특별시-용산구",
+    "name": "서울특별시 용산구",
+    "description": "GeoTIFF (20 KB)",
+    "file": "raster/서울특별시 용산구.tif",
+    "fileSize": 20750,
+    "source": "",
+    "tags": [
+      "서울특별시 용산구"
+    ]
+  },
+  {
+    "id": "서울특별시-은평구",
+    "name": "서울특별시 은평구",
+    "description": "GeoTIFF (28 KB)",
+    "file": "raster/서울특별시 은평구.tif",
+    "fileSize": 28526,
+    "source": "",
+    "tags": [
+      "서울특별시 은평구"
+    ]
+  },
+  {
+    "id": "서울특별시-종로구",
+    "name": "서울특별시 종로구",
+    "description": "GeoTIFF (22 KB)",
+    "file": "raster/서울특별시 종로구.tif",
+    "fileSize": 22990,
+    "source": "",
+    "tags": [
+      "서울특별시 종로구"
+    ]
+  },
+  {
+    "id": "서울특별시-중구",
+    "name": "서울특별시 중구",
+    "description": "GeoTIFF (13 KB)",
+    "file": "raster/서울특별시 중구.tif",
+    "fileSize": 13338,
+    "source": "",
+    "tags": [
+      "서울특별시 중구"
+    ]
+  },
+  {
+    "id": "서울특별시-중랑구",
+    "name": "서울특별시 중랑구",
+    "description": "GeoTIFF (17 KB)",
+    "file": "raster/서울특별시 중랑구.tif",
+    "fileSize": 17480,
+    "source": "",
+    "tags": [
+      "서울특별시 중랑구"
+    ]
+  },
+  {
+    "id": "제주특별자치도-서귀포시",
+    "name": "제주특별자치도 서귀포시",
+    "description": "GeoTIFF (435 KB)",
+    "file": "raster/제주특별자치도 서귀포시.tif",
+    "fileSize": 445274,
+    "source": "",
+    "tags": [
+      "제주특별자치도 서귀포시"
+    ]
+  },
+  {
+    "id": "제주특별자치도-제주시",
+    "name": "제주특별자치도 제주시",
+    "description": "GeoTIFF (512 KB)",
+    "file": "raster/제주특별자치도 제주시.tif",
+    "fileSize": 524596,
+    "source": "",
+    "tags": [
+      "제주특별자치도 제주시"
+    ]
+  },
+  {
+    "id": "충청남도-계룡시",
+    "name": "충청남도 계룡시",
+    "description": "GeoTIFF (47 KB)",
+    "file": "raster/충청남도 계룡시.tif",
+    "fileSize": 47830,
+    "source": "",
+    "tags": [
+      "충청남도 계룡시"
+    ]
+  },
+  {
+    "id": "충청남도-공주시",
+    "name": "충청남도 공주시",
+    "description": "GeoTIFF (501 KB)",
+    "file": "raster/충청남도 공주시.tif",
+    "fileSize": 512590,
+    "source": "",
+    "tags": [
+      "충청남도 공주시"
+    ]
+  },
+  {
+    "id": "충청남도-금산군",
+    "name": "충청남도 금산군",
+    "description": "GeoTIFF (327 KB)",
+    "file": "raster/충청남도 금산군.tif",
+    "fileSize": 334674,
+    "source": "",
+    "tags": [
+      "충청남도 금산군"
+    ]
+  },
+  {
+    "id": "충청남도-논산시",
+    "name": "충청남도 논산시",
+    "description": "GeoTIFF (327 KB)",
+    "file": "raster/충청남도 논산시.tif",
+    "fileSize": 334474,
+    "source": "",
+    "tags": [
+      "충청남도 논산시"
+    ]
+  },
+  {
+    "id": "충청남도-당진시",
+    "name": "충청남도 당진시",
+    "description": "GeoTIFF (401 KB)",
+    "file": "raster/충청남도 당진시.tif",
+    "fileSize": 411124,
+    "source": "",
+    "tags": [
+      "충청남도 당진시"
+    ]
+  },
+  {
+    "id": "충청남도-보령시",
+    "name": "충청남도 보령시",
+    "description": "GeoTIFF (359 KB)",
+    "file": "raster/충청남도 보령시.tif",
+    "fileSize": 367658,
+    "source": "",
+    "tags": [
+      "충청남도 보령시"
+    ]
+  },
+  {
+    "id": "충청남도-부여군",
+    "name": "충청남도 부여군",
+    "description": "GeoTIFF (377 KB)",
+    "file": "raster/충청남도 부여군.tif",
+    "fileSize": 385606,
+    "source": "",
+    "tags": [
+      "충청남도 부여군"
+    ]
+  },
+  {
+    "id": "충청남도-서산시",
+    "name": "충청남도 서산시",
+    "description": "GeoTIFF (423 KB)",
+    "file": "raster/충청남도 서산시.tif",
+    "fileSize": 433604,
+    "source": "",
+    "tags": [
+      "충청남도 서산시"
+    ]
+  },
+  {
+    "id": "충청남도-서천군",
+    "name": "충청남도 서천군",
+    "description": "GeoTIFF (214 KB)",
+    "file": "raster/충청남도 서천군.tif",
+    "fileSize": 219248,
+    "source": "",
+    "tags": [
+      "충청남도 서천군"
+    ]
+  },
+  {
+    "id": "충청남도-아산시",
+    "name": "충청남도 아산시",
+    "description": "GeoTIFF (313 KB)",
+    "file": "raster/충청남도 아산시.tif",
+    "fileSize": 320232,
+    "source": "",
+    "tags": [
+      "충청남도 아산시"
+    ]
+  },
+  {
+    "id": "충청남도-예산군",
+    "name": "충청남도 예산군",
+    "description": "GeoTIFF (326 KB)",
+    "file": "raster/충청남도 예산군.tif",
+    "fileSize": 334148,
+    "source": "",
+    "tags": [
+      "충청남도 예산군"
+    ]
+  },
+  {
+    "id": "충청남도-천안시-동남구",
+    "name": "충청남도 천안시 동남구",
+    "description": "GeoTIFF (268 KB)",
+    "file": "raster/충청남도 천안시 동남구.tif",
+    "fileSize": 274402,
+    "source": "",
+    "tags": [
+      "충청남도 천안시 동남구"
+    ]
+  },
+  {
+    "id": "충청남도-천안시-서북구",
+    "name": "충청남도 천안시 서북구",
+    "description": "GeoTIFF (125 KB)",
+    "file": "raster/충청남도 천안시 서북구.tif",
+    "fileSize": 127894,
+    "source": "",
+    "tags": [
+      "충청남도 천안시 서북구"
+    ]
+  },
+  {
+    "id": "충청남도-청양군",
+    "name": "충청남도 청양군",
+    "description": "GeoTIFF (287 KB)",
+    "file": "raster/충청남도 청양군.tif",
+    "fileSize": 293956,
+    "source": "",
+    "tags": [
+      "충청남도 청양군"
+    ]
+  },
+  {
+    "id": "충청남도-태안군",
+    "name": "충청남도 태안군",
+    "description": "GeoTIFF (346 KB)",
+    "file": "raster/충청남도 태안군.tif",
+    "fileSize": 354386,
+    "source": "",
+    "tags": [
+      "충청남도 태안군"
+    ]
+  },
+  {
+    "id": "충청남도-홍성군",
+    "name": "충청남도 홍성군",
+    "description": "GeoTIFF (267 KB)",
+    "file": "raster/충청남도 홍성군.tif",
+    "fileSize": 273732,
+    "source": "",
+    "tags": [
+      "충청남도 홍성군"
+    ]
+  }
+]
