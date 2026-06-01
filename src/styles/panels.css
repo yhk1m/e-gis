@@ -169,6 +169,28 @@
   opacity: 0.7;
 }
 
+/* 레이어 전체 표시/숨김 마스터 체크박스 */
+.layer-select-all {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  cursor: pointer;
+}
+
+.layer-select-all input[type="checkbox"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+/* 레이어 탭 헤더: 체크박스+제목 왼쪽 묶고 액션 버튼은 오른쪽 */
+#tab-layers .panel-header-title {
+  margin-right: auto;
+  margin-left: var(--spacing-sm);
+}
+
 /* 패널 헤더 액션 버튼 */
 .panel-header-actions .btn-icon {
   width: 22px;

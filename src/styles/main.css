@@ -3813,6 +3813,48 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--border-color);
 }
 
+/* 해발고도(고도색) 범례 */
+.raster-legend-gradient {
+  height: 16px;
+  border-radius: 2px;
+  border: 1px solid var(--border-color);
+}
+
+/* 래스터 필터 범례 */
+.filter-legend-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+}
+
+.filter-legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+/* 래스터 계산기 값 범위 입력 */
+.filter-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.filter-range-inputs input[type="number"] {
+  width: 80px;
+}
+
+.filter-hint {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 /* Slope 범례 */
 .slope-legend-gradient {
   height: 16px;

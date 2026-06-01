@@ -108,10 +108,11 @@ export class AppLayout {
             <div class="menu-item dropdown" data-menu="raster-analysis">
               <button class="menu-button">래스터 분석</button>
               <div class="dropdown-menu" id="menu-raster-analysis">
-                <div class="dropdown-item" data-action="analysis-hillshade">해발고도 (Hillshade)</div>
+                <div class="dropdown-item" data-action="analysis-terrain">해발고도 (지형음영)</div>
                 <div class="dropdown-item" data-action="analysis-slope">경사도 (Slope)</div>
                 <div class="dropdown-item" data-action="analysis-aspect">경사방향 (Aspect)</div>
                 <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="analysis-raster-filter">래스터 계산기 (값 필터)</div>
                 <div class="dropdown-item" data-action="analysis-contour">등고선 생성</div>
               </div>
             </div>
@@ -283,7 +284,7 @@ export class AppLayout {
             <button class="panel-tab" data-tab="browser"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>브라우저</button>
           </div>
           <div id="tab-layers" class="tab-content active">
-            <div class="panel-header"><span class="panel-header-title">레이어 목록</span><div class="panel-header-actions"><button class="btn-icon btn-small" id="btn-add-layer" title="새 레이어 추가"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></div></div>
+            <div class="panel-header"><label class="layer-select-all" title="전체 표시/숨김"><input type="checkbox" id="layer-select-all"></label><span class="panel-header-title">레이어 목록</span><div class="panel-header-actions"><button class="btn-icon btn-small" id="btn-add-layer" title="새 레이어 추가"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></div></div>
             <div class="panel-content"><ul id="layer-list" class="layer-list"></ul></div>
           </div>
           <div id="tab-browser" class="tab-content">

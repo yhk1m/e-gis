@@ -12,10 +12,18 @@ class RasterAnalysisPanel {
   }
 
   /**
-   * Hillshade 분석 패널
+   * 해발고도(지형음영) 분석 패널 — 고도색 + 음영기복 결합
    */
-  showHillshade() {
-    this.currentAnalysis = 'hillshade';
+  showTerrain() {
+    this.currentAnalysis = 'terrain';
+    this.render();
+  }
+
+  /**
+   * 래스터 계산기(값 필터) 패널
+   */
+  showRasterFilter() {
+    this.currentAnalysis = 'filter';
     this.render();
   }
 
@@ -75,9 +83,13 @@ class RasterAnalysisPanel {
     let title, bodyHTML;
 
     switch (this.currentAnalysis) {
-      case 'hillshade':
-        title = '해발고도 (Hillshade)';
-        bodyHTML = this.getHillshadeHTML(layerOptions);
+      case 'terrain':
+        title = '해발고도 (지형음영)';
+        bodyHTML = this.getTerrainHTML(layerOptions);
+        break;
+      case 'filter':
+        title = '래스터 계산기 (값 필터)';
+        bodyHTML = this.getRasterFilterHTML(layerOptions);
         break;
       case 'slope':
         title = '경사도 (Slope)';
@@ -114,12 +126,12 @@ class RasterAnalysisPanel {
   }
 
   /**
-   * Hillshade HTML
+   * 해발고도(지형음영) HTML — 고도색 + 음영기복 결합
    */
-  getHillshadeHTML(layerOptions) {
+  getTerrainHTML(layerOptions) {
     return `
       <div class="analysis-description">
-        <p>음영기복도를 생성합니다. 태양 위치에 따라 지형의 입체감을 표현합니다.</p>
+        <p>해발고도를 색으로(저지대 녹색 → 고지대 갈색·흰색), 지형 입체감을 음영으로 함께 표현합니다. 범례에는 실제 고도값(m)이 표시됩니다.</p>
       </div>
       <div class="form-group">
         <label for="raster-layer">입력 DEM 레이어</label>
@@ -127,7 +139,7 @@ class RasterAnalysisPanel {
       </div>
       <div class="form-group">
         <label for="hillshade-azimuth">
-          방위각 (Azimuth): <span id="azimuth-value">315</span>°
+          광원 방위각 (Azimuth): <span id="azimuth-value">315</span>°
         </label>
         <input type="range" id="hillshade-azimuth" min="0" max="360" value="315" step="1">
         <div class="range-labels">
@@ -139,20 +151,52 @@ class RasterAnalysisPanel {
       </div>
       <div class="form-group">
         <label for="hillshade-altitude">
-          고도각 (Altitude): <span id="altitude-value">45</span>°
+          광원 고도각 (Altitude): <span id="altitude-value">45</span>°
         </label>
         <input type="range" id="hillshade-altitude" min="0" max="90" value="45" step="1">
-        <div class="range-labels">
-          <span>수평(0°)</span>
-          <span>45°</span>
-          <span>수직(90°)</span>
-        </div>
       </div>
       <div class="form-group">
         <label for="hillshade-zfactor">
-          Z 인자 (고도 과장): <span id="zfactor-value">1</span>
+          Z 인자 (음영 과장): <span id="zfactor-value">1</span>
         </label>
         <input type="range" id="hillshade-zfactor" min="0.1" max="10" value="1" step="0.1">
+      </div>
+    `;
+  }
+
+  /**
+   * 래스터 계산기(값 필터) HTML
+   */
+  getRasterFilterHTML(layerOptions) {
+    return `
+      <div class="analysis-description">
+        <p>선택한 기준이 지정 범위에 드는 셀만 색칠해 표시합니다. (예: 해발 500~1000m, 향 북~동)</p>
+      </div>
+      <div class="form-group">
+        <label for="raster-layer">입력 DEM 레이어</label>
+        <select id="raster-layer">${layerOptions}</select>
+      </div>
+      <div class="form-group">
+        <label for="filter-metric">기준</label>
+        <select id="filter-metric">
+          <option value="elevation">해발고도 (m)</option>
+          <option value="slope">경사도 (°)</option>
+          <option value="aspect">경사방향/향 (°)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>값 범위</label>
+        <div class="filter-range-inputs">
+          <input type="number" id="filter-min" placeholder="최소" step="any">
+          <span>~</span>
+          <input type="number" id="filter-max" placeholder="최대" step="any">
+          <span id="filter-unit">m</span>
+        </div>
+        <div class="filter-hint">비워두면 제한 없음. 향은 0(북)~360이며, 최소&gt;최대로 두면 북향(예: 315~45)처럼 0°를 가로질러 선택됩니다.</div>
+      </div>
+      <div class="form-group">
+        <label for="filter-color">표시 색상</label>
+        <input type="color" id="filter-color" value="#e3170a">
       </div>
     `;
   }
@@ -284,6 +328,15 @@ class RasterAnalysisPanel {
         document.getElementById('zfactor-value').textContent = e.target.value;
       });
     });
+
+    // 래스터 계산기: 기준 변경 시 단위 표시 갱신
+    const filterMetric = document.getElementById('filter-metric');
+    if (filterMetric) {
+      filterMetric.addEventListener('change', (e) => {
+        const unitEl = document.getElementById('filter-unit');
+        if (unitEl) unitEl.textContent = e.target.value === 'elevation' ? 'm' : '°';
+      });
+    }
   }
 
   /**
@@ -301,11 +354,24 @@ class RasterAnalysisPanel {
       let resultLayerId;
 
       switch (this.currentAnalysis) {
-        case 'hillshade':
-          const azimuth = parseFloat(document.getElementById('hillshade-azimuth').value);
-          const altitude = parseFloat(document.getElementById('hillshade-altitude').value);
-          const zFactor = parseFloat(document.getElementById('hillshade-zfactor').value);
-          resultLayerId = rasterAnalysisTool.createHillshade(layerId, { azimuth, altitude, zFactor });
+        case 'terrain':
+          const tAzimuth = parseFloat(document.getElementById('hillshade-azimuth').value);
+          const tAltitude = parseFloat(document.getElementById('hillshade-altitude').value);
+          const tZFactor = parseFloat(document.getElementById('hillshade-zfactor').value);
+          resultLayerId = rasterAnalysisTool.createTerrain(layerId, { azimuth: tAzimuth, altitude: tAltitude, zFactor: tZFactor });
+          break;
+
+        case 'filter':
+          const metric = document.getElementById('filter-metric').value;
+          const minRaw = document.getElementById('filter-min').value;
+          const maxRaw = document.getElementById('filter-max').value;
+          const fmin = minRaw === '' ? null : parseFloat(minRaw);
+          const fmax = maxRaw === '' ? null : parseFloat(maxRaw);
+          const fcolor = document.getElementById('filter-color').value;
+          if (fmin === null && fmax === null) {
+            throw new Error('최소 또는 최대값을 하나 이상 입력하세요.');
+          }
+          resultLayerId = rasterAnalysisTool.createRasterFilter(layerId, { metric, min: fmin, max: fmax, color: fcolor });
           break;
 
         case 'slope':

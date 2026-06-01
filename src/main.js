@@ -699,8 +699,11 @@ function handleMenuAction(action) {
       break;
 
     // ===== 래스터 분석 메뉴 =====
-    case 'analysis-hillshade':
-      rasterAnalysisPanel.showHillshade();
+    case 'analysis-terrain':
+      rasterAnalysisPanel.showTerrain();
+      break;
+    case 'analysis-raster-filter':
+      rasterAnalysisPanel.showRasterFilter();
       break;
     case 'analysis-slope':
       rasterAnalysisPanel.showSlope();

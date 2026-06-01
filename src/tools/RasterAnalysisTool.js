@@ -111,11 +111,220 @@ class RasterAnalysisTool {
 
     // 결과 레이어 생성
     return this.createResultLayer(
-      `${layerInfo.name}_Hillshade`,
+      `${layerInfo.name}_음영기복`,
       hillshadeData,
       width, height, extent, noDataValue,
       'grayscale'
     );
+  }
+
+  /**
+   * 해발고도 색상(hypsometric tint) 시각화 생성
+   * DEM 고도값을 색상 그라데이션으로 표현하고 범례에 실제 고도값(m) 표시
+   * @param {string} layerId - DEM 레이어 ID
+   * @returns {string} 생성된 레이어 ID
+   */
+  createElevation(layerId) {
+    const layerInfo = layerManager.getLayer(layerId);
+    if (!layerInfo || !layerInfo.demData) {
+      throw new Error('DEM 레이어를 찾을 수 없습니다.');
+    }
+
+    const demData = layerInfo.demData;
+    const { data, width, height, extent, noDataValue } = demData;
+
+    // 고도 최소/최대 (없으면 계산)
+    let minVal = demData.minVal;
+    let maxVal = demData.maxVal;
+    if (minVal === undefined || maxVal === undefined) {
+      minVal = Infinity; maxVal = -Infinity;
+      for (let i = 0; i < data.length; i++) {
+        const v = data[i];
+        if (v === noDataValue || isNaN(v) || !isFinite(v)) continue;
+        if (v < minVal) minVal = v;
+        if (v > maxVal) maxVal = v;
+      }
+    }
+
+    // 고도값을 그대로 결과 데이터로 사용
+    const elevData = Float32Array.from(data);
+
+    return this.createResultLayer(
+      `${layerInfo.name}_해발고도`,
+      elevData,
+      width, height, extent, noDataValue,
+      'elevation',
+      { minVal, maxVal }
+    );
+  }
+
+  /**
+   * 해발고도 + 음영기복 결합 시각화 (shaded relief)
+   * 고도색 위에 음영을 곱해 입체 지형도를 만들고, 범례는 고도값(m) 표시
+   * @param {string} layerId - DEM 레이어 ID
+   * @param {Object} options - { azimuth, altitude, zFactor }
+   * @returns {string} 생성된 레이어 ID
+   */
+  createTerrain(layerId, options = {}) {
+    const {
+      azimuth = this.defaultAzimuth,
+      altitude = this.defaultAltitude,
+      zFactor = 1
+    } = options;
+
+    const layerInfo = layerManager.getLayer(layerId);
+    if (!layerInfo || !layerInfo.demData) {
+      throw new Error('DEM 레이어를 찾을 수 없습니다.');
+    }
+
+    const demData = layerInfo.demData;
+    const { data, width, height, extent, noDataValue } = demData;
+
+    // 고도 최소/최대
+    let minVal = demData.minVal;
+    let maxVal = demData.maxVal;
+    if (minVal === undefined || maxVal === undefined) {
+      minVal = Infinity; maxVal = -Infinity;
+      for (let i = 0; i < data.length; i++) {
+        const v = data[i];
+        if (v === noDataValue || isNaN(v) || !isFinite(v)) continue;
+        if (v < minVal) minVal = v;
+        if (v > maxVal) maxVal = v;
+      }
+    }
+
+    // 음영기복(0~1) 계산
+    const azimuthRad = (360 - azimuth + 90) * Math.PI / 180;
+    const altitudeRad = altitude * Math.PI / 180;
+    const cellSizeX = (extent[2] - extent[0]) / width;
+    const cellSizeY = (extent[3] - extent[1]) / height;
+    const shadeData = new Float32Array(width * height).fill(1);
+
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const idx = y * width + x;
+        const z = this.getNeighborValues(data, width, height, x, y, noDataValue);
+        if (z === null) { shadeData[idx] = 1; continue; }
+
+        const dzdx = ((z[2] + 2 * z[5] + z[8]) - (z[0] + 2 * z[3] + z[6])) / (8 * cellSizeX * zFactor);
+        const dzdy = ((z[6] + 2 * z[7] + z[8]) - (z[0] + 2 * z[1] + z[2])) / (8 * cellSizeY * zFactor);
+        const slope = Math.atan(Math.sqrt(dzdx * dzdx + dzdy * dzdy));
+        const aspect = Math.atan2(dzdy, -dzdx);
+        let hs = Math.sin(altitudeRad) * Math.cos(slope) +
+                 Math.cos(altitudeRad) * Math.sin(slope) * Math.cos(azimuthRad - aspect);
+        shadeData[idx] = Math.max(0, Math.min(1, hs));
+      }
+    }
+
+    // 결과 데이터는 고도값(색상·투명·범례 기준), 음영은 shadeData로 전달
+    const elevData = Float32Array.from(data);
+
+    return this.createResultLayer(
+      `${layerInfo.name}_해발고도`,
+      elevData,
+      width, height, extent, noDataValue,
+      'relief',
+      { minVal, maxVal, shadeData }
+    );
+  }
+
+  /**
+   * 래스터 값 범위 필터 (래스터 계산기)
+   * 선택한 기준(고도/경사/향)이 지정 범위에 드는 셀만 단색으로 표시
+   * @param {string} layerId - DEM 레이어 ID
+   * @param {Object} options - { metric, min, max, color }
+   * @returns {string} 생성된 레이어 ID
+   */
+  createRasterFilter(layerId, options = {}) {
+    const { metric = 'elevation', min = null, max = null, color = '#e3170a' } = options;
+
+    const layerInfo = layerManager.getLayer(layerId);
+    if (!layerInfo || !layerInfo.demData) {
+      throw new Error('DEM 레이어를 찾을 수 없습니다.');
+    }
+
+    const demData = layerInfo.demData;
+    const { width, height, extent, noDataValue } = demData;
+
+    const values = this.computeMetric(demData, metric);
+    const lo = (min === null || min === undefined) ? -Infinity : min;
+    const hi = (max === null || max === undefined) ? Infinity : max;
+    // 향(aspect)에서 최소>최대면 0도를 가로지르는 범위(예: 북향 315~45)로 해석
+    const wrap = metric === 'aspect' && lo !== -Infinity && hi !== Infinity && lo > hi;
+
+    const out = new Float32Array(width * height);
+    for (let i = 0; i < out.length; i++) {
+      const v = values[i];
+      let pass;
+      if (v === noDataValue || isNaN(v) || !isFinite(v) || v === -1) {
+        pass = false;
+      } else if (wrap) {
+        pass = (v >= lo || v <= hi);
+      } else {
+        pass = (v >= lo && v <= hi);
+      }
+      out[i] = pass ? 1 : noDataValue; // 통과=1(색칠), 아니면 투명
+    }
+
+    const rgb = this.hexToRgb(color);
+    const metricLabel = this.getMetricLabel(metric);
+    return this.createResultLayer(
+      `${layerInfo.name}_필터(${metricLabel})`,
+      out,
+      width, height, extent, noDataValue,
+      'filter',
+      { fillColorRgb: rgb, color, metric, min, max }
+    );
+  }
+
+  /**
+   * 기준 지표 배열 계산 (고도/경사/향)
+   * @returns {Float32Array} 데이터 없음/평탄면은 noDataValue
+   */
+  computeMetric(demData, metric) {
+    const { data, width, height, extent, noDataValue } = demData;
+    if (metric === 'elevation') return data;
+
+    const cellSizeX = (extent[2] - extent[0]) / width;
+    const cellSizeY = (extent[3] - extent[1]) / height;
+    const out = new Float32Array(width * height).fill(noDataValue);
+
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const idx = y * width + x;
+        const z = this.getNeighborValues(data, width, height, x, y, noDataValue);
+        if (z === null) { out[idx] = noDataValue; continue; }
+
+        const dzdx = ((z[2] + 2 * z[5] + z[8]) - (z[0] + 2 * z[3] + z[6])) / (8 * cellSizeX);
+        const dzdy = ((z[6] + 2 * z[7] + z[8]) - (z[0] + 2 * z[1] + z[2])) / (8 * cellSizeY);
+
+        if (metric === 'slope') {
+          out[idx] = Math.atan(Math.sqrt(dzdx * dzdx + dzdy * dzdy)) * 180 / Math.PI;
+        } else { // aspect
+          if (dzdx === 0 && dzdy === 0) {
+            out[idx] = -1; // 평탄면
+          } else {
+            let a = Math.atan2(dzdy, -dzdx) * 180 / Math.PI;
+            if (a < 0) a = 90 - a; else if (a > 90) a = 360 - a + 90; else a = 90 - a;
+            out[idx] = a;
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  getMetricLabel(metric) {
+    if (metric === 'slope') return '경사도';
+    if (metric === 'aspect') return '향';
+    return '해발고도';
+  }
+
+  hexToRgb(hex) {
+    const h = (hex || '#e3170a').replace('#', '');
+    const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    const n = parseInt(full, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   }
 
   /**
@@ -566,7 +775,23 @@ class RasterAnalysisTool {
           const value = data[dataIndex];
 
           if (value !== noDataValue && !isNaN(value) && isFinite(value) && value !== -1) {
-            const color = this.getColorForScheme(value, colorScheme, minVal, maxVal);
+            let color;
+            if (colorScheme === 'filter') {
+              color = analysisData.fillColorRgb || [227, 23, 10];
+            } else if (colorScheme === 'relief') {
+              // 고도색 위에 음영(0~1)을 곱해 입체감 부여
+              const base = this.getColorForScheme(value, 'elevation', minVal, maxVal);
+              let s = analysisData.shadeData ? analysisData.shadeData[dataIndex] : 1;
+              if (!isFinite(s)) s = 1;
+              const shade = 0.35 + 0.65 * Math.max(0, Math.min(1, s));
+              color = [
+                Math.round(base[0] * shade),
+                Math.round(base[1] * shade),
+                Math.round(base[2] * shade)
+              ];
+            } else {
+              color = this.getColorForScheme(value, colorScheme, minVal, maxVal);
+            }
             pixels[pixelIndex] = color[0];
             pixels[pixelIndex + 1] = color[1];
             pixels[pixelIndex + 2] = color[2];
@@ -593,6 +818,14 @@ class RasterAnalysisTool {
         const gray = Math.round(value);
         return [gray, gray, gray];
 
+      case 'elevation': {
+        // 해발고도 색상: 저지대(녹) → 황 → 갈 → 고지대(백)
+        const range = (maxVal - minVal) || 1;
+        let t = (value - minVal) / range;
+        t = Math.max(0, Math.min(1, t));
+        return this.hypsometricColor(t);
+      }
+
       case 'slope':
         // 녹색(완만) -> 노랑 -> 빨강(급경사)
         const normalized = (value - minVal) / (maxVal - minVal);
@@ -616,6 +849,33 @@ class RasterAnalysisTool {
       default:
         return [128, 128, 128];
     }
+  }
+
+  /**
+   * 해발고도 색상(hypsometric) — t(0~1)에 따른 RGB
+   * 범례의 그라데이션과 동일한 색상 정지점 사용
+   */
+  hypsometricColor(t) {
+    const stops = [
+      [0.0, [38, 115, 0]],     // 진녹 (저지대)
+      [0.25, [128, 180, 60]],  // 연녹
+      [0.5, [240, 220, 130]],  // 황
+      [0.75, [160, 110, 60]],  // 갈
+      [1.0, [245, 245, 245]]   // 백 (고지대/설선)
+    ];
+    for (let i = 0; i < stops.length - 1; i++) {
+      const [t0, c0] = stops[i];
+      const [t1, c1] = stops[i + 1];
+      if (t <= t1) {
+        const f = (t1 - t0) === 0 ? 0 : (t - t0) / (t1 - t0);
+        return [
+          Math.round(c0[0] + (c1[0] - c0[0]) * f),
+          Math.round(c0[1] + (c1[1] - c0[1]) * f),
+          Math.round(c0[2] + (c1[2] - c0[2]) * f)
+        ];
+      }
+    }
+    return stops[stops.length - 1][1];
   }
 
   /**
@@ -651,11 +911,18 @@ class RasterAnalysisTool {
       case 'grayscale':
         legendHTML = this.getHillshadeLegendHTML(layerName);
         break;
+      case 'elevation':
+      case 'relief':
+        legendHTML = this.getElevationLegendHTML(layerName, metadata);
+        break;
       case 'slope':
         legendHTML = this.getSlopeLegendHTML(layerName, metadata);
         break;
       case 'aspect':
         legendHTML = this.getAspectLegendHTML(layerName);
+        break;
+      case 'filter':
+        legendHTML = this.getFilterLegendHTML(layerName, metadata);
         break;
       case 'contour':
         legendHTML = this.getContourLegendHTML(layerName, metadata);
@@ -686,6 +953,46 @@ class RasterAnalysisTool {
         <div class="raster-legend-labels">
           <span>어두움</span>
           <span>밝음</span>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * 해발고도 범례 HTML (고도값 표시)
+   */
+  getElevationLegendHTML(layerName, metadata) {
+    const { minVal = 0, maxVal = 0 } = metadata;
+    const mid = (minVal + maxVal) / 2;
+    const grad = 'linear-gradient(to right, rgb(38,115,0), rgb(128,180,60), rgb(240,220,130), rgb(160,110,60), rgb(245,245,245))';
+    return `
+      <div class="raster-legend-title">${layerName}</div>
+      <div class="raster-legend-content">
+        <div class="raster-legend-gradient" style="background:${grad}"></div>
+        <div class="raster-legend-labels">
+          <span>${Math.round(minVal)}m</span>
+          <span>${Math.round(mid)}m</span>
+          <span>${Math.round(maxVal)}m</span>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * 래스터 필터 범례 HTML (조건 표시)
+   */
+  getFilterLegendHTML(layerName, metadata) {
+    const { color = '#e3170a', metric = 'elevation', min, max } = metadata;
+    const label = this.getMetricLabel(metric);
+    const unit = metric === 'elevation' ? 'm' : '°';
+    const lo = (min === null || min === undefined) ? '-∞' : min;
+    const hi = (max === null || max === undefined) ? '∞' : max;
+    return `
+      <div class="raster-legend-title">${layerName}</div>
+      <div class="raster-legend-content">
+        <div class="filter-legend-row">
+          <span class="filter-legend-swatch" style="background:${color}"></span>
+          <span>${label} ${lo} ~ ${hi}${unit}</span>
         </div>
       </div>
     `;

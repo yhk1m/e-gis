@@ -49,6 +49,44 @@ export class LayerPanel {
     if (this.scrollEl) {
       this.scrollEl.addEventListener('mousedown', (e) => this.handleMarqueeStart(e));
     }
+
+    // 전체 표시/숨김 마스터 체크박스
+    this.selectAllCheckbox = document.getElementById('layer-select-all');
+    if (this.selectAllCheckbox) {
+      this.selectAllCheckbox.addEventListener('change', (e) => this.handleSelectAll(e.target.checked));
+    }
+  }
+
+  /**
+   * 전체 레이어 표시/숨김 토글
+   */
+  handleSelectAll(visible) {
+    layerManager.getAllLayers().forEach(layer => {
+      if (layer.visible !== visible) {
+        layerManager.toggleVisibility(layer.id);
+      }
+    });
+  }
+
+  /**
+   * 마스터 체크박스 상태 갱신 (전체/일부/없음)
+   */
+  updateSelectAllState() {
+    const cb = this.selectAllCheckbox || document.getElementById('layer-select-all');
+    if (!cb) return;
+
+    const layers = layerManager.getAllLayers();
+    if (layers.length === 0) {
+      cb.checked = false;
+      cb.indeterminate = false;
+      cb.disabled = true;
+      return;
+    }
+
+    cb.disabled = false;
+    const visibleCount = layers.filter(l => l.visible).length;
+    cb.checked = visibleCount === layers.length;
+    cb.indeterminate = visibleCount > 0 && visibleCount < layers.length;
   }
 
   /**
@@ -137,6 +175,9 @@ export class LayerPanel {
     const layers = layerManager.getAllLayers();
     const selectedIds = layerManager.getSelectedLayerIds();
     const primarySelectedId = layerManager.getSelectedLayerId();
+
+    // 전체 표시/숨김 체크박스 상태 동기화
+    this.updateSelectAllState();
 
     if (layers.length === 0) {
       this.container.innerHTML = `
