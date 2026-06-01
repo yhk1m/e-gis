@@ -404,7 +404,7 @@ class CartogramPanel {
       }
 
       .color-preview.spectral {
-        background: linear-gradient(to right, #d53e4f, #fdae61, #e6f598, #66c2a5, #3288bd);
+        background: linear-gradient(to right, #3288bd, #66c2a5, #e6f598, #fdae61, #d53e4f);
       }
 
       .checkbox-label {
