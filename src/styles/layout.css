@@ -208,6 +208,7 @@
   flex: 1;
   overflow: auto;
   padding: var(--spacing-sm);
+  position: relative; /* 드래그 박스(마퀴) 선택 기준점 */
 }
 
 /* 지도 컨테이너 */

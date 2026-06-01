@@ -47,7 +47,9 @@ export class AttributeTable {
       this.refreshAllWindows();
     });
 
-    eventBus.on(Events.FEATURE_DELETED, () => {
+    eventBus.on(Events.FEATURE_DELETED, ({ source } = {}) => {
+      // 속성 테이블 자체 삭제는 이미 DOM을 갱신했으므로 재갱신(닫고 다시 열기) 불필요
+      if (source === 'attributeTable') return;
       this.refreshAllWindows();
     });
   }
@@ -651,7 +653,8 @@ export class AttributeTable {
         clearSelection();
         updateSelectionUI();
 
-        eventBus.emit(Events.FEATURE_DELETED, { layerId, count });
+        // 이 창은 이미 행을 제거했으므로 자기 자신은 재갱신하지 않도록 출처 표시
+        eventBus.emit(Events.FEATURE_DELETED, { layerId, count, source: 'attributeTable' });
       }
 
       function startEditing(td) {
@@ -798,7 +801,9 @@ export class AttributeTable {
    * 모든 창 새로고침
    */
   refreshAllWindows() {
-    for (const layerId of this.openWindows.keys()) {
+    // 키를 배열로 스냅샷: refreshWindow가 openWindows를 delete/set 하므로
+    // 살아있는 이터레이터를 직접 돌면 같은 키를 무한 재방문(창 폭주)하게 됨
+    for (const layerId of [...this.openWindows.keys()]) {
       this.refreshWindow(layerId);
     }
   }

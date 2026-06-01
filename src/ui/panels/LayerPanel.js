@@ -9,7 +9,9 @@ import { mapManager } from '../../core/MapManager.js';
 export class LayerPanel {
   constructor(containerId = 'layer-list') {
     this.container = document.getElementById(containerId);
+    this.scrollEl = this.container ? this.container.parentElement : null; // .panel-content
     this.draggedItem = null;
+    this.marquee = null; // 드래그 선택 상태
     this.init();
   }
 
@@ -34,11 +36,95 @@ export class LayerPanel {
     this.container.addEventListener('click', (e) => this.handleClick(e));
     this.container.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
 
-    // 드래그 앤 드롭
+    // 드래그 앤 드롭 (레이어 순서 변경)
     this.container.addEventListener('dragstart', (e) => this.handleDragStart(e));
     this.container.addEventListener('dragover', (e) => this.handleDragOver(e));
     this.container.addEventListener('drop', (e) => this.handleDrop(e));
     this.container.addEventListener('dragend', (e) => this.handleDragEnd(e));
+
+    // 드래그 박스(마퀴) 선택: 빈 공간에서 드래그 시작
+    if (this.scrollEl) {
+      this.scrollEl.addEventListener('mousedown', (e) => this.handleMarqueeStart(e));
+    }
+  }
+
+  /**
+   * 드래그 박스(마퀴) 선택 시작
+   * 레이어 항목이 아닌 빈 공간에서 마우스를 누르고 끌면 박스로 다중 선택.
+   * (레이어 항목 위에서 끄는 것은 기존 순서 변경 드래그로 동작)
+   */
+  handleMarqueeStart(e) {
+    if (e.button !== 0) return; // 좌클릭만
+    // 레이어 항목이나 인터랙티브 요소 위에서 시작하면 마퀴 아님
+    if (e.target.closest('.layer-item')) return;
+
+    const additive = e.ctrlKey || e.metaKey;
+    const baseIds = additive ? layerManager.getSelectedLayerIds() : [];
+
+    const box = document.createElement('div');
+    box.className = 'layer-marquee-box';
+    this.scrollEl.appendChild(box);
+
+    this.marquee = {
+      startX: e.clientX,
+      startY: e.clientY,
+      box,
+      baseIds,
+      moved: false
+    };
+
+    this._onMarqueeMove = (ev) => this.handleMarqueeMove(ev);
+    this._onMarqueeUp = (ev) => this.handleMarqueeEnd(ev);
+    document.addEventListener('mousemove', this._onMarqueeMove);
+    document.addEventListener('mouseup', this._onMarqueeUp);
+    e.preventDefault();
+  }
+
+  handleMarqueeMove(e) {
+    if (!this.marquee) return;
+    const m = this.marquee;
+    const dx = e.clientX - m.startX;
+    const dy = e.clientY - m.startY;
+    if (!m.moved && Math.abs(dx) < 4 && Math.abs(dy) < 4) return; // 임계값
+    m.moved = true;
+
+    // 뷰포트 좌표 기준 선택 사각형
+    const vLeft = Math.min(m.startX, e.clientX);
+    const vTop = Math.min(m.startY, e.clientY);
+    const vRight = Math.max(m.startX, e.clientX);
+    const vBottom = Math.max(m.startY, e.clientY);
+
+    // 마퀴 박스를 스크롤 컨테이너 내부 좌표로 변환하여 그리기
+    const pr = this.scrollEl.getBoundingClientRect();
+    m.box.style.left = (vLeft - pr.left + this.scrollEl.scrollLeft) + 'px';
+    m.box.style.top = (vTop - pr.top + this.scrollEl.scrollTop) + 'px';
+    m.box.style.width = (vRight - vLeft) + 'px';
+    m.box.style.height = (vBottom - vTop) + 'px';
+
+    // 교차하는 항목 강조 (확정은 mouseup에서)
+    this.container.querySelectorAll('.layer-item').forEach(li => {
+      const r = li.getBoundingClientRect();
+      const hit = !(r.right < vLeft || r.left > vRight || r.bottom < vTop || r.top > vBottom);
+      li.classList.toggle('marquee-hit', hit);
+    });
+  }
+
+  handleMarqueeEnd() {
+    if (!this.marquee) return;
+    const m = this.marquee;
+    document.removeEventListener('mousemove', this._onMarqueeMove);
+    document.removeEventListener('mouseup', this._onMarqueeUp);
+
+    if (m.moved) {
+      const hitIds = Array.from(this.container.querySelectorAll('.layer-item.marquee-hit'))
+        .map(li => li.dataset.layerId);
+      const finalIds = Array.from(new Set([...m.baseIds, ...hitIds]));
+      layerManager.setSelection(finalIds);
+    }
+
+    m.box.remove();
+    this.container.querySelectorAll('.marquee-hit').forEach(li => li.classList.remove('marquee-hit'));
+    this.marquee = null;
   }
 
   /**

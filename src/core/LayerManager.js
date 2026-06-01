@@ -360,6 +360,24 @@ class LayerManager {
   }
 
   /**
+   * 선택 집합을 한 번에 설정 (드래그 박스 선택용)
+   * @param {string[]} layerIds - 선택할 레이어 ID 목록
+   */
+  setSelection(layerIds) {
+    this.selectedLayerIds.clear();
+    layerIds.forEach(id => {
+      if (this.layers.has(id)) this.selectedLayerIds.add(id);
+    });
+    const arr = Array.from(this.selectedLayerIds);
+    this.selectedLayerId = arr.length > 0 ? arr[arr.length - 1] : null;
+
+    eventBus.emit(Events.LAYER_SELECTED, {
+      layerId: this.selectedLayerId,
+      selectedIds: arr
+    });
+  }
+
+  /**
    * 선택된 레이어 ID 목록 반환
    */
   getSelectedLayerIds() {
