@@ -9,6 +9,7 @@ import { eventBus, Events } from '../utils/EventBus.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import VectorSource from 'ol/source/Vector';
 import { choroplethTool } from '../tools/ChoroplethTool.js';
+import { chartMapTool } from '../tools/ChartMapTool.js';
 
 class AutoSaveManager {
   constructor() {
@@ -201,6 +202,12 @@ class AutoSaveManager {
         }
       }
       const savedLayers = Array.from(groups.values());
+      // 도형표현도(chartmap)는 원본 레이어가 먼저 복원돼야 하므로 마지막에 처리
+      savedLayers.sort((a, b) => {
+        const ax = a.type === 'chartmap' ? 1 : 0;
+        const bx = b.type === 'chartmap' ? 1 : 0;
+        return ax - bx;
+      });
       const removedCount = allSaved.length - savedLayers.length;
       if (removedCount > 0) {
         const keepIds = new Set(savedLayers.map(l => l.id));
@@ -277,6 +284,12 @@ class AutoSaveManager {
           layerData.choroplethConfig.breaks,
           layerData.choroplethConfig.colors
         );
+      }
+
+      // 도형표현도(chartmap) 복원 — 원본 레이어 기준으로 오버레이/범례 재생성
+      if (layerData.type === 'chartmap' && layerData.chartMapConfig) {
+        const cfg = layerData.chartMapConfig;
+        chartMapTool.restoreChartMap(layerId, cfg.sourceLayerId, cfg);
       }
 
       // 스타일 적용

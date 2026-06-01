@@ -593,11 +593,12 @@ class LayerManager {
         })
       });
     } else if (geoType === "Point" || geoType === "MultiPoint") {
+      const pointStrokeWidth = layerInfo.strokeWidth !== undefined ? layerInfo.strokeWidth : 2;
       newStyle = new Style({
         image: new CircleStyle({
           radius: layerInfo.pointRadius || 6,
           fill: new Fill({ color: rgbaFill }),
-          stroke: new Stroke({ color: rgbaStroke, width: 2 })
+          stroke: new Stroke({ color: rgbaStroke, width: pointStrokeWidth })
         })
       });
     } else {

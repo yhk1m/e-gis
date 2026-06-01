@@ -65,6 +65,7 @@ class ChartMapPanel {
           <select id="chart-type">
             <option value="pie">파이 차트</option>
             <option value="bar">막대 차트</option>
+            <option value="100bar">100% 막대 차트</option>
           </select>
         </div>
         <div class="form-group">

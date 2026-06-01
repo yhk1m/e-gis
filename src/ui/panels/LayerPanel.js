@@ -27,7 +27,10 @@ export class LayerPanel {
     // 레이어 추가 이벤트
     eventBus.on(Events.LAYER_ADDED, () => this.render());
     eventBus.on(Events.LAYER_REMOVED, () => this.render());
-    eventBus.on(Events.LAYER_VISIBILITY_CHANGED, () => this.render());
+    eventBus.on(Events.LAYER_VISIBILITY_CHANGED, ({ layerId, visible }) => {
+      this.toggleLayerLegend(layerId, visible);
+      this.render();
+    });
     eventBus.on(Events.LAYER_SELECTED, () => this.render());
     eventBus.on(Events.LAYER_ORDER_CHANGED, () => this.render());
     eventBus.on(Events.LAYER_STYLE_CHANGED, () => this.render());
@@ -183,6 +186,25 @@ export class LayerPanel {
     } else {
       this.hideMultiSelectInfo();
     }
+  }
+
+  /**
+   * 레이어 가시성에 맞춰 해당 레이어의 범례(legend) 표시/숨김
+   * 각 도구가 만든 범례는 `{접두사}-{layerId}` id를 가짐
+   */
+  toggleLayerLegend(layerId, visible) {
+    const prefixes = [
+      'choropleth-legend', // 단계구분도
+      'heatmap-legend',    // 히트맵
+      'raster-legend',     // 래스터 분석
+      'dem-legend',        // DEM
+      'chart-legend',      // 도형표현도(차트맵)
+      'legend'             // 카토그램
+    ];
+    prefixes.forEach(prefix => {
+      const el = document.getElementById(`${prefix}-${layerId}`);
+      if (el) el.style.display = visible ? '' : 'none';
+    });
   }
 
   /**
@@ -528,16 +550,29 @@ export class LayerPanel {
       html += "<button class=\"stroke-btn" + (currentStrokeDash === "dash-dot" ? " active" : "") + "\" data-stroke=\"dash-dot\" title=\"일점쇄선\">━┅━</button>";
       html += "</div></div>";
     } else {
-      const colorItems = colors.map(function(color) {
-        return "<div class=\"color-item" + (color === layer.color ? " active" : "") + "\" data-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
+      // 포인트: 면 색상 / 테두리 색상 따로 설정
+      const fillColorItems = colors.map(function(color) {
+        return "<div class=\"color-item" + (color === currentFillColor ? " active" : "") + "\" data-fill-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
       }).join("");
 
-      html += "<div class=\"style-section\"><label>색상:</label><div class=\"color-picker-grid\">" + colorItems + "</div>";
-      html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + layer.color + "\" class=\"color-input\"></div></div>";
+      html += "<div class=\"style-section\"><label>면 색상:</label><div class=\"color-picker-grid\">" + fillColorItems + "</div>";
+      html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentFillColor + "\" class=\"fill-color-input\"></div></div>";
 
-      // 포인트 투명도
-      html += "<div class=\"style-section\"><label>투명도: <span class=\"fill-opacity-value\">" + Math.round(currentFillOpacity * 100) + "%</span></label>";
+      // 면 불투명도
+      html += "<div class=\"style-section\"><label>면 불투명도: <span class=\"fill-opacity-value\">" + Math.round(currentFillOpacity * 100) + "%</span></label>";
       html += "<input type=\"range\" class=\"opacity-slider fill-opacity-slider\" min=\"0\" max=\"100\" value=\"" + Math.round(currentFillOpacity * 100) + "\"></div>";
+
+      // 테두리 색상
+      const strokeColorItems = colors.map(function(color) {
+        return "<div class=\"color-item" + (color === currentStrokeColor ? " active" : "") + "\" data-stroke-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
+      }).join("");
+
+      html += "<div class=\"style-section\"><label>테두리 색상:</label><div class=\"color-picker-grid\">" + strokeColorItems + "</div>";
+      html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentStrokeColor + "\" class=\"stroke-color-input\"></div></div>";
+
+      // 테두리 두께
+      html += "<div class=\"style-section\"><label>테두리 두께: <span class=\"stroke-width-value\">" + currentStrokeWidth + "px</span></label>";
+      html += "<input type=\"range\" class=\"stroke-width-slider\" min=\"0\" max=\"10\" value=\"" + currentStrokeWidth + "\"></div>";
     }
 
 

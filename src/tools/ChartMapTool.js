@@ -5,6 +5,9 @@
 
 import Overlay from 'ol/Overlay';
 import { getCenter } from 'ol/extent';
+import { fromLonLat } from 'ol/proj';
+import GeoJSON from 'ol/format/GeoJSON';
+import * as turf from '@turf/turf';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { layerManager } from '../core/LayerManager.js';
@@ -18,6 +21,7 @@ class ChartMapTool {
     this.legends = new Map();           // derivedLayerId -> legend element
     this.derivedBySource = new Map();   // sourceLayerId -> derivedLayerId
     this.sourceByDerived = new Map();   // derivedLayerId -> sourceLayerId
+    this.geoJSONFormat = new GeoJSON(); // 무게중심 계산용 (OL ↔ turf)
     this.colors = [
       '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
       '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
@@ -81,30 +85,97 @@ class ChartMapTool {
    * 도형표현도 생성
    */
   createChartMap(layerId, options) {
-    const {
-      chartType = 'pie', // 'pie' or 'bar'
-      fields = [],       // 표시할 숫자 필드들
-      sizeField = null,  // 크기 기준 필드 (없으면 고정 크기)
-      minSize = 20,
-      maxSize = 60,
-      showLabels = false
-    } = options;
+    const config = {
+      chartType: options.chartType || 'pie', // 'pie' | 'bar' | '100bar'
+      fields: options.fields || [],          // 표시할 숫자 필드들
+      sizeField: options.sizeField || null,  // 크기 기준 필드 (없으면 고정 크기)
+      minSize: options.minSize !== undefined ? options.minSize : 20,
+      maxSize: options.maxSize !== undefined ? options.maxSize : 60,
+      showLabels: options.showLabels || false
+    };
 
     const layerInfo = layerManager.getLayer(layerId);
     if (!layerInfo) {
       throw new Error('레이어를 찾을 수 없습니다.');
     }
 
-    // 같은 원본에서 만든 기존 파생 레이어 제거 (재적용 시 교체)
-    this.removeChartMap(layerId);
-
-    const source = layerInfo.olLayer.getSource();
-    const features = source.getFeatures();
-    const map = mapManager.getMap();
-
+    const features = layerInfo.olLayer.getSource().getFeatures();
     if (features.length === 0) {
       throw new Error('레이어에 피처가 없습니다.');
     }
+
+    // 같은 원본에서 만든 기존 파생 레이어 제거 (재적용 시 교체)
+    this.removeChartMap(layerId);
+
+    // 파생 레이어 등록 (가시성/삭제 제어용 placeholder)
+    const placeholderSource = new VectorSource();
+    const placeholderLayer = new VectorLayer({ source: placeholderSource });
+
+    const derivedLayerId = layerManager.addLayer({
+      name: `${layerInfo.name}_도형표현_${this.getChartTypeLabel(config.chartType)}`,
+      type: 'chartmap',
+      geometryType: 'Point',
+      olLayer: placeholderLayer,
+      source: placeholderSource,
+      visible: true
+    });
+
+    // 설정을 파생 레이어에 보관 (복원용 직렬화 대상)
+    const derivedLayer = layerManager.getLayer(derivedLayerId);
+    if (derivedLayer) {
+      derivedLayer._chartMapConfig = { sourceLayerId: layerId, ...config };
+    }
+
+    this.derivedBySource.set(layerId, derivedLayerId);
+    this.sourceByDerived.set(derivedLayerId, layerId);
+
+    // 오버레이/범례 렌더링
+    const chartCount = this.renderChartMap(derivedLayerId, layerId, config);
+
+    return {
+      layerId: derivedLayerId,
+      sourceLayerId: layerId,
+      chartCount,
+      chartType: config.chartType
+    };
+  }
+
+  /**
+   * 저장된 도형표현도 복원 (파생 레이어는 이미 추가된 상태)
+   * @param {string} derivedLayerId - 복원된 파생 레이어 ID
+   * @param {string} sourceLayerId - 원본 레이어 ID
+   * @param {object} config - 저장된 차트 설정
+   */
+  restoreChartMap(derivedLayerId, sourceLayerId, config) {
+    const sourceInfo = layerManager.getLayer(sourceLayerId);
+    if (!sourceInfo) return 0; // 원본이 없으면 복원 불가
+
+    const derivedLayer = layerManager.getLayer(derivedLayerId);
+    if (derivedLayer) {
+      derivedLayer._chartMapConfig = { sourceLayerId, ...config };
+    }
+
+    this.derivedBySource.set(sourceLayerId, derivedLayerId);
+    this.sourceByDerived.set(derivedLayerId, sourceLayerId);
+
+    return this.renderChartMap(derivedLayerId, sourceLayerId, config);
+  }
+
+  /**
+   * 차트 오버레이 + 범례 렌더링 (생성/복원 공통)
+   * @returns {number} 생성된 차트 수
+   */
+  renderChartMap(derivedLayerId, sourceLayerId, config) {
+    const { chartType, fields, sizeField, minSize, maxSize } = config;
+
+    const sourceInfo = layerManager.getLayer(sourceLayerId);
+    if (!sourceInfo) return 0;
+
+    const features = sourceInfo.olLayer.getSource().getFeatures();
+    const map = mapManager.getMap();
+
+    // 기존 오버레이가 있으면 정리 (재렌더 대비)
+    this.cleanupOverlays(derivedLayerId);
 
     // 크기 범위 계산
     let minValue = Infinity, maxValue = -Infinity;
@@ -133,16 +204,9 @@ class ChartMapTool {
 
     const overlays = [];
 
-    features.forEach((feature, idx) => {
-      // 피처 중심점 계산
-      const geometry = feature.getGeometry();
-      let center;
-
-      if (geometry.getType() === 'Point') {
-        center = geometry.getCoordinates();
-      } else {
-        center = getCenter(geometry.getExtent());
-      }
+    features.forEach((feature) => {
+      // 피처 위치 계산 (폴리곤은 무게중심)
+      const center = this.getChartPosition(feature);
 
       // 필드 값 추출
       const values = fields.map(f => parseFloat(feature.get(f)) || 0);
@@ -166,6 +230,9 @@ class ChartMapTool {
 
       if (chartType === 'pie') {
         chartEl.innerHTML = this.createPieChart(values, fields, size);
+      } else if (chartType === '100bar') {
+        // 100% 누적 막대: 피처별 합계를 100%로 정규화
+        chartEl.innerHTML = this.createStackedBar100Chart(values, fields, size);
       } else {
         // 막대 차트는 전체 최대값 기준으로 높이 계산
         const maxVals = fields.map(f => globalMaxValues[f]);
@@ -184,32 +251,98 @@ class ChartMapTool {
       overlays.push(overlay);
     });
 
-    // 파생 레이어 등록 (가시성/삭제 제어용 placeholder)
-    const placeholderSource = new VectorSource();
-    const placeholderLayer = new VectorLayer({ source: placeholderSource });
-
-    const derivedLayerId = layerManager.addLayer({
-      name: `${layerInfo.name}_도형표현_${chartType === 'pie' ? '파이' : '막대'}`,
-      type: 'chartmap',
-      geometryType: 'Point',
-      olLayer: placeholderLayer,
-      source: placeholderSource,
-      visible: true
-    });
-
     this.overlays.set(derivedLayerId, overlays);
-    this.derivedBySource.set(layerId, derivedLayerId);
-    this.sourceByDerived.set(derivedLayerId, layerId);
 
     // 범례 생성 (파생 레이어 기준)
-    this.createLegend(derivedLayerId, layerInfo.name, chartType, fields, globalMaxValues);
+    this.createLegend(derivedLayerId, sourceInfo.name, chartType, fields, globalMaxValues);
 
-    return {
-      layerId: derivedLayerId,
-      sourceLayerId: layerId,
-      chartCount: overlays.length,
-      chartType
-    };
+    // 파생 레이어가 숨김 상태면 오버레이·범례도 숨김
+    const derivedLayer = layerManager.getLayer(derivedLayerId);
+    if (derivedLayer && derivedLayer.visible === false) {
+      overlays.forEach(o => {
+        const el = o.getElement();
+        if (el) el.style.display = 'none';
+      });
+      const legendEl = this.legends.get(derivedLayerId);
+      if (legendEl) legendEl.style.display = 'none';
+    }
+
+    return overlays.length;
+  }
+
+  /**
+   * 차트를 표시할 위치 계산
+   * - 포인트: 좌표 그대로
+   * - 폴리곤: 면적가중 무게중심(center of mass)
+   * - 멀티폴리곤(본토+섬 등): 면적이 가장 큰 덩어리(본토)의 무게중심
+   *   → 흩어진 섬들 때문에 무게중심이 바다로 빠지는 것을 방지
+   * - 무게중심이 폴리곤 밖(오목/구멍)에 떨어지면 표면 위 점으로 보정
+   * 실패 시 경계상자 중심으로 폴백.
+   * @returns {number[]} 지도 좌표(EPSG:3857)
+   */
+  getChartPosition(feature) {
+    const geometry = feature.getGeometry();
+    const type = geometry.getType();
+
+    if (type === 'Point') {
+      return geometry.getCoordinates();
+    }
+
+    try {
+      // OL(EPSG:3857) → GeoJSON(EPSG:4326)
+      const geoJSONGeom = this.geoJSONFormat.writeGeometryObject(geometry, {
+        dataProjection: 'EPSG:4326',
+        featureProjection: 'EPSG:3857'
+      });
+
+      // 멀티폴리곤이면 면적이 가장 큰 폴리곤(본토)만 사용
+      let target = geoJSONGeom;
+      if (geoJSONGeom.type === 'MultiPolygon') {
+        target = this.largestPolygon(geoJSONGeom) || geoJSONGeom;
+      }
+
+      const com = turf.centerOfMass(target);
+      let coords = com && com.geometry && com.geometry.coordinates;
+
+      // 무게중심이 폴리곤 밖이면 표면 위 점으로 보정
+      try {
+        if (target.type === 'Polygon' && (!coords || !turf.booleanPointInPolygon(com, target))) {
+          const pof = turf.pointOnFeature(target);
+          coords = pof.geometry.coordinates;
+        }
+      } catch (e) {
+        // booleanPointInPolygon 등 실패 시 com 좌표 유지
+      }
+
+      if (coords && isFinite(coords[0]) && isFinite(coords[1])) {
+        return fromLonLat(coords); // 다시 EPSG:3857로
+      }
+    } catch (e) {
+      // 폴백
+    }
+
+    return getCenter(geometry.getExtent());
+  }
+
+  /**
+   * 멀티폴리곤에서 면적이 가장 큰 폴리곤 반환 (GeoJSON Polygon)
+   */
+  largestPolygon(multiPolygon) {
+    let best = null;
+    let bestArea = -Infinity;
+    multiPolygon.coordinates.forEach(rings => {
+      try {
+        const poly = turf.polygon(rings);
+        const area = turf.area(poly);
+        if (area > bestArea) {
+          bestArea = area;
+          best = poly.geometry;
+        }
+      } catch (e) {
+        // 잘못된 링은 스킵
+      }
+    });
+    return best;
   }
 
   /**
@@ -223,7 +356,7 @@ class ChartMapTool {
     legendEl.className = 'chart-map-legend';
     legendEl.id = `chart-legend-${layerId}`;
 
-    let legendHTML = `<div class="chart-legend-title">${layerName} - ${chartType === 'pie' ? '파이' : '막대'} 차트</div>`;
+    let legendHTML = `<div class="chart-legend-title">${layerName} - ${this.getChartTypeLabel(chartType)} 차트</div>`;
     legendHTML += '<div class="chart-legend-items">';
 
     fields.forEach((field, i) => {
@@ -334,23 +467,76 @@ class ChartMapTool {
     const offsetX = (size - totalBarWidth) / 2;
     const maxHeight = size - 4;
 
+    const baselineY = size - 2;
+
     let bars = '';
     values.forEach((value, i) => {
       // 각 막대는 해당 필드의 전체 최대값 기준으로 높이 계산
       const fieldMax = globalMaxValues ? globalMaxValues[i] : overallMax;
       const height = fieldMax > 0 ? (value / fieldMax) * maxHeight : 0;
       const x = offsetX + i * barWidth;
-      const y = size - height - 2;
+      const y = baselineY - height;
 
       bars += `<rect x="${x + 1}" y="${y}" width="${barWidth - 2}" height="${height}"
                fill="${this.colors[i % this.colors.length]}"
-               stroke="white" stroke-width="0.5"/>`;
+               stroke="white" stroke-width="2" stroke-linejoin="round"/>`;
     });
 
+    // 하단 가로축
+    const axis = `<line x1="${offsetX - 1}" y1="${baselineY}" x2="${offsetX + totalBarWidth + 1}" y2="${baselineY}"
+               stroke="#333" stroke-width="1.5"/>`;
+
     return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <rect x="0" y="0" width="${size}" height="${size}" fill="rgba(255,255,255,0.8)" rx="2"/>
+      ${axis}
       ${bars}
     </svg>`;
+  }
+
+  /**
+   * 100% 누적 막대 차트 SVG 생성
+   * 피처별 합계를 100%로 정규화하여 각 필드의 구성비를 한 막대에 누적 표시.
+   * @param {number[]} values - 각 필드의 값
+   * @param {string[]} fields - 필드 이름 목록
+   * @param {number} size - 차트 크기
+   */
+  createStackedBar100Chart(values, fields, size) {
+    const total = values.reduce((a, b) => a + b, 0);
+    if (total === 0) return '';
+
+    const barWidth = size / 3; // 기존 0.5*size 대비 약 2/3로 축소
+    const offsetX = (size - barWidth) / 2;
+    const maxHeight = size - 4;
+
+    const baselineY = 2 + maxHeight; // 막대 하단
+
+    let segments = '';
+    let yTop = 2; // 위에서부터 아래로 누적
+    values.forEach((value, i) => {
+      if (value <= 0) return;
+      const h = (value / total) * maxHeight;
+      segments += `<rect x="${offsetX}" y="${yTop}" width="${barWidth}" height="${h}"
+               fill="${this.colors[i % this.colors.length]}"
+               stroke="white" stroke-width="2" stroke-linejoin="round"/>`;
+      yTop += h;
+    });
+
+    // 하단 가로축
+    const axis = `<line x1="${offsetX - 2}" y1="${baselineY}" x2="${offsetX + barWidth + 2}" y2="${baselineY}"
+               stroke="#333" stroke-width="1.5"/>`;
+
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      ${axis}
+      ${segments}
+    </svg>`;
+  }
+
+  /**
+   * 차트 유형 표시 라벨
+   */
+  getChartTypeLabel(chartType) {
+    if (chartType === 'pie') return '파이';
+    if (chartType === '100bar') return '100% 막대';
+    return '막대';
   }
 
   /**

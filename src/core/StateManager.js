@@ -164,6 +164,21 @@ class StateManager {
           };
         }
 
+        // 도형표현도 설정 직렬화
+        let chartMapConfig = null;
+        if (layerInfo._chartMapConfig) {
+          const c = layerInfo._chartMapConfig;
+          chartMapConfig = {
+            sourceLayerId: c.sourceLayerId,
+            chartType: c.chartType,
+            fields: c.fields,
+            sizeField: c.sizeField,
+            minSize: c.minSize,
+            maxSize: c.maxSize,
+            showLabels: c.showLabels
+          };
+        }
+
         const layerData = {
           id: layerInfo.id,
           name: layerInfo.name,
@@ -179,6 +194,7 @@ class StateManager {
           pointRadius: layerInfo.pointRadius,
           visible: layerInfo.visible,
           choroplethConfig,
+          chartMapConfig,
           features: geoJSONFormat.writeFeaturesObject(features),
           timestamp: Date.now()
         };
