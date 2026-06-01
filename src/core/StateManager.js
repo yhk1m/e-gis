@@ -160,7 +160,23 @@ class StateManager {
             title: cfg.title,
             unit: cfg.unit,
             format: cfg.format,
-            rounding: cfg.rounding
+            rounding: cfg.rounding,
+            controlsHidden: cfg.controlsHidden
+          };
+        }
+
+        // 카토그램 설정 직렬화 (색상 분류 — 복원 시 색 유지)
+        let cartogramConfig = null;
+        if (layerInfo._cartogramConfig) {
+          const c = layerInfo._cartogramConfig;
+          cartogramConfig = {
+            attribute: c.attribute,
+            colorScheme: c.colorScheme,
+            method: c.method,
+            colors: c.colors,
+            breaks: c.breaks,
+            showLabels: c.showLabels,
+            cartogramType: c.cartogramType
           };
         }
 
@@ -195,6 +211,7 @@ class StateManager {
           visible: layerInfo.visible,
           choroplethConfig,
           chartMapConfig,
+          cartogramConfig,
           features: geoJSONFormat.writeFeaturesObject(features),
           timestamp: Date.now()
         };

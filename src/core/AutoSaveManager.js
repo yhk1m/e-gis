@@ -10,6 +10,7 @@ import GeoJSON from 'ol/format/GeoJSON';
 import VectorSource from 'ol/source/Vector';
 import { choroplethTool } from '../tools/ChoroplethTool.js';
 import { chartMapTool } from '../tools/ChartMapTool.js';
+import { cartogramTool } from '../tools/CartogramTool.js';
 
 class AutoSaveManager {
   constructor() {
@@ -294,6 +295,12 @@ class AutoSaveManager {
 
       // 스타일 적용
       layerManager.updateLayerStyle(layerId);
+
+      // 카토그램 색상 스타일 복원 (updateLayerStyle 이후에 덮어써야 함)
+      if (layerData.cartogramConfig) {
+        restoredLayer._cartogramConfig = { ...layerData.cartogramConfig };
+        cartogramTool.applyCartogramStyle(layerId);
+      }
     }
 
     return layerId;

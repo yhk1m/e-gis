@@ -82,21 +82,6 @@ class CartogramPanel {
                   </div>
                 </label>
                 <label class="cartogram-type-option">
-                  <input type="radio" name="cartogram-type" value="noncontiguous">
-                  <div class="type-content">
-                    <div class="type-icon">
-                      <svg width="40" height="40" viewBox="0 0 40 40">
-                        <polygon points="5,20 15,5 25,8 20,20 25,35 10,30" fill="#4292c6" stroke="#333" stroke-width="1" transform="scale(0.6) translate(8,12)"/>
-                        <polygon points="22,8 35,5 38,18 30,25 25,15" fill="#2171b5" stroke="#333" stroke-width="1" transform="scale(1.2) translate(2,2)"/>
-                      </svg>
-                    </div>
-                    <div class="type-info">
-                      <strong>Non-contiguous (비연속)</strong>
-                      <small>원래 모양 유지, 값에 따라 크기만 조절</small>
-                    </div>
-                  </div>
-                </label>
-                <label class="cartogram-type-option">
                   <input type="radio" name="cartogram-type" value="contiguous">
                   <div class="type-content">
                     <div class="type-icon">
@@ -108,11 +93,20 @@ class CartogramPanel {
                     </div>
                     <div class="type-info">
                       <strong>Contiguous (연속)</strong>
-                      <small>원래 모양 유지, 폴리곤들이 서로 붙어있음</small>
+                      <small>모양·인접 유지하며 면적을 값에 비례하게 변형 (Dougenik)</small>
                     </div>
                   </div>
                 </label>
               </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">분류 방법</label>
+              <select class="form-select" id="cartogram-method">
+                <option value="quantile" selected>분위수 (Quantile)</option>
+                <option value="naturalBreaks">자연 분류 (Jenks)</option>
+                <option value="equalInterval">동일 간격</option>
+              </select>
             </div>
 
             <div class="form-group">
@@ -244,28 +238,20 @@ class CartogramPanel {
 
     const cartogramType = document.querySelector('input[name="cartogram-type"]:checked').value;
     const colorScheme = document.querySelector('input[name="color-scheme"]:checked').value;
+    const method = document.getElementById('cartogram-method').value;
     const showLabels = document.getElementById('cartogram-labels').checked;
+    const opts = { colorScheme, method, showLabels };
 
     try {
       let newLayerId;
 
       if (cartogramType === 'dorling') {
         newLayerId = cartogramTool.createDorlingCartogram(
-          this.selectedLayerId,
-          this.selectedAttribute,
-          { colorScheme, showLabels }
-        );
-      } else if (cartogramType === 'contiguous') {
-        newLayerId = cartogramTool.createContiguousCartogram(
-          this.selectedLayerId,
-          this.selectedAttribute,
-          { colorScheme, showLabels }
+          this.selectedLayerId, this.selectedAttribute, opts
         );
       } else {
-        newLayerId = cartogramTool.createNonContiguousCartogram(
-          this.selectedLayerId,
-          this.selectedAttribute,
-          { colorScheme, showLabels }
+        newLayerId = cartogramTool.createContiguousCartogram(
+          this.selectedLayerId, this.selectedAttribute, opts
         );
       }
 

@@ -256,13 +256,16 @@ export class LayerPanel {
     if (!infoEl) {
       infoEl = document.createElement('div');
       infoEl.className = 'layer-multi-select-info';
-      this.container.parentElement.insertBefore(infoEl, this.container);
+      // 레이어 목록 박스(.panel-content) 바로 위(헤더와 목록 사이)에 간격 없이 붙임
+      const panelContent = this.container.parentElement;
+      const tab = panelContent.parentElement;
+      tab.insertBefore(infoEl, panelContent);
     }
     infoEl.innerHTML = `
       <span>${count}개 레이어 선택됨</span>
       <div class="multi-select-actions">
-        <button class="delete-selection-btn" title="선택 레이어 삭제">🗑</button>
-        <button class="clear-selection-btn" title="선택 해제">✕</button>
+        <button class="clear-selection-btn" title="선택 해제하고 돌아가기">↩ 선택 해제</button>
+        <button class="delete-selection-btn" title="선택한 레이어 삭제">🗑 삭제</button>
       </div>
     `;
 

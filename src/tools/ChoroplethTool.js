@@ -272,8 +272,11 @@ class ChoroplethTool {
     legendEl.className = 'choropleth-legend';
     legendEl.id = `choropleth-legend-${layerId}`;
 
+    const controlsHidden = !!cfg.controlsHidden;
+
     let html = `<div class="choropleth-legend-title" contenteditable="plaintext-only" spellcheck="false" data-field="title">${this.escapeHtml(title)}</div>`;
     html += '<div class="choropleth-legend-items"></div>';
+    html += `<div class="choropleth-legend-settings${controlsHidden ? ' hidden' : ''}">`;
     html += `<div class="choropleth-legend-unit-row">
       <label>형식</label>
       <select class="choropleth-legend-format">
@@ -299,6 +302,8 @@ class ChoroplethTool {
       <label>단위</label>
       <input type="text" class="choropleth-legend-unit" value="${this.escapeHtml(unit)}" placeholder="예: 원, 명, %">
     </div>`;
+    html += `</div>`;
+    html += `<button class="choropleth-legend-toggle" title="형식·반올림·단위 설정 접기/펼치기">${controlsHidden ? '▾ 설정 펼치기' : '▴ 설정 접기'}</button>`;
     legendEl.innerHTML = html;
 
     const formatSel = legendEl.querySelector('.choropleth-legend-format');
@@ -346,6 +351,18 @@ class ChoroplethTool {
     const persist = () => {
       eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
     };
+
+    // 형식·반올림·단위 설정 숨기기/표시 토글
+    const toggleBtn = legendEl.querySelector('.choropleth-legend-toggle');
+    const settingsEl = legendEl.querySelector('.choropleth-legend-settings');
+    if (toggleBtn && settingsEl) {
+      toggleBtn.addEventListener('click', () => {
+        const hidden = settingsEl.classList.toggle('hidden');
+        toggleBtn.textContent = hidden ? '▾ 설정 펼치기' : '▴ 설정 접기';
+        if (layerInfo._choroplethConfig) layerInfo._choroplethConfig.controlsHidden = hidden;
+        persist();
+      });
+    }
 
     legendEl.querySelectorAll('[contenteditable]').forEach(el => {
       el.addEventListener('input', () => {

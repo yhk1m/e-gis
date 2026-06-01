@@ -12,6 +12,7 @@ import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
 import { makeDraggable } from '../utils/DraggableElement.js';
+import { choroplethTool } from './ChoroplethTool.js';
 
 class CartogramTool {
   constructor() {
@@ -23,6 +24,99 @@ class CartogramTool {
       purples: ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486'],
       spectral: ['#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd']
     };
+  }
+
+  /**
+   * 분류 정보 계산 (단계구분도와 동일한 분류 방식 재사용)
+   * @returns {Object|null} { data, colors, breaks, minVal, maxVal }
+   */
+  buildClassification(features, attribute, colorScheme, method) {
+    const data = [];
+    const values = [];
+    features.forEach(feature => {
+      const value = parseFloat(feature.get(attribute));
+      if (isNaN(value)) return;
+      data.push({ feature, value });
+      values.push(value);
+    });
+    if (data.length === 0) return null;
+
+    values.sort((a, b) => a - b);
+    const colors = this.colorSchemes[colorScheme] || this.colorSchemes.blues;
+    const numClasses = Math.min(colors.length, Math.max(2, data.length));
+    const breaks = choroplethTool.calculateBreaks(values, numClasses, method || 'quantile');
+
+    return {
+      data,
+      colors,
+      breaks,
+      minVal: values[0],
+      maxVal: values[values.length - 1]
+    };
+  }
+
+  /**
+   * 분류 색상 인덱스 (범위 클램프)
+   */
+  cartoColorIndex(value, breaks, numColors) {
+    if (isNaN(value) || !breaks || breaks.length < 2) return 0;
+    const idx = choroplethTool.getColorIndex(value, breaks);
+    return Math.max(0, Math.min(idx, numColors - 1));
+  }
+
+  /**
+   * 카토그램 레이어 스타일 함수 (속성값 기반 — 저장/복원 시에도 색 유지)
+   * @param {Object} config - { attribute, colors, breaks, showLabels }
+   */
+  cartogramStyle(config) {
+    const self = this;
+    const { attribute, colors, breaks, showLabels } = config;
+    return function (feature) {
+      const val = parseFloat(feature.get(attribute));
+      const color = colors[self.cartoColorIndex(val, breaks, colors.length)] || colors[0];
+      return new Style({
+        fill: new Fill({ color: self.hexToRgba(color, 0.85) }),
+        stroke: new Stroke({ color: '#333', width: 1 }),
+        text: showLabels ? new Text({
+          text: String(feature.get('name') || feature.get('NAME') || ''),
+          font: 'bold 11px sans-serif',
+          fill: new Fill({ color: '#333' }),
+          stroke: new Stroke({ color: '#fff', width: 3 }),
+          overflow: true
+        }) : undefined
+      });
+    };
+  }
+
+  /**
+   * 저장된 카토그램 스타일 재적용 (복원용)
+   */
+  applyCartogramStyle(layerId) {
+    const layerInfo = layerManager.getLayer(layerId);
+    if (!layerInfo || !layerInfo._cartogramConfig || !layerInfo.olLayer) return;
+    layerInfo.olLayer.setStyle(this.cartogramStyle(layerInfo._cartogramConfig));
+  }
+
+  /**
+   * 원형 폴리곤 생성 (지도 단위)
+   */
+  makeCirclePolygon(cx, cy, r, segments = 36) {
+    const ring = [];
+    for (let i = 0; i <= segments; i++) {
+      const a = (i / segments) * 2 * Math.PI;
+      ring.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+    return new Polygon([ring]);
+  }
+
+  /**
+   * 정사각형 폴리곤 생성 (지도 단위) — Demers 카토그램용
+   */
+  makeSquarePolygon(cx, cy, side) {
+    const h = side / 2;
+    return new Polygon([[
+      [cx - h, cy - h], [cx + h, cy - h], [cx + h, cy + h], [cx - h, cy + h], [cx - h, cy - h]
+    ]]);
   }
 
   /**
@@ -45,144 +139,138 @@ class CartogramTool {
 
     const {
       colorScheme = 'blues',
-      minRadius = 5,
-      maxRadius = 50,
+      method = 'quantile',
       showLabels = false,
-      iterations = 100
+      iterations = 120,
+      sizeScale = 1
     } = options;
 
-    // 속성값과 중심점 수집
-    const data = [];
-    let minVal = Infinity, maxVal = -Infinity;
-
-    features.forEach(feature => {
-      const value = parseFloat(feature.get(attribute));
-      if (isNaN(value) || value <= 0) return;
-
-      const geom = feature.getGeometry();
-      if (!geom) return;
-
-      const center = getCenter(geom.getExtent());
-
-      data.push({
-        feature,
-        value,
-        center,
-        x: center[0],
-        y: center[1],
-        radius: 0
-      });
-
-      if (value < minVal) minVal = value;
-      if (value > maxVal) maxVal = value;
+    // 양수 값만 (원 면적은 양수 비례)
+    const positives = features.filter(f => {
+      const v = parseFloat(f.get(attribute));
+      return !isNaN(v) && v > 0 && f.getGeometry();
     });
-
-    if (data.length === 0) {
+    const cls = this.buildClassification(positives, attribute, colorScheme, method);
+    if (!cls) {
       throw new Error(`속성 "${attribute}"에 유효한 숫자 데이터가 없습니다.`);
     }
 
-    // 반지름 계산 (면적 비례)
-    const valueRange = maxVal - minVal || 1;
-    data.forEach(d => {
-      const normalized = (d.value - minVal) / valueRange;
-      // 면적이 값에 비례하도록 반지름 계산
-      d.radius = minRadius + Math.sqrt(normalized) * (maxRadius - minRadius);
+    const data = cls.data.map(d => {
+      const center = getCenter(d.feature.getGeometry().getExtent());
+      return { feature: d.feature, value: d.value, center, x: center[0], y: center[1], radius: 0 };
     });
 
-    // Force-directed layout으로 원 겹침 해소
+    // 전체 범위(bbox) 기준으로 원 면적을 값에 정확히 비례 (지도 단위)
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    data.forEach(d => {
+      minX = Math.min(minX, d.center[0]); maxX = Math.max(maxX, d.center[0]);
+      minY = Math.min(minY, d.center[1]); maxY = Math.max(maxY, d.center[1]);
+    });
+    const bboxArea = Math.max((maxX - minX) * (maxY - minY), 1);
+    const sumValue = data.reduce((s, d) => s + d.value, 0) || 1;
+    const totalCircleArea = bboxArea * 0.4 * sizeScale; // 패킹 비율
+    data.forEach(d => {
+      // 면적 ∝ 값  →  r = sqrt(area/π)
+      const area = (d.value / sumValue) * totalCircleArea;
+      d.radius = Math.sqrt(area / Math.PI);
+    });
+
+    // 겹침 해소 (지도 단위 — 위치/반지름 단위 일치)
     this.applyForceLayout(data, iterations);
 
-    // 색상 스케일
-    const colors = this.colorSchemes[colorScheme] || this.colorSchemes.blues;
+    // 속성 기반 스타일 함수로 색상 적용 (저장/복원에도 유지)
+    const config = { attribute, colorScheme, method, colors: cls.colors, breaks: cls.breaks, showLabels, cartogramType: 'dorling' };
 
-    // 새 피처 생성
-    const newFeatures = data.map((d, index) => {
-      const colorIndex = Math.floor((d.value - minVal) / valueRange * (colors.length - 1));
-      const color = colors[Math.min(colorIndex, colors.length - 1)];
-
-      // 속성 복사 (geometry 제외)
+    const newFeatures = data.map(d => {
       const props = d.feature.getProperties();
       delete props.geometry;
-
-      const circleFeature = new Feature({
-        geometry: new Point([d.x, d.y]),
-        ...props
-      });
-
-      // 스타일 설정
-      const style = new Style({
-        image: new CircleStyle({
-          radius: d.radius,
-          fill: new Fill({ color: color }),
-          stroke: new Stroke({ color: '#333', width: 1 })
-        }),
-        text: showLabels ? new Text({
-          text: d.feature.get('name') || d.feature.get('NAME') || '',
-          font: '11px sans-serif',
-          fill: new Fill({ color: '#333' }),
-          stroke: new Stroke({ color: '#fff', width: 2 }),
-          offsetY: d.radius + 10
-        }) : undefined
-      });
-
-      circleFeature.setStyle(style);
-      return circleFeature;
+      return new Feature({ geometry: this.makeCirclePolygon(d.x, d.y, d.radius), ...props });
     });
 
-    // 새 레이어 생성
     const vectorSource = new VectorSource({ features: newFeatures });
-    const vectorLayer = new VectorLayer({ source: vectorSource });
+    const vectorLayer = new VectorLayer({ source: vectorSource, style: this.cartogramStyle(config) });
 
     const newLayerId = layerManager.addLayer({
       name: `${layer.name}_Dorling_${attribute}`,
       type: 'vector',
-      geometryType: 'Point',
+      geometryType: 'Polygon',
       olLayer: vectorLayer,
       source: vectorSource
     });
 
-    // 범례 추가
-    this.addLegend(newLayerId, `Dorling: ${attribute}`, minVal, maxVal, colors);
+    const newLayerInfo = layerManager.getLayer(newLayerId);
+    if (newLayerInfo) newLayerInfo._cartogramConfig = config;
+
+    // 범례 (색상 등급 + 원 크기)
+    this.addLegend(newLayerId, `Dorling: ${attribute}`, cls.minVal, cls.maxVal, cls.colors, {
+      sizeLegend: { minVal: cls.minVal, maxVal: cls.maxVal, shape: 'circle' }
+    });
 
     return newLayerId;
   }
 
   /**
-   * Force-directed layout 적용
+   * Dorling 원 패킹 — 원들이 겹치지 않으면서 서로 맞닿도록 배치
+   * 균일 압축(중심으로 수축)으로 상대 배치를 유지한 채 틈을 메우고,
+   * 겹침 반발로 원이 겹치지 않게 균형을 맞춘다.
    */
   applyForceLayout(data, iterations) {
-    const padding = 2;
+    const n = data.length;
+    if (n === 0) return;
 
     for (let iter = 0; iter < iterations; iter++) {
-      let moved = false;
+      // 1) 균일 압축 — 전체 무게중심으로 조금 수축시켜 틈을 메움
+      //    (균일 스케일이라 상대 배치/방향은 유지됨)
+      let gx = 0, gy = 0;
+      for (const d of data) { gx += d.x; gy += d.y; }
+      gx /= n; gy /= n;
+      const shrink = 0.985;
+      for (const d of data) {
+        d.x = gx + (d.x - gx) * shrink;
+        d.y = gy + (d.y - gy) * shrink;
+      }
 
-      for (let i = 0; i < data.length; i++) {
-        for (let j = i + 1; j < data.length; j++) {
-          const dx = data[j].x - data[i].x;
-          const dy = data[j].y - data[i].y;
+      // 2) 겹침 반발 (마지막에 수행 → 최종 상태는 겹침 없음)
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const a = data[i], b = data[j];
+          const dx = b.x - a.x, dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          const minDist = data[i].radius + data[j].radius + padding;
-
-          if (dist < minDist && dist > 0) {
+          const minDist = a.radius + b.radius;
+          if (dist > 1e-9 && dist < minDist) {
             const overlap = (minDist - dist) / 2;
-            const moveX = (dx / dist) * overlap;
-            const moveY = (dy / dist) * overlap;
+            const mx = (dx / dist) * overlap;
+            const my = (dy / dist) * overlap;
+            a.x -= mx; a.y -= my;
+            b.x += mx; b.y += my;
+          } else if (dist <= 1e-9) {
+            // 완전히 겹친 경우 살짝 분리
+            a.x -= a.radius * 0.01;
+            b.x += b.radius * 0.01;
+          }
+        }
+      }
+    }
 
-            data[i].x -= moveX;
-            data[i].y -= moveY;
-            data[j].x += moveX;
-            data[j].y += moveY;
+    // 마무리: 압축 없이 반발만 반복해 잔여 겹침 제거
+    for (let pass = 0; pass < 30; pass++) {
+      let moved = false;
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const a = data[i], b = data[j];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const minDist = a.radius + b.radius;
+          if (dist > 1e-9 && dist < minDist) {
+            const overlap = (minDist - dist) / 2;
+            const mx = (dx / dist) * overlap;
+            const my = (dy / dist) * overlap;
+            a.x -= mx; a.y -= my;
+            b.x += mx; b.y += my;
             moved = true;
           }
         }
       }
-
-      // 원래 위치로 약간 당기기
-      data.forEach(d => {
-        d.x += (d.center[0] - d.x) * 0.01;
-        d.y += (d.center[1] - d.y) * 0.01;
-      });
-
       if (!moved) break;
     }
   }
@@ -207,75 +295,40 @@ class CartogramTool {
 
     const {
       colorScheme = 'blues',
-      minScale = 0.3,
-      maxScale = 1.5,
+      method = 'quantile',
       showLabels = false
     } = options;
 
-    // 속성값 수집
-    let minVal = Infinity, maxVal = -Infinity;
-    const validFeatures = [];
-
-    features.forEach(feature => {
-      const value = parseFloat(feature.get(attribute));
-      if (isNaN(value) || value <= 0) return;
-
-      validFeatures.push({ feature, value });
-      if (value < minVal) minVal = value;
-      if (value > maxVal) maxVal = value;
+    const positives = features.filter(f => {
+      const v = parseFloat(f.get(attribute));
+      return !isNaN(v) && v > 0 && f.getGeometry();
     });
-
-    if (validFeatures.length === 0) {
+    const cls = this.buildClassification(positives, attribute, colorScheme, method);
+    if (!cls) {
       throw new Error(`속성 "${attribute}"에 유효한 숫자 데이터가 없습니다.`);
     }
 
-    const valueRange = maxVal - minVal || 1;
-    const colors = this.colorSchemes[colorScheme] || this.colorSchemes.blues;
+    // 면적이 값에 비례하도록 스케일 (scale = sqrt(value / 기준값))
+    // 기준값 = 중앙값에 가까운 대표값(중앙 분위) → 작은 곳은 축소, 큰 곳은 확대
+    const refValue = cls.breaks[Math.floor(cls.breaks.length / 2)] || cls.maxVal;
 
-    // 새 피처 생성 (스케일링된)
-    const newFeatures = validFeatures.map(({ feature, value }) => {
+    const newFeatures = cls.data.map(({ feature, value }) => {
       const geom = feature.getGeometry();
       if (!geom) return null;
 
-      // 스케일 계산
-      const normalized = (value - minVal) / valueRange;
-      const scale = minScale + normalized * (maxScale - minScale);
-
-      // 중심점 기준으로 스케일링
+      const scale = Math.sqrt(value / (refValue || 1));
       const center = getCenter(geom.getExtent());
-      const scaledGeom = this.scaleGeometry(geom.clone(), center, scale);
+      const scaledGeom = this.scaleGeometry(geom.clone(), center, Math.max(0.05, scale));
 
-      // 색상 계산
-      const colorIndex = Math.floor(normalized * (colors.length - 1));
-      const color = colors[Math.min(colorIndex, colors.length - 1)];
-
-      // 속성 복사 (geometry 제외)
       const props = feature.getProperties();
       delete props.geometry;
-
-      const newFeature = new Feature({
-        geometry: scaledGeom,
-        ...props
-      });
-
-      const style = new Style({
-        fill: new Fill({ color: this.hexToRgba(color, 0.7) }),
-        stroke: new Stroke({ color: '#333', width: 1 }),
-        text: showLabels ? new Text({
-          text: feature.get('name') || feature.get('NAME') || '',
-          font: '11px sans-serif',
-          fill: new Fill({ color: '#333' }),
-          stroke: new Stroke({ color: '#fff', width: 2 })
-        }) : undefined
-      });
-
-      newFeature.setStyle(style);
-      return newFeature;
+      return new Feature({ geometry: scaledGeom, ...props });
     }).filter(f => f !== null);
 
-    // 새 레이어 생성
+    const config = { attribute, colorScheme, method, colors: cls.colors, breaks: cls.breaks, showLabels, cartogramType: 'noncontiguous' };
+
     const vectorSource = new VectorSource({ features: newFeatures });
-    const vectorLayer = new VectorLayer({ source: vectorSource });
+    const vectorLayer = new VectorLayer({ source: vectorSource, style: this.cartogramStyle(config) });
 
     const newLayerId = layerManager.addLayer({
       name: `${layer.name}_NonContig_${attribute}`,
@@ -285,8 +338,10 @@ class CartogramTool {
       source: vectorSource
     });
 
-    // 범례 추가
-    this.addLegend(newLayerId, `Non-Contiguous: ${attribute}`, minVal, maxVal, colors);
+    const newLayerInfo = layerManager.getLayer(newLayerId);
+    if (newLayerInfo) newLayerInfo._cartogramConfig = config;
+
+    this.addLegend(newLayerId, `Non-Contiguous: ${attribute}`, cls.minVal, cls.maxVal, cls.colors);
 
     return newLayerId;
   }
@@ -312,142 +367,105 @@ class CartogramTool {
 
     const {
       colorScheme = 'blues',
+      method = 'quantile',
       showLabels = false,
-      iterations = 50  // 더 많은 반복
+      iterations = 15
     } = options;
 
-    // 속성값 수집
-    let minVal = Infinity, maxVal = -Infinity;
-    let totalValue = 0;
-    const data = [];
-
-    features.forEach(feature => {
-      const value = parseFloat(feature.get(attribute));
-      if (isNaN(value) || value <= 0) return;
-
-      const geom = feature.getGeometry();
-      if (!geom) return;
-
-      const area = this.calculateGeometryArea(geom);
-      if (area <= 0) return;
-
-      data.push({
-        feature,
-        value,
-        originalArea: area,
-        geom: geom.clone()
-      });
-
-      totalValue += value;
-      if (value < minVal) minVal = value;
-      if (value > maxVal) maxVal = value;
+    const positives = features.filter(f => {
+      const v = parseFloat(f.get(attribute));
+      const g = f.getGeometry();
+      return !isNaN(v) && v > 0 && g && (g.getType() === 'Polygon' || g.getType() === 'MultiPolygon');
     });
-
-    if (data.length === 0) {
+    const cls = this.buildClassification(positives, attribute, colorScheme, method);
+    if (!cls) {
       throw new Error(`속성 "${attribute}"에 유효한 숫자 데이터가 없습니다.`);
     }
 
-    // 총 면적 계산
-    const totalArea = data.reduce((sum, d) => sum + d.originalArea, 0);
+    // 원래 폴리곤 형태를 유지한 채 면적만 값에 비례하도록 변형 (Dougenik 1985)
+    const data = cls.data.map(d => ({
+      feature: d.feature,
+      value: d.value,
+      geom: d.feature.getGeometry().clone()
+    }));
 
-    // 목표 면적 계산 (값에 비례)
-    data.forEach(d => {
-      d.targetArea = (d.value / totalValue) * totalArea;
-      d.desiredRadius = Math.sqrt(d.targetArea / Math.PI);
-    });
-
-    // 전체 바운딩 박스 계산
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    data.forEach(d => {
-      const ext = d.geom.getExtent();
-      minX = Math.min(minX, ext[0]);
-      minY = Math.min(minY, ext[1]);
-      maxX = Math.max(maxX, ext[2]);
-      maxY = Math.max(maxY, ext[3]);
-    });
-    const mapWidth = maxX - minX;
-    const mapHeight = maxY - minY;
-
-    // 강력한 Gastner-Newman 스타일 변형 적용
     for (let iter = 0; iter < iterations; iter++) {
-      // 현재 상태 업데이트
+      // 1) 각 폴리곤의 현재 면적/중심/반경/질량 계산
+      let totalArea = 0, totalValue = 0;
       data.forEach(d => {
-        d.currentArea = this.calculateGeometryArea(d.geom);
-        d.center = this.calculateCentroid(d.geom);
-        d.currentRadius = Math.sqrt(d.currentArea / Math.PI);
-        // 면적 비율 계산
-        d.sizeRatio = Math.sqrt(d.targetArea / Math.max(d.currentArea, 0.0001));
+        d.area = Math.abs(this.calculateGeometryArea(d.geom)) || 1e-9;
+        let c = this.calculateCentroid(d.geom);
+        // 접힘/퇴화로 중심이 비정상이면 경계상자 중심으로 폴백 (NaN 전파 차단)
+        if (!c || !isFinite(c[0]) || !isFinite(c[1])) c = getCenter(d.geom.getExtent());
+        d.center = c;
+        totalArea += d.area;
+        totalValue += d.value;
       });
+      if (totalValue <= 0) break;
 
-      // 점진적 강도 (처음엔 강하게, 나중엔 약하게)
-      const strength = 0.4 * (1 - iter / iterations * 0.7);
+      let sizeErrorWeighted = 0;
+      data.forEach(d => {
+        d.radius = Math.sqrt(d.area / Math.PI);
+        const desired = totalArea * d.value / totalValue;
+        // 질량 = 목표반경 - 현재반경 (양수면 팽창, 음수면 수축)
+        d.mass = Math.sqrt(Math.max(desired, 0) / Math.PI) - d.radius;
+        const a = Math.max(d.area, 1e-9), de = Math.max(desired, 1e-9);
+        d.sizeError = Math.max(a, de) / Math.min(a, de);
+        sizeErrorWeighted += d.sizeError * d.area;
+      });
+      const meanError = sizeErrorWeighted / (totalArea || 1);
+      const forceReductionFactor = 1 / (1 + meanError);
 
-      // 모든 정점에 대해 변형 적용
-      data.forEach((d, idx) => {
-        const type = d.geom.getType();
+      // 2) 모든 정점을 전체 힘장(force field)으로 이동
+      //    변위는 정점 위치만의 함수 → 인접 폴리곤 공유 정점이 함께 이동(경계 유지)
+      const transformPoint = (pt) => {
+        const x0 = pt[0], y0 = pt[1];
+        let x = x0, y = y0;
+        for (let k = 0; k < data.length; k++) {
+          const o = data[k];
+          if (o.radius < 1e-9 || !isFinite(o.mass) || !isFinite(o.center[0]) || !isFinite(o.center[1])) continue;
+          const ddx = x0 - o.center[0];
+          const ddy = y0 - o.center[1];
+          const dist = Math.hypot(ddx, ddy);
+          if (dist < 1e-9) continue;
+          let force;
+          if (dist > o.radius) {
+            force = o.mass * o.radius / dist;
+          } else {
+            const xf = dist / o.radius;
+            force = o.mass * xf * xf * (4 - 3 * xf);
+          }
+          const factor = force * forceReductionFactor / dist;
+          x += factor * ddx;
+          y += factor * ddy;
+        }
+        // 비정상 좌표면 원위치 유지 (NaN/Infinity 전파 차단)
+        if (!isFinite(x) || !isFinite(y)) return [x0, y0];
+        return [x, y];
+      };
 
-        if (type === 'Polygon') {
-          const coords = d.geom.getCoordinates();
-          const newCoords = coords.map(ring =>
-            this.transformRingGastner(ring, data, idx, strength, mapWidth, mapHeight)
-          );
-          d.geom.setCoordinates(newCoords);
-        } else if (type === 'MultiPolygon') {
-          const coords = d.geom.getCoordinates();
-          const newCoords = coords.map(polygon =>
-            polygon.map(ring =>
-              this.transformRingGastner(ring, data, idx, strength, mapWidth, mapHeight)
-            )
-          );
-          d.geom.setCoordinates(newCoords);
+      data.forEach(d => {
+        const g = d.geom;
+        const t = g.getType();
+        if (t === 'Polygon') {
+          g.setCoordinates(g.getCoordinates().map(ring => ring.map(transformPoint)));
+        } else if (t === 'MultiPolygon') {
+          g.setCoordinates(g.getCoordinates().map(poly => poly.map(ring => ring.map(transformPoint))));
         }
       });
-
-      // 중첩 해소 단계
-      this.resolveOverlaps(data, strength * 0.5);
     }
 
-    // 최종 스무딩 (부드러운 블롭 형태로)
-    for (let s = 0; s < 3; s++) {
-      data.forEach(d => {
-        d.geom = this.smoothPolygonAdvanced(d.geom, 0.3);
-      });
-    }
-
-    // 색상 적용 및 피처 생성
-    const valueRange = maxVal - minVal || 1;
-    const colors = this.colorSchemes[colorScheme] || this.colorSchemes.blues;
+    // 속성 기반 스타일 함수 (저장/복원에도 색 유지)
+    const config = { attribute, colorScheme, method, colors: cls.colors, breaks: cls.breaks, showLabels, cartogramType: 'contiguous' };
 
     const newFeatures = data.map(d => {
-      const normalized = (d.value - minVal) / valueRange;
-      const colorIndex = Math.floor(normalized * (colors.length - 1));
-      const color = colors[Math.min(colorIndex, colors.length - 1)];
-
       const props = d.feature.getProperties();
       delete props.geometry;
-
-      const newFeature = new Feature({
-        geometry: d.geom,
-        ...props
-      });
-
-      const style = new Style({
-        fill: new Fill({ color: this.hexToRgba(color, 0.8) }),
-        stroke: new Stroke({ color: '#333', width: 1.5 }),
-        text: showLabels ? new Text({
-          text: d.feature.get('name') || d.feature.get('NAME') || '',
-          font: 'bold 11px sans-serif',
-          fill: new Fill({ color: '#333' }),
-          stroke: new Stroke({ color: '#fff', width: 3 })
-        }) : undefined
-      });
-
-      newFeature.setStyle(style);
-      return newFeature;
+      return new Feature({ geometry: d.geom, ...props });
     });
 
     const vectorSource = new VectorSource({ features: newFeatures });
-    const vectorLayer = new VectorLayer({ source: vectorSource });
+    const vectorLayer = new VectorLayer({ source: vectorSource, style: this.cartogramStyle(config) });
 
     const newLayerId = layerManager.addLayer({
       name: `${layer.name}_Contig_${attribute}`,
@@ -457,7 +475,10 @@ class CartogramTool {
       source: vectorSource
     });
 
-    this.addLegend(newLayerId, `Contiguous: ${attribute}`, minVal, maxVal, colors);
+    const newLayerInfo = layerManager.getLayer(newLayerId);
+    if (newLayerInfo) newLayerInfo._cartogramConfig = config;
+
+    this.addLegend(newLayerId, `Contiguous: ${attribute}`, cls.minVal, cls.maxVal, cls.colors);
 
     return newLayerId;
   }
@@ -782,10 +803,35 @@ class CartogramTool {
   /**
    * 범례 추가
    */
-  addLegend(layerId, title, minVal, maxVal, colors) {
+  addLegend(layerId, title, minVal, maxVal, colors, opts = {}) {
     // 기존 범례 제거
     const existingLegend = document.getElementById(`legend-${layerId}`);
     if (existingLegend) existingLegend.remove();
+
+    // 원 크기 범례 (Dorling 비례기호)
+    let sizeHtml = '';
+    if (opts.sizeLegend) {
+      const maxPx = 30;
+      const minPx = Math.max(6, Math.round(maxPx * Math.sqrt(
+        (opts.sizeLegend.minVal || 1) / (opts.sizeLegend.maxVal || 1)
+      )));
+      const isSquare = opts.sizeLegend.shape === 'square';
+      const radius = isSquare ? '2px' : '50%';
+      const sizeTitle = isSquare ? '사각형 크기 = 값' : '원 크기 = 값';
+      sizeHtml = `
+        <div class="legend-subtitle">${sizeTitle}</div>
+        <div class="legend-size">
+          <div class="legend-size-item">
+            <span class="legend-size-dot" style="width:${maxPx}px;height:${maxPx}px;border-radius:${radius};"></span>
+            <small>${maxVal.toLocaleString()}</small>
+          </div>
+          <div class="legend-size-item">
+            <span class="legend-size-dot" style="width:${minPx}px;height:${minPx}px;border-radius:${radius};"></span>
+            <small>${minVal.toLocaleString()}</small>
+          </div>
+        </div>
+      `;
+    }
 
     const legendHtml = `
       <div class="cartogram-legend" id="legend-${layerId}">
@@ -795,6 +841,7 @@ class CartogramTool {
           <span>${minVal.toLocaleString()}</span>
           <span>${maxVal.toLocaleString()}</span>
         </div>
+        ${sizeHtml}
       </div>
     `;
 
@@ -847,6 +894,39 @@ class CartogramTool {
         display: flex;
         justify-content: space-between;
         font-size: var(--font-size-xs);
+        color: var(--text-secondary);
+      }
+
+      .cartogram-legend .legend-subtitle {
+        margin-top: 10px;
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .cartogram-legend .legend-size {
+        display: flex;
+        align-items: flex-end;
+        gap: 14px;
+        margin-top: 6px;
+      }
+
+      .cartogram-legend .legend-size-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .cartogram-legend .legend-size-dot {
+        display: inline-block;
+        border-radius: 50%;
+        background: #9ecae1;
+        border: 1px solid #333;
+      }
+
+      .cartogram-legend .legend-size-item small {
+        font-size: 10px;
         color: var(--text-secondary);
       }
     `;
