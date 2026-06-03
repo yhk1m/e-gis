@@ -6,10 +6,64 @@ import { layerManager } from './LayerManager.js';
 import { mapManager } from './MapManager.js';
 import { coordinateSystem } from './CoordinateSystem.js';
 import { eventBus, Events } from '../utils/EventBus.js';
+import { demLoader } from '../loaders/DEMLoader.js';
+import { rasterAnalysisTool } from '../tools/RasterAnalysisTool.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 const PROJECT_VERSION = '1.0';
 const PROJECT_EXTENSION = '.egis';
+
+// 래스터 밴드 데이터(TypedArray) 직렬화 지원
+const TYPED_ARRAY_CTORS = {
+  Int8Array, Uint8Array, Uint8ClampedArray,
+  Int16Array, Uint16Array, Int32Array, Uint32Array,
+  Float32Array, Float64Array
+};
+
+/**
+ * 래스터 메타데이터 객체(demData/analysisData)를 JSON 안전한 형태로 변환한다.
+ * 큰 밴드 데이터(TypedArray)는 base64로 인코딩하여 파일 크기를 줄인다.
+ */
+function encodeRasterMeta(rasterObj) {
+  const arr = rasterObj.data;
+  let encodedData;
+
+  if (ArrayBuffer.isView(arr)) {
+    const bytes = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    encodedData = { __encoding: 'base64', dtype: arr.constructor.name, base64: btoa(binary) };
+  } else if (Array.isArray(arr)) {
+    encodedData = { __encoding: 'array', dtype: 'Array', values: arr };
+  } else {
+    encodedData = { __encoding: 'array', dtype: 'Array', values: arr ? Array.from(arr) : [] };
+  }
+
+  return { ...rasterObj, data: encodedData };
+}
+
+/**
+ * encodeRasterMeta로 직렬화된 객체를 원래의 demData/analysisData 형태로 복원한다.
+ */
+function decodeRasterMeta(encoded) {
+  const result = { ...encoded };
+  const d = encoded.data;
+
+  if (d && d.__encoding === 'base64') {
+    const binary = atob(d.base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const Ctor = TYPED_ARRAY_CTORS[d.dtype] || Float32Array;
+    result.data = new Ctor(bytes.buffer);
+  } else if (d && d.__encoding === 'array') {
+    result.data = d.values;
+  }
+
+  return result;
+}
 
 export class ProjectManager {
   constructor() {
@@ -41,20 +95,36 @@ export class ProjectManager {
 
       // 레이어 데이터
       layers: layers.map(layer => {
-        const features = layer.source.getFeatures();
+        const base = {
+          id: layer.id,
+          name: layer.name,
+          type: layer.type || 'vector',
+          geometryType: layer.geometryType,
+          visible: layer.visible,
+          color: layer.color,
+          opacity: layer.opacity || 1
+        };
+
+        // 래스터 레이어: 벡터 source가 없으므로 demData/analysisData를 직렬화
+        if (layer.type === 'raster') {
+          if (layer.demData) {
+            return { ...base, rasterKind: 'dem', raster: encodeRasterMeta(layer.demData) };
+          }
+          if (layer.analysisData) {
+            return { ...base, rasterKind: 'analysis', raster: encodeRasterMeta(layer.analysisData) };
+          }
+          // 복원 가능한 데이터가 없는 래스터 — 메타데이터만 보존(복원 시 건너뜀)
+          return { ...base, rasterKind: 'unknown' };
+        }
+
+        // 벡터 레이어: GeoJSON으로 직렬화 (source가 없으면 빈 피처)
+        const features = layer.source ? layer.source.getFeatures() : [];
         const geojsonData = geojsonFormat.writeFeaturesObject(features, {
           featureProjection: 'EPSG:3857',
           dataProjection: 'EPSG:4326'
         });
 
-        return {
-          id: layer.id,
-          name: layer.name,
-          visible: layer.visible,
-          color: layer.color,
-          opacity: layer.opacity || 1,
-          features: geojsonData
-        };
+        return { ...base, features: geojsonData };
       })
     };
 
@@ -69,6 +139,9 @@ export class ProjectManager {
     if (!projectData.version) {
       throw new Error('유효하지 않은 프로젝트 파일입니다.');
     }
+
+    // 레이어가 아닌 도구 오버레이(측정·라벨·경로·등시선 등) 정리
+    eventBus.emit(Events.PROJECT_NEW, {});
 
     // 기존 레이어 모두 제거
     const existingLayers = layerManager.getAllLayers();
@@ -89,6 +162,32 @@ export class ProjectManager {
 
     for (const layerData of projectData.layers) {
       try {
+        // 래스터 레이어 복원
+        if (layerData.type === 'raster') {
+          let layerId = null;
+          if (layerData.rasterKind === 'dem' && layerData.raster) {
+            layerId = demLoader.buildDEMLayer(decodeRasterMeta(layerData.raster), layerData.name, { doFit: false });
+          } else if (layerData.rasterKind === 'analysis' && layerData.raster) {
+            layerId = rasterAnalysisTool.buildAnalysisLayer(decodeRasterMeta(layerData.raster), layerData.name);
+          } else {
+            console.warn(`래스터 레이어 "${layerData.name}"에 복원 가능한 데이터가 없어 건너뜁니다.`);
+            continue;
+          }
+
+          // 가시성 복원
+          if (layerData.visible === false && layerId) {
+            const layerInfo = layerManager.getLayer(layerId);
+            if (layerInfo) {
+              layerInfo.visible = false;
+              layerInfo.olLayer.setVisible(false);
+            }
+          }
+
+          console.log(`래스터 레이어 "${layerData.name}" 복원됨`);
+          continue;
+        }
+
+        // 벡터 레이어 복원
         const features = geojsonFormat.readFeatures(layerData.features, {
           featureProjection: 'EPSG:3857',
           dataProjection: 'EPSG:4326'

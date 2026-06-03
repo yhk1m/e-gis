@@ -92,6 +92,13 @@ class HeatmapTool {
       heatmapOptions.gradient = gradient;
     }
 
+    // 같은 원본 레이어로 만든 기존 히트맵 제거 (재적용 시 교체 — 레이어·범례 중복 방지)
+    const staleIds = [];
+    for (const [existingId, info] of this.heatmapLayers) {
+      if (info.sourceLayerId === layerId) staleIds.push(existingId);
+    }
+    staleIds.forEach(id => this.removeHeatmap(id));
+
     // 히트맵 레이어 생성
     const heatmapLayer = new Heatmap(heatmapOptions);
 

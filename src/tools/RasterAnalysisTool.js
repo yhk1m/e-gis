@@ -704,6 +704,28 @@ class RasterAnalysisTool {
       ...metadata
     };
 
+    return this.buildAnalysisLayer(analysisData, name);
+  }
+
+  /**
+   * analysisData 객체로부터 분석 결과 래스터 레이어를 생성한다.
+   * 분석 실행 시뿐 아니라 프로젝트(.egis) 복원 시에도 사용된다.
+   * @param {Object} analysisData - { data, width, height, extent, noDataValue, colorScheme, ...metadata }
+   * @param {string} name - 레이어 이름
+   * @returns {string} 레이어 ID
+   */
+  buildAnalysisLayer(analysisData, name) {
+    const { width, height, extent, colorScheme } = analysisData;
+
+    // colorScheme/렌더링 외 부가 메타데이터만 추출 (범례용)
+    const metadata = { ...analysisData };
+    delete metadata.data;
+    delete metadata.width;
+    delete metadata.height;
+    delete metadata.extent;
+    delete metadata.noDataValue;
+    delete metadata.colorScheme;
+
     const canvasSource = new ImageCanvasSource({
       canvasFunction: (viewExtent, resolution, pixelRatio, size) => {
         return this.renderAnalysisResult(analysisData, viewExtent, size);

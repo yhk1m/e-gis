@@ -2336,6 +2336,7 @@ input:focus, select:focus, textarea:focus {
 .api-key-input-group .btn-sm {
   padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--bg-hover);
+  color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);

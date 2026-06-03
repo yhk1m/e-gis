@@ -263,14 +263,18 @@ class MeasureTool {
   }
 
   clearMeasurements() {
-    this.source.clear();
-    
-    for (var i = 0; i < this.tooltips.length; i++) {
-      this.map.removeOverlay(this.tooltips[i]);
+    if (this.source) {
+      this.source.clear();
+    }
+
+    if (this.map) {
+      for (var i = 0; i < this.tooltips.length; i++) {
+        this.map.removeOverlay(this.tooltips[i]);
+      }
     }
     this.tooltips = [];
-    
-    if (this.currentTooltip) {
+
+    if (this.currentTooltip && this.map) {
       this.map.removeOverlay(this.currentTooltip);
       this.currentTooltip = null;
     }

@@ -248,10 +248,27 @@ class DEMLoader {
       noDataValue
     };
 
+    // 레이어 빌드 (프로젝트 복원에서도 재사용)
+    return this.buildDEMLayer(demData, name, { doFit });
+  }
+
+  /**
+   * demData 객체로부터 DEM 래스터 레이어를 생성한다.
+   * GeoTIFF 파싱 결과뿐 아니라 프로젝트(.egis) 복원 시에도 사용된다.
+   * @param {Object} demData - { data, width, height, extent, minVal, maxVal, noDataValue }
+   * @param {string} name - 레이어 이름
+   * @param {Object} [options]
+   * @param {boolean} [options.doFit=false] - 생성 후 해당 범위로 이동 여부
+   * @returns {string} 레이어 ID
+   */
+  buildDEMLayer(demData, name, options = {}) {
+    const { doFit = false } = options;
+    const { extent, width, height, minVal, maxVal } = demData;
+
     // 이미지 캔버스 소스 생성
     const canvasSource = new ImageCanvasSource({
-      canvasFunction: (extent, resolution, pixelRatio, size) => {
-        return this.renderDEM(demData, extent, resolution, size);
+      canvasFunction: (canvasExtent, resolution, pixelRatio, size) => {
+        return this.renderDEM(demData, canvasExtent, resolution, size);
       },
       ratio: 1
     });

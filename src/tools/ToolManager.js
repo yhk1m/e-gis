@@ -5,6 +5,9 @@
 import { drawTool } from "./DrawTool.js";
 import { selectTool } from "./SelectTool.js";
 import { measureTool } from "./MeasureTool.js";
+import { labelTool } from "./LabelTool.js";
+import { routingTool } from "./RoutingTool.js";
+import { isochroneTool } from "./IsochroneTool.js";
 import { eventBus, Events } from "../utils/EventBus.js";
 
 class ToolManager {
@@ -21,6 +24,30 @@ class ToolManager {
       "measure-distance": measureTool,
       "measure-area": measureTool
     };
+
+    // 새 프로젝트/프로젝트 불러오기 시, 레이어가 아닌 도구 오버레이도 정리
+    // (측정 도형·툴팁, 라벨 편집, 경로/등시선 마커, 그리기 임시 도형 등은
+    //  layerManager를 거치지 않아 레이어 삭제만으로는 지워지지 않음)
+    eventBus.on(Events.PROJECT_NEW, () => this.resetForNewProject());
+  }
+
+  /**
+   * layerManager에 등록되지 않은 도구 오버레이를 모두 정리한다.
+   */
+  resetForNewProject() {
+    this.deactivateCurrentTool();
+
+    const safeCall = (fn) => {
+      try { fn(); } catch (e) { console.warn('도구 정리 중 오류:', e); }
+    };
+
+    safeCall(() => measureTool && measureTool.clearMeasurements());
+    safeCall(() => selectTool && selectTool.clearSelection && selectTool.clearSelection());
+    safeCall(() => labelTool && labelTool.stopEditMode && labelTool.stopEditMode());
+    safeCall(() => routingTool && routingTool.clear && routingTool.clear());
+    safeCall(() => isochroneTool && isochroneTool.clear && isochroneTool.clear());
+
+    this.updateToolbarUI(null);
   }
 
   activateTool(toolName) {
