@@ -70,6 +70,7 @@ export const Events = {
   // 피처 관련
   FEATURE_SELECTED: 'feature:selected',
   FEATURE_DESELECTED: 'feature:deselected',
+  SELECTION_CHANGED: 'feature:selectionchanged',
   FEATURE_CREATED: 'feature:created',
   FEATURE_MODIFIED: 'feature:modified',
   FEATURE_DELETED: 'feature:deleted',

@@ -181,9 +181,22 @@ export class AppLayout {
         </div>
 
         <div class="toolbar-group" data-group="select">
-          <button class="btn-icon" data-tool="select" title="선택">
+          <button class="btn-icon" data-tool="select" title="선택 (드래그로 범위 선택)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+            </svg>
+          </button>
+          <button class="btn-icon selection-action" id="btn-clear-selection" title="선택 취소" style="display:none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <button class="btn-icon selection-action btn-icon-danger" id="btn-delete-selection" title="선택 피처 삭제" style="display:none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+              <path d="M10 11v6M14 11v6"></path>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
             </svg>
           </button>
         </div>
@@ -423,6 +436,11 @@ export class AppLayout {
       /* 툴바 스타일 */
       .toolbar-spacer {
         flex: 1;
+      }
+
+      .btn-icon-danger:hover {
+        color: #fff;
+        background: #dc3545;
       }
 
       .toolbar-copyright {

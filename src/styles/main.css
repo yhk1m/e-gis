@@ -1695,6 +1695,31 @@ input:focus, select:focus, textarea:focus {
   background: transparent;
 }
 
+/* 포인트 집계: 폴리곤(사각형) 안에 점들 */
+.preview-diagram.pointsInPolygon .preview-shape.shape2 {
+  display: none;
+}
+
+.preview-diagram.pointsInPolygon .preview-shape.shape1 {
+  width: 120px;
+  height: 80px;
+  left: 15px;
+  top: 10px;
+  border-radius: 8px;
+  background: rgba(168, 85, 247, 0.18);
+  border: 2px solid #a855f7;
+  opacity: 1;
+  /* 폴리곤 내부 포인트들 */
+  background-image:
+    radial-gradient(circle, #a855f7 3px, transparent 3.5px),
+    radial-gradient(circle, #a855f7 3px, transparent 3.5px),
+    radial-gradient(circle, #a855f7 3px, transparent 3.5px),
+    radial-gradient(circle, #a855f7 3px, transparent 3.5px),
+    radial-gradient(circle, #a855f7 3px, transparent 3.5px);
+  background-repeat: no-repeat;
+  background-position: 25px 22px, 60px 18px, 90px 38px, 40px 55px, 80px 60px;
+}
+
 /* ===== 히트맵 모달 스타일 ===== */
 .heatmap-modal .modal-content {
   max-width: 400px;

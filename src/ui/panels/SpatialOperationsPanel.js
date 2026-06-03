@@ -24,12 +24,20 @@ class SpatialOperationsPanel {
     this.close();
 
     const polygonLayers = spatialOperationsTool.getPolygonLayers();
+    const pointLayers = spatialOperationsTool.getPointLayers();
     const operations = spatialOperationsTool.getOperations();
 
-    if (polygonLayers.length < 2) {
-      alert('공간 연산을 수행하려면 최소 2개의 폴리곤 레이어가 필요합니다.');
+    const canDoPolygonOps = polygonLayers.length >= 2;
+    const canCountPoints = polygonLayers.length >= 1 && pointLayers.length >= 1;
+
+    if (!canDoPolygonOps && !canCountPoints) {
+      alert('공간 연산을 수행하려면 폴리곤 레이어 2개,\n또는 폴리곤·포인트 레이어가 각각 1개 이상 필요합니다.');
       return;
     }
+
+    // 상태 저장 (연산별 드롭다운 재구성에 사용)
+    this.polygonLayers = polygonLayers;
+    this.pointLayers = pointLayers;
 
     this.modal = document.createElement('div');
     this.modal.className = 'modal-overlay spatial-ops-modal active';
@@ -89,6 +97,47 @@ class SpatialOperationsPanel {
   }
 
   /**
+   * 레이어 목록 → option HTML
+   */
+  layerOptionsHTML(layers) {
+    return layers.map(l =>
+      '<option value="' + l.id + '">' + l.name + ' (' + l.featureCount + ')</option>'
+    ).join('');
+  }
+
+  /**
+   * 연산 유형에 맞게 레이어1/레이어2 드롭다운 채우기
+   */
+  populateLayerSelects(operation) {
+    const layer1Select = document.getElementById('spatial-ops-layer1');
+    const layer2Select = document.getElementById('spatial-ops-layer2');
+    if (!layer1Select || !layer2Select) return;
+
+    const prev1 = layer1Select.value;
+    const prev2 = layer2Select.value;
+
+    if (operation === 'pointsInPolygon') {
+      // 레이어1 = 폴리곤, 레이어2 = 포인트
+      layer1Select.innerHTML = this.layerOptionsHTML(this.polygonLayers);
+      layer2Select.innerHTML = this.layerOptionsHTML(this.pointLayers);
+    } else {
+      // 폴리곤 ↔ 폴리곤
+      layer1Select.innerHTML = this.layerOptionsHTML(this.polygonLayers);
+      layer2Select.innerHTML = this.layerOptionsHTML(this.polygonLayers);
+    }
+
+    // 가능하면 이전 선택 유지
+    if ([...layer1Select.options].some(o => o.value === prev1)) layer1Select.value = prev1;
+    if ([...layer2Select.options].some(o => o.value === prev2)) layer2Select.value = prev2;
+
+    // 같은 목록을 공유하는 연산에서 두 선택이 겹치면 분리
+    if (operation !== 'pointsInPolygon' && layer1Select.value === layer2Select.value) {
+      const alt = [...layer2Select.options].find(o => o.value !== layer1Select.value);
+      if (alt) layer2Select.value = alt.value;
+    }
+  }
+
+  /**
    * 이벤트 바인딩
    */
   bindEvents() {
@@ -105,8 +154,9 @@ class SpatialOperationsPanel {
     // 연산 변경 시 설명 업데이트
     operationSelect.addEventListener('change', () => this.updateDescription());
 
-    // 레이어 선택 변경 시 다른 선택 확인
+    // 레이어 선택 변경 시 다른 선택 확인 (폴리곤↔폴리곤 연산에서만 중복 방지)
     layer1Select.addEventListener('change', () => {
+      if (operationSelect.value === 'pointsInPolygon') return;
       if (layer1Select.value === layer2Select.value) {
         const options = layer2Select.options;
         for (let i = 0; i < options.length; i++) {
@@ -138,19 +188,24 @@ class SpatialOperationsPanel {
       intersect: '두 레이어가 겹치는 영역만 추출합니다.',
       union: '두 레이어의 모든 영역을 하나로 합칩니다.',
       difference: '첫 번째 레이어에서 두 번째 레이어와 겹치는 영역을 제거합니다.',
-      clip: '입력 레이어를 클립 레이어의 범위로 자릅니다.'
+      clip: '입력 레이어를 클립 레이어의 범위로 자릅니다.',
+      pointsInPolygon: '폴리곤 안에 들어가는 포인트만 남기고, 각 포인트에 포함하는 폴리곤의 속성을 poly_ 접두사로 추가합니다.'
     };
 
     const labels = {
       intersect: { l1: '레이어 1', l2: '레이어 2' },
       union: { l1: '레이어 1', l2: '레이어 2' },
       difference: { l1: '입력 레이어 (유지)', l2: '제거할 레이어' },
-      clip: { l1: '입력 레이어', l2: '클립 레이어' }
+      clip: { l1: '입력 레이어', l2: '클립 레이어' },
+      pointsInPolygon: { l1: '폴리곤 레이어', l2: '포인트 레이어' }
     };
 
     descEl.innerHTML = '<p>' + (descriptions[operation] || '') + '</p>';
     layer1Label.textContent = labels[operation]?.l1 || '레이어 1';
     layer2Label.textContent = labels[operation]?.l2 || '레이어 2';
+
+    // 연산에 맞게 레이어 드롭다운 재구성
+    this.populateLayerSelects(operation);
 
     // 미리보기 다이어그램 업데이트
     previewEl.className = 'preview-diagram ' + operation;
@@ -164,7 +219,8 @@ class SpatialOperationsPanel {
     const layerId1 = document.getElementById('spatial-ops-layer1').value;
     const layerId2 = document.getElementById('spatial-ops-layer2').value;
 
-    if (layerId1 === layerId2) {
+    // 폴리곤↔폴리곤 연산은 서로 다른 레이어여야 함 (포인트 추출은 타입이 달라 허용)
+    if (operation !== 'pointsInPolygon' && layerId1 === layerId2) {
       alert('서로 다른 레이어를 선택해주세요.');
       return;
     }
@@ -189,11 +245,24 @@ class SpatialOperationsPanel {
         case 'clip':
           result = spatialOperationsTool.clip(layerId1, layerId2);
           break;
+        case 'pointsInPolygon':
+          result = spatialOperationsTool.pointsInPolygons(layerId1, layerId2);
+          break;
         default:
           throw new Error('알 수 없는 연산입니다.');
       }
 
-      alert(`연산 완료!\n새 레이어: ${result.layerName}\n피처 수: ${result.featureCount}`);
+      if (operation === 'pointsInPolygon') {
+        alert(
+          `포인트 추출 완료!\n새 레이어: ${result.layerName}\n` +
+          `폴리곤 내 포인트 ${result.insidePoints}개 / 전체 ${result.totalPoints}개` +
+          (result.insidePoints < result.totalPoints
+            ? `\n(폴리곤 밖 포인트 ${result.totalPoints - result.insidePoints}개 제외)`
+            : '')
+        );
+      } else {
+        alert(`연산 완료!\n새 레이어: ${result.layerName}\n피처 수: ${result.featureCount}`);
+      }
       this.close();
     } catch (error) {
       alert('연산 실패: ' + error.message);

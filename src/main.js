@@ -413,6 +413,27 @@ function initToolbar() {
     // 그리기/선택 도구
     toolManager.toggleTool(tool);
   });
+
+  // 선택 액션 버튼 (선택 취소 / 선택 피처 삭제) — 선택 도구의 선택 집합에 따라 표시
+  const btnClearSel = document.getElementById('btn-clear-selection');
+  const btnDeleteSel = document.getElementById('btn-delete-selection');
+
+  if (btnClearSel) {
+    btnClearSel.addEventListener('click', () => toolManager.clearSelection());
+  }
+  if (btnDeleteSel) {
+    btnDeleteSel.addEventListener('click', () => {
+      const deleted = toolManager.deleteSelectedFeatures();
+      showStatusMessage(deleted ? '선택된 피처가 삭제되었습니다.' : '삭제할 피처를 먼저 선택하세요.');
+    });
+  }
+
+  // 선택 개수가 바뀌면 버튼 표시/숨김
+  eventBus.on(Events.SELECTION_CHANGED, ({ count }) => {
+    const display = count > 0 ? '' : 'none';
+    if (btnClearSel) btnClearSel.style.display = display;
+    if (btnDeleteSel) btnDeleteSel.style.display = display;
+  });
 }
 
 
@@ -511,8 +532,8 @@ function handleMenuAction(action) {
 
     // ===== 편집 메뉴 =====
     case 'edit-delete': {
-      // 선택 도구 활성화 후 삭제
-      toolManager.activateTool('select');
+      // 현재 선택된 피처 삭제. activateTool('select')를 다시 호출하면
+      // Select 인터랙션이 재생성되며 선택이 초기화되므로 호출하지 않는다.
       const deleted = toolManager.deleteSelectedFeatures();
       if (deleted) {
         showStatusMessage('선택된 피처가 삭제되었습니다.');

@@ -4,6 +4,8 @@
 
 import Select from 'ol/interaction/Select';
 import Modify from 'ol/interaction/Modify';
+import DragBox from 'ol/interaction/DragBox';
+import DragPan from 'ol/interaction/DragPan';
 import { click, shiftKeyOnly, platformModifierKeyOnly } from 'ol/events/condition';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { mapManager } from '../core/MapManager.js';
@@ -31,6 +33,8 @@ class SelectTool {
     this.map = null;
     this.select = null;
     this.modify = null;
+    this.dragBox = null;
+    this.dragPan = null;
     this.isActive = false;
     this.selectedFeatures = null;
   }
@@ -75,7 +79,48 @@ class SelectTool {
       this.handleSelect(event);
     });
 
+    // 선택 집합이 바뀔 때마다(클릭·박스·삭제 등) 알림 → 툴바 버튼 토글
+    this.selectedFeatures.on('add', () => this.emitSelectionChange());
+    this.selectedFeatures.on('remove', () => this.emitSelectionChange());
+
     this.map.addInteraction(this.select);
+
+    // 드래그 박스 선택: 선택 도구가 활성일 때 빈 곳을 드래그하면 범위 내 피처 일괄 선택
+    // 지도 패닝과 충돌하므로 선택 도구 활성 동안 DragPan을 비활성화
+    this.map.getInteractions().forEach((interaction) => {
+      if (interaction instanceof DragPan) {
+        this.dragPan = interaction;
+        interaction.setActive(false);
+      }
+    });
+
+    this.dragBox = new DragBox();
+
+    this.dragBox.on('boxend', (event) => {
+      const extent = this.dragBox.getGeometry().getExtent();
+      const additive = !!(event.mapBrowserEvent &&
+        event.mapBrowserEvent.originalEvent &&
+        event.mapBrowserEvent.originalEvent.shiftKey);
+
+      if (!additive) {
+        this.selectedFeatures.clear();
+      }
+
+      const existing = this.selectedFeatures.getArray();
+      layerManager.getAllLayers().forEach((layerInfo) => {
+        const olLayer = layerInfo.olLayer;
+        if (!olLayer) return;
+        if (olLayer.getProperties().type === 'base') return;
+        if (!olLayer.getVisible()) return;
+        layerInfo.source.forEachFeatureIntersectingExtent(extent, (feature) => {
+          if (!existing.includes(feature)) {
+            this.selectedFeatures.push(feature);
+          }
+        });
+      });
+    });
+
+    this.map.addInteraction(this.dragBox);
 
     // Modify 인터랙션 추가 (수정 모드)
     if (enableModify) {
@@ -111,6 +156,14 @@ class SelectTool {
     document.addEventListener('keydown', this.handleKeyDown);
 
     eventBus.emit(Events.TOOL_ACTIVATED, { tool: 'select' });
+  }
+
+  /**
+   * 선택 집합 변경 알림 (툴바의 선택취소/삭제 버튼 토글용)
+   */
+  emitSelectionChange() {
+    const count = this.selectedFeatures ? this.selectedFeatures.getLength() : 0;
+    eventBus.emit(Events.SELECTION_CHANGED, { count });
   }
 
   /**
@@ -298,8 +351,22 @@ class SelectTool {
       this.modify = null;
     }
 
+    if (this.dragBox) {
+      this.map.removeInteraction(this.dragBox);
+      this.dragBox = null;
+    }
+
+    // 패닝 복구
+    if (this.dragPan) {
+      this.dragPan.setActive(true);
+      this.dragPan = null;
+    }
+
     this.selectedFeatures = null;
     this.isActive = false;
+
+    // 선택 0 → 툴바 버튼 숨김
+    eventBus.emit(Events.SELECTION_CHANGED, { count: 0 });
 
     // 키보드 이벤트 해제
     document.removeEventListener('keydown', this.handleKeyDown);

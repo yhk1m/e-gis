@@ -159,14 +159,22 @@ export class AttributeTable {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    html, body {
+      height: 100vh;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 13px;
       background: ${isDark ? '#1a1a2e' : '#ffffff'};
       color: ${isDark ? '#e4e4e7' : '#333333'};
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     .header {
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -236,7 +244,8 @@ export class AttributeTable {
     }
 
     .table-container {
-      height: calc(100vh - 50px);
+      flex: 1 1 auto;
+      min-height: 0;
       overflow: auto;
     }
 
@@ -338,6 +347,7 @@ export class AttributeTable {
     }
 
     .help-text {
+      flex: 0 0 auto;
       font-size: 11px;
       color: ${isDark ? '#808090' : '#999'};
       padding: 8px 16px;

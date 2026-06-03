@@ -7,6 +7,7 @@ import { layerManager } from '../../core/LayerManager.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import KML from 'ol/format/KML';
 import GPX from 'ol/format/GPX';
+import WKB from 'ol/format/WKB';
 import shpwrite from '@mapbox/shp-write';
 
 class LayerExportPanel {
@@ -456,12 +457,21 @@ ${waypoints}${tracks}</gpx>`;
         featureProjection: 'EPSG:3857'
       });
 
-      // shpwrite로 Shapefile 생성
+      // @mapbox/shp-write 버그 회피: Polygon/MultiPolygon, LineString/MultiLineString이
+      // 같은 shapefile 이름("POLYGON"/"POLYLINE")으로 매핑되어 충돌 → 한쪽 피처가 통째로 사라진다.
+      // 단일 타입을 멀티 타입으로 통일해 그룹을 하나로 만들면 충돌이 사라진다.
+      this.normalizeToMultiGeometry(geoJsonObj);
+
+      // 내부 .shp/.dbf 파일명을 레이어 이름으로 지정 → 압축을 풀어 불러와도
+      // 이름이 'POLYGON'이 아니라 실제 레이어명으로 들어온다.
+      // (shp-write는 shpType "POINT"/"POLYLINE"/"POLYGON" 키로 조회한다)
+      const safeName = layerName.replace(/[^a-zA-Z0-9가-힣_\-]/g, '_');
       const options = {
         folder: layerName,
         filename: layerName,
         outputType: 'blob',
-        compression: 'DEFLATE'
+        compression: 'DEFLATE',
+        types: { point: safeName, polyline: safeName, polygon: safeName }
       };
 
       const zipBlob = await shpwrite.zip(geoJsonObj, options);
@@ -482,6 +492,23 @@ ${waypoints}${tracks}</gpx>`;
   }
 
   /**
+   * 폴리곤/라인 계열을 멀티 타입으로 통일 (shp-write 파일명 충돌 회피)
+   * shapefile은 단일/멀티 폴리곤을 구분하지 않으므로 데이터 손실은 없다.
+   */
+  normalizeToMultiGeometry(geoJsonObj) {
+    if (!geoJsonObj || !geoJsonObj.features) return;
+    geoJsonObj.features.forEach(f => {
+      const g = f.geometry;
+      if (!g) return;
+      if (g.type === 'Polygon') {
+        f.geometry = { type: 'MultiPolygon', coordinates: [g.coordinates] };
+      } else if (g.type === 'LineString') {
+        f.geometry = { type: 'MultiLineString', coordinates: [g.coordinates] };
+      }
+    });
+  }
+
+  /**
    * GeoPackage로 내보내기
    */
   async exportToGeoPackage(features, layerName) {
@@ -493,6 +520,10 @@ ${waypoints}${tracks}</gpx>`;
       });
 
       const db = new SQL.Database();
+
+      // GeoPackage 식별자: application_id "GPKG"(0x47504B47), user_version 10201(=1.2.1)
+      db.run('PRAGMA application_id = 1196444487');
+      db.run('PRAGMA user_version = 10201');
 
       // GeoPackage 테이블 생성
       db.run(`
@@ -533,7 +564,9 @@ ${waypoints}${tracks}</gpx>`;
         )
       `);
 
-      // WGS84 SRS 추가
+      // 필수 SRS 행 (GeoPackage 표준 요구: -1, 0) + WGS84
+      db.run(`INSERT INTO gpkg_spatial_ref_sys VALUES ('Undefined cartesian SRS', -1, 'NONE', -1, 'undefined', NULL)`);
+      db.run(`INSERT INTO gpkg_spatial_ref_sys VALUES ('Undefined geographic SRS', 0, 'NONE', 0, 'undefined', NULL)`);
       db.run(`INSERT INTO gpkg_spatial_ref_sys VALUES ('WGS 84', 4326, 'EPSG', 4326, 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]]', 'WGS 84')`);
 
       // 피처 데이터 수집
@@ -588,16 +621,21 @@ ${waypoints}${tracks}</gpx>`;
       db.run(`INSERT INTO gpkg_geometry_columns VALUES (?, 'geom', ?, 4326, 0, 0)`,
         [tableName, geomType]);
 
-      // 피처 삽입
-      geoJsonObj.features.forEach(f => {
-        const geomWKB = this.geojsonToWKB(f.geometry);
-        const values = [geomWKB];
+      // 피처 삽입 — geom은 실제 GeoPackage 바이너리(GP 헤더 + 표준 WKB)로 저장
+      const wkbWriter = new WKB({ hex: false });
+      const placeholders = ['?'].concat(columns.map(() => '?')).join(', ');
+      const colNames = ['geom'].concat(columns.map(c => '"' + c.replace(/[^a-zA-Z0-9_]/g, '_') + '"')).join(', ');
+
+      geoJsonObj.features.forEach((f, i) => {
+        // 원본 OL 지오메트리를 4326으로 변환해 WKB 작성 (features와 geoJsonObj.features는 동일 순서)
+        const olGeom = features[i].getGeometry().clone().transform('EPSG:3857', 'EPSG:4326');
+        const geomBlob = this.buildGpkgGeometryBlob(olGeom, wkbWriter, 4326);
+
+        const values = [geomBlob];
         columns.forEach(col => {
           values.push(f.properties[col] ?? null);
         });
 
-        const placeholders = ['?'].concat(columns.map(() => '?')).join(', ');
-        const colNames = ['geom'].concat(columns.map(c => '"' + c.replace(/[^a-zA-Z0-9_]/g, '_') + '"')).join(', ');
         db.run(`INSERT INTO "${tableName}" (${colNames}) VALUES (${placeholders})`, values);
       });
 
@@ -633,12 +671,23 @@ ${waypoints}${tracks}</gpx>`;
   }
 
   /**
-   * GeoJSON 지오메트리를 간단한 WKB로 변환
+   * OL 지오메트리를 GeoPackage 지오메트리 BLOB으로 변환
+   * 구조: "GP"(0x47,0x50) + version(0) + flags + srs_id(int32 LE) + 표준 WKB
+   * @param {import('ol/geom/Geometry').default} olGeometry - 4326 좌표의 OL 지오메트리
+   * @param {WKB} wkbWriter - hex:false 로 생성된 WKB 작성기 (ArrayBuffer 반환)
+   * @param {number} srsId - 좌표계 ID (예: 4326)
+   * @returns {Uint8Array} GeoPackage 지오메트리 BLOB
    */
-  geojsonToWKB(geometry) {
-    // 간단한 GeoJSON을 WKT로 변환 후 텍스트로 저장 (간소화 버전)
-    // 실제 WKB 변환은 복잡하므로 WKT 텍스트로 저장
-    return JSON.stringify(geometry);
+  buildGpkgGeometryBlob(olGeometry, wkbWriter, srsId) {
+    const wkb = new Uint8Array(wkbWriter.writeGeometry(olGeometry));
+    const blob = new Uint8Array(8 + wkb.length);
+    blob[0] = 0x47; // 'G'
+    blob[1] = 0x50; // 'P'
+    blob[2] = 0x00; // version 0
+    blob[3] = 0x01; // flags: little-endian 헤더, 엔벨로프 없음
+    new DataView(blob.buffer).setInt32(4, srsId, true); // srs_id (LE)
+    blob.set(wkb, 8);
+    return blob;
   }
 
   /**
