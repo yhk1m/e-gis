@@ -174,12 +174,19 @@ export class ProjectManager {
             continue;
           }
 
-          // 가시성 복원
-          if (layerData.visible === false && layerId) {
+          // 가시성·불투명도 복원
+          if (layerId) {
             const layerInfo = layerManager.getLayer(layerId);
             if (layerInfo) {
-              layerInfo.visible = false;
-              layerInfo.olLayer.setVisible(false);
+              if (layerData.visible === false) {
+                layerInfo.visible = false;
+                layerInfo.olLayer.setVisible(false);
+              }
+              if (typeof layerData.opacity === 'number' &&
+                  typeof layerInfo.olLayer.setOpacity === 'function') {
+                layerInfo.opacity = layerData.opacity;
+                layerInfo.olLayer.setOpacity(layerData.opacity);
+              }
             }
           }
 

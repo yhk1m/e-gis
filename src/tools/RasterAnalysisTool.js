@@ -751,12 +751,42 @@ class RasterAnalysisTool {
     if (layerInfo) {
       layerInfo.analysisData = analysisData;
       layerInfo.featureCount = `${width}×${height}`;
+      layerInfo.opacity = olLayer.getOpacity();
     }
 
     // 범례 생성
     this.createLegend(layerId, name, colorScheme, metadata);
 
     return layerId;
+  }
+
+  /**
+   * 래스터 계산기(필터) 결과 레이어의 표시 색상을 변경하고 다시 렌더링한다.
+   * 단색(colorScheme === 'filter') 레이어에만 적용된다.
+   * @param {string} layerId - 대상 레이어 ID
+   * @param {string} hex - 새 색상(#rrggbb)
+   */
+  recolorFilter(layerId, hex) {
+    const layerInfo = layerManager.getLayer(layerId);
+    if (!layerInfo || !layerInfo.analysisData) return;
+
+    const ad = layerInfo.analysisData;
+    if (ad.colorScheme !== 'filter') return;
+
+    ad.fillColorRgb = this.hexToRgb(hex);
+    ad.color = hex;
+    layerInfo.color = hex;
+
+    // 캔버스 소스 재렌더 (canvasFunction이 analysisData를 클로저로 참조함)
+    const source = layerInfo.olLayer && layerInfo.olLayer.getSource();
+    if (source && typeof source.refresh === 'function') source.refresh();
+
+    // 범례 색상 갱신
+    this.createLegend(layerId, layerInfo.name, 'filter', {
+      color: hex, metric: ad.metric, min: ad.min, max: ad.max
+    });
+
+    eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
   }
 
   /**

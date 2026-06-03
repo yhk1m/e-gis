@@ -294,6 +294,7 @@ class DEMLoader {
     if (layerInfo) {
       layerInfo.demData = demData;
       layerInfo.featureCount = `${width}×${height}`;
+      layerInfo.opacity = olLayer.getOpacity();
     }
 
     // 해당 범위로 이동 (일괄 로드에서는 호출 측이 마지막에 통합 fit)

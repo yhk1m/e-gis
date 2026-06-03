@@ -432,6 +432,17 @@ class LayerManager {
     }
   }
 
+  // 래스터(ImageLayer) 레이어 불투명도 설정 — 벡터 스타일과 별개로 olLayer에 직접 적용
+  setRasterOpacity(layerId, opacity) {
+    const layerInfo = this.layers.get(layerId);
+    if (!layerInfo || !layerInfo.olLayer) return;
+    layerInfo.opacity = opacity;
+    if (typeof layerInfo.olLayer.setOpacity === 'function') {
+      layerInfo.olLayer.setOpacity(opacity);
+    }
+    eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
+  }
+
   setLayerColor(layerId, newColor) {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;

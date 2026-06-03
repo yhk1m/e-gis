@@ -5,6 +5,7 @@
 import { eventBus, Events } from '../../utils/EventBus.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { mapManager } from '../../core/MapManager.js';
+import { rasterAnalysisTool } from '../../tools/RasterAnalysisTool.js';
 
 export class LayerPanel {
   constructor(containerId = 'layer-list') {
@@ -524,6 +525,7 @@ export class LayerPanel {
     // 강제 인라인 스타일 적용 (기본 위치 포함)
     picker.style.cssText = "position: fixed; left: 300px; top: 100px; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; min-width: 200px; z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);";
 
+    const isRaster = layer.type === "raster";
     const isPoint = layer.geometryType === "Point" || layer.geometryType === "MultiPoint";
     const isLine = layer.geometryType === "LineString" || layer.geometryType === "MultiLineString";
     const isPolygon = layer.geometryType === "Polygon" || layer.geometryType === "MultiPolygon";
@@ -537,7 +539,29 @@ export class LayerPanel {
 
     let html = "<div class=\"color-picker-header\">스타일 편집</div>";
 
-    if (isPolygon) {
+    if (isRaster) {
+      // 래스터: 캔버스 렌더링이라 벡터 색상 스타일이 적용되지 않음.
+      // 불투명도는 공통 제공, 단색(필터) 결과만 표시 색상 변경 허용.
+      const olOpacity = (layer.olLayer && typeof layer.olLayer.getOpacity === "function")
+        ? layer.olLayer.getOpacity()
+        : (layer.opacity !== undefined ? layer.opacity : 1);
+      const opacityPct = Math.round(olOpacity * 100);
+      const isFilter = layer.analysisData && layer.analysisData.colorScheme === "filter";
+
+      if (isFilter) {
+        const fc = layer.analysisData.color || "#e3170a";
+        html += "<div class=\"style-section\"><label>표시 색상:</label>";
+        html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + fc + "\" class=\"raster-filter-color-input\"></div></div>";
+      }
+
+      html += "<div class=\"style-section\"><label>불투명도: <span class=\"raster-opacity-value\">" + opacityPct + "%</span></label>";
+      html += "<input type=\"range\" class=\"opacity-slider raster-opacity-slider\" min=\"0\" max=\"100\" value=\"" + opacityPct + "\"></div>";
+
+      if (!isFilter) {
+        html += "<div class=\"style-section\" style=\"font-size:12px;color:var(--text-secondary,#888)\">색상은 분석 종류(고도/경사/향)에 따라 자동 지정됩니다.</div>";
+      }
+    }
+    else if (isPolygon) {
       // 면 색상
       const fillColorItems = colors.map(function(color) {
         return "<div class=\"color-item" + (color === currentFillColor ? " active" : "") + "\" data-fill-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
@@ -748,6 +772,25 @@ export class LayerPanel {
         var label = picker.querySelector(".stroke-width-value");
         if (label) label.textContent = width + "px";
         layerManager.setLayerStrokeWidth(layerId, width);
+      });
+    }
+
+    var rasterOpacitySlider = picker.querySelector(".raster-opacity-slider");
+    if (rasterOpacitySlider) {
+      rasterOpacitySlider.addEventListener("input", function(e) {
+        var opacity = parseInt(e.target.value) / 100;
+        var label = picker.querySelector(".raster-opacity-value");
+        if (label) label.textContent = e.target.value + "%";
+        layerManager.setRasterOpacity(layerId, opacity);
+      });
+    }
+
+    var rasterFilterColorInput = picker.querySelector(".raster-filter-color-input");
+    if (rasterFilterColorInput) {
+      rasterFilterColorInput.addEventListener("input", function(e) {
+        rasterAnalysisTool.recolorFilter(layerId, e.target.value);
+        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
+        if (indicator) indicator.style.backgroundColor = e.target.value;
       });
     }
 
