@@ -125,7 +125,7 @@ class CompassControl extends Control {
     return Math.max(0, Math.min(360, Math.round(deg)));
   }
 
-  /** 0~180°를 지도 회전에 적용하고, 입력하지 않은 쪽 컨트롤을 동기화 */
+  /** 0~360°를 지도 회전에 적용하고, 입력하지 않은 쪽 컨트롤을 동기화 */
   applyDegrees(deg, opts = {}) {
     const d = this.clampDeg(deg);
     this._applying = true;
@@ -133,6 +133,15 @@ class CompassControl extends Control {
     this._applying = false;
     if (!opts.fromSlider) this.slider.value = String(d);
     if (!opts.fromNumber) this.numInput.value = String(d);
+    this.updateSliderFill();
+  }
+
+  /** 슬라이더 값에 맞춰 진행 채움(왼쪽=채움, 오른쪽=빈 트랙)을 갱신 */
+  updateSliderFill() {
+    const max = Number(this.slider.max) || 360;
+    const pct = max ? (Number(this.slider.value) / max) * 100 : 0;
+    // 트랙 의사요소가 읽는 CSS 변수만 갱신 (요소 배경/트랙 좌표 불일치 방지)
+    this.slider.style.setProperty('--fill', `${pct}%`);
   }
 
   /** 현재 지도 회전값을 0~180° 컨트롤에 반영 */
@@ -141,6 +150,7 @@ class CompassControl extends Control {
     const deg = this.rotationToDeg(rotation);
     this.slider.value = String(deg);
     this.numInput.value = String(deg);
+    this.updateSliderFill();
   }
 
   rotationToDeg(rotation) {
@@ -160,6 +170,7 @@ class CompassControl extends Control {
       this.slider.value = String(deg);
       this.numInput.value = String(deg);
     }
+    this.updateSliderFill();
   }
 }
 

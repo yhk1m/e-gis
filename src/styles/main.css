@@ -278,22 +278,34 @@ input:focus, select:focus, textarea:focus {
   -webkit-appearance: none;
   appearance: none;
   width: 180px;
-  height: 6px;
   margin: 6px 0;
-  border-radius: 3px;
-  background: var(--border-color);
+  background: transparent;
   cursor: pointer;
+  --fill: 0%;
 }
 
-/* 손잡이: 진행 채움 없이 가로로 긴 막대 (0°에서 왼쪽 끝에 위치) */
+/* 트랙: 채움(--fill, JS가 갱신)까지 색, 이후 빈 트랙. 양끝까지 정확히 채워짐 */
+.egis-compass-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    var(--primary-color, #0066cc) var(--fill),
+    var(--border-color) var(--fill)
+  );
+}
+
+/* 손잡이: 좁은 세로 막대 → 양 끝까지 닿음 (인셋 최소화) */
 .egis-compass-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 30px;
-  height: 16px;
-  border: none;
+  width: 12px;
+  height: 18px;
+  margin-top: -6px; /* 6px 트랙 기준 수직 중앙 정렬 */
+  border: 2px solid #fff;
   border-radius: 4px;
   background: var(--primary-color, #0066cc);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: grab;
 }
 
@@ -302,11 +314,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 .egis-compass-slider::-moz-range-thumb {
-  width: 30px;
-  height: 16px;
-  border: none;
+  width: 12px;
+  height: 18px;
+  border: 2px solid #fff;
   border-radius: 4px;
   background: var(--primary-color, #0066cc);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: grab;
 }
 
@@ -314,6 +327,12 @@ input:focus, select:focus, textarea:focus {
   height: 6px;
   border-radius: 3px;
   background: var(--border-color);
+}
+
+.egis-compass-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--primary-color, #0066cc);
 }
 
 .egis-compass-panel-row {
