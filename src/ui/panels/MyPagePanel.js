@@ -17,6 +17,9 @@ class MyPagePanel {
   constructor() {
     this.modal = null;
     this.profile = null;
+    this.schoolStatsPage = 1;
+    this._schoolStats = null;
+    this._mySchool = null;
   }
 
   /**
@@ -392,29 +395,69 @@ class MyPagePanel {
 
       // 학교 순위
       const stats = await supabaseManager.getSchoolStats();
-      if (stats.length === 0) {
-        schoolRanking.innerHTML = '<div class="empty-list">등록된 학교가 없습니다.</div>';
-        return;
-      }
-
-      schoolRanking.innerHTML = `
-        <div class="ranking-list">
-          ${stats.slice(0, 10).map((item, index) => `
-            <div class="ranking-item ${mySchool && item.school === mySchool.school ? 'my-school' : ''}">
-              <span class="ranking-position">${index + 1}</span>
-              <span class="ranking-school">${item.school}</span>
-              <span class="ranking-count">${item.count}명</span>
-            </div>
-          `).join('')}
-        </div>
-        ${stats.length > 10 ? `<div class="ranking-more">외 ${stats.length - 10}개 학교</div>` : ''}
-      `;
+      this._schoolStats = stats;
+      this._mySchool = mySchool;
+      this.schoolStatsPage = 1;
+      this.renderSchoolRanking();
 
     } catch (error) {
       console.error('학교 통계 로드 실패:', error);
       mySchoolInfo.innerHTML = '<div class="error">정보를 불러올 수 없습니다.</div>';
       schoolRanking.innerHTML = '<div class="error">순위를 불러올 수 없습니다.</div>';
     }
+  }
+
+  /**
+   * 학교 순위 렌더링 (10위 단위 페이지네이션, 동석차 반영)
+   */
+  renderSchoolRanking() {
+    const schoolRanking = document.getElementById('school-ranking');
+    if (!schoolRanking) return;
+
+    const stats = this._schoolStats || [];
+    const mySchool = this._mySchool;
+
+    if (stats.length === 0) {
+      schoolRanking.innerHTML = '<div class="empty-list">등록된 학교가 없습니다.</div>';
+      return;
+    }
+
+    const pageSize = 10;
+    const totalPages = Math.ceil(stats.length / pageSize);
+    const page = Math.min(Math.max(1, this.schoolStatsPage || 1), totalPages);
+    this.schoolStatsPage = page;
+
+    const start = (page - 1) * pageSize;
+    const pageItems = stats.slice(start, start + pageSize);
+
+    schoolRanking.innerHTML = `
+      <div class="ranking-list">
+        ${pageItems.map(item => `
+          <div class="ranking-item ${item.rank <= 3 ? `rank-${item.rank}` : ''} ${mySchool && item.school === mySchool.school ? 'my-school' : ''}">
+            <span class="ranking-position">${item.rank}</span>
+            <span class="ranking-school">${item.school}</span>
+            <span class="ranking-count">${item.count}명</span>
+          </div>
+        `).join('')}
+      </div>
+      ${totalPages > 1 ? `
+        <div class="ranking-pagination">
+          <button class="ranking-page-btn" data-page="prev" ${page === 1 ? 'disabled' : ''}>이전</button>
+          <span class="ranking-page-info">${page} / ${totalPages}</span>
+          <button class="ranking-page-btn" data-page="next" ${page === totalPages ? 'disabled' : ''}>다음</button>
+        </div>
+      ` : ''}
+    `;
+
+    schoolRanking.querySelectorAll('.ranking-page-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dir = btn.dataset.page;
+        if (dir === 'prev' && this.schoolStatsPage > 1) this.schoolStatsPage--;
+        else if (dir === 'next' && this.schoolStatsPage < totalPages) this.schoolStatsPage++;
+        else return;
+        this.renderSchoolRanking();
+      });
+    });
   }
 
   /**

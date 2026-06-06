@@ -45,6 +45,9 @@ export class AppLayout {
             <div class="menu-item dropdown" data-menu="edit">
               <button class="menu-button">편집</button>
               <div class="dropdown-menu" id="menu-edit">
+                <div class="dropdown-item" data-action="edit-merge">피처 합치기</div>
+                <div class="dropdown-item" data-action="edit-split">피처 자르기</div>
+                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="edit-delete">선택 피처 삭제</div>
                 <div class="dropdown-item" data-action="edit-select-all">모두 선택</div>
                 <div class="dropdown-item" data-action="edit-deselect">선택 해제</div>
@@ -197,6 +200,22 @@ export class AppLayout {
               <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
               <path d="M10 11v6M14 11v6"></path>
               <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            </svg>
+          </button>
+          <button class="btn-icon" id="btn-merge-features" title="피처 합치기 (선택한 피처들을 박음질하듯 하나로)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="8.5" height="16" rx="1.5"/>
+              <rect x="13.5" y="4" width="8.5" height="16" rx="1.5"/>
+              <path d="M12 3.5 L10 7 L14 10.5 L10 14 L14 17.5 L12 20.5" fill="none"/>
+            </svg>
+          </button>
+          <button class="btn-icon" data-tool="edit-split" title="피처 자르기 (선을 그어 분할)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="6" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+              <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+              <line x1="8.12" y1="8.12" x2="12" y2="12"/>
             </svg>
           </button>
         </div>

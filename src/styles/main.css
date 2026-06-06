@@ -3381,15 +3381,15 @@ input:focus, select:focus, textarea:focus {
   color: var(--text-muted);
 }
 
-.ranking-item:nth-child(1) .ranking-position {
+.ranking-item.rank-1 .ranking-position {
   color: #FFD700;
 }
 
-.ranking-item:nth-child(2) .ranking-position {
+.ranking-item.rank-2 .ranking-position {
   color: #C0C0C0;
 }
 
-.ranking-item:nth-child(3) .ranking-position {
+.ranking-item.rank-3 .ranking-position {
   color: #CD7F32;
 }
 
@@ -3408,6 +3408,41 @@ input:focus, select:focus, textarea:focus {
   text-align: center;
   font-size: var(--font-size-xs);
   color: var(--text-muted);
+}
+
+.ranking-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.ranking-page-btn {
+  padding: 4px 12px;
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-app);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ranking-page-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.ranking-page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ranking-page-info {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  min-width: 48px;
+  text-align: center;
 }
 
 /* 학교 등록 섹션 */

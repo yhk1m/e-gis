@@ -292,24 +292,51 @@ class SupabaseManager {
 
     const { data, error } = await this.supabase
       .from('user_profiles')
-      .select('school')
+      .select('school, created_at')
       .not('school', 'is', null)
       .not('school', 'eq', '');
 
     if (error) throw error;
 
-    // 학교별 집계
+    // 학교별 집계 (사용자 수 + 최초 가입 시각)
     const stats = {};
     data.forEach(row => {
-      if (row.school) {
-        stats[row.school] = (stats[row.school] || 0) + 1;
+      if (!row.school) return;
+      if (!stats[row.school]) {
+        stats[row.school] = { count: 0, firstJoinedAt: null };
+      }
+      stats[row.school].count += 1;
+      // 가장 빠른 가입 시각 추적 (동석차 정렬용)
+      const joinedAt = row.created_at || null;
+      if (joinedAt && (!stats[row.school].firstJoinedAt || joinedAt < stats[row.school].firstJoinedAt)) {
+        stats[row.school].firstJoinedAt = joinedAt;
       }
     });
 
-    // 순위 정렬
+    // 순위 정렬: 사용자 수 내림차순 → 동석차는 첫 가입자가 빠른 학교 우선
     const ranked = Object.entries(stats)
-      .map(([school, count]) => ({ school, count }))
-      .sort((a, b) => b.count - a.count);
+      .map(([school, info]) => ({ school, count: info.count, firstJoinedAt: info.firstJoinedAt }))
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        // 동석차: 첫 가입자가 빠른 순 (가입 시각 없는 학교는 뒤로)
+        if (!a.firstJoinedAt && !b.firstJoinedAt) return 0;
+        if (!a.firstJoinedAt) return 1;
+        if (!b.firstJoinedAt) return -1;
+        if (a.firstJoinedAt < b.firstJoinedAt) return -1;
+        if (a.firstJoinedAt > b.firstJoinedAt) return 1;
+        return 0;
+      });
+
+    // 동석차 순위 부여 (같은 사용자 수 → 같은 순위, 예: 1, 1, 3)
+    let rank = 0;
+    let prevCount = null;
+    ranked.forEach((item, i) => {
+      if (item.count !== prevCount) {
+        rank = i + 1;
+        prevCount = item.count;
+      }
+      item.rank = rank;
+    });
 
     return ranked;
   }
@@ -323,12 +350,11 @@ class SupabaseManager {
 
     const stats = await this.getSchoolStats();
     const mySchool = stats.find(s => s.school === profile.school);
-    const rank = stats.findIndex(s => s.school === profile.school) + 1;
 
     return {
       school: profile.school,
       count: mySchool ? mySchool.count : 0,
-      rank: rank || null,
+      rank: mySchool ? mySchool.rank : null,
       totalSchools: stats.length
     };
   }

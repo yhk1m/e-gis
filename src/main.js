@@ -18,6 +18,7 @@ import { projectManager } from './core/ProjectManager.js';
 import { autoSaveManager } from './core/AutoSaveManager.js';
 import { historyManager } from './core/HistoryManager.js';
 import { selectTool } from './tools/SelectTool.js';
+import { featureEditTool } from './tools/FeatureEditTool.js';
 import { choroplethPanel } from './ui/panels/ChoroplethPanel.js';
 import { tableJoinPanel } from './ui/panels/TableJoinPanel.js';
 import { labelPanel } from './ui/panels/LabelPanel.js';
@@ -423,9 +424,20 @@ function initToolbar() {
   }
   if (btnDeleteSel) {
     btnDeleteSel.addEventListener('click', () => {
+      if (selectTool.getSelectedFeatures().length === 0) {
+        showStatusMessage('삭제할 피처를 먼저 선택하세요.');
+        return;
+      }
+      // deleteSelectedFeatures()가 확인창을 띄운다. 취소하면 false 반환.
       const deleted = toolManager.deleteSelectedFeatures();
-      showStatusMessage(deleted ? '선택된 피처가 삭제되었습니다.' : '삭제할 피처를 먼저 선택하세요.');
+      if (deleted) showStatusMessage('선택된 피처가 삭제되었습니다.');
     });
+  }
+
+  // 피처 합치기 (선택한 피처들을 하나로) — 모드가 아닌 즉시 액션
+  const btnMerge = document.getElementById('btn-merge-features');
+  if (btnMerge) {
+    btnMerge.addEventListener('click', () => featureEditTool.mergeSelected());
   }
 
   // 선택 개수가 바뀌면 버튼 표시/숨김
@@ -531,14 +543,23 @@ function handleMenuAction(action) {
       break;
 
     // ===== 편집 메뉴 =====
+    case 'edit-merge':
+      featureEditTool.mergeSelected();
+      break;
+    case 'edit-split':
+      toolManager.toggleTool('edit-split');
+      break;
     case 'edit-delete': {
       // 현재 선택된 피처 삭제. activateTool('select')를 다시 호출하면
       // Select 인터랙션이 재생성되며 선택이 초기화되므로 호출하지 않는다.
+      if (selectTool.getSelectedFeatures().length === 0) {
+        showStatusMessage('삭제할 피처를 먼저 선택하세요.');
+        break;
+      }
+      // deleteSelectedFeatures()가 확인창을 띄운다. 취소하면 false 반환(메시지 없음).
       const deleted = toolManager.deleteSelectedFeatures();
       if (deleted) {
         showStatusMessage('선택된 피처가 삭제되었습니다.');
-      } else {
-        showStatusMessage('삭제할 피처를 먼저 선택하세요.');
       }
       break;
     }

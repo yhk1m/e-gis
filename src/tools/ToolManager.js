@@ -4,6 +4,7 @@
 
 import { drawTool } from "./DrawTool.js";
 import { selectTool } from "./SelectTool.js";
+import { featureEditTool } from "./FeatureEditTool.js";
 import { measureTool } from "./MeasureTool.js";
 import { labelTool } from "./LabelTool.js";
 import { routingTool } from "./RoutingTool.js";
@@ -22,7 +23,8 @@ class ToolManager {
       "draw-multiline": drawTool,
       "draw-multipolygon": drawTool,
       "measure-distance": measureTool,
-      "measure-area": measureTool
+      "measure-area": measureTool,
+      "edit-split": featureEditTool
     };
 
     // 새 프로젝트/프로젝트 불러오기 시, 레이어가 아닌 도구 오버레이도 정리
@@ -81,6 +83,9 @@ class ToolManager {
       case "measure-area":
         measureTool.activate("area");
         break;
+      case "edit-split":
+        featureEditTool.startSplit();
+        break;
       case "pan":
         break;
       default:
@@ -102,6 +107,9 @@ class ToolManager {
     }
     if (measureTool.getIsActive()) {
       measureTool.deactivate();
+    }
+    if (featureEditTool.getIsActive()) {
+      featureEditTool.deactivate();
     }
     this.currentTool = null;
   }
@@ -139,9 +147,10 @@ class ToolManager {
       return false;
     }
     if (selectTool && selectTool.deleteSelected) {
-      selectTool.deleteSelected();
-      return true;
+      // 확인창에서 취소하면 false 가 반환되어 "삭제됨" 메시지가 뜨지 않는다.
+      return selectTool.deleteSelected();
     }
+    return false;
   }
 
   selectAllFeatures() {

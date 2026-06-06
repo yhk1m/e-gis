@@ -277,10 +277,15 @@ class SelectTool {
    */
   deleteSelectedFeatures() {
     if (!this.selectedFeatures || this.selectedFeatures.getLength() === 0) {
-      return;
+      return false;
     }
 
     const features = this.selectedFeatures.getArray().slice();
+
+    // 삭제 확인 (실수로 지우는 것을 방지)
+    if (!confirm(`선택한 피처 ${features.length}개를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.`)) {
+      return false;
+    }
 
     features.forEach(feature => {
       // 해당 피처가 속한 레이어 찾기
@@ -324,6 +329,8 @@ class SelectTool {
 
     // 레이어 패널 갱신
     eventBus.emit(Events.LAYER_ADDED, {});
+
+    return true;
   }
 
   /**
@@ -399,7 +406,7 @@ class SelectTool {
    * 선택된 피처 삭제 (alias)
    */
   deleteSelected() {
-    this.deleteSelectedFeatures();
+    return this.deleteSelectedFeatures();
   }
 
   /**
