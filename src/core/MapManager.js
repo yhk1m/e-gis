@@ -25,7 +25,7 @@ class CompassControl extends Control {
   constructor() {
     const button = document.createElement('button');
     button.type = 'button';
-    button.title = '정북 방향으로';
+    button.title = '회전 조절 (클릭)';
     button.innerHTML = `
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="9"/>
@@ -33,16 +33,68 @@ class CompassControl extends Control {
         <polygon points="12,20 9,11 12,13 15,11" fill="currentColor"/>
       </svg>
     `;
+
+    // 회전 조절 슬라이더 팝업 (0~180°)
+    const panel = document.createElement('div');
+    panel.className = 'egis-compass-panel';
+    panel.hidden = true;
+    panel.innerHTML = `
+      <input type="range" class="egis-compass-slider" min="0" max="360" step="1" value="0"
+             aria-label="지도 회전 각도">
+      <div class="egis-compass-panel-row">
+        <span class="egis-compass-num-wrap">
+          <input type="number" class="egis-compass-num" min="0" max="360" step="1" value="0"
+                 aria-label="지도 회전 각도(숫자 입력)">°
+        </span>
+        <button type="button" class="egis-compass-reset">정북</button>
+      </div>
+    `;
+
     const element = document.createElement('div');
     element.className = 'ol-control egis-compass';
     element.appendChild(button);
+    element.appendChild(panel);
 
     super({ element });
 
     this.button = button;
+    this.panel = panel;
     this.iconEl = button.querySelector('svg');
+    this.slider = panel.querySelector('.egis-compass-slider');
+    this.numInput = panel.querySelector('.egis-compass-num');
+    this.resetBtn = panel.querySelector('.egis-compass-reset');
 
-    button.addEventListener('click', () => this.handleClick());
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePanel();
+    });
+
+    // 슬라이더 조작 → 지도 회전
+    this.slider.addEventListener('input', () => {
+      this.applyDegrees(Number(this.slider.value), { fromSlider: true });
+    });
+
+    // 숫자 입력 → 지도 회전
+    this.numInput.addEventListener('input', () => {
+      const raw = Number(this.numInput.value);
+      if (Number.isNaN(raw)) return;
+      this.applyDegrees(raw, { fromNumber: true });
+    });
+    // 입력 확정 시 0~180 범위로 표시값 정규화
+    this.numInput.addEventListener('change', () => {
+      const d = this.clampDeg(Number(this.numInput.value) || 0);
+      this.numInput.value = String(d);
+    });
+
+    this.resetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.getMap()?.getView().animate({ rotation: 0, duration: 300 });
+    });
+
+    // 패널 바깥을 누르면 닫기
+    this._onOutside = (e) => {
+      if (!this.element.contains(e.target)) this.closePanel();
+    };
   }
 
   setMap(map) {
@@ -53,16 +105,61 @@ class CompassControl extends Control {
     }
   }
 
+  togglePanel() {
+    if (this.panel.hidden) this.openPanel();
+    else this.closePanel();
+  }
+
+  openPanel() {
+    this.syncSlider();
+    this.panel.hidden = false;
+    document.addEventListener('pointerdown', this._onOutside);
+  }
+
+  closePanel() {
+    this.panel.hidden = true;
+    document.removeEventListener('pointerdown', this._onOutside);
+  }
+
+  clampDeg(deg) {
+    return Math.max(0, Math.min(360, Math.round(deg)));
+  }
+
+  /** 0~180°를 지도 회전에 적용하고, 입력하지 않은 쪽 컨트롤을 동기화 */
+  applyDegrees(deg, opts = {}) {
+    const d = this.clampDeg(deg);
+    this._applying = true;
+    this.getMap()?.getView().setRotation((d * Math.PI) / 180);
+    this._applying = false;
+    if (!opts.fromSlider) this.slider.value = String(d);
+    if (!opts.fromNumber) this.numInput.value = String(d);
+  }
+
+  /** 현재 지도 회전값을 0~180° 컨트롤에 반영 */
+  syncSlider() {
+    const rotation = this.getMap()?.getView().getRotation() || 0;
+    const deg = this.rotationToDeg(rotation);
+    this.slider.value = String(deg);
+    this.numInput.value = String(deg);
+  }
+
+  rotationToDeg(rotation) {
+    return (((Math.round((rotation * 180) / Math.PI)) % 360) + 360) % 360;
+  }
+
   updateRotation() {
     const rotation = this.getMap()?.getView().getRotation() || 0;
     if (this.iconEl) {
       this.iconEl.style.transform = `rotate(${-rotation}rad)`;
     }
-  }
-
-  handleClick() {
-    const view = this.getMap().getView();
-    view.animate({ rotation: 0, duration: 300 });
+    const deg = this.rotationToDeg(rotation);
+    this.button.title = deg === 0 ? '회전 조절 (클릭)' : `회전 ${deg}° · 클릭하여 조절`;
+    // 외부 회전(정북 버튼·Alt+Shift 드래그)으로 바뀐 경우에만 컨트롤 동기화.
+    // 슬라이더/숫자 입력 중(_applying)에는 사용자가 입력한 값을 덮어쓰지 않는다.
+    if (!this.panel.hidden && !this._applying) {
+      this.slider.value = String(deg);
+      this.numInput.value = String(deg);
+    }
   }
 }
 
