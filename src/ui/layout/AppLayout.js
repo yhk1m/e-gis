@@ -137,7 +137,7 @@ export class AppLayout {
         <div class="menu-right">
           <a href="/privacy" class="header-privacy-link" target="_blank" title="개인정보 처리방침">개인정보 처리방침</a>
           <div class="header-auth" id="header-auth">
-            <button class="btn btn-sm btn-primary" id="header-login-btn">로그인</button>
+            <button class="btn btn-sm btn-primary" id="header-login-btn"><span class="auth-label-ko">로그인</span><span class="auth-label-en">Login</span></button>
           </div>
           <button id="theme-toggle" class="theme-toggle" title="테마 전환">
             <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -485,6 +485,15 @@
   display: none;
 }
 
+/* 로그인/마이페이지 버튼 라벨: 데스크톱 한글, 모바일 영문 */
+.auth-label-en {
+  display: none;
+}
+
+.header-auth .btn {
+  white-space: nowrap;
+}
+
 .menu-item.disabled .menu-button {
   color: var(--text-disabled);
   cursor: not-allowed;
@@ -728,6 +737,15 @@
     margin-right: auto;
   }
 
+  /* 로그인/마이페이지/로그아웃: 줄바꿈 방지를 위해 영문 라벨 사용 */
+  .auth-label-ko {
+    display: none;
+  }
+
+  .auth-label-en {
+    display: inline;
+  }
+
   .menu-center {
     order: 2;
     width: 100%;
@@ -737,12 +755,17 @@
     flex-wrap: wrap;
   }
 
-  /* 로그인 이메일이 길어도 넘치지 않게 */
+  /* 로그인 이메일이 길어도 넘치지 않게: 끝부분을 …로 줄임 (줄바꿈 없음) */
   .header-user-email {
+    min-width: 0;
     max-width: 55vw;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .header-auth {
+    min-width: 0;
   }
 
   /* 메뉴 버튼: 한글 라벨 대신 아이콘 표시 */

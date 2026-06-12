@@ -1072,12 +1072,12 @@ function updateHeaderAuth() {
     const isAdmin = supabaseManager.isAdmin();
     headerAuth.innerHTML = `
       <span class="header-user-email">${user.email}${isAdmin ? ' <span class="admin-badge">관리자</span>' : ''}</span>
-      <button class="btn btn-sm btn-primary" id="header-mypage-btn">마이페이지</button>
-      <button class="btn btn-sm btn-secondary" id="header-logout-btn">로그아웃</button>
+      <button class="btn btn-sm btn-primary" id="header-mypage-btn"><span class="auth-label-ko">마이페이지</span><span class="auth-label-en">Mypage</span></button>
+      <button class="btn btn-sm btn-secondary" id="header-logout-btn"><span class="auth-label-ko">로그아웃</span><span class="auth-label-en">Logout</span></button>
     `;
   } else {
     headerAuth.innerHTML = `
-      <button class="btn btn-sm btn-primary" id="header-login-btn">로그인</button>
+      <button class="btn btn-sm btn-primary" id="header-login-btn"><span class="auth-label-ko">로그인</span><span class="auth-label-en">Login</span></button>
     `;
   }
 }
