@@ -24,6 +24,7 @@ export class AttributeTable {
   constructor() {
     this.openWindows = new Map(); // layerId -> window
     this.highlightSelects = new Map(); // layerId -> Select interaction
+    this.mobileSheet = null; // 모바일 오버레이 { layerId, el }
 
     this.bindEvents();
   }
@@ -40,6 +41,7 @@ export class AttributeTable {
     // 레이어 삭제 시 창 닫기
     eventBus.on(Events.LAYER_REMOVED, ({ layerId }) => {
       this.closeWindow(layerId);
+      this.closeMobileSheet(layerId);
     });
 
     // 피처 변경 시 테이블 갱신
@@ -60,6 +62,12 @@ export class AttributeTable {
   open(layerId) {
     const layerInfo = layerManager.getLayer(layerId);
     if (!layerInfo) return;
+
+    // 모바일: 팝업 창 대신 전체 화면 오버레이로 표시
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      this.openMobileSheet(layerId, layerInfo);
+      return;
+    }
 
     // 이미 열린 창이 있으면 포커스
     if (this.openWindows.has(layerId)) {
@@ -112,6 +120,293 @@ export class AttributeTable {
 
     // 창 내부 이벤트 바인딩
     this.bindWindowEvents(win, layerId, features, columns);
+  }
+
+  /**
+   * 속성 테이블 열기 (모바일: 전체 화면 오버레이)
+   * 보기/정렬/선택/지도 이동 + 편집 모드(셀 수정)/삭제 지원
+   */
+  openMobileSheet(layerId, layerInfo) {
+    this.closeMobileSheet();
+
+    const features = layerInfo.source.getFeatures();
+    const columns = this.extractColumns(features);
+
+    const headerCells = columns.map(col =>
+      `<th data-column="${col}">${col}<span class="attr-sort-icon"></span></th>`
+    ).join('');
+
+    const bodyRows = features.map((feature, index) => {
+      const cells = columns.map(col => {
+        const value = feature.get(col);
+        const displayValue = value !== undefined && value !== null ? value : '';
+        return `<td>${displayValue}</td>`;
+      }).join('');
+      return `<tr data-feature-id="${feature.ol_uid}"><td class="row-num">${index + 1}</td>${cells}</tr>`;
+    }).join('');
+
+    const HINT_DEFAULT = '행 탭: 선택/해제 · 머리글 탭: 정렬 · 선택 이동: 지도에서 보기';
+    const HINT_EDIT = '✏️ 편집 모드: 수정할 셀을 탭하세요. 완료하려면 편집을 다시 탭하세요.';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'attr-table-mobile';
+    overlay.innerHTML = `
+      <div class="attr-mobile-header">
+        <div class="attr-mobile-title">${layerInfo.name}
+          <span class="attr-mobile-count">${features.length}개</span>
+          <span class="attr-mobile-selcount"></span>
+        </div>
+        <button class="attr-mobile-close" id="attr-mobile-close" aria-label="닫기">&times;</button>
+      </div>
+      <div class="attr-mobile-toolbar">
+        <button class="btn btn-sm" id="attr-mobile-edit">✏️ 편집</button>
+        <button class="btn btn-sm btn-danger" id="attr-mobile-delete" disabled>삭제</button>
+        <button class="btn btn-sm btn-primary" id="attr-mobile-zoom" disabled>선택 이동</button>
+      </div>
+      <div class="attr-mobile-hint">${HINT_DEFAULT}</div>
+      <div class="attr-mobile-table-wrap">
+        <table class="attr-mobile-table">
+          <thead><tr><th class="row-num">#</th>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    this.mobileSheet = { layerId, el: overlay };
+
+    // 지도 하이라이트 인터랙션
+    this.setupHighlight(layerId, layerInfo);
+
+    const featureMap = new Map();
+    features.forEach(f => featureMap.set(String(f.ol_uid), f));
+
+    const selected = new Set();
+    const tbody = overlay.querySelector('tbody');
+    const zoomBtn = overlay.querySelector('#attr-mobile-zoom');
+    const editBtn = overlay.querySelector('#attr-mobile-edit');
+    const deleteBtn = overlay.querySelector('#attr-mobile-delete');
+    const selcountEl = overlay.querySelector('.attr-mobile-selcount');
+    const countEl = overlay.querySelector('.attr-mobile-count');
+    const hintEl = overlay.querySelector('.attr-mobile-hint');
+
+    const updateHighlight = () => {
+      const hs = this.highlightSelects.get(layerId);
+      if (!hs) return;
+      hs.getFeatures().clear();
+      selected.forEach(fid => {
+        const f = featureMap.get(fid);
+        if (f) hs.getFeatures().push(f);
+      });
+    };
+
+    const updateSelectionUI = () => {
+      selcountEl.textContent = selected.size > 0 ? `· ${selected.size}개 선택` : '';
+      zoomBtn.disabled = selected.size === 0;
+      deleteBtn.disabled = selected.size === 0;
+    };
+
+    // ----- 편집 모드 (셀 수정) -----
+    let editMode = false;
+    let editingCell = null; // { td, fid, column, originalValue }
+
+    const finishEditing = (save) => {
+      if (!editingCell) return;
+      const { td, fid, column, originalValue } = editingCell;
+      editingCell = null;
+      const input = td.querySelector('input');
+      const newValue = input ? input.value : null;
+      const feature = featureMap.get(fid);
+
+      let displayValue = originalValue !== undefined && originalValue !== null ? originalValue : '';
+      if (save && feature && newValue !== null && newValue !== String(displayValue)) {
+        // 숫자 변환 시도 (데스크톱 버전과 동일)
+        const num = parseFloat(newValue);
+        const finalValue = (!isNaN(num) && newValue.trim() !== '') ? num : newValue;
+        feature.set(column, finalValue);
+        displayValue = newValue;
+      }
+
+      td.classList.remove('editing');
+      td.innerHTML = '';
+      td.textContent = displayValue;
+    };
+
+    const startEditing = (td, tr) => {
+      finishEditing(true);
+      const fid = tr.dataset.featureId;
+      const feature = featureMap.get(fid);
+      if (!feature) return;
+
+      const cells = Array.from(tr.querySelectorAll('td'));
+      const cellIndex = cells.indexOf(td) - 1; // row-num 셀 제외
+      if (cellIndex < 0 || cellIndex >= columns.length) return;
+
+      const column = columns[cellIndex];
+      const originalValue = feature.get(column);
+      editingCell = { td, fid, column, originalValue };
+
+      td.classList.add('editing');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = originalValue !== undefined && originalValue !== null ? originalValue : '';
+      td.innerHTML = '';
+      td.appendChild(input);
+      input.focus();
+
+      input.addEventListener('blur', () => finishEditing(true));
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') finishEditing(true);
+        else if (ev.key === 'Escape') finishEditing(false);
+        ev.stopPropagation();
+      });
+    };
+
+    editBtn.addEventListener('click', () => {
+      finishEditing(true);
+      editMode = !editMode;
+      editBtn.classList.toggle('active', editMode);
+      hintEl.textContent = editMode ? HINT_EDIT : HINT_DEFAULT;
+    });
+
+    // 행 탭: 일반 모드 → 선택 토글 / 편집 모드 → 셀 수정
+    tbody.addEventListener('click', (e) => {
+      const tr = e.target.closest('tr');
+      if (!tr) return;
+
+      if (editMode) {
+        const td = e.target.closest('td');
+        if (!td || td.classList.contains('row-num')) return;
+        if (editingCell && editingCell.td === td) return;
+        startEditing(td, tr);
+        return;
+      }
+
+      const fid = tr.dataset.featureId;
+      if (selected.has(fid)) {
+        selected.delete(fid);
+        tr.classList.remove('selected');
+      } else {
+        selected.add(fid);
+        tr.classList.add('selected');
+      }
+      updateSelectionUI();
+      updateHighlight();
+    });
+
+    // ----- 선택 피처 삭제 -----
+    deleteBtn.addEventListener('click', () => {
+      if (selected.size === 0) return;
+      const count = selected.size;
+      const message = count === 1
+        ? '선택한 피처를 삭제하시겠습니까?'
+        : `선택한 ${count}개의 피처를 삭제하시겠습니까?`;
+      if (!confirm(message)) return;
+
+      selected.forEach(fid => {
+        const f = featureMap.get(fid);
+        if (f) {
+          layerInfo.source.removeFeature(f);
+          featureMap.delete(fid);
+        }
+        const row = tbody.querySelector(`tr[data-feature-id="${fid}"]`);
+        if (row) row.remove();
+      });
+
+      // 행 번호 재정렬 + 개수 갱신
+      tbody.querySelectorAll('tr').forEach((tr, i) => {
+        const num = tr.querySelector('.row-num');
+        if (num) num.textContent = i + 1;
+      });
+      countEl.textContent = `${featureMap.size}개`;
+
+      const hs = this.highlightSelects.get(layerId);
+      if (hs) hs.getFeatures().clear();
+      selected.clear();
+      updateSelectionUI();
+
+      eventBus.emit(Events.FEATURE_DELETED, { layerId, count, source: 'attributeTable' });
+    });
+
+    // 머리글 탭: 정렬
+    let sortColumn = null;
+    let sortAsc = true;
+    overlay.querySelector('thead').addEventListener('click', (e) => {
+      const th = e.target.closest('th[data-column]');
+      if (!th) return;
+      const col = th.dataset.column;
+      if (sortColumn === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortColumn = col;
+        sortAsc = true;
+      }
+
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort((a, b) => {
+        const fa = featureMap.get(a.dataset.featureId);
+        const fb = featureMap.get(b.dataset.featureId);
+        const va = fa ? fa.get(col) : undefined;
+        const vb = fb ? fb.get(col) : undefined;
+        const na = parseFloat(va);
+        const nb = parseFloat(vb);
+        let cmp;
+        if (!isNaN(na) && !isNaN(nb)) cmp = na - nb;
+        else cmp = String(va ?? '').localeCompare(String(vb ?? ''), 'ko');
+        return sortAsc ? cmp : -cmp;
+      });
+      rows.forEach((tr, i) => {
+        tbody.appendChild(tr);
+        const num = tr.querySelector('.row-num');
+        if (num) num.textContent = i + 1;
+      });
+      overlay.querySelectorAll('th[data-column]').forEach(h => h.classList.remove('asc', 'desc'));
+      th.classList.add(sortAsc ? 'asc' : 'desc');
+    });
+
+    // 선택 이동: 지도 이동 후 테이블만 닫기 (하이라이트는 유지해 지도에서 확인)
+    zoomBtn.addEventListener('click', () => {
+      if (selected.size === 0) return;
+      let fullExtent = null;
+      selected.forEach(fid => {
+        const f = featureMap.get(fid);
+        const geom = f && f.getGeometry();
+        if (!geom) return;
+        const ext = geom.getExtent();
+        if (!fullExtent) {
+          fullExtent = ext.slice();
+        } else {
+          fullExtent[0] = Math.min(fullExtent[0], ext[0]);
+          fullExtent[1] = Math.min(fullExtent[1], ext[1]);
+          fullExtent[2] = Math.max(fullExtent[2], ext[2]);
+          fullExtent[3] = Math.max(fullExtent[3], ext[3]);
+        }
+      });
+      if (fullExtent) {
+        mapManager.fitExtent(fullExtent, { padding: [60, 40, 60, 40], maxZoom: 15 });
+      }
+      if (this.mobileSheet) {
+        this.mobileSheet.el.remove();
+        this.mobileSheet = null;
+      }
+    });
+
+    // 닫기: 하이라이트도 제거
+    overlay.querySelector('#attr-mobile-close').addEventListener('click', () => {
+      this.closeMobileSheet();
+    });
+  }
+
+  /**
+   * 모바일 속성 테이블 닫기
+   * @param {string|null} layerId - 지정 시 해당 레이어의 시트만 닫음
+   */
+  closeMobileSheet(layerId = null) {
+    if (!this.mobileSheet) return;
+    if (layerId !== null && this.mobileSheet.layerId !== layerId) return;
+    this.removeHighlight(this.mobileSheet.layerId);
+    this.mobileSheet.el.remove();
+    this.mobileSheet = null;
   }
 
   /**

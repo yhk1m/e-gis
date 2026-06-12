@@ -1323,3 +1323,182 @@ body.exporting .map-image-delete {
   font-size: 13px;
   z-index: 10001;
 }
+
+/* ============================================
+ * 모바일 속성 테이블 (전체 화면 오버레이)
+ * 요소 자체가 모바일에서만 생성되므로 미디어쿼리 불필요
+ * ============================================ */
+.attr-table-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+}
+
+.attr-mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.attr-mobile-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.attr-mobile-count,
+.attr-mobile-selcount {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.attr-mobile-selcount {
+  color: var(--color-primary);
+}
+
+.attr-mobile-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.attr-mobile-close {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.attr-mobile-hint {
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.attr-mobile-table-wrap {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.attr-mobile-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 100%;
+}
+
+.attr-mobile-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.attr-mobile-table th {
+  background: var(--bg-toolbar);
+  color: var(--text-primary);
+  padding: 9px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.attr-mobile-table th[data-column] .attr-sort-icon::after {
+  content: '⇅';
+  margin-left: 4px;
+  opacity: 0.4;
+}
+
+.attr-mobile-table th.asc .attr-sort-icon::after {
+  content: '↑';
+  opacity: 1;
+}
+
+.attr-mobile-table th.desc .attr-sort-icon::after {
+  content: '↓';
+  opacity: 1;
+}
+
+.attr-mobile-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attr-mobile-table .row-num {
+  color: var(--text-muted);
+}
+
+.attr-mobile-table tr.selected td {
+  background: var(--bg-selected, rgba(74, 144, 217, 0.18));
+}
+
+/* 모바일 속성 테이블: 액션 툴바 + 편집 모드 */
+.attr-mobile-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.attr-mobile-toolbar #attr-mobile-zoom {
+  margin-left: auto;
+}
+
+.attr-mobile-toolbar .btn-danger {
+  background: var(--color-danger, #dc3545);
+  color: #fff;
+}
+
+.attr-mobile-toolbar .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#attr-mobile-edit.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.attr-mobile-table td.editing {
+  padding: 2px;
+  max-width: none;
+}
+
+.attr-mobile-table td.editing input {
+  width: 100%;
+  min-width: 90px;
+  padding: 6px 8px;
+  border: 2px solid var(--color-primary);
+  border-radius: 3px;
+  font-size: 16px; /* iOS 입력 시 자동 확대 방지 */
+  background: var(--bg-input);
+  color: var(--text-primary);
+  box-sizing: border-box;
+}

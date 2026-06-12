@@ -681,27 +681,36 @@ export class LayerPanel {
     document.body.appendChild(picker);
 
     // 팝업 위치 조정 (화면 밖으로 나가지 않도록)
-    const layerItem = this.container.querySelector("[data-layer-id=\"" + layerId + "\"]");
-    if (layerItem) {
-      const rect = layerItem.getBoundingClientRect();
-      const pickerRect = picker.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      // 모바일: 화면 중앙 팝업 (하단 시트에서 좌우 어느 쪽도 공간이 없음)
+      picker.style.left = "50%";
+      picker.style.top = "50%";
+      picker.style.transform = "translate(-50%, -50%)";
+      picker.style.maxWidth = "calc(100vw - 24px)";
+      picker.style.maxHeight = "80vh";
+      picker.style.overflowY = "auto";
+    } else {
+      const layerItem = this.container.querySelector("[data-layer-id=\"" + layerId + "\"]");
+      if (layerItem) {
+        const rect = layerItem.getBoundingClientRect();
+        const pickerRect = picker.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
 
-      picker.style.position = "fixed";
-      picker.style.left = (rect.right + 10) + "px";
-      picker.style.top = rect.top + "px";
+        picker.style.position = "fixed";
+        picker.style.left = (rect.right + 10) + "px";
+        picker.style.top = rect.top + "px";
 
-      // 아래로 잘리면 위로 조정
-      if (rect.top + pickerRect.height > viewportHeight - 10) {
-        picker.style.top = Math.max(10, viewportHeight - pickerRect.height - 10) + "px";
+        // 아래로 잘리면 위로 조정
+        if (rect.top + pickerRect.height > viewportHeight - 10) {
+          picker.style.top = Math.max(10, viewportHeight - pickerRect.height - 10) + "px";
+        }
+
+        // 오른쪽으로 잘리면 왼쪽에 표시
+        if (rect.right + 10 + pickerRect.width > viewportWidth) {
+          picker.style.left = (rect.left - pickerRect.width - 10) + "px";
+        }
       }
-
-      // 오른쪽으로 잘리면 왼쪽에 표시
-      if (rect.right + 10 + pickerRect.width > viewportWidth) {
-        picker.style.left = (rect.left - pickerRect.width - 10) + "px";
-      }
-
     }
 
     // 이벤트 핸들러
