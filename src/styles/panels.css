@@ -139,6 +139,17 @@
   margin: var(--spacing-xs) 0;
 }
 
+/* 모바일: 하단 시트(z-index 1200)보다 위에 표시 + 터치 친화적 항목 크기 */
+@media (max-width: 768px) {
+  .layer-context-menu {
+    z-index: 1300;
+  }
+
+  .context-menu-item {
+    padding: 10px 14px;
+  }
+}
+
 /* 파일 드롭 존 */
 .file-drop-zone {
   border: 2px dashed var(--border-color);

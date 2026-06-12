@@ -17,19 +17,21 @@ class BuiltinDataManager {
     this.spatialCatalog = [];
     this.attributeCatalog = [];
     this.rasterCatalog = [];
+    this.practiceCatalog = [];
     this._loaded = false;
   }
 
   /**
-   * 카탈로그 로드 (공간+속성+래스터)
+   * 카탈로그 로드 (공간+속성+래스터+실습)
    */
   async loadCatalogs() {
     if (this._loaded) return;
 
-    const [spatialResp, attrResp, rasterResp] = await Promise.allSettled([
+    const [spatialResp, attrResp, rasterResp, practiceResp] = await Promise.allSettled([
       fetch(BUILTIN_BASE + 'spatial_catalog.json'),
       fetch(BUILTIN_BASE + 'attribute_catalog.json'),
-      fetch(BUILTIN_BASE + 'raster_catalog.json')
+      fetch(BUILTIN_BASE + 'raster_catalog.json'),
+      fetch(BUILTIN_BASE + 'practice_catalog.json')
     ]);
 
     if (spatialResp.status === 'fulfilled' && spatialResp.value.ok) {
@@ -40,6 +42,9 @@ class BuiltinDataManager {
     }
     if (rasterResp.status === 'fulfilled' && rasterResp.value.ok) {
       this.rasterCatalog = await rasterResp.value.json();
+    }
+    if (practiceResp.status === 'fulfilled' && practiceResp.value.ok) {
+      this.practiceCatalog = await practiceResp.value.json();
     }
 
     this._loaded = true;
@@ -55,6 +60,82 @@ class BuiltinDataManager {
 
   getRasterCatalog() {
     return this.rasterCatalog;
+  }
+
+  /**
+   * 실습 데이터 카탈로그 (실습 유형별 그룹)
+   * 형식: [{ id, name, description, datasets: [{ id, name, description, type, file, ... }] }]
+   * type: 'spatial' | 'attribute' | 'raster'
+   */
+  getPracticeCatalog() {
+    return this.practiceCatalog;
+  }
+
+  /**
+   * 실습 데이터셋 조회
+   */
+  getPracticeDataset(typeId, datasetId) {
+    const group = this.practiceCatalog.find(g => g.id === typeId);
+    if (!group) return null;
+    return (group.datasets || []).find(d => d.id === datasetId) || null;
+  }
+
+  /**
+   * 실습 데이터셋 로드 (데이터셋의 type에 따라 분기)
+   * spatial/raster → 레이어 추가, attribute → 파싱된 데이터 반환
+   */
+  async loadPracticeDataset(typeId, datasetId) {
+    const dataset = this.getPracticeDataset(typeId, datasetId);
+    if (!dataset) throw new Error('실습 데이터셋을 찾을 수 없습니다: ' + datasetId);
+
+    const url = BUILTIN_BASE + dataset.file;
+    if (dataset.type === 'spatial') {
+      const layerId = await geojsonLoader.loadFromUrl(url, dataset.name);
+      return { type: 'spatial', layerId };
+    }
+    if (dataset.type === 'raster') {
+      const layerId = await demLoader.loadFromUrl(url, dataset.name);
+      return { type: 'raster', layerId };
+    }
+    if (dataset.type === 'attribute') {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('파일을 찾을 수 없습니다: ' + dataset.file);
+      const arrayBuffer = await resp.arrayBuffer();
+      const { headers, data } = this._parseXlsxBuffer(arrayBuffer);
+      return { type: 'attribute', headers, data, fileName: dataset.name, dataset };
+    }
+    throw new Error('알 수 없는 데이터 유형: ' + dataset.type);
+  }
+
+  /**
+   * XLSX ArrayBuffer → { headers, data }
+   */
+  _parseXlsxBuffer(arrayBuffer) {
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+    if (jsonData.length < 2) throw new Error('데이터가 없습니다.');
+
+    const headers = jsonData[0].map(h => String(h || '').trim()).filter(h => h);
+    const data = [];
+    for (let i = 1; i < jsonData.length; i++) {
+      const values = jsonData[i];
+      if (!values || values.length === 0) continue;
+      const row = {};
+      headers.forEach((header, idx) => {
+        const val = values[idx];
+        if (val === undefined || val === null) row[header] = '';
+        else if (typeof val === 'number') row[header] = val;
+        else {
+          const num = parseFloat(val);
+          row[header] = (!isNaN(num) && String(val).trim() !== '') ? num : String(val);
+        }
+      });
+      data.push(row);
+    }
+
+    return { headers, data };
   }
 
   /**
@@ -167,30 +248,7 @@ class BuiltinDataManager {
     if (!resp.ok) throw new Error('파일을 찾을 수 없습니다: ' + dataset.file);
 
     const arrayBuffer = await resp.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-
-    if (jsonData.length < 2) throw new Error('데이터가 없습니다.');
-
-    const headers = jsonData[0].map(h => String(h || '').trim()).filter(h => h);
-    const data = [];
-    for (let i = 1; i < jsonData.length; i++) {
-      const values = jsonData[i];
-      if (!values || values.length === 0) continue;
-      const row = {};
-      headers.forEach((header, idx) => {
-        const val = values[idx];
-        if (val === undefined || val === null) row[header] = '';
-        else if (typeof val === 'number') row[header] = val;
-        else {
-          const num = parseFloat(val);
-          row[header] = (!isNaN(num) && String(val).trim() !== '') ? num : String(val);
-        }
-      });
-      data.push(row);
-    }
-
+    const { headers, data } = this._parseXlsxBuffer(arrayBuffer);
     return { headers, data, fileName: dataset.name, dataset };
   }
 }

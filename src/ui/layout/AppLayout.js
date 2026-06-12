@@ -27,7 +27,7 @@ export class AppLayout {
         <div class="menu-center">
           <div class="menu-items">
             <div class="menu-item dropdown" data-menu="project">
-              <button class="menu-button">프로젝트</button>
+              <button class="menu-button" title="프로젝트"><span class="menu-btn-icon">📁</span><span class="menu-btn-label">프로젝트</span></button>
               <div class="dropdown-menu" id="menu-project">
                 <div class="dropdown-item" data-action="project-new">새 프로젝트</div>
                 <div class="dropdown-divider"></div>
@@ -43,7 +43,7 @@ export class AppLayout {
               </div>
             </div>
             <div class="menu-item dropdown" data-menu="edit">
-              <button class="menu-button">편집</button>
+              <button class="menu-button" title="편집"><span class="menu-btn-icon">✏️</span><span class="menu-btn-label">편집</span></button>
               <div class="dropdown-menu" id="menu-edit">
                 <div class="dropdown-item" data-action="edit-merge">피처 합치기</div>
                 <div class="dropdown-item" data-action="edit-split">피처 자르기</div>
@@ -54,7 +54,7 @@ export class AppLayout {
               </div>
             </div>
             <div class="menu-item dropdown" data-menu="view">
-              <button class="menu-button">보기</button>
+              <button class="menu-button" title="보기"><span class="menu-btn-icon">🔍</span><span class="menu-btn-label">보기</span></button>
               <div class="dropdown-menu" id="menu-view">
                 <div class="dropdown-item" data-action="view-zoom-in">확대</div>
                 <div class="dropdown-item" data-action="view-zoom-out">축소</div>
@@ -68,7 +68,7 @@ export class AppLayout {
               </div>
             </div>
             <div class="menu-item dropdown" data-menu="layer">
-              <button class="menu-button">레이어</button>
+              <button class="menu-button" title="레이어"><span class="menu-btn-icon">📑</span><span class="menu-btn-label">레이어</span></button>
               <div class="dropdown-menu" id="menu-layer">
                 <div class="dropdown-item" data-action="layer-from-coords">좌표 데이터 가져오기</div>
                 <div class="dropdown-item" data-action="layer-remove">레이어 삭제</div>
@@ -85,7 +85,7 @@ export class AppLayout {
               </div>
             </div>
             <div class="menu-item dropdown" data-menu="measure">
-              <button class="menu-button">측정</button>
+              <button class="menu-button" title="측정"><span class="menu-btn-icon">📏</span><span class="menu-btn-label">측정</span></button>
               <div class="dropdown-menu" id="menu-measure">
                 <div class="dropdown-item" data-action="analysis-measure-distance">거리 측정</div>
                 <div class="dropdown-item" data-action="analysis-measure-area">면적 측정</div>
@@ -94,7 +94,7 @@ export class AppLayout {
               </div>
             </div>
             <div class="menu-item dropdown" data-menu="vector-analysis">
-              <button class="menu-button">벡터 분석</button>
+              <button class="menu-button" title="벡터 분석"><span class="menu-btn-icon">📊</span><span class="menu-btn-label">벡터 분석</span></button>
               <div class="dropdown-menu" id="menu-vector-analysis">
                 <div class="dropdown-item" data-action="analysis-choropleth">단계구분도</div>
                 <div class="dropdown-item" data-action="analysis-chart-map">도형표현도</div>
@@ -109,7 +109,7 @@ export class AppLayout {
               </div>
             </div>
             <div class="menu-item dropdown" data-menu="raster-analysis">
-              <button class="menu-button">래스터 분석</button>
+              <button class="menu-button" title="래스터 분석"><span class="menu-btn-icon">🏔</span><span class="menu-btn-label">래스터 분석</span></button>
               <div class="dropdown-menu" id="menu-raster-analysis">
                 <div class="dropdown-item" data-action="analysis-terrain">해발고도 (지형음영)</div>
                 <div class="dropdown-item" data-action="analysis-slope">경사도 (Slope)</div>
@@ -120,7 +120,7 @@ export class AppLayout {
               </div>
             </div>
             <div class="menu-item" data-menu="builtin-data">
-              <button class="menu-button" data-action="builtin-data" style="color: var(--primary-color); font-weight: 600;">📂 데이터 불러오기</button>
+              <button class="menu-button" data-action="builtin-data" title="데이터 불러오기" style="color: var(--primary-color); font-weight: 600;"><span class="menu-btn-icon">📂</span><span class="menu-btn-label">📂 데이터 불러오기</span></button>
             </div>
             <button class="btn-help" id="btn-help" title="사용 설명서">❓</button>
             <a href="https://cafe.naver.com/egiskr" class="btn-community" target="_blank" title="e-GIS 커뮤니티">
@@ -305,6 +305,13 @@ export class AppLayout {
           </div>
           <div class="search-results" id="search-results" style="display:none;"></div>
         </div>
+
+        <!-- 툴바 접기/펴기 (모바일 전용) -->
+        <button class="btn-icon toolbar-collapse-btn" id="toolbar-collapse" title="도구 모음 접기/펴기" aria-label="도구 모음 접기/펴기">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </button>
       </div>
 
       <!-- 메인 컨테이너 -->
@@ -376,7 +383,22 @@ export class AppLayout {
     this.initResizer();
     this.initTabs();
     this.initSidebarToggle();
+    this.initToolbarCollapse();
     this.setFavicon();
+  }
+
+  /**
+   * 툴바 접기/펴기 토글 (모바일 전용 버튼)
+   */
+  initToolbarCollapse() {
+    const btn = document.getElementById('toolbar-collapse');
+    const toolbar = document.getElementById('toolbar');
+    if (!btn || !toolbar) return;
+
+    btn.addEventListener('click', () => {
+      toolbar.classList.toggle('collapsed');
+      window.dispatchEvent(new Event('resize'));
+    });
   }
 
   /**
@@ -628,6 +650,13 @@ export class AppLayout {
     const btn = document.getElementById('sidebar-toggle');
     const leftPanel = document.getElementById('left-panel');
     const resizer = document.getElementById('panel-resizer');
+
+    // 모바일에서는 지도가 먼저 보이도록 패널을 접은 상태로 시작
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      leftPanel.classList.add('hidden');
+      btn.classList.add('collapsed');
+      if (resizer) resizer.style.display = 'none';
+    }
 
     btn.addEventListener('click', () => {
       const collapsed = leftPanel.classList.toggle('hidden');

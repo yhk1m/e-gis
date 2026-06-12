@@ -379,13 +379,45 @@ export class LayerPanel {
       `;
     }
 
-    // 위치 설정
-    const rect = e.target.getBoundingClientRect();
-    menu.style.position = 'fixed';
-    menu.style.left = rect.right + 'px';
-    menu.style.top = rect.top + 'px';
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
-    document.body.appendChild(menu);
+    if (!isMobile) {
+      // 데스크톱: 기존과 동일하게 버튼 오른쪽에 표시
+      const rect = e.target.getBoundingClientRect();
+      menu.style.position = 'fixed';
+      menu.style.left = rect.right + 'px';
+      menu.style.top = rect.top + 'px';
+      document.body.appendChild(menu);
+    } else {
+      // 모바일: 화면 밖으로 나가지 않도록 위치 보정 (하단 시트 대응)
+      const anchor = e.target.closest('.layer-menu-btn') || e.target;
+      const rect = anchor.getBoundingClientRect();
+      menu.style.position = 'fixed';
+      menu.style.visibility = 'hidden';
+      document.body.appendChild(menu);
+
+      const menuW = menu.offsetWidth;
+      const menuH = menu.offsetHeight;
+      const margin = 8;
+
+      // 오른쪽 공간이 부족하면 버튼 왼쪽에 표시
+      let left = rect.right;
+      if (left + menuW > window.innerWidth - margin) {
+        left = rect.left - menuW;
+      }
+      left = Math.max(margin, Math.min(left, window.innerWidth - menuW - margin));
+
+      // 아래 공간이 부족하면 위로 펼침
+      let top = rect.top;
+      if (top + menuH > window.innerHeight - margin) {
+        top = rect.bottom - menuH;
+      }
+      top = Math.max(margin, Math.min(top, window.innerHeight - menuH - margin));
+
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+      menu.style.visibility = '';
+    }
 
     // 메뉴 클릭 이벤트
     menu.addEventListener('click', (ev) => {

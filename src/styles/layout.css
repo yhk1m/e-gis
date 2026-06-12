@@ -125,6 +125,11 @@
   flex-shrink: 0;
 }
 
+/* 툴바 접기 버튼: 모바일 전용 */
+.toolbar-collapse-btn {
+  display: none;
+}
+
 /* 메인 컨테이너 (패널 + 지도) */
 #main-container {
   display: flex;
@@ -465,6 +470,7 @@
   font-size: var(--font-size-sm);
   color: var(--text-primary);
   background: transparent;
+  white-space: nowrap;
   cursor: pointer;
   transition: background var(--transition-fast);
 }
@@ -474,6 +480,11 @@
 }
 
 /* 비활성화된 메뉴 */
+/* 메뉴 버튼 아이콘: 데스크톱에서는 숨기고 모바일에서만 표시 */
+.menu-btn-icon {
+  display: none;
+}
+
 .menu-item.disabled .menu-button {
   color: var(--text-disabled);
   cursor: not-allowed;
@@ -684,5 +695,180 @@
   .sidebar-toggle svg {
     width: 22px;
     height: 22px;
+  }
+}
+
+/* ============================================
+ * 모바일 최적화 (휴대폰, ≤768px)
+ * ============================================ */
+@media (max-width: 768px) {
+  /* --- 메뉴바: 줄바꿈 허용 (드롭다운이 잘리지 않도록 스크롤 대신 wrap) --- */
+  #menubar {
+    height: auto;
+    min-height: var(--menubar-height);
+    flex-wrap: wrap;
+    padding: 2px var(--spacing-sm);
+    row-gap: 2px;
+  }
+
+  /* e-GIS 로고 줄 제거 */
+  .menu-left {
+    display: none;
+  }
+
+  /* 줄 순서: 이메일/로그인 줄 위, 메뉴 아이콘 줄 아래 */
+  .menu-right {
+    order: 1;
+  }
+
+  .menu-center {
+    order: 2;
+    width: 100%;
+  }
+
+  .menu-center .menu-items {
+    flex-wrap: wrap;
+  }
+
+  /* 로그인 이메일이 길어도 넘치지 않게 */
+  .header-user-email {
+    max-width: 55vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 메뉴 버튼: 한글 라벨 대신 아이콘 표시 */
+  .menu-button {
+    font-size: 17px !important;
+    padding: 5px 9px !important;
+    line-height: 1;
+  }
+
+  .menu-btn-icon {
+    display: inline;
+  }
+
+  .menu-btn-label {
+    display: none;
+  }
+
+  /* 드롭다운이 화면 밖으로 나가지 않도록 */
+  .menu-item .dropdown-menu {
+    max-width: calc(100vw - 16px);
+  }
+
+  /* 부가 링크는 공간 확보를 위해 숨김 */
+  .header-privacy-link,
+  .btn-community {
+    display: none;
+  }
+
+  /* --- 툴바: 줄바꿈 허용 --- */
+  #toolbar {
+    height: auto;
+    min-height: var(--toolbar-height);
+    flex-wrap: wrap;
+    padding: 4px var(--spacing-sm);
+    row-gap: 4px;
+  }
+
+  .toolbar-search {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  #location-search-input {
+    width: 100%;
+  }
+
+  /* 툴바 접기/펴기 버튼 */
+  .toolbar-collapse-btn {
+    display: flex;
+  }
+
+  /* 접힌 상태: 펴기 버튼만 가는 손잡이로 남김 */
+  #toolbar.collapsed {
+    min-height: 0;
+    padding: 2px var(--spacing-sm);
+  }
+
+  #toolbar.collapsed > *:not(.toolbar-collapse-btn) {
+    display: none;
+  }
+
+  #toolbar.collapsed .toolbar-collapse-btn {
+    width: 100%;
+    height: 24px;
+  }
+
+  #toolbar.collapsed .toolbar-collapse-btn svg {
+    transform: rotate(180deg);
+  }
+
+  /* --- 상태표시줄: 핵심 항목만 + 넘침 허용 --- */
+  #statusbar {
+    gap: var(--spacing-sm);
+    overflow-x: auto;
+  }
+
+  .visitor-counter {
+    display: none;
+  }
+
+  /* --- 왼쪽 패널: 하단에서 올라오는 시트(bottom sheet) --- */
+  #main-container {
+    position: relative;
+  }
+
+  #left-panel {
+    position: absolute;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* 리사이저가 남긴 인라인 width보다 우선 */
+    width: 100% !important;
+    min-width: 0;
+    max-width: 100%;
+    height: 55%;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.25);
+    z-index: 1200;
+  }
+
+  .panel-resizer {
+    display: none;
+  }
+
+  /* 토글 버튼: 하단 중앙의 손잡이로 변경 */
+  .sidebar-toggle {
+    top: auto;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 88px;
+    height: 26px;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    z-index: 1201;
+  }
+
+  /* 시트 열림: 손잡이가 시트 위쪽 가장자리에, 화살표는 아래(닫기) */
+  .sidebar-toggle svg {
+    transform: rotate(-90deg);
+  }
+
+  /* 시트 닫힘: 화살표는 위(열기) */
+  .sidebar-toggle.collapsed svg {
+    transform: rotate(90deg);
+  }
+
+  #left-panel:not(.hidden) ~ #map-container .sidebar-toggle {
+    bottom: 55%;
   }
 }

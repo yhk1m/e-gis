@@ -1089,6 +1089,75 @@ input:focus, select:focus, textarea:focus {
   to { transform: rotate(360deg); }
 }
 
+/* ===== 데이터 불러오기: 상단 탭 ===== */
+.builtin-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary, var(--bg-panel));
+}
+
+.builtin-tab {
+  flex: 1;
+  padding: 10px 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.builtin-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.builtin-tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+/* ===== 스프레드시트 탭: 데이터 유형 선택 ===== */
+.sheet-type-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.sheet-type-option:hover {
+  background: var(--bg-hover);
+}
+
+.sheet-type-option:has(input:checked) {
+  border-color: var(--primary-color);
+  background: var(--bg-badge, rgba(59,130,246,0.08));
+}
+
+.sheet-type-option input {
+  margin-top: 2px;
+  accent-color: var(--primary-color);
+}
+
+.sheet-type-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sheet-type-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
 /* ============================================
  * 래스터(GeoTIFF) 카탈로그: 그룹 폴더 + 다중선택
  * ============================================ */
@@ -4185,4 +4254,37 @@ input:focus, select:focus, textarea:focus {
   border-radius: 2px;
   border: 1px solid var(--border-color);
   flex-shrink: 0;
+}
+
+/* ============================================
+ * 모바일 반응형: 모달/다이얼로그
+ * 고정 폭(인라인 스타일 포함)을 화면 폭 이하로 제한
+ * (max-width는 width보다 항상 우선 적용됨)
+ * ============================================ */
+@media (max-width: 640px) {
+  .modal,
+  .modal-content,
+  .coord-import-content,
+  .choropleth-content,
+  .mypage-content,
+  .data-content,
+  .export-content,
+  .export-content-large {
+    max-width: calc(100vw - 20px) !important;
+    box-sizing: border-box;
+  }
+
+  .modal {
+    max-height: 88vh;
+    max-height: 88dvh; /* 모바일 브라우저 주소창 영역 보정 */
+  }
+
+  .modal-body {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 위치 검색 결과 드롭다운도 화면 폭 이하로 */
+  .search-results {
+    max-width: calc(100vw - 16px);
+  }
 }
