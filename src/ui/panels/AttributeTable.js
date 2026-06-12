@@ -63,8 +63,11 @@ export class AttributeTable {
     const layerInfo = layerManager.getLayer(layerId);
     if (!layerInfo) return;
 
-    // 모바일: 팝업 창 대신 전체 화면 오버레이로 표시
-    if (window.matchMedia('(max-width: 768px)').matches) {
+    // 모바일/태블릿(터치 기기): 팝업 창이 차단되므로 전체 화면 오버레이로 표시
+    // (태블릿 판별은 기존 태블릿 최적화 미디어쿼리와 동일 기준)
+    const useOverlay = window.matchMedia('(max-width: 768px)').matches ||
+      window.matchMedia('(pointer: coarse) and (max-width: 1366px)').matches;
+    if (useOverlay) {
       this.openMobileSheet(layerId, layerInfo);
       return;
     }
@@ -95,7 +98,8 @@ export class AttributeTable {
     );
 
     if (!win) {
-      alert('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
+      // 팝업이 차단된 환경에서는 전체 화면 오버레이로 대체
+      this.openMobileSheet(layerId, layerInfo);
       return;
     }
 
