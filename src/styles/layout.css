@@ -719,6 +719,13 @@
   /* 줄 순서: 이메일/로그인 줄 위, 메뉴 아이콘 줄 아래 */
   .menu-right {
     order: 1;
+    width: 100%;
+  }
+
+  /* 도움말(❓) 버튼: 로그인 줄 맨 왼쪽 (JS에서 menu-right로 이동됨) */
+  .menu-right .btn-help {
+    margin-left: 0;
+    margin-right: auto;
   }
 
   .menu-center {

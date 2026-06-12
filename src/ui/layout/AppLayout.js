@@ -384,7 +384,20 @@ export class AppLayout {
     this.initTabs();
     this.initSidebarToggle();
     this.initToolbarCollapse();
+    this.initMobileHelpPosition();
     this.setFavicon();
+  }
+
+  /**
+   * 모바일: 도움말(❓) 버튼을 로그인 줄(menu-right) 맨 왼쪽으로 이동
+   */
+  initMobileHelpPosition() {
+    if (!window.matchMedia('(max-width: 768px)').matches) return;
+    const helpBtn = document.getElementById('btn-help');
+    const menuRight = document.querySelector('#menubar .menu-right');
+    if (helpBtn && menuRight) {
+      menuRight.insertBefore(helpBtn, menuRight.firstChild);
+    }
   }
 
   /**
