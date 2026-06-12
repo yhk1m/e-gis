@@ -161,6 +161,7 @@ export class AttributeTable {
       <div class="attr-mobile-toolbar">
         <button class="btn btn-sm" id="attr-mobile-edit">✏️ 편집</button>
         <button class="btn btn-sm btn-danger" id="attr-mobile-delete" disabled>삭제</button>
+        <button class="btn btn-sm" id="attr-mobile-csv" title="CSV로 저장">CSV</button>
         <button class="btn btn-sm btn-primary" id="attr-mobile-zoom" disabled>선택 이동</button>
       </div>
       <div class="attr-mobile-hint">${HINT_DEFAULT}</div>
@@ -267,6 +268,12 @@ export class AttributeTable {
       editMode = !editMode;
       editBtn.classList.toggle('active', editMode);
       hintEl.textContent = editMode ? HINT_EDIT : HINT_DEFAULT;
+    });
+
+    // CSV 다운로드
+    overlay.querySelector('#attr-mobile-csv').addEventListener('click', () => {
+      finishEditing(true);
+      this.downloadCsv(layerId);
     });
 
     // 행 탭: 일반 모드 → 선택 토글 / 편집 모드 → 셀 수정
@@ -407,6 +414,47 @@ export class AttributeTable {
     this.removeHighlight(this.mobileSheet.layerId);
     this.mobileSheet.el.remove();
     this.mobileSheet = null;
+  }
+
+  /**
+   * 속성 데이터를 CSV 문자열로 변환 (엑셀 한글 호환 BOM 포함)
+   */
+  buildCsv(features, columns) {
+    const escapeCsv = (v) => {
+      const s = v === undefined || v === null ? '' : String(v);
+      return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const lines = [columns.map(escapeCsv).join(',')];
+    features.forEach(f => {
+      lines.push(columns.map(col => escapeCsv(f.get(col))).join(','));
+    });
+    return '\ufeff' + lines.join('\r\n');
+  }
+
+  /**
+   * 속성 테이블 CSV 다운로드
+   */
+  downloadCsv(layerId) {
+    const layerInfo = layerManager.getLayer(layerId);
+    if (!layerInfo) return;
+
+    const features = layerInfo.source.getFeatures();
+    const columns = this.extractColumns(features);
+    if (features.length === 0 || columns.length === 0) {
+      alert('내보낼 속성 데이터가 없습니다.');
+      return;
+    }
+
+    const csv = this.buildCsv(features, columns);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${layerInfo.name}_속성.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   /**
@@ -661,6 +709,7 @@ export class AttributeTable {
     <div class="header-actions">
       <button class="btn" id="btn-zoom-selected" title="선택한 피처로 이동">선택으로 이동</button>
       <button class="btn btn-danger" id="btn-delete-selected" title="선택한 피처 삭제" disabled>선택 삭제</button>
+      <button class="btn" id="btn-export-csv" title="속성 테이블을 CSV 파일로 저장">CSV 다운로드</button>
       <button class="btn" id="btn-refresh">새로고침</button>
     </div>
   </div>
@@ -769,6 +818,14 @@ export class AttributeTable {
       // 선택 삭제 버튼
       if (btnDelete) {
         btnDelete.addEventListener('click', deleteSelected);
+      }
+
+      // CSV 다운로드 버튼
+      const btnExportCsv = doc.getElementById('btn-export-csv');
+      if (btnExportCsv) {
+        btnExportCsv.addEventListener('click', function() {
+          self.downloadCsv(layerId);
+        });
       }
 
       // 새로고침 버튼
