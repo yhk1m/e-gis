@@ -257,6 +257,91 @@ class GeolocateControl extends Control {
   }
 }
 
+/**
+ * 배경지도 선택 컨트롤 - 일반/위성/위성+라벨 드롭다운
+ */
+class BasemapControl extends Control {
+  constructor(mapManager) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.title = '배경지도 선택';
+    button.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+        <polyline points="2 17 12 22 22 17"/>
+        <polyline points="2 12 12 17 22 12"/>
+      </svg>
+    `;
+
+    const options = [
+      { key: 'OSM', label: '일반지도' },
+      { key: 'SATELLITE', label: '위성' },
+      { key: 'SATELLITE_LABELS', label: '위성 + 라벨' }
+    ];
+
+    const panel = document.createElement('div');
+    panel.className = 'egis-basemap-panel';
+    panel.hidden = true;
+    panel.innerHTML = options.map((o) =>
+      `<button type="button" class="egis-basemap-option" data-key="${o.key}">${o.label}</button>`
+    ).join('');
+
+    const element = document.createElement('div');
+    element.className = 'ol-control egis-basemap';
+    element.appendChild(button);
+    element.appendChild(panel);
+
+    super({ element });
+
+    this.mapManager = mapManager;
+    this.button = button;
+    this.panel = panel;
+    this.element = element;
+
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePanel();
+    });
+
+    panel.querySelectorAll('.egis-basemap-option').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.select(btn.dataset.key);
+      });
+    });
+
+    // 바깥 영역 클릭 시 닫기
+    document.addEventListener('click', (e) => {
+      if (!element.contains(e.target)) this.closePanel();
+    });
+
+    this.updateActive();
+  }
+
+  togglePanel() {
+    this.panel.hidden = !this.panel.hidden;
+  }
+
+  closePanel() {
+    this.panel.hidden = true;
+  }
+
+  select(key) {
+    this.mapManager.setBasemap(key);
+    this.updateActive();
+    this.closePanel();
+  }
+
+  updateActive() {
+    const current = this.mapManager.getBasemap();
+    this.panel.querySelectorAll('.egis-basemap-option').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.key === current);
+    });
+    const isSatellite = current === 'SATELLITE' || current === 'SATELLITE_LABELS';
+    this.button.classList.toggle('active', isSatellite);
+  }
+}
+
 // 기본 배경지도 옵션
 const BASEMAPS = {
   OSM: {
@@ -319,10 +404,26 @@ export class MapManager {
       }
     });
 
+    // 라벨(지명/경계) 오버레이 레이어 — 위성+라벨 모드에서만 표시
+    // zIndex 0.5: 베이스맵(0) 위 · 사용자 데이터(1+) 아래에 위치
+    this.referenceLayer = new TileLayer({
+      source: new XYZ({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        maxZoom: 19,
+        attributions: '&copy; Esri'
+      }),
+      visible: false,
+      zIndex: 0.5,
+      properties: {
+        name: 'reference',
+        type: 'base'
+      }
+    });
+
     // 지도 생성
     this.map = new Map({
       target: targetId,
-      layers: [this.baseLayer],
+      layers: [this.baseLayer, this.referenceLayer],
       view: new View({
         center: fromLonLat(center),
         zoom: zoom,
@@ -339,7 +440,8 @@ export class MapManager {
           collapsed: true
         }),
         new CompassControl(),
-        new GeolocateControl()
+        new GeolocateControl(),
+        new BasemapControl(this)
       ])
     });
 
@@ -475,17 +577,26 @@ export class MapManager {
    * @param {string} basemapKey - 배경지도 키
    */
   setBasemap(basemapKey) {
-    if (!BASEMAPS[basemapKey]) {
+    // 'SATELLITE_LABELS'는 위성 영상 + 라벨 오버레이를 함께 표시하는 합성 모드
+    const showLabels = basemapKey === 'SATELLITE_LABELS';
+    const sourceKey = showLabels ? 'SATELLITE' : basemapKey;
+
+    if (!BASEMAPS[sourceKey]) {
       console.warn(`Unknown basemap: ${basemapKey}`);
       return;
     }
 
-    if (basemapKey === 'NONE') {
+    if (sourceKey === 'NONE') {
       this.baseLayer.setVisible(false);
     } else {
       this.baseLayer.setVisible(true);
-      this.baseLayer.setSource(BASEMAPS[basemapKey].source());
+      this.baseLayer.setSource(BASEMAPS[sourceKey].source());
     }
+
+    if (this.referenceLayer) {
+      this.referenceLayer.setVisible(showLabels);
+    }
+
     this.currentBasemap = basemapKey;
   }
 

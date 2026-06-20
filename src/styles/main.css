@@ -219,9 +219,10 @@ input:focus, select:focus, textarea:focus {
   left: auto !important;
 }
 
-/* 나침반 / GPS 컨트롤 (줌 아래로 배치) */
+/* 나침반 / GPS / 배경지도 컨트롤 (줌 아래로 배치) */
 .egis-compass,
-.egis-geolocate {
+.egis-geolocate,
+.egis-basemap {
   position: absolute;
   right: var(--spacing-sm);
   left: auto;
@@ -229,9 +230,11 @@ input:focus, select:focus, textarea:focus {
 
 .egis-compass { top: 76px; }
 .egis-geolocate { top: 116px; }
+.egis-basemap { top: 156px; }
 
 .egis-compass button,
-.egis-geolocate button {
+.egis-geolocate button,
+.egis-basemap > button {
   width: 32px;
   height: 32px;
   display: flex;
@@ -246,12 +249,69 @@ input:focus, select:focus, textarea:focus {
 }
 
 .egis-compass button:hover,
-.egis-geolocate button:hover {
+.egis-geolocate button:hover,
+.egis-basemap > button:hover {
   background: var(--bg-hover) !important;
 }
 
 .egis-compass svg {
   transform-origin: center;
+}
+
+/* 배경지도 선택: 위성 활성 시 강조 */
+.egis-basemap > button.active {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* 배경지도 선택 팝업 (버튼 왼쪽으로 열림) */
+.egis-basemap-panel {
+  position: absolute;
+  top: 0;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  z-index: 5;
+}
+
+.egis-basemap-panel[hidden] {
+  display: none;
+}
+
+/* 우선순위를 높여 OpenLayers 기본 .ol-control button 스타일을 확실히 덮음 */
+.egis-basemap-panel .egis-basemap-option {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 7px 14px;
+  white-space: nowrap;
+  text-align: left;
+  font-size: var(--font-size-sm);
+  font-weight: normal;
+  line-height: 1.3;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.egis-basemap-panel .egis-basemap-option:hover {
+  background: var(--bg-hover);
+}
+
+.egis-basemap-panel .egis-basemap-option.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
 }
 
 /* 회전 조절 팝업 (나침반 클릭 시) */
@@ -394,15 +454,26 @@ input:focus, select:focus, textarea:focus {
        (max-width: 1024px) {
   .egis-compass { top: 100px; }
   .egis-geolocate { top: 152px; }
+  .egis-basemap { top: 204px; }
   .egis-compass button,
-  .egis-geolocate button {
+  .egis-geolocate button,
+  .egis-basemap > button {
     width: 44px;
     height: 44px;
   }
   .egis-compass svg,
-  .egis-geolocate svg {
+  .egis-geolocate svg,
+  .egis-basemap svg {
     width: 26px;
     height: 26px;
+  }
+  /* 큰 버튼(44px)에 맞춰 팝업을 더 왼쪽으로 */
+  .egis-basemap-panel {
+    right: 52px;
+  }
+  .egis-basemap-option {
+    padding: 10px 16px;
+    font-size: var(--font-size-md, 15px);
   }
 }
 
