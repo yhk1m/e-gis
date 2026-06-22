@@ -366,7 +366,7 @@ export class AppLayout {
           <span class="crs-value">EPSG:4326</span>
         </div>
         <div class="statusbar-spacer"></div>
-        <div class="statusbar-item visitor-counter" title="방문자 수">
+        <div class="statusbar-item visitor-counter" title="조회수">
           <span class="visitor-label">Today</span>
           <span class="visitor-value" id="visitor-today">-</span>
           <span class="visitor-sep">|</span>

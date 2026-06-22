@@ -1,140 +1,57 @@
+// © 2026 김용현
 /**
- * VisitorTracker - 방문자 카운터
- * 오늘/총 방문자 수를 Supabase로 추적
+ * VisitorTracker - 조회수 카운터 (Apps Script Web App + 디바이스당 일 1회)
+ *
+ * GeoSource와 동일 방식:
+ *  - 구글 시트(viewership: [date, count])에 하루 1행으로 누적 (scripts/viewership.gs)
+ *  - today = 오늘 카운트, total = 전체 합
+ *  - 같은 디바이스는 하루 1회만 카운트(localStorage). 이후 같은 날엔 조회만(read).
  */
 
-import { supabaseManager } from './SupabaseManager.js';
+// Apps Script 웹앱 URL — scripts/viewership.gs 배포 후 받은 /exec URL.
+// 비어 있으면 카운터는 조용히 동작하지 않습니다(에러 없음).
+const VIEWERSHIP_URL = 'https://script.google.com/macros/s/AKfycbzoiENiKQTcvEVedXSUKa3z8w5NPLGYQr5hd8_lmWSmWndqsGaMAwp3a-OfgXZZLrXB/exec';
+const VIEWERSHIP_SHEET = 'egis'; // 통합 스크립트에서 eGIS 전용 탭 지정
+const VIEWERSHIP_LS_KEY = 'egis_last_visit';
 
 class VisitorTracker {
-  constructor() {
-    this.counts = { today: 0, total: 0 };
+  /** KST(UTC+9) 기준 YYYY-MM-DD */
+  kstDateString() {
+    const now = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    return now.toISOString().slice(0, 10);
   }
 
   /**
-   * 방문자 ID 생성 또는 가져오기 (브라우저별 고유)
-   */
-  getVisitorId() {
-    const key = 'egis_visitor_id';
-    let id = localStorage.getItem(key);
-    if (!id) {
-      id = crypto.randomUUID ? crypto.randomUUID() : Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem(key, id);
-    }
-    return id;
-  }
-
-  /**
-   * 오늘 이미 기록했는지 확인
-   */
-  isRecordedToday() {
-    const key = 'egis_visit_date';
-    const today = new Date().toISOString().slice(0, 10);
-    return localStorage.getItem(key) === today;
-  }
-
-  /**
-   * 오늘 기록 완료 표시
-   */
-  markRecordedToday() {
-    const key = 'egis_visit_date';
-    const today = new Date().toISOString().slice(0, 10);
-    localStorage.setItem(key, today);
-  }
-
-  /**
-   * 방문 기록 및 카운트 조회
+   * 조회수 기록 및 표시
+   *  - 오늘 처음 방문한 디바이스: action=count (오늘 카운트 +1)
+   *  - 오늘 이미 방문한 디바이스: action=read (증가 없이 조회만)
    */
   async init() {
-    // Supabase 초기화 대기
-    await this.waitForSupabase();
-
-    const supabase = supabaseManager.supabase;
-    if (!supabase) return;
-
-    // 오늘 아직 기록 안 했으면 기록
-    if (!this.isRecordedToday()) {
-      try {
-        const visitorId = this.getVisitorId();
-        await supabase.from('page_views').insert({
-          visitor_id: visitorId
-        });
-        this.markRecordedToday();
-      } catch (e) {
-        console.warn('방문 기록 실패:', e);
-      }
-    }
-
-    // 카운트 조회
-    await this.fetchCounts();
-    this.updateUI();
-  }
-
-  /**
-   * Supabase 초기화 대기
-   */
-  waitForSupabase() {
-    return new Promise((resolve) => {
-      if (supabaseManager.supabase) {
-        resolve();
-        return;
-      }
-      let attempts = 0;
-      const interval = setInterval(() => {
-        attempts++;
-        if (supabaseManager.supabase || attempts > 30) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 200);
-    });
-  }
-
-  /**
-   * 방문자 수 조회
-   */
-  async fetchCounts() {
-    const supabase = supabaseManager.supabase;
-    if (!supabase) return;
+    if (!VIEWERSHIP_URL) return; // URL 미설정 시 조용히 스킵
 
     try {
-      // RPC 함수 사용 시도
-      const { data, error } = await supabase.rpc('get_visitor_counts');
-      if (!error && data) {
-        this.counts = data;
-        return;
-      }
+      const today = this.kstDateString();
+      const last = localStorage.getItem(VIEWERSHIP_LS_KEY);
+      const action = last === today ? 'read' : 'count';
 
-      // RPC 실패 시 직접 쿼리
-      const today = new Date().toISOString().slice(0, 10);
+      const res = await fetch(`${VIEWERSHIP_URL}?action=${action}&sheet=${VIEWERSHIP_SHEET}`, { method: 'GET' });
+      if (!res.ok) return;
 
-      const [todayResult, totalResult] = await Promise.all([
-        supabase.from('page_views').select('visitor_id').eq('visit_date', today),
-        supabase.from('page_views').select('visitor_id')
-      ]);
+      const data = await res.json();
+      this.updateUI(Number(data.today || 0), Number(data.total || 0));
 
-      if (todayResult.data) {
-        const todayUnique = new Set(todayResult.data.map(r => r.visitor_id));
-        this.counts.today = todayUnique.size;
-      }
-
-      if (totalResult.data) {
-        const totalUnique = new Set(totalResult.data.map(r => r.visitor_id));
-        this.counts.total = totalUnique.size;
-      }
+      if (action === 'count') localStorage.setItem(VIEWERSHIP_LS_KEY, today);
     } catch (e) {
-      console.warn('방문자 수 조회 실패:', e);
+      // 네트워크 오류 시 표시는 기존값('-') 유지
     }
   }
 
-  /**
-   * UI 업데이트
-   */
-  updateUI() {
+  /** 상태바 카운터 UI 업데이트 */
+  updateUI(today, total) {
     const todayEl = document.getElementById('visitor-today');
     const totalEl = document.getElementById('visitor-total');
-
-    if (todayEl) todayEl.textContent = this.counts.today.toLocaleString('ko-KR');
-    if (totalEl) totalEl.textContent = this.counts.total.toLocaleString('ko-KR');
+    if (todayEl) todayEl.textContent = today.toLocaleString('ko-KR');
+    if (totalEl) totalEl.textContent = total.toLocaleString('ko-KR');
   }
 }
 

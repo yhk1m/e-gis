@@ -404,13 +404,18 @@ export class MapManager {
       }
     });
 
-    // 라벨(지명/경계) 오버레이 레이어 — 위성+라벨 모드에서만 표시
+    // 라벨(지명/도로명) 오버레이 레이어 — 위성+라벨 모드에서만 표시
     // zIndex 0.5: 베이스맵(0) 위 · 사용자 데이터(1+) 아래에 위치
+    // Esri World_Boundaries_and_Places는 광역 지명만 있어 확대 시 라벨이 사라지므로,
+    // 거리·동네까지 촘촘한 CARTO(OSM 기반) 라벨 전용 타일로 교체.
+    // voyager_only_labels: 도로·지명이 서로 다른 색(+흰 외곽선)이라 위성 위에서 잘 보임.
+    // @2x 레티나 타일(tilePixelRatio:2)로 고해상도 화면에서도 선명.
     this.referenceLayer = new TileLayer({
       source: new XYZ({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-        maxZoom: 19,
-        attributions: '&copy; Esri'
+        url: 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png',
+        tilePixelRatio: 2,
+        maxZoom: 20,
+        attributions: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }),
       visible: false,
       zIndex: 0.5,
