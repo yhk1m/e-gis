@@ -1,0 +1,50 @@
+{
+  "version": "1.0",
+  "name": "샘플 부산",
+  "created": "2026-07-01T00:00:00.000Z",
+  "view": { "center": [129.05, 35.16], "zoom": 11 },
+  "displayCRS": "EPSG:3857",
+  "layers": [
+    {
+      "id": "L_area",
+      "name": "예시 폴리곤",
+      "type": "vector",
+      "geometryType": "Polygon",
+      "visible": true,
+      "color": "#ef4444",
+      "opacity": 1,
+      "features": {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": { "name": "구역 A" },
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [[[129.00,35.12],[129.10,35.12],[129.10,35.20],[129.00,35.20],[129.00,35.12]]]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "L_pt",
+      "name": "예시 지점",
+      "type": "vector",
+      "geometryType": "Point",
+      "visible": true,
+      "color": "#3b82f6",
+      "opacity": 1,
+      "features": {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": { "name": "지점 1" },
+            "geometry": { "type": "Point", "coordinates": [129.05, 35.16] }
+          }
+        ]
+      }
+    }
+  ]
+}
