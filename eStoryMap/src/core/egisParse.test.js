@@ -52,4 +52,26 @@ describe('parseEgisDoc', () => {
     const doc = parseEgisDoc({ version: '1.0', layers: [{ type: 'weird' }] });
     expect(doc.layers[0].type).toBe('vector');
   });
+
+  it('opacity 0은 0으로 보존된다', () => {
+    const doc = parseEgisDoc({ version: '1.0', layers: [{ type: 'vector', opacity: 0 }] });
+    expect(doc.layers[0].opacity).toBe(0);
+  });
+
+  it('visible: false는 false로 보존된다', () => {
+    const doc = parseEgisDoc({ version: '1.0', layers: [{ type: 'vector', visible: false }] });
+    expect(doc.layers[0].visible).toBe(false);
+  });
+
+  it('view.zoom 0은 0으로 보존된다', () => {
+    const doc = parseEgisDoc({ version: '1.0', view: { center: [0, 0], zoom: 0 }, layers: [] });
+    expect(doc.view.zoom).toBe(0);
+  });
+
+  it('반환된 center는 입력 배열과 다른 참조(복사본)다', () => {
+    const raw = { version: '1.0', view: { center: [1, 2], zoom: 5 }, layers: [] };
+    const doc = parseEgisDoc(raw);
+    expect(doc.view.center).toEqual([1, 2]);
+    expect(doc.view.center).not.toBe(raw.view.center);
+  });
 });

@@ -22,7 +22,7 @@ export function parseEgisDoc(raw) {
 
   // ★ view.center는 EPSG:4326(경도, 위도). 기본값도 경위도.
   const view = raw.view && Array.isArray(raw.view.center)
-    ? { center: raw.view.center, zoom: Number(raw.view.zoom) || 7 }
+    ? { center: [...raw.view.center], zoom: raw.view.zoom != null ? Number(raw.view.zoom) : 7 }
     : { center: [127.5, 36.5], zoom: 7 };
 
   const layers = Array.isArray(raw.layers) ? raw.layers.map(normalizeLayer) : [];
