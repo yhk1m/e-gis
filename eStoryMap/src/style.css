@@ -1,0 +1,12 @@
+/* © 2026 김용현 */
+/* eStoryMap/src/style.css */
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body, #app { height: 100%; margin: 0; }
+#app { display: flex; flex-direction: column; font-family: system-ui, "Segoe UI", sans-serif; }
+#toolbar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #0b0f14; color: #e5e7eb; }
+#toolbar .brand { margin-right: 8px; }
+#toolbar button { padding: 6px 12px; border: 1px solid #334155; background: #1e293b; color: #e5e7eb; border-radius: 6px; cursor: pointer; }
+#toolbar button:hover { background: #334155; }
+#status { margin-left: auto; font-size: 13px; color: #94a3b8; }
+#map { flex: 1; background: #0b0f14; }

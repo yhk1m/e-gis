@@ -1,0 +1,28 @@
+{
+  "name": "estorymap",
+  "version": "0.1.0",
+  "description": "지도 스토리텔링 데스크톱 앱 (e-GIS 연동)",
+  "main": "dist-electron/main.js",
+  "author": "김용현",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && electron-builder",
+    "build:unpack": "vite build && electron-builder --dir",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "ol": "^9.0.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "vite": "^5.2.0",
+    "vite-plugin-electron": "^0.28.6",
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "vitest": "^1.6.0",
+    "jsdom": "^24.0.0"
+  }
+}
