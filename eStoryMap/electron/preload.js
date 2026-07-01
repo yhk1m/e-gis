@@ -1,0 +1,11 @@
+// © 2026 김용현
+// eStoryMap/electron/preload.js
+import { contextBridge, ipcRenderer } from 'electron';
+
+contextBridge.exposeInMainWorld('egisFS', {
+  importEgis: () => ipcRenderer.invoke('egis:import'),          // → {filename, text} | null
+  listProjects: () => ipcRenderer.invoke('project:list'),       // → string[]
+  loadProject: (name) => ipcRenderer.invoke('project:read', name),
+  saveProject: (name, json) => ipcRenderer.invoke('project:save', name, json),
+  openFolder: () => ipcRenderer.invoke('project:openFolder'),
+});
