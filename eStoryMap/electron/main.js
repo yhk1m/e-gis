@@ -16,7 +16,7 @@ async function createWindow() {
     height: 800,
     minWidth: 1024,
     minHeight: 640,
-    title: 'eStoryMap',
+    title: 'e-GIStory',
     backgroundColor: '#0b0f14',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

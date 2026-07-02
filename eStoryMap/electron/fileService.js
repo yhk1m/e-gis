@@ -1,13 +1,13 @@
 // © 2026 김용현
 // eStoryMap/electron/fileService.js
-// ~/Desktop/eStoryMap/ 폴더 관리 + .esm 프로젝트 파일 목록/읽기/쓰기.
+// ~/Desktop/e-GIStory/ 폴더 관리 + .esm 프로젝트 파일 목록/읽기/쓰기.
 import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 
 export function baseDir() {
-  return path.join(app.getPath('desktop'), 'eStoryMap');
+  return path.join(app.getPath('desktop'), 'e-GIStory');
 }
 
 export function ensureBaseDir() {
