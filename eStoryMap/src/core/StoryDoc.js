@@ -60,3 +60,35 @@ export function getPage(doc, pageId) {
 export function touch(doc) {
   doc.meta.updated = nowISO();
 }
+
+/**
+ * 소스를 추가하고, 지정 페이지에만 visible:true 가시성 엔트리를 만든다.
+ * (다른 페이지는 미등재 = 숨김. 상위 스펙 §2 가시성 계약)
+ * @param {object} doc
+ * @param {{sourceId:string, filename:string, egis:object}} source - egis는 원본 JSON 통째
+ * @param {string[]} layerIds - SourceRegistry가 실제로 빌드한 레이어 id들
+ * @param {string} pageId - 현재 페이지
+ */
+export function addSource(doc, source, layerIds, pageId) {
+  doc.sources.push(source);
+  const page = getPage(doc, pageId);
+  if (page) {
+    for (const layerId of layerIds) {
+      page.layerVisibility.push({ sourceId: source.sourceId, layerId, visible: true });
+    }
+  }
+  touch(doc);
+  return source;
+}
+
+/** 페이지의 레이어 가시성 갱신(없으면 생성). */
+export function setLayerVisible(doc, pageId, sourceId, layerId, visible) {
+  const page = getPage(doc, pageId);
+  if (!page) return;
+  const entry = page.layerVisibility.find(
+    (v) => v.sourceId === sourceId && v.layerId === layerId,
+  );
+  if (entry) entry.visible = visible;
+  else page.layerVisibility.push({ sourceId, layerId, visible });
+  touch(doc);
+}
