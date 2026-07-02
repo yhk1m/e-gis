@@ -4,6 +4,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('egisFS', {
   importEgis: () => ipcRenderer.invoke('egis:import'),          // → {filename, text} | null
+  importTif: () => ipcRenderer.invoke('tif:import'),            // → {filename, data:ArrayBuffer} | null
   listProjects: () => ipcRenderer.invoke('project:list'),       // → string[]
   loadProject: (name) => ipcRenderer.invoke('project:read', name),
   saveProject: (name, json) => ipcRenderer.invoke('project:save', name, json),

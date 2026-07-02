@@ -58,6 +58,23 @@ ipcMain.handle('egis:import', async () => {
   return { filename: path.basename(r.filePaths[0]), text };
 });
 
+// 생 GeoTIFF 열기 (경로② — renderer가 geotiff.js로 파싱)
+ipcMain.handle('tif:import', async () => {
+  if (!mainWindow) return null;
+  const r = await dialog.showOpenDialog(mainWindow, {
+    title: 'GeoTIFF 파일 열기',
+    filters: [{ name: 'GeoTIFF', extensions: ['tif', 'tiff', 'geotiff', 'img'] }],
+    properties: ['openFile'],
+  });
+  if (r.canceled || !r.filePaths[0]) return null;
+  const buf = await fsp.readFile(r.filePaths[0]);
+  return {
+    filename: path.basename(r.filePaths[0]),
+    // Node Buffer는 풀 ArrayBuffer의 뷰일 수 있어 정확한 구간만 잘라 전달
+    data: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+  };
+});
+
 // 로컬 .esm 저장/목록 (M6에서 본격 사용 — 여기선 골격만 배선)
 ipcMain.handle('project:list', () => listProjects());
 ipcMain.handle('project:read', (_e, name) => readProject(name));
