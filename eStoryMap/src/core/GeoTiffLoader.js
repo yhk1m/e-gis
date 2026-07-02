@@ -17,6 +17,9 @@ export async function loadGeoTiffIntoMap(arrayBuffer, filename, mapView) {
   const image = await tiff.getImage();
   const demData = await demDataFromGeoTiff(image); // data가 TypedArray라 decode는 통과
   const name = filename.replace(/\.(tif|tiff|geotiff|img)$/i, '');
+  // 전체 교체 시맨틱(M3 SourceRegistry 전까지): .egis/.tif 열기 시 기존 레이어 제거.
+  // 파싱 성공 후에만 클리어 — 손상 .tif가 현재 지도를 지우지 않도록 (EgisLoader와 동일 원칙).
+  mapView.clearEgisLayers();
   const layer = buildRasterLayer({
     id: `L_tif_${name}`,
     name,

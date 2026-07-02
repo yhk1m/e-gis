@@ -9,9 +9,9 @@ const mapView = new MapView('map');
 const status = document.getElementById('status');
 
 document.getElementById('btn-import').addEventListener('click', async () => {
-  const picked = await window.egisFS.importEgis();
-  if (!picked) return;
   try {
+    const picked = await window.egisFS.importEgis();
+    if (!picked) return;
     const raw = JSON.parse(picked.text);
     const result = loadEgisIntoMap(raw, mapView);
     const parts = [];
@@ -26,10 +26,10 @@ document.getElementById('btn-import').addEventListener('click', async () => {
 });
 
 document.getElementById('btn-tif').addEventListener('click', async () => {
-  const picked = await window.egisFS.importTif();
-  if (!picked) return;
-  status.textContent = `${picked.filename} 파싱 중…`;
   try {
+    const picked = await window.egisFS.importTif();
+    if (!picked) return;
+    status.textContent = `${picked.filename} 파싱 중…`;
     const result = await loadGeoTiffIntoMap(picked.data, picked.filename, mapView);
     status.textContent = `${picked.filename} — DEM 레이어 로드 (${result.name})`;
   } catch (e) {
