@@ -33,11 +33,16 @@ export function matchKoreanTM(geoKeys) {
 /** GeoKeys → 소스 좌표계('EPSG:xxxx' | null). */
 export function inferSourceProjection(geoKeys) {
   if (!geoKeys) return null;
-  if (geoKeys.ProjectedCSTypeGeoKey && geoKeys.ProjectedCSTypeGeoKey !== 32767) {
-    return `EPSG:${geoKeys.ProjectedCSTypeGeoKey}`;
-  }
-  if (geoKeys.GeographicTypeGeoKey && geoKeys.GeographicTypeGeoKey !== 32767) {
-    return `EPSG:${geoKeys.GeographicTypeGeoKey}`;
+  // 원본(DEMLoader)과 동일한 배타 분기: ProjectedCSType 키가 존재하면(값이
+  // 32767 user-defined여도) GeographicType은 보지 않는다.
+  if (geoKeys.ProjectedCSTypeGeoKey) {
+    if (geoKeys.ProjectedCSTypeGeoKey !== 32767) {
+      return `EPSG:${geoKeys.ProjectedCSTypeGeoKey}`;
+    }
+  } else if (geoKeys.GeographicTypeGeoKey) {
+    if (geoKeys.GeographicTypeGeoKey !== 32767) {
+      return `EPSG:${geoKeys.GeographicTypeGeoKey}`;
+    }
   }
   // 정부 GeoTIFF에서 흔히 EPSG 코드 없이 TM 파라미터만 채워짐
   if (geoKeys.ProjCoordTransGeoKey === 1) return matchKoreanTM(geoKeys);

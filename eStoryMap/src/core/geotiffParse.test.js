@@ -45,6 +45,12 @@ describe('inferSourceProjection', () => {
     })).toBe('EPSG:5186');
     expect(inferSourceProjection(null)).toBeNull();
   });
+  it('ProjectedCSType이 32767(user-defined)이면 GeographicType을 무시하고 TM 추론한다(원본 else-if 배타성)', () => {
+    expect(inferSourceProjection({
+      ProjectedCSTypeGeoKey: 32767, GeographicTypeGeoKey: 4019,
+      ProjCoordTransGeoKey: 1, ...TM_BASE, ProjNatOriginLongGeoKey: 127,
+    })).toBe('EPSG:5186');
+  });
 });
 
 describe('guessProjectionFromBbox', () => {
