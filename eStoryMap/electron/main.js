@@ -26,7 +26,11 @@ async function createWindow() {
   });
 
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
-    await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    // dev 의존성 재최적화 리로드로 초기 로드가 중단(ERR_ABORTED)돼도
+    // 메인 프로세스가 죽지 않게 방어 — webContents가 스스로 재로드한다.
+    await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL).catch((e) => {
+      console.warn('[main] 초기 로드 중단(자동 재시도됨):', e.message);
+    });
     mainWindow.webContents.openDevTools();
   } else {
     await mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
