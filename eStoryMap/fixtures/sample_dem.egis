@@ -1,0 +1,65 @@
+{
+  "version": "1.0",
+  "name": "샘플 DEM 부산",
+  "created": "2026-07-02T00:00:00.000Z",
+  "view": { "center": [129.1, 35.15], "zoom": 11 },
+  "displayCRS": "EPSG:3857",
+  "layers": [
+    {
+      "id": "L_dem",
+      "name": "고도 예시",
+      "type": "raster",
+      "geometryType": "Raster",
+      "visible": true,
+      "color": "#3b82f6",
+      "opacity": 0.8,
+      "rasterKind": "dem",
+      "raster": {
+        "data": {
+          "__encoding": "base64",
+          "dtype": "Float32Array",
+          "base64": "AAAAAAAAyEIAAEhDAACWQwAAFkMAAHpDAACvQwAA4UMAAMhDAAD6QwAAFkQAAC9E"
+        },
+        "width": 4,
+        "height": 3,
+        "extent": [14360214.31, 4177479.06, 14371346.26, 4191093.67],
+        "minVal": 0,
+        "maxVal": 700,
+        "noDataValue": -9999
+      }
+    },
+    {
+      "id": "L_slope",
+      "name": "경사 예시",
+      "type": "raster",
+      "geometryType": "Raster",
+      "visible": true,
+      "color": "#3b82f6",
+      "opacity": 0.9,
+      "rasterKind": "analysis",
+      "raster": {
+        "data": {
+          "__encoding": "base64",
+          "dtype": "Float32Array",
+          "base64": "AAAAAAAAoEAAACBBAABwQQAAoEEAAMhBAADwQQAADEIAABhCAAAgQgAAKEIAADRC"
+        },
+        "width": 4,
+        "height": 3,
+        "extent": [14371346.26, 4177479.06, 14382478.21, 4191093.67],
+        "noDataValue": -9999,
+        "colorScheme": "slope",
+        "minVal": 0,
+        "maxVal": 45,
+        "metric": "경사도",
+        "min": 0,
+        "max": 45
+      }
+    },
+    {
+      "id": "L_unknown",
+      "name": "복원불가 예시",
+      "type": "raster",
+      "rasterKind": "unknown"
+    }
+  ]
+}

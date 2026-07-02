@@ -13,8 +13,11 @@ document.getElementById('btn-import').addEventListener('click', async () => {
   try {
     const raw = JSON.parse(picked.text);
     const result = loadEgisIntoMap(raw, mapView);
-    const rasterNote = result.skipped ? ` (래스터 ${result.skipped}개는 M2에서)` : '';
-    status.textContent = `${picked.filename} — 벡터 ${result.vectorCount}개 로드${rasterNote}`;
+    const parts = [];
+    if (result.vectorCount) parts.push(`벡터 ${result.vectorCount}개`);
+    if (result.rasterCount) parts.push(`래스터 ${result.rasterCount}개`);
+    const skippedNote = result.skipped ? ` (복원 불가 ${result.skipped}개 건너뜀)` : '';
+    status.textContent = `${picked.filename} — ${parts.join('·') || '레이어 없음'} 로드${skippedNote}`;
   } catch (e) {
     status.textContent = `불러오기 실패: ${e.message}`;
     console.error(e);

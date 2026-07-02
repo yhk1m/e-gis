@@ -66,7 +66,7 @@ describe('loadEgisIntoMap', () => {
     expect(clearIdx).toBeLessThan(firstAddIdx);
   });
 
-  it('벡터가 아닌 레이어는 스킵하고 개수를 보고한다', () => {
+  it('복원 불가 래스터는 스킵하고 개수를 보고한다', () => {
     const mv = fakeMapView();
     const result = loadEgisIntoMap({
       version: '1.0',
@@ -75,5 +75,48 @@ describe('loadEgisIntoMap', () => {
     expect(result.vectorCount).toBe(1);
     expect(result.skipped).toBe(1);
     expect(mv.called('addLayer')).toHaveLength(1);
+  });
+
+  const DEM_RASTER = {
+    id: 'L_dem', name: '고도', type: 'raster', rasterKind: 'dem',
+    visible: true, opacity: 0.8,
+    raster: {
+      data: {
+        __encoding: 'base64', dtype: 'Float32Array',
+        base64: 'AAAAAAAAyEIAAEhDAACWQwAAFkMAAHpDAACvQwAA4UMAAMhDAAD6QwAAFkQAAC9E',
+      },
+      width: 4, height: 3, extent: [0, 0, 400, 300],
+      minVal: 0, maxVal: 700, noDataValue: -9999,
+    },
+  };
+
+  it('dem 래스터를 ImageLayer로 로드하고 rasterCount로 보고한다', () => {
+    const mv = fakeMapView();
+    const result = loadEgisIntoMap({
+      version: '1.0', view: { center: [129.0, 35.1], zoom: 8 }, layers: [DEM_RASTER],
+    }, mv);
+    expect(result.rasterCount).toBe(1);
+    expect(result.skipped).toBe(0);
+    expect(mv.called('addLayer')).toHaveLength(1);
+    expect(mv.called('addLayer')[0][1].get('egisLayerId')).toBe('L_dem');
+  });
+
+  it('rasterKind unknown은 스킵한다', () => {
+    const mv = fakeMapView();
+    const result = loadEgisIntoMap({
+      version: '1.0', view: { center: [129.0, 35.1], zoom: 8 },
+      layers: [{ id: 'L_u', name: '미상', type: 'raster', rasterKind: 'unknown' }],
+    }, mv);
+    expect(result.rasterCount).toBe(0);
+    expect(result.skipped).toBe(1);
+    expect(mv.called('addLayer')).toHaveLength(0);
+  });
+
+  it('view가 없으면 래스터도 fit 폴백 대상에 포함된다', () => {
+    const mv = fakeMapView();
+    const result = loadEgisIntoMap({ version: '1.0', layers: [DEM_RASTER] }, mv);
+    expect(mv.called('setView')).toHaveLength(0);
+    expect(mv.called('fitToLayers')).toHaveLength(1);
+    expect(mv.called('fitToLayers')[0][1]).toEqual(result.layers);
   });
 });
