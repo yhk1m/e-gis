@@ -68,6 +68,8 @@ export function touch(doc) {
  * @param {{sourceId:string, filename:string, egis:object}} source - egis는 원본 JSON 통째
  * @param {string[]} layerIds - SourceRegistry가 실제로 빌드한 레이어 id들
  * @param {string} pageId - 현재 페이지
+ * 주의: sourceId는 기존 layerVisibility 엔트리가 없는 새 id여야 한다
+ * (중복 push 미방지 — nextSourceId로 발급된 id만 사용할 것).
  */
 export function addSource(doc, source, layerIds, pageId) {
   doc.sources.push(source);
@@ -91,4 +93,32 @@ export function setLayerVisible(doc, pageId, sourceId, layerId, visible) {
   if (entry) entry.visible = visible;
   else page.layerVisibility.push({ sourceId, layerId, visible });
   touch(doc);
+}
+
+/**
+ * 새 페이지를 끝에 추가. 지정 페이지(보통 현재 페이지)의
+ * layerVisibility·camera를 복제한다(연속 편집 편의 — 상위 스펙 §4).
+ */
+export function addPage(doc, copyFromPageId) {
+  const from = getPage(doc, copyFromPageId);
+  const page = makePage(nextPageId(doc), `페이지 ${doc.pages.length + 1}`);
+  if (from) {
+    page.layerVisibility = from.layerVisibility.map((v) => ({ ...v }));
+    page.camera = from.camera
+      ? { center: [...from.camera.center], zoom: from.camera.zoom }
+      : null;
+  }
+  doc.pages.push(page);
+  touch(doc);
+  return page;
+}
+
+/** 페이지 제거. 최소 1페이지는 유지(마지막 페이지면 null). */
+export function removePage(doc, pageId) {
+  if (doc.pages.length <= 1) return null;
+  const idx = doc.pages.findIndex((p) => p.id === pageId);
+  if (idx === -1) return null;
+  const [removed] = doc.pages.splice(idx, 1);
+  touch(doc);
+  return removed;
 }

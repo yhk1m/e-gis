@@ -1,7 +1,7 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
 import {
-  createStoryDoc, getPage, nextSourceId, addSource, setLayerVisible,
+  createStoryDoc, getPage, nextSourceId, addSource, setLayerVisible, addPage, removePage,
 } from './StoryDoc.js';
 
 describe('createStoryDoc', () => {
@@ -99,5 +99,59 @@ describe('setLayerVisible', () => {
     setLayerVisible(doc, 'page_1', 'src_1', 'L_a', true);
     expect(doc.meta.updated >= before).toBe(true);
     expect(doc.meta.updated).not.toBe(doc.meta.created);
+  });
+});
+
+describe('addPage', () => {
+  it('지정 페이지의 layerVisibility를 깊은 복사한다(상위 스펙 §4)', () => {
+    const doc = createStoryDoc();
+    addSource(doc, { sourceId: 'src_1', filename: 'a.egis', egis: {} }, ['L_a'], 'page_1');
+    const p2 = addPage(doc, 'page_1');
+    expect(p2.layerVisibility).toEqual(getPage(doc, 'page_1').layerVisibility);
+    setLayerVisible(doc, p2.id, 'src_1', 'L_a', false);
+    expect(getPage(doc, 'page_1').layerVisibility[0].visible).toBe(true); // 원본 독립
+  });
+
+  it('camera를 복사한다(참조 독립)', () => {
+    const doc = createStoryDoc();
+    getPage(doc, 'page_1').camera = { center: [129, 35], zoom: 10 };
+    const p2 = addPage(doc, 'page_1');
+    expect(p2.camera).toEqual({ center: [129, 35], zoom: 10 });
+    expect(p2.camera).not.toBe(getPage(doc, 'page_1').camera);
+    expect(p2.camera.center).not.toBe(getPage(doc, 'page_1').camera.center);
+  });
+
+  it('끝에 추가되고 id/제목이 이어진다, content/overrides는 빈 값', () => {
+    const doc = createStoryDoc();
+    const p2 = addPage(doc, 'page_1');
+    expect(doc.pages).toHaveLength(2);
+    expect(doc.pages[1]).toBe(p2);
+    expect(p2.id).toBe('page_2');
+    expect(p2.title).toBe('페이지 2');
+    expect(p2.content).toEqual({ heading: '', body: '', caption: '' });
+    expect(p2.overrides).toEqual({});
+  });
+});
+
+describe('removePage', () => {
+  it('페이지를 제거하고 반환한다', () => {
+    const doc = createStoryDoc();
+    const p2 = addPage(doc, 'page_1');
+    const removed = removePage(doc, p2.id);
+    expect(removed).toBe(p2);
+    expect(doc.pages).toHaveLength(1);
+  });
+
+  it('마지막 1페이지는 제거할 수 없다(null 반환, 유지)', () => {
+    const doc = createStoryDoc();
+    expect(removePage(doc, 'page_1')).toBeNull();
+    expect(doc.pages).toHaveLength(1);
+  });
+
+  it('없는 페이지 id는 null', () => {
+    const doc = createStoryDoc();
+    addPage(doc, 'page_1');
+    expect(removePage(doc, 'page_999')).toBeNull();
+    expect(doc.pages).toHaveLength(2);
   });
 });
