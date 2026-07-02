@@ -1,6 +1,8 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
 import { loadEgisIntoMap } from './EgisLoader.js';
+// jsdom 환경에서 import.meta.url이 http 스킴이라 fs+URL 조합이 불가 → Vite ?raw로 픽스처 로드
+import sampleDemRaw from '../../fixtures/sample_dem.egis?raw';
 
 // MapView 대역: 호출 순서·인자만 기록 (OL 렌더링 없이 오케스트레이션 검증)
 function fakeMapView() {
@@ -118,5 +120,48 @@ describe('loadEgisIntoMap', () => {
     expect(mv.called('setView')).toHaveLength(0);
     expect(mv.called('fitToLayers')).toHaveLength(1);
     expect(mv.called('fitToLayers')[0][1]).toEqual(result.layers);
+  });
+
+  it('손상된 레이어는 건너뛰고 나머지는 계속 로드한다(레이어별 격리)', () => {
+    const mv = fakeMapView();
+    const corrupt = {
+      id: 'L_bad', name: '손상', type: 'raster', rasterKind: 'dem',
+      visible: true, opacity: 0.8,
+      raster: {
+        // 'AAAA'는 3바이트 → Float32Array 생성 시 RangeError (가드는 통과)
+        data: { __encoding: 'base64', dtype: 'Float32Array', base64: 'AAAA' },
+        width: 1, height: 1, extent: [0, 0, 1, 1],
+        minVal: 0, maxVal: 1, noDataValue: -9999,
+      },
+    };
+    const result = loadEgisIntoMap({
+      version: '1.0', view: { center: [129.0, 35.1], zoom: 8 },
+      layers: [corrupt, VECTOR_LAYER],
+    }, mv);
+    expect(result.skipped).toBe(1);
+    expect(result.vectorCount).toBe(1);
+    expect(mv.called('addLayer')).toHaveLength(1);
+  });
+
+  it('analysis 래스터도 로더에서 로드된다', () => {
+    const mv = fakeMapView();
+    const result = loadEgisIntoMap({
+      version: '1.0', view: { center: [129.0, 35.1], zoom: 8 },
+      layers: [{
+        ...DEM_RASTER, id: 'L_an', rasterKind: 'analysis',
+        raster: { ...DEM_RASTER.raster, colorScheme: 'slope', minVal: 0, maxVal: 45 },
+      }],
+    }, mv);
+    expect(result.rasterCount).toBe(1);
+    expect(mv.called('addLayer')[0][1].get('egisLayerId')).toBe('L_an');
+  });
+
+  it('스모크 픽스처(sample_dem.egis)가 래스터 2개·스킵 1개로 로드된다', () => {
+    const raw = JSON.parse(sampleDemRaw);
+    const mv = fakeMapView();
+    const result = loadEgisIntoMap(raw, mv);
+    expect(result.rasterCount).toBe(2);
+    expect(result.skipped).toBe(1);
+    expect(result.vectorCount).toBe(0);
   });
 });

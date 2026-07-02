@@ -21,14 +21,21 @@ export function loadEgisIntoMap(rawJson, mapView) {
 
   for (const layerData of doc.layers) {
     let olLayer;
-    if (layerData.type === 'vector') {
-      olLayer = buildVectorLayer(layerData);
-      vectorCount++;
-    } else if (canBuildRasterLayer(layerData)) {
-      olLayer = buildRasterLayer(layerData);
-      rasterCount++;
-    } else {
-      skipped++; // rasterKind 'unknown' 또는 복원 데이터 결손 (e-GIS deserialize와 동일 정책)
+    try {
+      if (layerData.type === 'vector') {
+        olLayer = buildVectorLayer(layerData);
+        vectorCount++;
+      } else if (canBuildRasterLayer(layerData)) {
+        olLayer = buildRasterLayer(layerData);
+        rasterCount++;
+      } else {
+        skipped++; // rasterKind 'unknown' 또는 복원 데이터 결손 (e-GIS와 동일 스킵 정책)
+        continue;
+      }
+    } catch (e) {
+      // 레이어 하나가 손상돼도 나머지는 계속 — e-GIS deserialize의 레이어별 try/catch 이식
+      console.warn(`레이어 "${layerData.name}" 복원 실패:`, e);
+      skipped++;
       continue;
     }
     mapView.addLayer(olLayer);
