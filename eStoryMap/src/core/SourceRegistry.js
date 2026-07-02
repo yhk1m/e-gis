@@ -21,6 +21,8 @@ export class SourceRegistry {
    * parseEgisDoc 산출 문서의 레이어들을 빌드해 등록한다.
    * unknown/데이터 결손은 스킵, 손상 레이어는 격리(e-GIS deserialize 정책).
    * @returns {{builtLayerIds:string[], skipped:number, olLayers:object[]}}
+   * 주의: sourceId는 호출마다 고유해야 한다(보통 nextSourceId(doc)로 발급).
+   * 재사용 시 이전 OL 레이어가 지도에 고아로 남는다(레지스트리에서 추적 불가).
    */
   addSource(sourceId, parsedDoc) {
     const builtLayerIds = [];
