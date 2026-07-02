@@ -81,6 +81,15 @@ describe('SourceRegistry.addSource', () => {
     expect(reg.getLayer('src_1', 'L_v')).not.toBe(reg.getLayer('src_2', 'L_v'));
     expect(mv.added).toHaveLength(2);
   });
+
+  it('같은 소스 안의 중복 layerId는 스킵한다(고아 레이어 방지)', () => {
+    const mv = fakeMapView();
+    const reg = new SourceRegistry(mv);
+    const result = reg.addSource('src_1', docWith([VECTOR_LAYER, VECTOR_LAYER]));
+    expect(result.builtLayerIds).toEqual(['L_v']);
+    expect(result.skipped).toBe(1);
+    expect(mv.added).toHaveLength(1);
+  });
 });
 
 describe('SourceRegistry 조회', () => {

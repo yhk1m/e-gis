@@ -121,6 +121,8 @@ export async function demDataFromGeoTiff(image) {
  * demData를 .egis 형식 문서로 래핑 — .tif도 .egis와 동일한
  * 소스 추가 경로(parseEgisDoc → SourceRegistry)를 타게 한다.
  * raster.data는 TypedArray 그대로(디코딩된 형태) — decodeRasterMeta가 통과시킨다.
+ * 주의(M6): raster.data가 TypedArray 그대로라 JSON.stringify 시 손상됨 —
+ * .esm 저장 시 encodeRasterMeta(base64) 인코딩을 거칠 것.
  */
 export function demDataToEgisDoc(demData, name) {
   return {

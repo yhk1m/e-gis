@@ -43,7 +43,11 @@ export class MapView {
     this.map.addLayer(olLayer);
   }
 
-  /** .egis에서 로드된 레이어(egisLayerId 보유) 전부 제거. 베이스맵 등은 유지. */
+  /**
+   * .egis에서 로드된 레이어(egisLayerId 보유) 전부 제거. 베이스맵 등은 유지.
+   * 주의: SourceRegistry를 우회한다 — 레지스트리 기반 앱 플로우(M3+)에서 호출하면
+   * 레지스트리가 stale해진다. 현재 앱 코드에서 미사용(테스트 전용).
+   */
   clearEgisLayers() {
     const egisLayers = this.map.getLayers().getArray()
       .filter((l) => l.get('egisLayerId'));

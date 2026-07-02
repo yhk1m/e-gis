@@ -30,6 +30,11 @@ export class SourceRegistry {
     let skipped = 0;
 
     for (const layerData of parsedDoc.layers) {
+      if (this.layers.has(this.key(sourceId, layerData.id))) {
+        console.warn(`중복 layerId "${layerData.id}" 스킵 (소스 ${sourceId})`);
+        skipped++;
+        continue;
+      }
       let olLayer;
       try {
         if (layerData.type === 'vector') {

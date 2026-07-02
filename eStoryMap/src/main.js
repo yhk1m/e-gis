@@ -44,7 +44,7 @@ const pageList = createPageList(document.getElementById('page-list'), {
 
 /** 문서·페이지 상태를 지도와 패널에 반영(단일 갱신 지점). */
 function refresh() {
-  const page = getPage(doc, currentPageId);
+  const page = getPage(doc, currentPageId) || doc.pages[0]; // 방어: 선택이 어긋나도 자가 복구
   applyPageVisibility(page, registry);
   sourcePanel.render(doc, page, registry);
   pageList.render(doc, currentPageId);
