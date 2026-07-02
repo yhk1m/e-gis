@@ -42,7 +42,7 @@ export function createStoryDoc(title = '새 스토리맵') {
   const now = nowISO();
   return {
     meta: {
-      id: 'doc_' + Math.random().toString(36).slice(2, 10),
+      id: crypto.randomUUID(), // 마스터 스펙 §2 "uuid"
       title,
       mode: 'presentation',
       created: now,

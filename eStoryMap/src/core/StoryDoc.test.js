@@ -18,10 +18,10 @@ describe('createStoryDoc', () => {
     expect(page.content).toEqual({ heading: '', body: '', caption: '' });
   });
 
-  it('meta.id는 doc_ 접두 문자열, created=updated ISO', () => {
+  it('meta.id는 UUID, created=updated ISO', () => {
     const doc = createStoryDoc('부산 이야기');
     expect(doc.meta.title).toBe('부산 이야기');
-    expect(doc.meta.id.startsWith('doc_')).toBe(true);
+    expect(doc.meta.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     expect(doc.meta.created).toBe(doc.meta.updated);
     expect(new Date(doc.meta.created).toString()).not.toBe('Invalid Date');
   });
