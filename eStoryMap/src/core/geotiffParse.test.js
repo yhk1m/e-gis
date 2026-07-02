@@ -4,6 +4,7 @@ import { fromLonLat } from 'ol/proj';
 import {
   matchKoreanTM, inferSourceProjection, guessProjectionFromBbox,
   toMercatorExtent, extentTo3857, computeMinMax, demDataFromGeoTiff,
+  demDataToEgisDoc,
 } from './geotiffParse.js';
 
 const TM_BASE = {
@@ -121,5 +122,34 @@ describe('demDataFromGeoTiff', () => {
     expect(dem.maxVal).toBe(40);
     expect(Math.abs(dem.extent[0] - fromLonLat([129.0, 35.1])[0])).toBeLessThan(1);
     expect(dem.data).toBeInstanceOf(Float32Array);
+  });
+});
+
+describe('demDataToEgisDoc', () => {
+  const DEM = {
+    data: new Float32Array([1, 2, 3, 4]), width: 2, height: 2,
+    extent: [0, 0, 10, 10], minVal: 1, maxVal: 4, noDataValue: -9999,
+  };
+
+  it('.egis 형식 문서로 래핑한다(dem 레이어 1개, view 없음)', () => {
+    const egis = demDataToEgisDoc(DEM, '뒷산');
+    expect(egis.version).toBe('1.0');
+    expect(egis.name).toBe('뒷산');
+    expect(egis.view).toBeUndefined();
+    expect(egis.layers).toHaveLength(1);
+    const layer = egis.layers[0];
+    expect(layer).toMatchObject({
+      id: 'L_dem', name: '뒷산', type: 'raster', rasterKind: 'dem',
+      visible: true, opacity: 0.8,
+    });
+    expect(layer.raster).toBe(DEM); // 데이터 복사 없이 그대로 참조
+  });
+
+  it('parseEgisDoc 정규화를 통과한다(view null, 레이어 보존)', async () => {
+    const { parseEgisDoc } = await import('./egisParse.js');
+    const doc = parseEgisDoc(demDataToEgisDoc(DEM, '뒷산'));
+    expect(doc.view).toBeNull();
+    expect(doc.layers[0].rasterKind).toBe('dem');
+    expect(doc.layers[0].raster).toBe(DEM);
   });
 });

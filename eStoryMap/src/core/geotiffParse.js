@@ -116,3 +116,24 @@ export async function demDataFromGeoTiff(image) {
   const { minVal, maxVal } = computeMinMax(data, noDataValue);
   return { data, width, height, extent, minVal, maxVal, noDataValue };
 }
+
+/**
+ * demData를 .egis 형식 문서로 래핑 — .tif도 .egis와 동일한
+ * 소스 추가 경로(parseEgisDoc → SourceRegistry)를 타게 한다.
+ * raster.data는 TypedArray 그대로(디코딩된 형태) — decodeRasterMeta가 통과시킨다.
+ */
+export function demDataToEgisDoc(demData, name) {
+  return {
+    version: '1.0',
+    name,
+    layers: [{
+      id: 'L_dem',
+      name,
+      type: 'raster',
+      rasterKind: 'dem',
+      visible: true,
+      opacity: 0.8, // e-GIS DEM 기본 불투명도
+      raster: demData,
+    }],
+  };
+}
