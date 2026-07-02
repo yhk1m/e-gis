@@ -101,7 +101,9 @@ export function setLayerVisible(doc, pageId, sourceId, layerId, visible) {
  */
 export function addPage(doc, copyFromPageId) {
   const from = getPage(doc, copyFromPageId);
-  const page = makePage(nextPageId(doc), `페이지 ${doc.pages.length + 1}`);
+  const id = nextPageId(doc);
+  // 제목 번호는 id의 순번과 동기화(길이 기반이면 삭제 후 중복 제목 발생)
+  const page = makePage(id, `페이지 ${id.split('_')[1]}`);
   if (from) {
     page.layerVisibility = from.layerVisibility.map((v) => ({ ...v }));
     page.camera = from.camera

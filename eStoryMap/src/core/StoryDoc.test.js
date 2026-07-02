@@ -131,6 +131,18 @@ describe('addPage', () => {
     expect(p2.content).toEqual({ heading: '', body: '', caption: '' });
     expect(p2.overrides).toEqual({});
   });
+
+  it('삭제 후 추가해도 제목이 id와 동기화되어 중복되지 않는다', () => {
+    const doc = createStoryDoc();          // page_1
+    addPage(doc, 'page_1');                // page_2
+    addPage(doc, 'page_2');                // page_3
+    removePage(doc, 'page_2');
+    const p = addPage(doc, 'page_3');
+    expect(p.id).toBe('page_4');
+    expect(p.title).toBe('페이지 4');       // 길이 기반이면 '페이지 3'이 되어 중복
+    const titles = doc.pages.map((x) => x.title);
+    expect(new Set(titles).size).toBe(titles.length);
+  });
 });
 
 describe('removePage', () => {
