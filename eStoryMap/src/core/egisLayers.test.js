@@ -66,4 +66,13 @@ describe('buildVectorLayer', () => {
     expect(layer.getVisible()).toBe(false);
     expect(layer.getSource()).toBeTruthy();
   });
+
+  it('opacity를 OL 레이어에 적용한다', () => {
+    const layer = buildVectorLayer({
+      id: 'L_b', name: '반투명', type: 'vector', geometryType: 'Polygon',
+      visible: true, color: '#ef4444', opacity: 0.5,
+      features: { type: 'FeatureCollection', features: [] },
+    });
+    expect(layer.getOpacity()).toBe(0.5);
+  });
 });

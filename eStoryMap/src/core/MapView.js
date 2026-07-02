@@ -28,6 +28,13 @@ export class MapView {
     this.map.addLayer(olLayer);
   }
 
+  /** .egis에서 로드된 레이어(egisLayerId 보유) 전부 제거. 베이스맵 등은 유지. */
+  clearEgisLayers() {
+    const egisLayers = this.map.getLayers().getArray()
+      .filter((l) => l.get('egisLayerId'));
+    for (const l of egisLayers) this.map.removeLayer(l);
+  }
+
   /** center: [경도, 위도] (EPSG:4326, .egis view.center 포맷). */
   setView(center, zoom) {
     const view = this.map.getView();
@@ -43,7 +50,8 @@ export class MapView {
       if (src && src.getExtent) extend(ext, src.getExtent());
     }
     if (!isEmpty(ext) && Number.isFinite(ext[0])) {
-      this.map.getView().fit(ext, { padding: [40, 40, 40, 40], duration: 300 });
+      // maxZoom 가드: 포인트 하나뿐인 extent(면적 0)에서 maxZoom(19)까지 박히는 것 방지.
+      this.map.getView().fit(ext, { padding: [40, 40, 40, 40], duration: 300, maxZoom: 16 });
     }
   }
 

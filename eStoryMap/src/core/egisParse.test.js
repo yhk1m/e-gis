@@ -35,9 +35,27 @@ describe('parseEgisDoc', () => {
     expect(() => parseEgisDoc(null)).toThrow();
   });
 
-  it('view가 없으면 한국 중심 기본값(4326)', () => {
+  it('view가 없으면 null(저장된 카메라 없음 — 기본 카메라는 MapView 소관)', () => {
     const doc = parseEgisDoc({ version: '1.0', layers: [] });
+    expect(doc.view).toBeNull();
+  });
+
+  it('center가 유한수 2개가 아니면 view는 null', () => {
+    const base = { version: '1.0', layers: [] };
+    expect(parseEgisDoc({ ...base, view: { center: ['a', 'b'], zoom: 5 } }).view).toBeNull();
+    expect(parseEgisDoc({ ...base, view: { center: [127.5], zoom: 5 } }).view).toBeNull();
+    expect(parseEgisDoc({ ...base, view: { center: [Infinity, 36.5], zoom: 5 } }).view).toBeNull();
+    expect(parseEgisDoc({ ...base, view: { center: 'seoul', zoom: 5 } }).view).toBeNull();
+  });
+
+  it('center가 유효하고 zoom이 숫자가 아니면 zoom만 7로 대체', () => {
+    const doc = parseEgisDoc({ version: '1.0', view: { center: [127.5, 36.5], zoom: 'abc' }, layers: [] });
     expect(doc.view.center).toEqual([127.5, 36.5]);
+    expect(doc.view.zoom).toBe(7);
+  });
+
+  it('zoom이 null이어도 7로 대체(Number(null)=0 함정)', () => {
+    const doc = parseEgisDoc({ version: '1.0', view: { center: [127.5, 36.5], zoom: null }, layers: [] });
     expect(doc.view.zoom).toBe(7);
   });
 

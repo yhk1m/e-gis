@@ -57,6 +57,7 @@ export function buildVectorLayer(layerData) {
     source: new VectorSource({ features }),
     style: createVectorStyle(layerData.color, geometryType),
     visible: layerData.visible,
+    opacity: layerData.opacity,
   });
   layer.set('egisLayerId', layerData.id);
   layer.set('egisLayerName', layerData.name);

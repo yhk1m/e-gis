@@ -11,6 +11,8 @@ import { buildVectorLayer } from './egisLayers.js';
  */
 export function loadEgisIntoMap(rawJson, mapView) {
   const doc = parseEgisDoc(rawJson);
+  mapView.clearEgisLayers(); // 재로드 시 이전 .egis 레이어 누적 방지
+
   const olLayers = [];
   let skipped = 0;
 
@@ -21,8 +23,13 @@ export function loadEgisIntoMap(rawJson, mapView) {
     olLayers.push(olLayer);
   }
 
-  mapView.setView(doc.view.center, doc.view.zoom);
-  if (olLayers.length) mapView.fitToLayers(olLayers);
+  // 저장된 카메라(작성자 시점)가 최우선. 없을 때만 벡터 범위로 폴백,
+  // 그마저 없으면 MapView 초기 카메라(한국 중심) 유지.
+  if (doc.view) {
+    mapView.setView(doc.view.center, doc.view.zoom);
+  } else if (olLayers.length) {
+    mapView.fitToLayers(olLayers);
+  }
 
   return { name: doc.name, vectorCount: olLayers.length, skipped, layers: olLayers };
 }

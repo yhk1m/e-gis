@@ -8,8 +8,9 @@ const SUPPORTED_LAYER_TYPES = new Set(['vector', 'raster']);
 /**
  * .egis 원본 JSON을 검증하고 정규화한다.
  * @param {object} raw - JSON.parse된 .egis 객체
- * @returns {{version:string, name:string, view:{center:number[], zoom:number},
+ * @returns {{version:string, name:string, view:({center:number[], zoom:number}|null),
  *            displayCRS:string, layers:object[]}}
+ *          view는 저장된 카메라가 없거나 손상됐으면 null — 기본 카메라는 MapView가 소유.
  * @throws {Error} 객체가 아니거나 version이 없으면
  */
 export function parseEgisDoc(raw) {
@@ -20,10 +21,7 @@ export function parseEgisDoc(raw) {
     throw new Error('유효하지 않은 .egis 파일입니다: version 누락');
   }
 
-  // ★ view.center는 EPSG:4326(경도, 위도). 기본값도 경위도.
-  const view = raw.view && Array.isArray(raw.view.center)
-    ? { center: [...raw.view.center], zoom: raw.view.zoom != null ? Number(raw.view.zoom) : 7 }
-    : { center: [127.5, 36.5], zoom: 7 };
+  const view = normalizeView(raw.view);
 
   const layers = Array.isArray(raw.layers) ? raw.layers.map(normalizeLayer) : [];
 
@@ -34,6 +32,17 @@ export function parseEgisDoc(raw) {
     displayCRS: raw.displayCRS || 'EPSG:3857',
     layers,
   };
+}
+
+// ★ view.center는 EPSG:4326(경도, 위도). 유한수 [lon, lat]가 아니면 손상으로 보고 null.
+function normalizeView(rawView) {
+  const center = rawView && rawView.center;
+  if (!Array.isArray(center) || center.length !== 2 || !center.every(Number.isFinite)) {
+    return null;
+  }
+  // rawView.zoom == null 가드 필수: Number(null)은 0이라 isFinite를 통과해버림.
+  const zoom = rawView.zoom == null ? NaN : Number(rawView.zoom);
+  return { center: [...center], zoom: Number.isFinite(zoom) ? zoom : 7 };
 }
 
 function normalizeLayer(layer, i) {
