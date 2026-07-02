@@ -10,3 +10,30 @@ html, body, #app { height: 100%; margin: 0; }
 #toolbar button:hover { background: #334155; }
 #status { margin-left: auto; font-size: 13px; color: #94a3b8; }
 #map { flex: 1; background: #0b0f14; }
+
+/* --- M3 에디터 레이아웃 --- */
+#workspace { flex: 1; display: flex; min-height: 0; }
+#sidebar {
+  width: 240px; flex: none; overflow-y: auto;
+  background: #0f172a; color: #e5e7eb; border-right: 1px solid #1e293b;
+  display: flex; flex-direction: column;
+}
+.panel { padding: 10px 12px; border-bottom: 1px solid #1e293b; }
+.panel-title { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: #94a3b8; letter-spacing: 0.05em; }
+.panel-empty { font-size: 12px; color: #64748b; }
+.source-item { margin-bottom: 10px; }
+.source-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.layer-row { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 2px 0 2px 10px; cursor: pointer; }
+.page-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 8px; border-radius: 6px; font-size: 13px; cursor: pointer;
+}
+.page-row.selected { background: #1d4ed8; }
+.page-row .page-name { flex: 1; }
+.page-del { border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 14px; }
+.page-del:disabled { opacity: 0.3; cursor: default; }
+#btn-add-page {
+  margin-top: 6px; width: 100%; padding: 5px; border: 1px dashed #334155;
+  background: none; color: #94a3b8; border-radius: 6px; cursor: pointer;
+}
+#btn-add-page:hover { border-color: #64748b; color: #e5e7eb; }
