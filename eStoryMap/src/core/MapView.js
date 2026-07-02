@@ -8,6 +8,21 @@ import OSM from 'ol/source/OSM';
 import { fromLonLat } from 'ol/proj';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 
+/** 레이어들의 범위 합집합. ImageLayer는 명시 extent, 벡터는 소스 extent 사용. */
+export function unionExtent(olLayers) {
+  const ext = createEmpty();
+  for (const l of olLayers) {
+    const layerExt = typeof l.getExtent === 'function' ? l.getExtent() : null;
+    if (layerExt) {
+      extend(ext, layerExt);
+      continue;
+    }
+    const src = l.getSource && l.getSource();
+    if (src && src.getExtent) extend(ext, src.getExtent());
+  }
+  return ext;
+}
+
 export class MapView {
   /** @param {string} target - 지도 컨테이너 DOM id */
   constructor(target) {
@@ -42,13 +57,9 @@ export class MapView {
     if (typeof zoom === 'number' && !Number.isNaN(zoom)) view.setZoom(zoom);
   }
 
-  /** 주어진 OL 벡터 레이어들의 합집합 범위로 맞춤. */
+  /** 주어진 OL 레이어들(벡터·래스터)의 합집합 범위로 맞춤. */
   fitToLayers(olLayers) {
-    const ext = createEmpty();
-    for (const l of olLayers) {
-      const src = l.getSource && l.getSource();
-      if (src && src.getExtent) extend(ext, src.getExtent());
-    }
+    const ext = unionExtent(olLayers);
     if (!isEmpty(ext) && Number.isFinite(ext[0])) {
       // maxZoom 가드: 포인트 하나뿐인 extent(면적 0)에서 maxZoom(19)까지 박히는 것 방지.
       this.map.getView().fit(ext, { padding: [40, 40, 40, 40], duration: 300, maxZoom: 16 });
