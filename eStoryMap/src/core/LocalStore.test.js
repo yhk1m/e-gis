@@ -1,6 +1,8 @@
 // © 2026 김용현
-import { describe, it, expect } from 'vitest';
-import { serializeStoryDoc, deserializeStoryDoc } from './LocalStore.js';
+import {
+  describe, it, expect, vi, beforeEach, afterEach,
+} from 'vitest';
+import { serializeStoryDoc, deserializeStoryDoc, createAutosaver } from './LocalStore.js';
 import { createStoryDoc, addSource, setPageContent, setPageCamera } from './StoryDoc.js';
 import { demDataToEgisDoc } from './geotiffParse.js';
 import { parseEgisDoc } from './egisParse.js';
@@ -69,5 +71,41 @@ describe('deserializeStoryDoc + 라운드트립', () => {
     expect(() => deserializeStoryDoc('not json')).toThrow(/유효하지 않은 \.esm/);
     expect(() => deserializeStoryDoc('{"meta":{}}')).toThrow(/유효하지 않은 \.esm/);
     expect(() => deserializeStoryDoc('{"meta":{},"pages":[],"sources":[]}')).toThrow(/유효하지 않은 \.esm/);
+  });
+});
+
+describe('createAutosaver', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('연속 schedule은 마지막 기준 delay 후 1회만 저장한다', () => {
+    const save = vi.fn();
+    const saver = createAutosaver(save, { delay: 2000 });
+    saver.schedule();
+    vi.advanceTimersByTime(1500);
+    saver.schedule(); // 타이머 리셋
+    vi.advanceTimersByTime(1999);
+    expect(save).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it('저장 후 다시 schedule하면 또 저장된다', () => {
+    const save = vi.fn();
+    const saver = createAutosaver(save, { delay: 100 });
+    saver.schedule();
+    vi.advanceTimersByTime(100);
+    saver.schedule();
+    vi.advanceTimersByTime(100);
+    expect(save).toHaveBeenCalledTimes(2);
+  });
+
+  it('기본 delay는 2000ms', () => {
+    const save = vi.fn();
+    createAutosaver(save).schedule();
+    vi.advanceTimersByTime(1999);
+    expect(save).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(save).toHaveBeenCalledTimes(1);
   });
 });
