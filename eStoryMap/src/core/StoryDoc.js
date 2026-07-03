@@ -115,6 +115,17 @@ export function addPage(doc, copyFromPageId) {
   return page;
 }
 
+/**
+ * 페이지 카메라 저장("이 위치로 캡처"). camera는 {center:[경도,위도](EPSG:4326), zoom}
+ * — .egis view와 동일 포맷(스펙 §2). 외부 변이와 격리되도록 복사해 저장한다.
+ */
+export function setPageCamera(doc, pageId, camera) {
+  const page = getPage(doc, pageId);
+  if (!page || !camera) return;
+  page.camera = { center: [...camera.center], zoom: camera.zoom };
+  touch(doc);
+}
+
 /** 페이지 제거. 최소 1페이지는 유지(마지막 페이지면 null). */
 export function removePage(doc, pageId) {
   if (doc.pages.length <= 1) return null;

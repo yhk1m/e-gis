@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createStoryDoc, getPage, nextSourceId, addSource, setLayerVisible, addPage, removePage,
+  setPageCamera,
 } from './StoryDoc.js';
 
 describe('createStoryDoc', () => {
@@ -165,5 +166,35 @@ describe('removePage', () => {
     addPage(doc, 'page_1');
     expect(removePage(doc, 'page_999')).toBeNull();
     expect(doc.pages).toHaveLength(2);
+  });
+});
+
+describe('setPageCamera', () => {
+  it('페이지 카메라를 저장한다', () => {
+    const doc = createStoryDoc();
+    setPageCamera(doc, 'page_1', { center: [129.05, 35.15], zoom: 11 });
+    expect(getPage(doc, 'page_1').camera).toEqual({ center: [129.05, 35.15], zoom: 11 });
+  });
+
+  it('복사본을 저장한다(원본 배열 변경과 무관)', () => {
+    const doc = createStoryDoc();
+    const cam = { center: [129, 35], zoom: 10 };
+    setPageCamera(doc, 'page_1', cam);
+    cam.center[0] = 0;
+    expect(getPage(doc, 'page_1').camera.center[0]).toBe(129);
+  });
+
+  it('다시 캡처하면 덮어쓴다', () => {
+    const doc = createStoryDoc();
+    setPageCamera(doc, 'page_1', { center: [129, 35], zoom: 10 });
+    setPageCamera(doc, 'page_1', { center: [127, 37], zoom: 7 });
+    expect(getPage(doc, 'page_1').camera).toEqual({ center: [127, 37], zoom: 7 });
+  });
+
+  it('없는 페이지/빈 camera는 no-op', () => {
+    const doc = createStoryDoc();
+    setPageCamera(doc, 'page_999', { center: [1, 2], zoom: 3 });
+    setPageCamera(doc, 'page_1', null);
+    expect(getPage(doc, 'page_1').camera).toBeNull();
   });
 });
