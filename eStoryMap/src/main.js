@@ -7,11 +7,12 @@ import { SourceRegistry } from './core/SourceRegistry.js';
 import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
   createStoryDoc, addSource, addPage, removePage, getPage, setLayerVisible, nextSourceId,
-  setPageCamera,
+  setPageCamera, setPageContent,
 } from './core/StoryDoc.js';
 import { parseGeoTiff } from './core/GeoTiffLoader.js';
 import { createSourcePanel } from './editor/SourcePanel.js';
 import { createPageList } from './editor/PageList.js';
+import { createContentEditor } from './editor/ContentEditor.js';
 import { CameraAnimator } from './shared/CameraAnimator.js';
 
 const mapView = new MapView('map');
@@ -47,12 +48,20 @@ const pageList = createPageList(document.getElementById('page-list'), {
   },
 });
 
+const contentEditor = createContentEditor(document.getElementById('content-panel'), {
+  onChange(field, value) {
+    // 전체 refresh 없음 — 타이핑 중 포커스 유지(콘텐츠는 지도/패널에 영향 없음)
+    setPageContent(doc, currentPageId, { [field]: value });
+  },
+});
+
 /** 문서·페이지 상태를 지도와 패널에 반영(단일 갱신 지점). */
 function refresh() {
   const page = getPage(doc, currentPageId) || doc.pages[0]; // 방어: 선택이 어긋나도 자가 복구
   applyPageVisibility(page, registry);
   sourcePanel.render(doc, page, registry);
   pageList.render(doc, currentPageId);
+  contentEditor.render(page);
 }
 
 /** .egis 형식 문서를 소스로 추가(공통 플로우 — .tif도 래핑 후 여기로). */

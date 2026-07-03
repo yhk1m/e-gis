@@ -46,3 +46,22 @@ html, body, #app { height: 100%; margin: 0; }
   background: rgba(15, 23, 42, 0.85); color: #e5e7eb; font-size: 13px; cursor: pointer;
 }
 #btn-capture:hover { background: rgba(29, 78, 216, 0.9); border-color: #3b82f6; }
+
+/* --- M5 콘텐츠 패널 --- */
+#content-sidebar {
+  width: 260px; flex: none; overflow-y: auto;
+  background: #0f172a; color: #e5e7eb; border-left: 1px solid #1e293b;
+}
+.content-field { margin-bottom: 12px; }
+.content-label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+#content-panel input, #content-panel textarea {
+  width: 100%; padding: 6px 8px; border: 1px solid #334155; border-radius: 6px;
+  background: #1e293b; color: #e5e7eb; font-size: 13px; font-family: inherit; resize: vertical;
+}
+.md-preview {
+  border: 1px dashed #334155; border-radius: 6px; padding: 8px;
+  font-size: 13px; min-height: 40px; overflow-wrap: break-word;
+}
+.md-preview h1, .md-preview h2, .md-preview h3 { margin: 4px 0; }
+.md-preview p { margin: 4px 0; }
+.md-preview ul, .md-preview ol { margin: 4px 0 4px 18px; padding: 0; }
