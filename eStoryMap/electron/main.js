@@ -4,7 +4,7 @@ import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'node:path';
 import fsp from 'node:fs/promises';
 import {
-  ensureBaseDir, baseDir, listProjects, readProject, writeProject,
+  ensureBaseDir, baseDir, listProjects, readProject, writeProject, backupProject,
 } from './fileService.js';
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
@@ -98,3 +98,4 @@ ipcMain.handle('project:list', () => listProjects());
 ipcMain.handle('project:read', (_e, name) => readProject(name));
 ipcMain.handle('project:save', (_e, name, json) => writeProject(name, json));
 ipcMain.handle('project:openFolder', () => shell.openPath(baseDir()));
+ipcMain.handle('project:backup', (_e, name) => backupProject(name));
