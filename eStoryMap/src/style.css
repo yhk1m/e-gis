@@ -37,3 +37,12 @@ html, body, #app { height: 100%; margin: 0; }
   background: none; color: #94a3b8; border-radius: 6px; cursor: pointer;
 }
 #btn-add-page:hover { border-color: #64748b; color: #e5e7eb; }
+
+/* --- M4 카메라 캡처 --- */
+#map-stage { flex: 1; position: relative; display: flex; min-width: 0; }
+#btn-capture {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 10; padding: 7px 14px; border: 1px solid #334155; border-radius: 999px;
+  background: rgba(15, 23, 42, 0.85); color: #e5e7eb; font-size: 13px; cursor: pointer;
+}
+#btn-capture:hover { background: rgba(29, 78, 216, 0.9); border-color: #3b82f6; }

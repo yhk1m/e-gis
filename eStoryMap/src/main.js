@@ -7,14 +7,17 @@ import { SourceRegistry } from './core/SourceRegistry.js';
 import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
   createStoryDoc, addSource, addPage, removePage, getPage, setLayerVisible, nextSourceId,
+  setPageCamera,
 } from './core/StoryDoc.js';
 import { parseGeoTiff } from './core/GeoTiffLoader.js';
 import { createSourcePanel } from './editor/SourcePanel.js';
 import { createPageList } from './editor/PageList.js';
+import { CameraAnimator } from './shared/CameraAnimator.js';
 
 const mapView = new MapView('map');
 const status = document.getElementById('status');
 const registry = new SourceRegistry(mapView);
+const animator = new CameraAnimator(mapView.map.getView());
 const doc = createStoryDoc();
 let currentPageId = doc.pages[0].id;
 
@@ -29,6 +32,8 @@ const pageList = createPageList(document.getElementById('page-list'), {
   onSelect(pageId) {
     currentPageId = pageId;
     refresh();
+    const page = getPage(doc, currentPageId);
+    if (page && page.camera) animator.flyTo(page.camera);
   },
   onAdd() {
     const page = addPage(doc, currentPageId); // 직전(현재) 페이지 복제
@@ -90,6 +95,12 @@ document.getElementById('btn-tif').addEventListener('click', async () => {
 
 document.getElementById('btn-folder').addEventListener('click', () => {
   window.egisFS.openFolder();
+});
+
+document.getElementById('btn-capture').addEventListener('click', () => {
+  setPageCamera(doc, currentPageId, mapView.getCamera());
+  const page = getPage(doc, currentPageId);
+  status.textContent = `현재 화면을 "${page.title}" 카메라로 저장했습니다`;
 });
 
 refresh();

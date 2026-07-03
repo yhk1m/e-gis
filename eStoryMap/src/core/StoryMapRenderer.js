@@ -16,6 +16,7 @@ export function applyPageVisibility(page, registry) {
     );
     layer.setVisible(entry ? entry.visible : false);
   }
-  // (M4) page.camera 적용 지점 — CameraAnimator에서 이동/애니메이션 담당 예정.
+  // 카메라는 여기서 적용하지 않는다 — refresh()가 체크 토글마다 실행되므로
+  // 재비행을 막기 위해 페이지 "전환"(main.js onSelect)에서만 CameraAnimator.flyTo 호출(M4).
   // (v2) page.overrides 적용 지점.
 }
