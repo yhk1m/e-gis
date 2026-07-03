@@ -5,7 +5,7 @@ import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 
 /** 레이어들의 범위 합집합. ImageLayer는 명시 extent, 벡터는 소스 extent 사용. */
@@ -59,6 +59,15 @@ export class MapView {
     const view = this.map.getView();
     if (Array.isArray(center)) view.setCenter(fromLonLat(center));
     if (typeof zoom === 'number' && !Number.isNaN(zoom)) view.setZoom(zoom);
+  }
+
+  /**
+   * 현재 카메라 — {center:[경도,위도](EPSG:4326), zoom}.
+   * page.camera / .egis view와 동일 포맷. e-GIS MapManager.getCenter/getZoom 이식.
+   */
+  getCamera() {
+    const view = this.map.getView();
+    return { center: toLonLat(view.getCenter()), zoom: view.getZoom() };
   }
 
   /** 주어진 OL 레이어들(벡터·래스터)의 합집합 범위로 맞춤. */

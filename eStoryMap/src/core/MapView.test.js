@@ -56,3 +56,20 @@ describe('unionExtent', () => {
     expect(isEmpty(unionExtent([]))).toBe(true);
   });
 });
+
+describe('MapView.getCamera', () => {
+  it('setView한 카메라를 4326 경위도로 돌려준다(라운드트립)', () => {
+    const mv = new MapView('nonexistent-target');
+    mv.setView([129.05, 35.15], 11);
+    const cam = mv.getCamera();
+    expect(cam.zoom).toBe(11);
+    expect(cam.center[0]).toBeCloseTo(129.05, 6);
+    expect(cam.center[1]).toBeCloseTo(35.15, 6);
+  });
+
+  it('호출마다 새 배열을 반환한다(외부 변이 안전)', () => {
+    const mv = new MapView('nonexistent-target');
+    mv.setView([127, 37], 8);
+    expect(mv.getCamera().center).not.toBe(mv.getCamera().center);
+  });
+});
