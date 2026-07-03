@@ -31,3 +31,30 @@ export function decodeRasterMeta(encoded) {
 
   return result;
 }
+
+/**
+ * 래스터 객체를 JSON 안전한 형태로 인코딩(.esm 저장용).
+ * 이식 원본: e-GIS src/core/ProjectManager.js encodeRasterMeta.
+ * data가 이미 인코딩(__encoding)돼 있으면 그대로 반환한다(.egis 유래 소스).
+ */
+export function encodeRasterMeta(rasterObj) {
+  const arr = rasterObj.data;
+  if (arr && arr.__encoding) return rasterObj; // 이미 JSON-safe
+
+  let encodedData;
+  if (ArrayBuffer.isView(arr)) {
+    const bytes = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    encodedData = { __encoding: 'base64', dtype: arr.constructor.name, base64: btoa(binary) };
+  } else if (Array.isArray(arr)) {
+    encodedData = { __encoding: 'array', dtype: 'Array', values: arr };
+  } else {
+    encodedData = { __encoding: 'array', dtype: 'Array', values: arr ? Array.from(arr) : [] };
+  }
+
+  return { ...rasterObj, data: encodedData };
+}
