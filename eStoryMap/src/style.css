@@ -8,7 +8,7 @@ html, body, #app { height: 100%; margin: 0; }
 #toolbar .brand { margin-right: 8px; }
 #toolbar button { padding: 6px 12px; border: 1px solid #334155; background: #1e293b; color: #e5e7eb; border-radius: 6px; cursor: pointer; }
 #toolbar button:hover { background: #334155; }
-#status { margin-left: auto; font-size: 13px; color: #94a3b8; }
+#status { font-size: 13px; color: #94a3b8; }
 #map { flex: 1; background: #0b0f14; }
 
 /* --- M3 에디터 레이아웃 --- */
@@ -68,3 +68,32 @@ html, body, #app { height: 100%; margin: 0; }
 .md-preview img { max-width: 100%; }
 .md-preview pre { overflow-x: auto; }
 .md-preview table { display: block; max-width: 100%; overflow-x: auto; }
+
+/* --- M6 시작 화면 + 저장 상태 --- */
+#save-status { margin-left: auto; font-size: 12px; color: #64748b; }
+#status { margin-left: 12px; } /* 기존 margin-left:auto는 save-status로 이동 */
+#start-screen {
+  position: fixed; inset: 0; z-index: 100; background: #0b0f14;
+  display: flex; align-items: center; justify-content: center;
+}
+#start-screen:empty { display: none; }
+.start-box { width: 420px; color: #e5e7eb; }
+.start-brand { font-size: 28px; margin: 0 0 20px; text-align: center; }
+.start-new { display: flex; gap: 8px; margin-bottom: 8px; }
+.start-new input {
+  flex: 1; padding: 8px 10px; border: 1px solid #334155; border-radius: 6px;
+  background: #1e293b; color: #e5e7eb; font-size: 14px;
+}
+.start-new button {
+  padding: 8px 14px; border: 1px solid #334155; background: #1d4ed8;
+  color: #e5e7eb; border-radius: 6px; cursor: pointer;
+}
+.start-error { min-height: 18px; font-size: 12px; color: #f87171; margin-bottom: 8px; }
+.start-list-title { font-size: 12px; color: #94a3b8; margin: 12px 0 6px; letter-spacing: 0.05em; }
+.start-empty { font-size: 13px; color: #64748b; }
+.start-item {
+  display: block; width: 100%; text-align: left; padding: 8px 10px; margin-bottom: 4px;
+  border: 1px solid #1e293b; background: #0f172a; color: #e5e7eb;
+  border-radius: 6px; cursor: pointer; font-size: 14px;
+}
+.start-item:hover { border-color: #3b82f6; }

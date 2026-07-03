@@ -55,4 +55,13 @@ describe('StartScreen', () => {
     screen.render([]);
     expect(el.querySelector('.start-error').textContent).toBe('');
   });
+
+  it('제목 입력에서 Enter → onCreate', () => {
+    const onCreate = vi.fn();
+    const { el, screen } = make({ onCreate });
+    screen.render([]);
+    el.querySelector('#start-title').value = '기후';
+    el.querySelector('#start-title').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(onCreate).toHaveBeenCalledWith('기후');
+  });
 });

@@ -31,6 +31,9 @@ export function createStartScreen(container, { onCreate, onOpen }) {
     create.id = 'btn-start-create';
     create.textContent = '새로 만들기';
     create.addEventListener('click', () => onCreate(title.value.trim() || '새 스토리맵'));
+    title.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') create.click();
+    });
     row.appendChild(title);
     row.appendChild(create);
     box.appendChild(row);
