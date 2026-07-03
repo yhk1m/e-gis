@@ -98,8 +98,9 @@ document.getElementById('btn-folder').addEventListener('click', () => {
 });
 
 document.getElementById('btn-capture').addEventListener('click', () => {
-  setPageCamera(doc, currentPageId, mapView.getCamera());
   const page = getPage(doc, currentPageId);
+  if (!page) return; // 방어: 선택 불변식이 깨져도 하드 크래시 방지
+  setPageCamera(doc, currentPageId, mapView.getCamera());
   status.textContent = `현재 화면을 "${page.title}" 카메라로 저장했습니다`;
 });
 

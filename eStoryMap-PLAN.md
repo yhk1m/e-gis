@@ -176,7 +176,7 @@ eStoryMap/                       // Electron 앱 루트
 
 **렌더링 파이프라인 (핵심, 변동 없음):**
 1. .egis 로드 시: `EgisLoader`가 각 레이어 → OL Layer 생성, `SourceRegistry`에 등록. 전부 map에 add하되 visible=false.
-2. 페이지 전환: `StoryMapRenderer`가 페이지 `layerVisibility`대로 `setVisible` 토글 (+ `overrides` 적용은 v2) + `CameraAnimator`로 카메라 이동.
+2. 페이지 전환: `StoryMapRenderer`가 페이지 `layerVisibility`대로 `setVisible` 토글 (+ `overrides` 적용은 v2). 카메라 이동은 renderer가 아니라 **전환 이벤트(main.js onSelect)에서만** `CameraAnimator.flyTo` 호출 — renderer는 체크 토글마다 실행되므로 재비행 방지(M4 확정).
 3. 지오데이터 재파싱 없음 → 전환 가볍고 빠름.
 
 ---
@@ -327,7 +327,7 @@ create table storymaps (
 
 > 설계 결정은 모두 확정됨. 아래는 이식·구현 단계에서 실측/검증이 필요한 항목.
 
-1. **좌표계 정렬**: .egis `view.center`는 EPSG:3857 전제. 생 GeoTIFF는 자체 CRS를 가지므로 `transformExtent`로 3857 정렬 필요(DEMLoader에 이미 있음, 이식 시 확인). 다른 displayCRS로 저장된 .egis 있는지도 M1에서 확인.
+1. **좌표계 정렬**: ~~.egis `view.center`는 EPSG:3857 전제~~ → **M1 실측 확정: EPSG:4326 경위도**(e-GIS `MapManager.getCenter()`가 `toLonLat` 반환). `page.camera`도 동일 포맷(M4). 생 GeoTIFF는 자체 CRS → `transformExtent`로 3857 정렬(M2에서 이식 완료).
 2. **DemRenderer 탈싱글턴화**: e-GIS `buildDEMLayer`가 `layerManager`/`mapManager` 싱글턴 의존 → 전용 래퍼 주입식으로 리팩터링. M2 핵심 작업.
 3. **클라우드 DEM 용량**: 로컬 `.esm`은 무제한이나 `storymaps.doc` jsonb에 DEM base64 다수 임베드 시 부담 → 대용량이면 클라우드 저장 시 래스터 제외 옵션(v2).
 4. **오프라인/온라인 시작 화면 분기**: 로그인 안 한 로컬 전용 모드 vs 로그인 클라우드 모드의 진입 UX.
