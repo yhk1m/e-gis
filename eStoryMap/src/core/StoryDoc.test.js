@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createStoryDoc, getPage, nextSourceId, addSource, setLayerVisible, addPage, removePage,
-  setPageCamera,
+  setPageCamera, setPageContent,
 } from './StoryDoc.js';
 
 describe('createStoryDoc', () => {
@@ -196,5 +196,39 @@ describe('setPageCamera', () => {
     setPageCamera(doc, 'page_999', { center: [1, 2], zoom: 3 });
     setPageCamera(doc, 'page_1', null);
     expect(getPage(doc, 'page_1').camera).toBeNull();
+  });
+});
+
+describe('setPageContent', () => {
+  it('부분 패치는 해당 필드만 갱신하고 나머지는 보존한다', () => {
+    const doc = createStoryDoc();
+    setPageContent(doc, 'page_1', { heading: '부산의 인구' });
+    setPageContent(doc, 'page_1', { body: '# 개요' });
+    expect(getPage(doc, 'page_1').content).toEqual({
+      heading: '부산의 인구', body: '# 개요', caption: '',
+    });
+  });
+
+  it('여러 필드를 한 번에 패치할 수 있다', () => {
+    const doc = createStoryDoc();
+    setPageContent(doc, 'page_1', { heading: '제목', body: '본문', caption: '캡션' });
+    expect(getPage(doc, 'page_1').content).toEqual({
+      heading: '제목', body: '본문', caption: '캡션',
+    });
+  });
+
+  it('없는 페이지/빈 patch는 no-op', () => {
+    const doc = createStoryDoc();
+    setPageContent(doc, 'page_999', { heading: 'x' });
+    setPageContent(doc, 'page_1', null);
+    expect(getPage(doc, 'page_1').content.heading).toBe('');
+  });
+
+  it('알 수 없는 필드와 문자열이 아닌 값은 무시한다(.esm 오염 방지)', () => {
+    const doc = createStoryDoc();
+    setPageContent(doc, 'page_1', { heading: '유지', evil: 'x', body: 123 });
+    const content = getPage(doc, 'page_1').content;
+    expect(content).toEqual({ heading: '유지', body: '', caption: '' });
+    expect('evil' in content).toBe(false);
   });
 });

@@ -126,6 +126,21 @@ export function setPageCamera(doc, pageId, camera) {
   touch(doc);
 }
 
+const CONTENT_FIELDS = ['heading', 'body', 'caption'];
+
+/**
+ * 페이지 콘텐츠 부분 패치(M5). 허용 필드(heading/body/caption)의 문자열 값만
+ * 반영하고 그 외는 무시한다(.esm에 임의 키가 스며드는 것 방지).
+ */
+export function setPageContent(doc, pageId, patch) {
+  const page = getPage(doc, pageId);
+  if (!page || !patch) return;
+  for (const field of CONTENT_FIELDS) {
+    if (typeof patch[field] === 'string') page.content[field] = patch[field];
+  }
+  touch(doc);
+}
+
 /** 페이지 제거. 최소 1페이지는 유지(마지막 페이지면 null). */
 export function removePage(doc, pageId) {
   if (doc.pages.length <= 1) return null;
