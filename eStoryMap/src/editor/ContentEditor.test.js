@@ -67,4 +67,17 @@ describe('ContentEditor', () => {
     expect(el.querySelector('#content-heading').value).toBe('B');
     expect(el.querySelector('#content-body').value).toBe('내용B');
   });
+
+  it('render를 다시 호출해도 필드 노드는 동일 인스턴스다(포커스 유지 회귀 가드)', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    const editor = createContentEditor(el, { onChange: vi.fn() });
+    const body = el.querySelector('#content-body');
+    body.focus();
+    editor.render(pageWith({ body: 'A' }));
+    editor.render(pageWith({ body: 'B' }));
+    expect(el.querySelector('#content-body')).toBe(body);
+    expect(document.activeElement).toBe(body);
+    el.remove();
+  });
 });

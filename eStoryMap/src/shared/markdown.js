@@ -8,6 +8,6 @@ import DOMPurify from 'dompurify';
 /** 마크다운 → 안전한 HTML 문자열. 빈 입력은 빈 문자열. */
 export function renderMarkdown(text) {
   if (!text) return '';
-  const html = marked.parse(text);
+  const html = marked.parse(text, { breaks: true }); // Enter 한 번 = 줄바꿈(슬라이드 본문 친화)
   return DOMPurify.sanitize(html);
 }

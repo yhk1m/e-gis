@@ -65,3 +65,6 @@ html, body, #app { height: 100%; margin: 0; }
 .md-preview h1, .md-preview h2, .md-preview h3 { margin: 4px 0; }
 .md-preview p { margin: 4px 0; }
 .md-preview ul, .md-preview ol { margin: 4px 0 4px 18px; padding: 0; }
+.md-preview img { max-width: 100%; }
+.md-preview pre { overflow-x: auto; }
+.md-preview table { display: block; max-width: 100%; overflow-x: auto; }

@@ -25,6 +25,20 @@ async function createWindow() {
     },
   });
 
+  // 미리보기의 마크다운 링크 클릭 등으로 창이 다른 URL로 항해하면
+  // 문서가 통째로 날아간다(M6 전엔 저장 없음). 창 내 항해는 차단하고
+  // 외부 http(s) 링크는 기본 브라우저로 연다. dev 서버 리로드는 허용.
+  mainWindow.webContents.on('will-navigate', (e, url) => {
+    const devUrl = process.env.VITE_DEV_SERVER_URL;
+    if (devUrl && url.startsWith(devUrl)) return; // Vite 전체 리로드 허용
+    e.preventDefault();
+    if (/^https?:/i.test(url)) shell.openExternal(url);
+  });
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
     // dev 의존성 재최적화 리로드로 초기 로드가 중단(ERR_ABORTED)돼도
     // 메인 프로세스가 죽지 않게 방어 — webContents가 스스로 재로드한다.

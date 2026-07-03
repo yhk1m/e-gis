@@ -57,7 +57,8 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
 
 /** 문서·페이지 상태를 지도와 패널에 반영(단일 갱신 지점). */
 function refresh() {
-  const page = getPage(doc, currentPageId) || doc.pages[0]; // 방어: 선택이 어긋나도 자가 복구
+  if (!getPage(doc, currentPageId)) currentPageId = doc.pages[0].id; // 방어: 표시·기록이 갈라지지 않게 id 자체를 복구
+  const page = getPage(doc, currentPageId);
   applyPageVisibility(page, registry);
   sourcePanel.render(doc, page, registry);
   pageList.render(doc, currentPageId);

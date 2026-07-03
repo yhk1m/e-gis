@@ -28,6 +28,10 @@ describe('renderMarkdown', () => {
     expect(html).not.toContain('onerror');
   });
 
+  it('단일 줄바꿈을 <br>로 렌더한다(슬라이드 본문 친화)', () => {
+    expect(renderMarkdown('첫 줄\n둘째 줄')).toContain('<br');
+  });
+
   it('빈 입력은 빈 문자열', () => {
     expect(renderMarkdown('')).toBe('');
     expect(renderMarkdown(null)).toBe('');
