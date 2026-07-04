@@ -5,7 +5,7 @@
 ## 0. 승인된 결정 (구 "확인 필요")
 
 1. **범위 축소 가정**: 마스터 스펙 M7의 "CloudSync — e-GIS `projects` 목록에서 .egis 직접 로드"를 **폐기**한다.
-   근거: e-GIS 본체에서 클라우드 프로젝트 저장 기능이 제거됨(커밋 `ece5de2` "Restore login functionality without cloud storage", CloudPanel 주석 "클라우드 저장 기능 제거됨"). `SupabaseManager.saveProject/listProjects`는 호출부가 없는 데드코드다. 채워지지 않는 테이블을 읽는 UI를 만드는 것은 낭비(YAGNI). 클라우드 기능은 M8에서 `storymaps` 전용 테이블로 구현한다.
+   근거: e-GIS 본체에서 클라우드 프로젝트 저장 기능이 제거됨(커밋 `ece5de2` "Restore login functionality without cloud storage", CloudPanel 주석 "클라우드 저장 기능 제거됨"). `SupabaseManager.saveProject/listProjects`는 호출부가 없는 데드코드다. 채워지지 않는 테이블을 읽는 UI를 만드는 것은 낭비(YAGNI). 클라우드 기능은 M8에서 `e-gistory` 전용 테이블로 구현한다(테이블명 2026-07-04 사용자 지시로 storymaps에서 개명).
    (참고: 살리더라도 클라우드 직렬화 `{mapState, layers}`는 `.egis` 파일 포맷 `{view, displayCRS, layers}`와 달라 어댑터가 필요했음.)
 2. **회원가입 미지원 가정**: 앱에서는 **로그인만** 지원하고, 가입은 e-GIS 웹(`e-gis.kr`)으로 안내한다.
    근거: e-GIS 가입은 개인정보 동의 플로우(`ConsentManager`, `signUpWithConsent`)와 결합돼 있다. 이를 Electron에서 중복 구현하면 법적 고지문 유지보수 지점이 두 곳이 된다.
@@ -84,5 +84,5 @@ createAuthManager({ client }) → {
 
 ## 6. 마스터 스펙 반영 사항 (승인 시)
 
-- `eStoryMap-PLAN.md` M7 항목에서 CloudSync/projects 로드 제거, M8을 "storymaps 저장/불러오기 + 시작 화면 클라우드 목록"으로 확장.
+- `eStoryMap-PLAN.md` M7 항목에서 CloudSync/projects 로드 제거, M8을 "e-gistory 테이블 저장/불러오기 + 시작 화면 클라우드 목록"으로 확장.
 - §5(스토리맵 스키마) 주변의 projects 연동 서술 정리, §8.4 해소 기록.

@@ -1,11 +1,11 @@
 # M8 클라우드 동기화 (CloudSync) 설계 — 2026-07-04
 
-> **상태: 사용자 리뷰 대기.** 동기화 UX는 사용자 확정(토글 + 자동 편승). 전제조건: Supabase에 `storymaps` 테이블 생성(사용자 액션 — §1 SQL, 2026-07-04 REST 확인 결과 미존재).
+> **상태: 사용자 리뷰 대기.** 동기화 UX는 사용자 확정(토글 + 자동 편승). 전제조건: Supabase에 `e-gistory` 테이블 생성(사용자 액션 — §1 SQL, 2026-07-04 REST 확인 결과 미존재). **테이블명은 사용자 지시(2026-07-04)로 storymaps → `e-gistory`로 변경** — 하이픈 포함이라 SQL에서는 `"e-gistory"` 따옴표 식별자 필수, supabase-js `.from('e-gistory')`는 그대로 동작.
 
 ## 1. 전제: Supabase 테이블 (사용자가 대시보드 SQL 편집기에서 1회 실행)
 
 ```sql
-create table public.storymaps (
+create table public."e-gistory" (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
@@ -13,8 +13,8 @@ create table public.storymaps (
   updated_at timestamptz not null default now(),
   unique(user_id, title)          -- e-GIS projects와 동일 패턴, upsert 충돌 키
 );
-alter table public.storymaps enable row level security;
-create policy "own storymaps" on public.storymaps
+alter table public."e-gistory" enable row level security;
+create policy "own e-gistory rows" on public."e-gistory"
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
