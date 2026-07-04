@@ -1,30 +1,9 @@
 [
   {
-    "id": "korea_sido",
-    "name": "korea sido",
-    "description": "17개 피처 (Polygon/MultiPolygon)",
-    "file": "korea_sido.geojson",
-    "featureCount": 17,
-    "geometryType": "Polygon/MultiPolygon",
-    "properties": [
-      "code",
-      "name",
-      "name_eng",
-      "base_year"
-    ],
-    "source": "KOSTAT (통계청)",
-    "tags": [
-      "code",
-      "name",
-      "name_eng",
-      "base_year"
-    ]
-  },
-  {
-    "id": "korea_sigungu",
-    "name": "korea sigungu",
+    "id": "대한민국-시군구",
+    "name": "대한민국 시군구",
     "description": "252개 피처 (Polygon/MultiPolygon)",
-    "file": "korea_sigungu.geojson",
+    "file": "대한민국 시군구.geojson",
     "featureCount": 252,
     "geometryType": "Polygon/MultiPolygon",
     "properties": [
@@ -44,10 +23,52 @@
     ]
   },
   {
-    "id": "world_countries",
-    "name": "world countries",
+    "id": "대한민국-시도-2026-07-01---",
+    "name": "대한민국 시도(2026.07.01.~)",
+    "description": "16개 피처 (Polygon/MultiPolygon)",
+    "file": "대한민국 시도(2026.07.01.~).geojson",
+    "featureCount": 16,
+    "geometryType": "Polygon/MultiPolygon",
+    "properties": [
+      "code",
+      "name",
+      "name_eng",
+      "base_year"
+    ],
+    "source": "KOSTAT (통계청)",
+    "tags": [
+      "code",
+      "name",
+      "name_eng",
+      "base_year"
+    ]
+  },
+  {
+    "id": "대한민국-시도--2026-06-30--",
+    "name": "대한민국 시도(~2026.06.30.)",
+    "description": "17개 피처 (Polygon/MultiPolygon)",
+    "file": "대한민국 시도(~2026.06.30.).geojson",
+    "featureCount": 17,
+    "geometryType": "Polygon/MultiPolygon",
+    "properties": [
+      "code",
+      "name",
+      "name_eng",
+      "base_year"
+    ],
+    "source": "KOSTAT (통계청)",
+    "tags": [
+      "code",
+      "name",
+      "name_eng",
+      "base_year"
+    ]
+  },
+  {
+    "id": "세계-국가",
+    "name": "세계 국가",
     "description": "177개 피처 (MultiPolygon/Polygon)",
-    "file": "world_countries.geojson",
+    "file": "세계 국가.geojson",
     "featureCount": 177,
     "geometryType": "MultiPolygon/Polygon",
     "properties": [

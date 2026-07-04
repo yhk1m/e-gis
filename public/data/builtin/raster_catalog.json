@@ -990,61 +990,6 @@
     ]
   },
   {
-    "id": "광주광역시-광산구",
-    "name": "광주광역시 광산구",
-    "description": "GeoTIFF (149 KB)",
-    "file": "raster/광주광역시 광산구.tif",
-    "fileSize": 152403,
-    "source": "",
-    "tags": [
-      "광주광역시 광산구"
-    ]
-  },
-  {
-    "id": "광주광역시-남구",
-    "name": "광주광역시 남구",
-    "description": "GeoTIFF (52 KB)",
-    "file": "raster/광주광역시 남구.tif",
-    "fileSize": 53626,
-    "source": "",
-    "tags": [
-      "광주광역시 남구"
-    ]
-  },
-  {
-    "id": "광주광역시-동구",
-    "name": "광주광역시 동구",
-    "description": "GeoTIFF (40 KB)",
-    "file": "raster/광주광역시 동구.tif",
-    "fileSize": 41340,
-    "source": "",
-    "tags": [
-      "광주광역시 동구"
-    ]
-  },
-  {
-    "id": "광주광역시-북구",
-    "name": "광주광역시 북구",
-    "description": "GeoTIFF (88 KB)",
-    "file": "raster/광주광역시 북구.tif",
-    "fileSize": 89882,
-    "source": "",
-    "tags": [
-      "광주광역시 북구"
-    ]
-  },
-  {
-    "id": "광주광역시-서구",
-    "name": "광주광역시 서구",
-    "description": "GeoTIFF (41 KB)",
-    "file": "raster/광주광역시 서구.tif",
-    "fileSize": 41801,
-    "source": "",
-    "tags": [
-      "광주광역시 서구"
-    ]
-  },
-  {
     "id": "대구광역시-남구",
     "name": "대구광역시 남구",
     "description": "GeoTIFF (17 KB)",
@@ -1815,245 +1760,300 @@
     ]
   },
   {
-    "id": "전라남도-강진군",
-    "name": "전라남도 강진군",
+    "id": "전남광주통합특별시-강진군",
+    "name": "전남광주통합특별시 강진군",
     "description": "GeoTIFF (323 KB)",
-    "file": "raster/전라남도 강진군.tif",
+    "file": "raster/전남광주통합특별시 강진군.tif",
     "fileSize": 331249,
     "source": "",
     "tags": [
-      "전라남도 강진군"
+      "전남광주통합특별시 강진군"
     ]
   },
   {
-    "id": "전라남도-고흥군",
-    "name": "전라남도 고흥군",
+    "id": "전남광주통합특별시-고흥군",
+    "name": "전남광주통합특별시 고흥군",
     "description": "GeoTIFF (498 KB)",
-    "file": "raster/전라남도 고흥군.tif",
+    "file": "raster/전남광주통합특별시 고흥군.tif",
     "fileSize": 509526,
     "source": "",
     "tags": [
-      "전라남도 고흥군"
+      "전남광주통합특별시 고흥군"
     ]
   },
   {
-    "id": "전라남도-곡성군",
-    "name": "전라남도 곡성군",
+    "id": "전남광주통합특별시-곡성군",
+    "name": "전남광주통합특별시 곡성군",
     "description": "GeoTIFF (343 KB)",
-    "file": "raster/전라남도 곡성군.tif",
+    "file": "raster/전남광주통합특별시 곡성군.tif",
     "fileSize": 351734,
     "source": "",
     "tags": [
-      "전라남도 곡성군"
+      "전남광주통합특별시 곡성군"
     ]
   },
   {
-    "id": "전라남도-광양시",
-    "name": "전라남도 광양시",
+    "id": "전남광주통합특별시-광산구",
+    "name": "전남광주통합특별시 광산구",
+    "description": "GeoTIFF (149 KB)",
+    "file": "raster/전남광주통합특별시 광산구.tif",
+    "fileSize": 152403,
+    "source": "",
+    "tags": [
+      "전남광주통합특별시 광산구"
+    ]
+  },
+  {
+    "id": "전남광주통합특별시-광양시",
+    "name": "전남광주통합특별시 광양시",
     "description": "GeoTIFF (298 KB)",
-    "file": "raster/전라남도 광양시.tif",
+    "file": "raster/전남광주통합특별시 광양시.tif",
     "fileSize": 304642,
     "source": "",
     "tags": [
-      "전라남도 광양시"
+      "전남광주통합특별시 광양시"
     ]
   },
   {
-    "id": "전라남도-구례군",
-    "name": "전라남도 구례군",
+    "id": "전남광주통합특별시-구례군",
+    "name": "전남광주통합특별시 구례군",
     "description": "GeoTIFF (279 KB)",
-    "file": "raster/전라남도 구례군.tif",
+    "file": "raster/전남광주통합특별시 구례군.tif",
     "fileSize": 285734,
     "source": "",
     "tags": [
-      "전라남도 구례군"
+      "전남광주통합특별시 구례군"
     ]
   },
   {
-    "id": "전라남도-나주시",
-    "name": "전라남도 나주시",
+    "id": "전남광주통합특별시-나주시",
+    "name": "전남광주통합특별시 나주시",
     "description": "GeoTIFF (394 KB)",
-    "file": "raster/전라남도 나주시.tif",
+    "file": "raster/전남광주통합특별시 나주시.tif",
     "fileSize": 403597,
     "source": "",
     "tags": [
-      "전라남도 나주시"
+      "전남광주통합특별시 나주시"
     ]
   },
   {
-    "id": "전라남도-담양군",
-    "name": "전라남도 담양군",
+    "id": "전남광주통합특별시-남구",
+    "name": "전남광주통합특별시 남구",
+    "description": "GeoTIFF (52 KB)",
+    "file": "raster/전남광주통합특별시 남구.tif",
+    "fileSize": 53626,
+    "source": "",
+    "tags": [
+      "전남광주통합특별시 남구"
+    ]
+  },
+  {
+    "id": "전남광주통합특별시-담양군",
+    "name": "전남광주통합특별시 담양군",
     "description": "GeoTIFF (297 KB)",
-    "file": "raster/전라남도 담양군.tif",
+    "file": "raster/전남광주통합특별시 담양군.tif",
     "fileSize": 304038,
     "source": "",
     "tags": [
-      "전라남도 담양군"
+      "전남광주통합특별시 담양군"
     ]
   },
   {
-    "id": "전라남도-목포시",
-    "name": "전라남도 목포시",
+    "id": "전남광주통합특별시-동구",
+    "name": "전남광주통합특별시 동구",
+    "description": "GeoTIFF (40 KB)",
+    "file": "raster/전남광주통합특별시 동구.tif",
+    "fileSize": 41340,
+    "source": "",
+    "tags": [
+      "전남광주통합특별시 동구"
+    ]
+  },
+  {
+    "id": "전남광주통합특별시-목포시",
+    "name": "전남광주통합특별시 목포시",
     "description": "GeoTIFF (38 KB)",
-    "file": "raster/전라남도 목포시.tif",
+    "file": "raster/전남광주통합특별시 목포시.tif",
     "fileSize": 39197,
     "source": "",
     "tags": [
-      "전라남도 목포시"
+      "전남광주통합특별시 목포시"
     ]
   },
   {
-    "id": "전라남도-무안군",
-    "name": "전라남도 무안군",
+    "id": "전남광주통합특별시-무안군",
+    "name": "전남광주통합특별시 무안군",
     "description": "GeoTIFF (288 KB)",
-    "file": "raster/전라남도 무안군.tif",
+    "file": "raster/전남광주통합특별시 무안군.tif",
     "fileSize": 295355,
     "source": "",
     "tags": [
-      "전라남도 무안군"
+      "전남광주통합특별시 무안군"
     ]
   },
   {
-    "id": "전라남도-보성군",
-    "name": "전라남도 보성군",
+    "id": "전남광주통합특별시-보성군",
+    "name": "전남광주통합특별시 보성군",
     "description": "GeoTIFF (421 KB)",
-    "file": "raster/전라남도 보성군.tif",
+    "file": "raster/전남광주통합특별시 보성군.tif",
     "fileSize": 431185,
     "source": "",
     "tags": [
-      "전라남도 보성군"
+      "전남광주통합특별시 보성군"
     ]
   },
   {
-    "id": "전라남도-순천시",
-    "name": "전라남도 순천시",
+    "id": "전남광주통합특별시-북구",
+    "name": "전남광주통합특별시 북구",
+    "description": "GeoTIFF (88 KB)",
+    "file": "raster/전남광주통합특별시 북구.tif",
+    "fileSize": 89882,
+    "source": "",
+    "tags": [
+      "전남광주통합특별시 북구"
+    ]
+  },
+  {
+    "id": "전남광주통합특별시-서구",
+    "name": "전남광주통합특별시 서구",
+    "description": "GeoTIFF (41 KB)",
+    "file": "raster/전남광주통합특별시 서구.tif",
+    "fileSize": 41801,
+    "source": "",
+    "tags": [
+      "전남광주통합특별시 서구"
+    ]
+  },
+  {
+    "id": "전남광주통합특별시-순천시",
+    "name": "전남광주통합특별시 순천시",
     "description": "GeoTIFF (556 KB)",
-    "file": "raster/전라남도 순천시.tif",
+    "file": "raster/전남광주통합특별시 순천시.tif",
     "fileSize": 569369,
     "source": "",
     "tags": [
-      "전라남도 순천시"
+      "전남광주통합특별시 순천시"
     ]
   },
   {
-    "id": "전라남도-신안군",
-    "name": "전라남도 신안군",
+    "id": "전남광주통합특별시-신안군",
+    "name": "전남광주통합특별시 신안군",
     "description": "GeoTIFF (500 KB)",
-    "file": "raster/전라남도 신안군.tif",
+    "file": "raster/전남광주통합특별시 신안군.tif",
     "fileSize": 512510,
     "source": "",
     "tags": [
-      "전라남도 신안군"
+      "전남광주통합특별시 신안군"
     ]
   },
   {
-    "id": "전라남도-여수시",
-    "name": "전라남도 여수시",
+    "id": "전남광주통합특별시-여수시",
+    "name": "전남광주통합특별시 여수시",
     "description": "GeoTIFF (356 KB)",
-    "file": "raster/전라남도 여수시.tif",
+    "file": "raster/전남광주통합특별시 여수시.tif",
     "fileSize": 364687,
     "source": "",
     "tags": [
-      "전라남도 여수시"
+      "전남광주통합특별시 여수시"
     ]
   },
   {
-    "id": "전라남도-영광군",
-    "name": "전라남도 영광군",
+    "id": "전남광주통합특별시-영광군",
+    "name": "전남광주통합특별시 영광군",
     "description": "GeoTIFF (319 KB)",
-    "file": "raster/전라남도 영광군.tif",
+    "file": "raster/전남광주통합특별시 영광군.tif",
     "fileSize": 326235,
     "source": "",
     "tags": [
-      "전라남도 영광군"
+      "전남광주통합특별시 영광군"
     ]
   },
   {
-    "id": "전라남도-영암군",
-    "name": "전라남도 영암군",
+    "id": "전남광주통합특별시-영암군",
+    "name": "전남광주통합특별시 영암군",
     "description": "GeoTIFF (376 KB)",
-    "file": "raster/전라남도 영암군.tif",
+    "file": "raster/전남광주통합특별시 영암군.tif",
     "fileSize": 385212,
     "source": "",
     "tags": [
-      "전라남도 영암군"
+      "전남광주통합특별시 영암군"
     ]
   },
   {
-    "id": "전라남도-완도군",
-    "name": "전라남도 완도군",
+    "id": "전남광주통합특별시-완도군",
+    "name": "전남광주통합특별시 완도군",
     "description": "GeoTIFF (276 KB)",
-    "file": "raster/전라남도 완도군.tif",
+    "file": "raster/전남광주통합특별시 완도군.tif",
     "fileSize": 282784,
     "source": "",
     "tags": [
-      "전라남도 완도군"
+      "전남광주통합특별시 완도군"
     ]
   },
   {
-    "id": "전라남도-장성군",
-    "name": "전라남도 장성군",
+    "id": "전남광주통합특별시-장성군",
+    "name": "전남광주통합특별시 장성군",
     "description": "GeoTIFF (332 KB)",
-    "file": "raster/전라남도 장성군.tif",
+    "file": "raster/전남광주통합특별시 장성군.tif",
     "fileSize": 340061,
     "source": "",
     "tags": [
-      "전라남도 장성군"
+      "전남광주통합특별시 장성군"
     ]
   },
   {
-    "id": "전라남도-장흥군",
-    "name": "전라남도 장흥군",
+    "id": "전남광주통합특별시-장흥군",
+    "name": "전남광주통합특별시 장흥군",
     "description": "GeoTIFF (396 KB)",
-    "file": "raster/전라남도 장흥군.tif",
+    "file": "raster/전남광주통합특별시 장흥군.tif",
     "fileSize": 405263,
     "source": "",
     "tags": [
-      "전라남도 장흥군"
+      "전남광주통합특별시 장흥군"
     ]
   },
   {
-    "id": "전라남도-진도군",
-    "name": "전라남도 진도군",
+    "id": "전남광주통합특별시-진도군",
+    "name": "전남광주통합특별시 진도군",
     "description": "GeoTIFF (289 KB)",
-    "file": "raster/전라남도 진도군.tif",
+    "file": "raster/전남광주통합특별시 진도군.tif",
     "fileSize": 295705,
     "source": "",
     "tags": [
-      "전라남도 진도군"
+      "전남광주통합특별시 진도군"
     ]
   },
   {
-    "id": "전라남도-함평군",
-    "name": "전라남도 함평군",
+    "id": "전남광주통합특별시-함평군",
+    "name": "전남광주통합특별시 함평군",
     "description": "GeoTIFF (259 KB)",
-    "file": "raster/전라남도 함평군.tif",
+    "file": "raster/전남광주통합특별시 함평군.tif",
     "fileSize": 264787,
     "source": "",
     "tags": [
-      "전라남도 함평군"
+      "전남광주통합특별시 함평군"
     ]
   },
   {
-    "id": "전라남도-해남군",
-    "name": "전라남도 해남군",
+    "id": "전남광주통합특별시-해남군",
+    "name": "전남광주통합특별시 해남군",
     "description": "GeoTIFF (604 KB)",
-    "file": "raster/전라남도 해남군.tif",
+    "file": "raster/전남광주통합특별시 해남군.tif",
     "fileSize": 618305,
     "source": "",
     "tags": [
-      "전라남도 해남군"
+      "전남광주통합특별시 해남군"
     ]
   },
   {
-    "id": "전라남도-화순군",
-    "name": "전라남도 화순군",
+    "id": "전남광주통합특별시-화순군",
+    "name": "전남광주통합특별시 화순군",
     "description": "GeoTIFF (487 KB)",
-    "file": "raster/전라남도 화순군.tif",
+    "file": "raster/전남광주통합특별시 화순군.tif",
     "fileSize": 498251,
     "source": "",
     "tags": [
-      "전라남도 화순군"
+      "전남광주통합특별시 화순군"
     ]
   },
   {
