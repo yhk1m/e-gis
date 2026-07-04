@@ -315,8 +315,8 @@ create table storymaps (
 - **M4 — 카메라:** "이 위치로 캡처" + `CameraAnimator`. 페이지 전환 애니메이션.
 - **M5 — 콘텐츠:** ContentEditor(heading/body/caption). body는 마크다운(marked 렌더 + DOMPurify 살균).
 - **M6 — 로컬 자동 저장:** `LocalStore` + 디바운스 + 시작 화면(목록/열기) + 백업 + "폴더 열기" 버튼.
-- **M7 — 로그인 & e-GIS 연동:** `AuthManager` + `CloudSync`. 로그인 → e-GIS `projects` 목록에서 .egis 직접 로드.
-- **M8 — 클라우드 동기화:** `storymaps` 테이블 저장/불러오기(옵션 토글) + RLS.
+- **M7 — 로그인:** `AuthManager`(이메일/비밀번호, supabase-js npm 번들) + 시작 화면 로그인 영역. 가입은 e-GIS 웹 안내. ~~CloudSync/e-GIS projects 로드~~ 폐기 — e-GIS 본체가 클라우드 프로젝트 저장을 제거해(ece5de2, CloudPanel "클라우드 저장 기능 제거됨") projects 테이블은 데드 데이터. 설계: `docs/superpowers/specs/2026-07-04-m7-auth-design.md`.
+- **M8 — 클라우드 동기화:** `storymaps` 테이블 저장/불러오기(옵션 토글) + RLS + 시작 화면 클라우드 목록.
 - **M9 — 프레젠테이션 셸:** 4:3 뷰어 + 키보드 전환 + 전체화면.
 - **M10 — 보고서 셸:** A4 레이아웃 + PDF 출력.
 - **M11 — 패키징:** electron-builder로 win/mac 빌드.
@@ -330,7 +330,7 @@ create table storymaps (
 1. **좌표계 정렬**: ~~.egis `view.center`는 EPSG:3857 전제~~ → **M1 실측 확정: EPSG:4326 경위도**(e-GIS `MapManager.getCenter()`가 `toLonLat` 반환). `page.camera`도 동일 포맷(M4). 생 GeoTIFF는 자체 CRS → `transformExtent`로 3857 정렬(M2에서 이식 완료).
 2. **DemRenderer 탈싱글턴화**: e-GIS `buildDEMLayer`가 `layerManager`/`mapManager` 싱글턴 의존 → 전용 래퍼 주입식으로 리팩터링. M2 핵심 작업.
 3. **클라우드 DEM 용량**: 로컬 `.esm`은 무제한이나 `storymaps.doc` jsonb에 DEM base64 다수 임베드 시 부담 → 대용량이면 클라우드 저장 시 래스터 제외 옵션(v2).
-4. **오프라인/온라인 시작 화면 분기**: 로그인 안 한 로컬 전용 모드 vs 로그인 클라우드 모드의 진입 UX.
+4. **오프라인/온라인 시작 화면 분기**: ~~로그인 안 한 로컬 전용 모드 vs 로그인 클라우드 모드의 진입 UX~~ → **M7 설계로 해소(2026-07-04)**: 시작 화면 하단 auth 섹션 3상태(로그아웃 폼/로그인 표시/오프라인 에러 라인), 로그인 없이 로컬 기능 전부 동작.
 
 ## 8b. v2 백로그 (확정 연기)
 
