@@ -61,6 +61,13 @@ export function touch(doc) {
   doc.meta.updated = nowISO();
 }
 
+/** 클라우드 동기화 토글(M8). 문서에 저장돼 .esm/클라우드 왕복 시 유지된다.
+ *  구버전 .esm에는 필드가 없음 = false 취급(읽는 쪽 계약). */
+export function setCloudSync(doc, on) {
+  doc.meta.cloudSync = !!on;
+  touch(doc);
+}
+
 /**
  * 소스를 추가하고, 지정 페이지에만 visible:true 가시성 엔트리를 만든다.
  * (다른 페이지는 미등재 = 숨김. 상위 스펙 §2 가시성 계약)

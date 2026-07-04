@@ -2,8 +2,19 @@
 import { describe, it, expect } from 'vitest';
 import {
   createStoryDoc, getPage, nextSourceId, addSource, setLayerVisible, addPage, removePage,
-  setPageCamera, setPageContent,
+  setPageCamera, setPageContent, setCloudSync,
 } from './StoryDoc.js';
+
+describe('setCloudSync', () => {
+  it('새 문서에는 cloudSync가 없고(구버전 .esm 호환 계약), 토글로 불리언 설정된다', () => {
+    const doc = createStoryDoc('t');
+    expect(doc.meta.cloudSync).toBeUndefined();
+    setCloudSync(doc, true);
+    expect(doc.meta.cloudSync).toBe(true);
+    setCloudSync(doc, 0); // truthy 강제 변환 계약
+    expect(doc.meta.cloudSync).toBe(false);
+  });
+});
 
 describe('createStoryDoc', () => {
   it('기본 페이지 1개를 가진 문서를 만든다', () => {
