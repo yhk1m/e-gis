@@ -99,3 +99,9 @@ ipcMain.handle('project:read', (_e, name) => readProject(name));
 ipcMain.handle('project:save', (_e, name, json) => writeProject(name, json));
 ipcMain.handle('project:openFolder', () => shell.openPath(baseDir()));
 ipcMain.handle('project:backup', (_e, name) => backupProject(name));
+
+// 외부 링크(M7 가입 안내 등)는 기본 브라우저로 — http(s)만 화이트리스트
+ipcMain.handle('app:openExternal', (_e, url) => {
+  if (typeof url === 'string' && /^https?:\/\//i.test(url)) return shell.openExternal(url);
+  return null;
+});
