@@ -11,15 +11,18 @@
  *          auth?: {signIn(email:string,pw:string):Promise<object>, signOut():Promise<void>, openSignup():void}}} handlers
  *        auth 미주입 시 로그인 영역을 렌더하지 않는다(테스트·이전 계약 유지).
  */
-export function createStartScreen(container, { onCreate, onOpen, auth }) {
+export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, auth }) {
   let errorEl = null;
   let authBox = null;
   let authUser = null;  // updateAuth로 갱신되는 유일한 인증 상태
   let authBusy = false; // 로그인 요청 중 중복 제출 방지
+  let cloudBox = null;
+  let cloudItems = null; // null=미로드/비로그인(섹션 숨김), []=비었음 안내 — renderCloud로 갱신(M8)
 
   function render(projectNames) {
     container.innerHTML = '';
     authBox = null;
+    cloudBox = null;
     const box = document.createElement('div');
     box.className = 'start-box';
 
@@ -73,6 +76,11 @@ export function createStartScreen(container, { onCreate, onOpen, auth }) {
     }
 
     if (auth) {
+      cloudBox = document.createElement('div');
+      cloudBox.className = 'start-cloud';
+      box.appendChild(cloudBox);
+      renderCloudSection();
+
       authBox = document.createElement('div');
       authBox.className = 'start-auth';
       box.appendChild(authBox);
@@ -80,6 +88,37 @@ export function createStartScreen(container, { onCreate, onOpen, auth }) {
     }
 
     container.appendChild(box);
+  }
+
+  function renderCloudSection() {
+    if (!cloudBox) return;
+    cloudBox.innerHTML = '';
+    if (!cloudItems) return; // 비로그인/미로드 — 섹션 자체를 그리지 않는다
+    const title = document.createElement('div');
+    title.className = 'start-list-title';
+    title.textContent = '클라우드 스토리맵';
+    cloudBox.appendChild(title);
+    if (!cloudItems.length) {
+      const empty = document.createElement('div');
+      empty.className = 'start-empty';
+      empty.textContent = '클라우드에 저장된 스토리맵이 없습니다';
+      cloudBox.appendChild(empty);
+    } else {
+      for (const item of cloudItems) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'start-item cloud-item';
+        btn.textContent = `☁ ${item.title}`;
+        btn.addEventListener('click', () => { if (onOpenCloud) onOpenCloud(item.id); });
+        cloudBox.appendChild(btn);
+      }
+    }
+  }
+
+  /** 클라우드 목록 반영(M8). render 전에 불려도 안전 — 상태만 저장, 다음 render에 반영. */
+  function renderCloud(items) {
+    cloudItems = items || null;
+    renderCloudSection();
   }
 
   function renderAuth() {
@@ -187,5 +226,5 @@ export function createStartScreen(container, { onCreate, onOpen, auth }) {
     if (errorEl) errorEl.textContent = message;
   }
 
-  return { render, showError, updateAuth };
+  return { render, showError, updateAuth, renderCloud };
 }

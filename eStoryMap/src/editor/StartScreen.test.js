@@ -90,6 +90,53 @@ function makeWithAuth(authOverrides = {}) {
 /** submit의 async 처리(await auth.signIn 이후 DOM 반영)를 기다린다. */
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
+describe('StartScreen 클라우드 목록(M8)', () => {
+  function makeCloud() {
+    const onOpenCloud = vi.fn();
+    const el = document.createElement('div');
+    const screen = createStartScreen(el, {
+      onCreate: vi.fn(), onOpen: vi.fn(), onOpenCloud,
+      auth: { signIn: vi.fn(async () => ({})), signOut: vi.fn(async () => {}), openSignup: vi.fn() },
+    });
+    return { el, screen, onOpenCloud };
+  }
+
+  it('기본(renderCloud 미호출·null) → 클라우드 섹션 내용 없음', () => {
+    const { el, screen } = makeCloud();
+    screen.render([]);
+    expect(el.querySelector('.cloud-item')).toBeNull();
+    screen.renderCloud(null);
+    expect(el.querySelector('.cloud-item')).toBeNull();
+  });
+
+  it('renderCloud(items) → 제목·항목 렌더, 클릭 → onOpenCloud(id)', () => {
+    const { el, screen, onOpenCloud } = makeCloud();
+    screen.render([]);
+    screen.renderCloud([
+      { id: 'c1', title: '부산 이야기', updated_at: '2026-07-04T00:00:00Z' },
+      { id: 'c2', title: '기후', updated_at: '2026-07-03T00:00:00Z' },
+    ]);
+    const items = [...el.querySelectorAll('.cloud-item')];
+    expect(items.map((n) => n.textContent)).toEqual(['☁ 부산 이야기', '☁ 기후']);
+    items[1].dispatchEvent(new Event('click'));
+    expect(onOpenCloud).toHaveBeenCalledWith('c2');
+  });
+
+  it('빈 배열 → 안내 문구', () => {
+    const { el, screen } = makeCloud();
+    screen.render([]);
+    screen.renderCloud([]);
+    expect(el.querySelector('.start-cloud .start-empty')).not.toBeNull();
+  });
+
+  it('render 전에 renderCloud가 와도 안전하고, 이후 render에 반영된다', () => {
+    const { el, screen } = makeCloud();
+    screen.renderCloud([{ id: 'c1', title: 't', updated_at: '' }]);
+    screen.render([]);
+    expect(el.querySelector('.cloud-item')).not.toBeNull();
+  });
+});
+
 describe('StartScreen 로그인 영역(M7)', () => {
   it('auth 미주입이면 로그인 영역이 없다(기존 계약 유지)', () => {
     const { el, screen } = make();
