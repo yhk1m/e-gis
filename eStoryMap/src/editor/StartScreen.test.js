@@ -74,3 +74,108 @@ describe('StartScreen', () => {
     expect(onCreate).not.toHaveBeenCalled();
   });
 });
+
+function makeWithAuth(authOverrides = {}) {
+  const auth = {
+    signIn: vi.fn(async () => ({})),
+    signOut: vi.fn(async () => {}),
+    openSignup: vi.fn(),
+    ...authOverrides,
+  };
+  const el = document.createElement('div');
+  const screen = createStartScreen(el, { onCreate: vi.fn(), onOpen: vi.fn(), auth });
+  return { el, screen, auth };
+}
+
+/** submit의 async 처리(await auth.signIn 이후 DOM 반영)를 기다린다. */
+const flush = () => new Promise((r) => setTimeout(r, 0));
+
+describe('StartScreen 로그인 영역(M7)', () => {
+  it('auth 미주입이면 로그인 영역이 없다(기존 계약 유지)', () => {
+    const { el, screen } = make();
+    screen.render([]);
+    expect(el.querySelector('.start-auth')).toBeNull();
+  });
+
+  it('로그아웃 상태: 이메일·비밀번호·로그인 버튼·가입 링크 렌더', () => {
+    const { el, screen } = makeWithAuth();
+    screen.render([]);
+    expect(el.querySelector('#auth-email')).not.toBeNull();
+    expect(el.querySelector('#auth-password')).not.toBeNull();
+    expect(el.querySelector('#btn-auth-login')).not.toBeNull();
+    expect(el.querySelector('#auth-signup-link')).not.toBeNull();
+  });
+
+  it('로그인 버튼 → auth.signIn(트림된 이메일, 비밀번호 원문)', () => {
+    const { el, screen, auth } = makeWithAuth();
+    screen.render([]);
+    el.querySelector('#auth-email').value = ' a@b.c ';
+    el.querySelector('#auth-password').value = 'pw 1';
+    el.querySelector('#btn-auth-login').dispatchEvent(new Event('click'));
+    expect(auth.signIn).toHaveBeenCalledWith('a@b.c', 'pw 1');
+  });
+
+  it('빈 입력 제출 → 안내 메시지, signIn 미호출', () => {
+    const { el, screen, auth } = makeWithAuth();
+    screen.render([]);
+    el.querySelector('#btn-auth-login').dispatchEvent(new Event('click'));
+    expect(auth.signIn).not.toHaveBeenCalled();
+    expect(el.querySelector('.auth-error').textContent).toContain('입력하세요');
+  });
+
+  it('signIn 실패 → .auth-error에 메시지 표시', async () => {
+    const { el, screen } = makeWithAuth({
+      signIn: vi.fn(async () => { throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.'); }),
+    });
+    screen.render([]);
+    el.querySelector('#auth-email').value = 'a@b.c';
+    el.querySelector('#auth-password').value = 'nope';
+    el.querySelector('#btn-auth-login').dispatchEvent(new Event('click'));
+    await flush();
+    expect(el.querySelector('.auth-error').textContent).toContain('올바르지 않습니다');
+  });
+
+  it('updateAuth(user) → 이메일 표시 + 로그아웃 버튼(폼 없음)', () => {
+    const { el, screen } = makeWithAuth();
+    screen.render([]);
+    screen.updateAuth({ user: { id: 'u1', email: 'a@b.c' } });
+    expect(el.querySelector('.auth-user').textContent).toContain('a@b.c');
+    expect(el.querySelector('#btn-auth-logout')).not.toBeNull();
+    expect(el.querySelector('#auth-email')).toBeNull();
+  });
+
+  it('render 전에 updateAuth가 와도 안전하고, 이후 render에 반영된다', () => {
+    const { el, screen } = makeWithAuth();
+    screen.updateAuth({ user: { id: 'u1', email: 'a@b.c' } }); // authBox 없음 — no-op이어야
+    screen.render([]);
+    expect(el.querySelector('.auth-user').textContent).toContain('a@b.c');
+  });
+
+  it('로그아웃 버튼 → auth.signOut', () => {
+    const { el, screen, auth } = makeWithAuth();
+    screen.render([]);
+    screen.updateAuth({ user: { id: 'u1', email: 'a@b.c' } });
+    el.querySelector('#btn-auth-logout').dispatchEvent(new Event('click'));
+    expect(auth.signOut).toHaveBeenCalled();
+  });
+
+  it('가입 링크 → auth.openSignup', () => {
+    const { el, screen, auth } = makeWithAuth();
+    screen.render([]);
+    el.querySelector('#auth-signup-link').dispatchEvent(new Event('click'));
+    expect(auth.openSignup).toHaveBeenCalled();
+  });
+
+  it('비밀번호 입력에서 Enter → 제출, 한글 조합 중(isComposing)은 무시', () => {
+    const { el, screen, auth } = makeWithAuth();
+    screen.render([]);
+    el.querySelector('#auth-email').value = 'a@b.c';
+    el.querySelector('#auth-password').value = 'pw';
+    el.querySelector('#auth-password').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', isComposing: true }));
+    expect(auth.signIn).not.toHaveBeenCalled();
+    el.querySelector('#auth-password').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(auth.signIn).toHaveBeenCalledWith('a@b.c', 'pw');
+  });
+});

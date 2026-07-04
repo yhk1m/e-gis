@@ -96,3 +96,23 @@ html, body, #app { height: 100%; margin: 0; }
   border-radius: 6px; cursor: pointer; font-size: 14px;
 }
 .start-item:hover { border-color: #3b82f6; }
+
+/* M7 시작 화면 로그인 영역 */
+.start-auth { margin-top: 20px; padding-top: 14px; border-top: 1px solid #1e293b; }
+.auth-row { display: flex; gap: 6px; align-items: center; }
+.auth-row input {
+  flex: 1; min-width: 0; padding: 7px 9px; border: 1px solid #334155; border-radius: 6px;
+  background: #1e293b; color: #e5e7eb; font-size: 13px;
+}
+.auth-row button {
+  padding: 7px 12px; border: 1px solid #334155; background: #1e293b;
+  color: #e5e7eb; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap;
+}
+.auth-row button:hover { border-color: #3b82f6; }
+.auth-row button:disabled { opacity: 0.5; cursor: default; }
+.auth-user { flex: 1; font-size: 13px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; }
+.auth-signup {
+  margin-top: 6px; padding: 0; border: none; background: none; cursor: pointer;
+  font-size: 12px; color: #60a5fa; text-decoration: underline;
+}
+.auth-error { min-height: 16px; font-size: 12px; color: #f87171; margin-top: 6px; }
