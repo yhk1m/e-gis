@@ -152,4 +152,40 @@ describe('createAuthManager', () => {
     client.fire('SIGNED_IN', { user: { id: 'u2', email: 'x@y.z' } });
     expect(cb).not.toHaveBeenCalled();
   });
+
+  it('signOut은 scope local로 호출한다(다른 기기·e-GIS 웹 세션 보호)', async () => {
+    const client = makeFakeClient();
+    const auth = createAuthManager({ client });
+    await auth.init();
+    await auth.signOut();
+    expect(client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it('signOut이 {error}로 resolve(오프라인)해도 경고만 남기고 로컬은 해제', async () => {
+    const user = { id: 'u1', email: 'a@b.c' };
+    const client = makeFakeClient({ session: { user } });
+    client.auth.signOut = vi.fn(async () => ({ error: new Error('AuthRetryableFetchError') }));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const auth = createAuthManager({ client });
+    await auth.init();
+    await auth.signOut();
+    expect(auth.isLoggedIn()).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('리스너가 throw해도 다른 리스너는 호출되고 발화 흐름이 끊기지 않는다', async () => {
+    const client = makeFakeClient();
+    const auth = createAuthManager({ client });
+    await auth.init();
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const bad = vi.fn(() => { throw new Error('DOM 렌더 실패'); });
+    const good = vi.fn();
+    auth.onChange(bad);
+    auth.onChange(good);
+    await auth.signIn('a@b.c', 'pw'); // reject되면 안 됨
+    expect(good).toHaveBeenCalledWith({ user: expect.objectContaining({ id: 'u1' }) });
+    expect(err).toHaveBeenCalled();
+    err.mockRestore();
+  });
 });

@@ -26,17 +26,27 @@ export function createAuthManager({ client }) {
   function setUser(next) {
     const changed = ((next && next.id) || null) !== ((user && user.id) || null);
     user = next || null;
-    if (changed) for (const cb of [...listeners]) cb({ user });
+    if (!changed) return; // 같은 신원 재통지(USER_UPDATED 포함)는 발화 안 함 — 폼 입력 보호 트레이드오프
+    for (const cb of [...listeners]) {
+      try {
+        cb({ user });
+      } catch (e) {
+        // 리스너 에러가 supabase 이벤트 경유로 signIn을 reject시키거나
+        // 다른 리스너 호출을 끊지 않게 격리한다.
+        console.error('[auth] onChange 리스너 오류:', e);
+      }
+    }
   }
 
   return {
-    /** 세션 복원 + 상태 변화 구독. 실패해도 throw하지 않음(오프라인 → 로컬 모드). */
+    /** 세션 복원 + 상태 변화 구독. 실패해도 throw하지 않음(오프라인 → 로컬 모드).
+     *  구독을 getSession보다 먼저 건다 — getSession이 throw해도 이후 이벤트는 받아야 한다. */
     async init() {
       try {
-        const { data } = await client.auth.getSession();
         client.auth.onAuthStateChange((_event, session) => {
           setUser(session ? session.user : null);
         });
+        const { data } = await client.auth.getSession();
         setUser(data && data.session ? data.session.user : null);
       } catch (e) {
         console.warn('[auth] 세션 복원 실패(로컬 모드로 계속):', e && e.message);
@@ -56,10 +66,16 @@ export function createAuthManager({ client }) {
       return res.data.user;
     },
 
-    /** 로컬 상태는 항상 비운다 — 서버 세션 무효화 실패(오프라인)는 치명적이지 않음. */
+    /** 로컬 상태는 항상 비운다 — 서버 세션 무효화 실패(오프라인)는 치명적이지 않음.
+     *  scope:'local' 필수 — 기본 'global'은 e-GIS 웹 등 같은 계정의 모든 기기를 로그아웃시킨다. */
     async signOut() {
       try {
-        await client.auth.signOut();
+        const res = await client.auth.signOut({ scope: 'local' });
+        // 오프라인이면 reject가 아니라 {error}로 resolve되며 영속 세션이 남는다
+        // (공개 API로는 제거 불가) — 재시작 시 자동 로그인이 복원될 수 있음을 기록만 한다.
+        if (res && res.error) {
+          console.warn('[auth] 서버 로그아웃 실패(재시작 시 세션이 복원될 수 있음):', res.error.message);
+        }
       } catch (e) {
         console.warn('[auth] 서버 로그아웃 실패(로컬 세션은 해제됨):', e && e.message);
       }
