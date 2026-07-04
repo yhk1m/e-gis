@@ -16,6 +16,8 @@ import { createContentEditor } from './editor/ContentEditor.js';
 import { CameraAnimator } from './shared/CameraAnimator.js';
 import { serializeStoryDoc, deserializeStoryDoc, createAutosaver } from './core/LocalStore.js';
 import { createStartScreen } from './editor/StartScreen.js';
+import { createAuthManager } from './core/AuthManager.js';
+import { createSupabaseClient } from './core/supabaseClient.js';
 
 const mapView = new MapView('map');
 const status = document.getElementById('status');
@@ -90,6 +92,8 @@ function scheduleSave() {
   autosaver.schedule();
 }
 
+const authManager = createAuthManager({ client: createSupabaseClient() });
+
 let knownNames = [];
 let opening = false;
 const startScreen = createStartScreen(document.getElementById('start-screen'), {
@@ -126,7 +130,16 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
       opening = false;
     }
   },
+  auth: {
+    signIn: (email, pw) => authManager.signIn(email, pw),
+    signOut: () => authManager.signOut(),
+    openSignup: () => window.egisFS.openExternal('https://e-gis.kr'),
+  },
 });
+
+authManager.onChange(({ user }) => startScreen.updateAuth({ user }));
+// 비차단 init — 세션 복원 실패(오프라인)는 내부에서 흡수, 로컬 기능은 항상 동작(스펙 §4)
+authManager.init();
 
 function enterEditor() {
   currentPageId = doc.pages[0].id;
