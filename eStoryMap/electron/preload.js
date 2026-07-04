@@ -10,5 +10,5 @@ contextBridge.exposeInMainWorld('egisFS', {
   saveProject: (name, json) => ipcRenderer.invoke('project:save', name, json),
   backupProject: (name) => ipcRenderer.invoke('project:backup', name), // → 백업 파일명 | null
   openFolder: () => ipcRenderer.invoke('project:openFolder'),
-  openExternal: (url) => ipcRenderer.invoke('app:openExternal', url), // 외부 브라우저(https만, M7 가입 안내)
+  openExternal: (url) => ipcRenderer.invoke('app:openExternal', url), // 외부 브라우저(http(s)만, M7 가입 안내)
 });

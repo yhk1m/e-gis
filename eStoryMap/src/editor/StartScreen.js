@@ -96,10 +96,13 @@ export function createStartScreen(container, { onCreate, onOpen, auth }) {
       logout.id = 'btn-auth-logout';
       logout.textContent = '로그아웃';
       logout.addEventListener('click', async () => {
+        logout.disabled = true; // 연타로 signOut 중복 호출 방지(로그인 버튼과 동일 패턴)
         try {
           await auth.signOut();
         } catch (e) {
-          showAuthError(e.message); // signOut은 원래 throw하지 않는 계약이지만 방어
+          showAuthError((e && e.message) || '로그아웃에 실패했습니다.'); // 원래 throw하지 않는 계약이지만 방어
+        } finally {
+          if (logout.isConnected) logout.disabled = false; // updateAuth로 DOM 교체됐으면 불필요
         }
       });
       row.appendChild(who);
@@ -161,7 +164,7 @@ export function createStartScreen(container, { onCreate, onOpen, auth }) {
       await auth.signIn(email, pw);
       // 성공 시 UI 전환은 main.js의 authManager.onChange → updateAuth가 담당(단방향)
     } catch (e) {
-      showAuthError(e.message);
+      showAuthError((e && e.message) || '로그인에 실패했습니다.'); // 비-Error throw 방어
     } finally {
       authBusy = false;
       const b = authBox.querySelector('#btn-auth-login'); // 성공 시 renderAuth로 교체됐을 수 있음

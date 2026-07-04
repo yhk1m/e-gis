@@ -102,6 +102,8 @@ ipcMain.handle('project:backup', (_e, name) => backupProject(name));
 
 // 외부 링크(M7 가입 안내 등)는 기본 브라우저로 — http(s)만 화이트리스트
 ipcMain.handle('app:openExternal', (_e, url) => {
-  if (typeof url === 'string' && /^https?:\/\//i.test(url)) return shell.openExternal(url);
+  // openExternal은 브라우저 실행 실패 시 reject할 수 있다 — invoke로 전파되면
+  // 렌더러의 미대기 click 핸들러에서 unhandled rejection이 되므로 여기서 흡수.
+  if (typeof url === 'string' && /^https?:\/\//i.test(url)) return shell.openExternal(url).catch(() => null);
   return null;
 });
