@@ -7,8 +7,9 @@ import { SourceRegistry } from './core/SourceRegistry.js';
 import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
   createStoryDoc, addSource, addPage, removePage, getPage, setLayerVisible, nextSourceId,
-  setPageCamera, setPageContent,
+  setPageCamera, setPageContent, setCloudSync,
 } from './core/StoryDoc.js';
+import { createCloudSync } from './core/CloudSync.js';
 import { parseGeoTiff } from './core/GeoTiffLoader.js';
 import { createSourcePanel } from './editor/SourcePanel.js';
 import { createPageList } from './editor/PageList.js';
@@ -65,13 +66,25 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
   },
 });
 
+let saveSeq = 0; // 늦게 도착한 클라우드 콜백이 더 새 상태 표시를 덮지 않게 하는 토큰(M8)
 async function doSaveNow() {
   if (!doc || !projectName) return;
+  const seq = ++saveSeq;
   try {
     saveStatus.textContent = '저장 중…';
     await window.egisFS.saveProject(projectName, serializeStoryDoc(doc));
     const t = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     saveStatus.textContent = `저장됨 ${t}`;
+    // 클라우드 편승(M8): 토글 on + 로그인 시 비차단 upsert — 실패해도 로컬 저장은 유효
+    if (doc.meta.cloudSync && authManager.isLoggedIn()) {
+      saveStatus.textContent = `저장됨 ${t} · 클라우드 ↑`;
+      cloudSync.upsert(doc)
+        .then(() => { if (seq === saveSeq) saveStatus.textContent = `저장됨 ${t} · 클라우드 ✓`; })
+        .catch((e) => {
+          if (seq === saveSeq) saveStatus.textContent = `저장됨 ${t} · 클라우드 실패: ${e.message}`;
+          console.error('[cloud] upsert 실패:', e);
+        });
+    }
   } catch (e) {
     saveStatus.textContent = `저장 실패: ${e.message}`;
     console.error(e);
@@ -92,7 +105,10 @@ function scheduleSave() {
   autosaver.schedule();
 }
 
-const authManager = createAuthManager({ client: createSupabaseClient() });
+// ⚠️ auth와 cloud는 같은 클라이언트 인스턴스를 공유해야 세션(JWT)이 함께 간다
+const supabase = createSupabaseClient();
+const authManager = createAuthManager({ client: supabase });
+const cloudSync = createCloudSync({ client: supabase, getUser: () => authManager.getUser() });
 
 let knownNames = [];
 let opening = false;
@@ -130,6 +146,28 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
       opening = false;
     }
   },
+  // 클라우드 문서 열기(M8): 다운로드 → 로컬 동명 파일 보호(backup) → 로컬 저장 → 편집 진입
+  async onOpenCloud(id) {
+    if (opening) return;
+    opening = true;
+    try {
+      const cloudDoc = await cloudSync.download(id);
+      const name = cloudDoc.meta.title;
+      if (knownNames.includes(name)) await window.egisFS.backupProject(name);
+      doc = cloudDoc;
+      projectName = name;
+      for (const source of doc.sources) {
+        registry.addSource(source.sourceId, parseEgisDoc(source.egis)); // visible=false로 빌드
+      }
+      enterEditor();
+      saveNow(); // 오프라인 연속성 — 즉시 로컬 .esm로도 저장
+    } catch (e) {
+      startScreen.showError(`클라우드 열기 실패: ${e.message}`);
+      console.error(e);
+    } finally {
+      opening = false;
+    }
+  },
   auth: {
     signIn: (email, pw) => authManager.signIn(email, pw),
     signOut: () => authManager.signOut(),
@@ -137,7 +175,35 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
   },
 });
 
-authManager.onChange(({ user }) => startScreen.updateAuth({ user }));
+const cloudToggle = document.getElementById('cloud-toggle');
+function updateCloudToggle() {
+  cloudToggle.checked = !!(doc && doc.meta.cloudSync);
+  cloudToggle.disabled = !authManager.isLoggedIn();
+}
+cloudToggle.addEventListener('change', () => {
+  if (!doc) return;
+  setCloudSync(doc, cloudToggle.checked);
+  scheduleSave(); // 켜는 순간의 상태도 2초 뒤 로컬+클라우드로 저장
+});
+
+async function refreshCloudList() {
+  if (!authManager.isLoggedIn()) {
+    startScreen.renderCloud(null);
+    return;
+  }
+  try {
+    startScreen.renderCloud(await cloudSync.list());
+  } catch (e) {
+    startScreen.renderCloud([]); // 앱은 정상 — 목록만 비움
+    console.error('[cloud] 목록 로드 실패:', e.message);
+  }
+}
+
+authManager.onChange(({ user }) => {
+  startScreen.updateAuth({ user });
+  updateCloudToggle();
+  refreshCloudList();
+});
 // 비차단 init — 세션 복원 실패(오프라인)는 내부에서 흡수, 로컬 기능은 항상 동작(스펙 §4)
 authManager.init();
 
@@ -146,6 +212,7 @@ function enterEditor() {
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('app').inert = false; // 시작 화면 동안 편집기 전체(포커스·포인터) 비활성
   document.title = `${doc.meta.title} — e-GIStory`;
+  updateCloudToggle();
   refresh();
   const page = getPage(doc, currentPageId);
   if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 즉시 복원
