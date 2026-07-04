@@ -32,6 +32,7 @@ export function createStartScreen(container, { onCreate, onOpen }) {
     create.textContent = '새로 만들기';
     create.addEventListener('click', () => onCreate(title.value.trim() || '새 스토리맵'));
     title.addEventListener('keydown', (e) => {
+      if (e.isComposing || e.keyCode === 229) return; // 한글 IME 조합 중 Enter 무시
       if (e.key === 'Enter') create.click();
     });
     row.appendChild(title);

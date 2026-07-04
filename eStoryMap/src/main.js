@@ -63,7 +63,7 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
   },
 });
 
-async function saveNow() {
+async function doSaveNow() {
   if (!doc || !projectName) return;
   try {
     saveStatus.textContent = '저장 중…';
@@ -74,6 +74,13 @@ async function saveNow() {
     saveStatus.textContent = `저장 실패: ${e.message}`;
     console.error(e);
   }
+}
+
+let saving = Promise.resolve();
+/** 저장을 직렬화(이전 저장 완료 후 실행) — 동시 writeFile 인터리브로 .esm 손상 방지. */
+function saveNow() {
+  saving = saving.then(doSaveNow);
+  return saving;
 }
 
 const autosaver = createAutosaver(saveNow, { delay: 2000 });
@@ -87,7 +94,11 @@ let knownNames = [];
 let opening = false;
 const startScreen = createStartScreen(document.getElementById('start-screen'), {
   onCreate(title) {
-    if (knownNames.includes(title)) {
+    if (opening) return; // 열기 진행 중 생성 방지
+    // knownNames는 sanitize된 파일명 — 같은 규칙으로 비교해야 "어디로 갈까?" 류
+    // 제목이 기존 파일을 무백업 덮어쓰는 사고를 막는다(fileService.sanitize와 동일 규칙).
+    const safeName = title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 120);
+    if (knownNames.includes(safeName) || knownNames.includes(title)) {
       startScreen.showError('같은 이름의 스토리맵이 이미 있습니다. 다른 제목을 입력하세요.');
       return;
     }
@@ -120,6 +131,7 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
 function enterEditor() {
   currentPageId = doc.pages[0].id;
   document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('app').inert = false; // 시작 화면 동안 편집기 전체(포커스·포인터) 비활성
   document.title = `${doc.meta.title} — e-GIStory`;
   refresh();
   const page = getPage(doc, currentPageId);
@@ -127,8 +139,14 @@ function enterEditor() {
 }
 
 async function boot() {
-  knownNames = await window.egisFS.listProjects();
-  startScreen.render(knownNames);
+  try {
+    knownNames = await window.egisFS.listProjects();
+    startScreen.render(knownNames);
+  } catch (e) {
+    startScreen.render([]);
+    startScreen.showError(`목록을 불러오지 못했습니다: ${e.message}`);
+    console.error(e);
+  }
 }
 
 /** 문서·페이지 상태를 지도와 패널에 반영(단일 갱신 지점). */

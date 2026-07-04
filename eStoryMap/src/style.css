@@ -76,7 +76,6 @@ html, body, #app { height: 100%; margin: 0; }
   position: fixed; inset: 0; z-index: 100; background: #0b0f14;
   display: flex; align-items: center; justify-content: center;
 }
-#start-screen:empty { display: none; }
 .start-box { width: 420px; color: #e5e7eb; }
 .start-brand { font-size: 28px; margin: 0 0 20px; text-align: center; }
 .start-new { display: flex; gap: 8px; margin-bottom: 8px; }

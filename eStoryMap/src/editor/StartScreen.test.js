@@ -64,4 +64,13 @@ describe('StartScreen', () => {
     el.querySelector('#start-title').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     expect(onCreate).toHaveBeenCalledWith('기후');
   });
+
+  it('한글 조합 중 Enter(isComposing)는 무시한다', () => {
+    const onCreate = vi.fn();
+    const { el, screen } = make({ onCreate });
+    screen.render([]);
+    el.querySelector('#start-title').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', isComposing: true }));
+    expect(onCreate).not.toHaveBeenCalled();
+  });
 });
