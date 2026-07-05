@@ -19,6 +19,7 @@ import { serializeStoryDoc, deserializeStoryDoc, createAutosaver } from './core/
 import { createStartScreen } from './editor/StartScreen.js';
 import { createAuthManager } from './core/AuthManager.js';
 import { createSupabaseClient } from './core/supabaseClient.js';
+import { createPresentationShell } from './viewer/PresentationShell.js';
 
 const mapView = new MapView('map');
 const status = document.getElementById('status');
@@ -64,6 +65,29 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
     setPageContent(doc, currentPageId, { [field]: value });
     scheduleSave();
   },
+});
+
+// M9 발표 셸: #map 노드를 4:3 스테이지로 재부모(소스·레이어 유지). 종료 시 편집기 원복.
+const presentation = createPresentationShell(document.getElementById('presentation'), {
+  mapEl: document.getElementById('map'),
+  mapHome: document.getElementById('map-stage'),
+  mapView,
+  animator,
+  registry,
+  getDoc: () => doc,
+  onExit: exitPresentation,
+});
+
+function exitPresentation() {
+  document.getElementById('app').inert = false;
+  refresh(); // 편집기 현재 페이지 가시성·패널 복원
+  const page = getPage(doc, currentPageId);
+  if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 카메라 즉시 원복
+}
+
+document.getElementById('btn-present').addEventListener('click', () => {
+  // 진입에 성공한 경우에만 편집기 비활성(실패 시 inert 굳음 방지). 항상 페이지 1부터(사용자 확정).
+  if (presentation.enter(0)) document.getElementById('app').inert = true;
 });
 
 let saveSeq = 0; // 늦게 도착한 클라우드 콜백이 더 새 상태 표시를 덮지 않게 하는 토큰(M8)
