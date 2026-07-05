@@ -26,7 +26,8 @@ export function unionExtent(olLayers) {
 export class MapView {
   /** @param {string} target - 지도 컨테이너 DOM id */
   constructor(target) {
-    this.baseLayer = new TileLayer({ source: new OSM(), properties: { type: 'base' } });
+    // crossOrigin: 보고서 캡처(toDataURL) 시 베이스 타일이 canvas를 오염시키지 않도록(M10). OSM은 CORS 지원.
+    this.baseLayer = new TileLayer({ source: new OSM({ crossOrigin: 'anonymous' }), properties: { type: 'base' } });
     this.map = new Map({
       target,
       layers: [this.baseLayer],

@@ -100,6 +100,31 @@ ipcMain.handle('project:save', (_e, name, json) => writeProject(name, json));
 ipcMain.handle('project:openFolder', () => shell.openPath(baseDir()));
 ipcMain.handle('project:backup', (_e, name) => backupProject(name));
 
+// 보고서 → PDF (M10): 현재 렌더러 DOM(@media print로 #report만)을 A4 PDF로. 저장 다이얼로그 후 기록.
+ipcMain.handle('report:savePDF', async (_e, title) => {
+  if (!mainWindow) return null;
+  let data;
+  try {
+    data = await mainWindow.webContents.printToPDF({
+      pageSize: 'A4',
+      printBackground: true,
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    });
+  } catch (err) {
+    console.warn('[main] printToPDF 실패:', err);
+    return null;
+  }
+  const safe = String(title || '보고서').replace(/[\\/:*?"<>|]/g, '_').trim() || '보고서';
+  const r = await dialog.showSaveDialog(mainWindow, {
+    title: 'PDF로 저장',
+    defaultPath: path.join(baseDir(), `${safe}.pdf`),
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+  });
+  if (r.canceled || !r.filePath) return null;
+  await fsp.writeFile(r.filePath, data);
+  return r.filePath;
+});
+
 // 외부 링크(M7 가입 안내 등)는 기본 브라우저로 — http(s)만 화이트리스트
 ipcMain.handle('app:openExternal', (_e, url) => {
   // openExternal은 브라우저 실행 실패 시 reject할 수 있다 — invoke로 전파되면

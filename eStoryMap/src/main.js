@@ -22,6 +22,7 @@ import { createStartScreen } from './editor/StartScreen.js';
 import { createAuthManager } from './core/AuthManager.js';
 import { createSupabaseClient } from './core/supabaseClient.js';
 import { createPresentationShell } from './viewer/PresentationShell.js';
+import { createReportShell } from './viewer/ReportShell.js';
 import { createLegend } from './editor/Legend.js';
 
 const mapView = new MapView('map');
@@ -100,6 +101,22 @@ const presentation = createPresentationShell(document.getElementById('presentati
   onExit: exitPresentation,
 });
 
+// M10 보고서 셸: 페이지별 지도 캡처 → A4 섹션. PDF는 Electron printToPDF.
+const report = createReportShell(document.getElementById('report'), {
+  mapView,
+  registry,
+  getDoc: () => doc,
+  onExit: exitReport,
+  onSavePDF: (title) => window.egisFS.savePDF(title),
+});
+
+function exitReport() {
+  document.getElementById('app').inert = false;
+  refresh(); // 편집기 현재 페이지 가시성·패널 복원
+  const page = getPage(doc, currentPageId);
+  if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 캡처로 옮겨진 뷰 원복
+}
+
 function exitPresentation() {
   document.getElementById('app').inert = false;
   refresh(); // 편집기 현재 페이지 가시성·패널 복원
@@ -110,6 +127,12 @@ function exitPresentation() {
 document.getElementById('btn-present').addEventListener('click', () => {
   // 진입에 성공한 경우에만 편집기 비활성(실패 시 inert 굳음 방지). 항상 페이지 1부터(사용자 확정).
   if (presentation.enter(0)) document.getElementById('app').inert = true;
+});
+
+document.getElementById('btn-report').addEventListener('click', () => {
+  if (!doc || !doc.pages.length) return;
+  document.getElementById('app').inert = true; // 생성·열람 중 편집기 비활성
+  report.open(); // 비동기: 페이지별 캡처 후 표시. 닫기(exitReport)에서 inert 해제
 });
 
 // M9 확장: 발표 레이아웃 선택(프로젝트 전체, doc.meta.presentationLayout)
