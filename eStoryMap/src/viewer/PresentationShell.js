@@ -117,6 +117,8 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     active = true;
     index = Math.max(0, Math.min(doc.pages.length - 1, startIndex | 0));
 
+    // 프로젝트 전체 레이아웃(band/panel/card) — 무대 클래스로만 스타일 분기(M9 확장)
+    stage.className = 'pres-stage pres-layout-' + (doc.meta.presentationLayout || 'band');
     stage.insertBefore(mapEl, stage.firstChild); // 지도 노드를 스테이지 배경으로
     root.style.display = '';
     renderPage();

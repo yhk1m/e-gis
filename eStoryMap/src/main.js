@@ -8,6 +8,7 @@ import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
   createStoryDoc, addSource, addPage, removePage, getPage, setLayerVisible, nextSourceId,
   setPageCamera, setPageContent, setCloudSync,
+  setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
 } from './core/StoryDoc.js';
 import { createCloudSync } from './core/CloudSync.js';
 import { parseGeoTiff } from './core/GeoTiffLoader.js';
@@ -88,6 +89,60 @@ function exitPresentation() {
 document.getElementById('btn-present').addEventListener('click', () => {
   // 진입에 성공한 경우에만 편집기 비활성(실패 시 inert 굳음 방지). 항상 페이지 1부터(사용자 확정).
   if (presentation.enter(0)) document.getElementById('app').inert = true;
+});
+
+// M9 확장: 발표 레이아웃 선택(프로젝트 전체, doc.meta.presentationLayout)
+const layoutSelect = document.getElementById('layout-select');
+layoutSelect.addEventListener('change', () => {
+  if (!doc) return;
+  setPresentationLayout(doc, layoutSelect.value);
+  scheduleSave();
+});
+
+// M9 확장: 카메라 위치 도구 (모두 적용 / 위치 가져오기 팝오버)
+const camSyncBtn = document.getElementById('btn-cam-sync');
+const camSyncPop = document.getElementById('cam-sync-pop');
+
+document.getElementById('btn-cam-all').addEventListener('click', () => {
+  if (!doc) return;
+  applyCameraToAllPages(doc, mapView.getCamera()); // 현재 지도 뷰 → 전 페이지
+  refresh();
+  scheduleSave();
+  status.textContent = `현재 위치를 ${doc.pages.length}개 슬라이드 전체에 적용했습니다.`;
+});
+
+function closeCamSyncPop() {
+  camSyncPop.hidden = true;
+  camSyncPop.innerHTML = '';
+  document.removeEventListener('click', onDocClickForPop, true);
+}
+function onDocClickForPop(e) {
+  if (!camSyncPop.contains(e.target) && e.target !== camSyncBtn) closeCamSyncPop();
+}
+camSyncBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!doc) return;
+  if (!camSyncPop.hidden) { closeCamSyncPop(); return; } // 재클릭 = 토글 닫기
+  const others = doc.pages.filter((p) => p.id !== currentPageId);
+  camSyncPop.innerHTML = '';
+  for (const p of others) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = p.camera ? p.title : `${p.title} (위치 없음)`;
+    b.disabled = !p.camera; // 위치 없는 슬라이드는 가져올 것이 없음
+    b.addEventListener('click', () => {
+      syncCameraFromPage(doc, currentPageId, p.id); // 선택 슬라이드 위치 → 현재 슬라이드
+      closeCamSyncPop();
+      refresh();
+      const page = getPage(doc, currentPageId);
+      if (page && page.camera) animator.flyTo(page.camera);
+      scheduleSave();
+      status.textContent = `'${p.title}'의 위치를 가져왔습니다.`;
+    });
+    camSyncPop.appendChild(b);
+  }
+  camSyncPop.hidden = false;
+  document.addEventListener('click', onDocClickForPop, true); // 바깥 클릭 닫기(캡처 단계)
 });
 
 let saveSeq = 0; // 늦게 도착한 클라우드 콜백이 더 새 상태 표시를 덮지 않게 하는 토큰(M8)
@@ -237,6 +292,7 @@ function enterEditor() {
   document.getElementById('app').inert = false; // 시작 화면 동안 편집기 전체(포커스·포인터) 비활성
   document.title = `${doc.meta.title} — e-GIStory`;
   updateCloudToggle();
+  layoutSelect.value = doc.meta.presentationLayout || 'band'; // 발표 레이아웃 현재값 반영
   refresh();
   const page = getPage(doc, currentPageId);
   if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 즉시 복원
@@ -261,6 +317,7 @@ function refresh() {
   sourcePanel.render(doc, page, registry);
   pageList.render(doc, currentPageId);
   contentEditor.render(page);
+  camSyncBtn.disabled = doc.pages.length <= 1; // 가져올 다른 슬라이드가 없으면 비활성
 }
 
 /** .egis 형식 문서를 소스로 추가(공통 플로우 — .tif도 래핑 후 여기로). */

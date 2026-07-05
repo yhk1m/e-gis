@@ -15,6 +15,13 @@
         <button id="btn-tif" type="button">.tif 열기</button>
         <button id="btn-folder" type="button">저장 폴더 열기</button>
         <button id="btn-present" type="button" title="발표 모드로 보기 (Esc로 종료)">▶ 발표</button>
+        <label id="layout-select-label" title="발표 텍스트 레이아웃 (프로젝트 전체)">레이아웃
+          <select id="layout-select">
+            <option value="band">밴드</option>
+            <option value="panel">패널</option>
+            <option value="card">카드</option>
+          </select>
+        </label>
         <label id="cloud-toggle-label" title="로그인하면 이 스토리맵을 클라우드에도 자동 저장합니다"><input type="checkbox" id="cloud-toggle" disabled /> 클라우드 동기화</label>
         <span id="save-status"></span>
         <span id="status"></span>
@@ -32,7 +39,12 @@
         </aside>
         <div id="map-stage">
           <div id="map"></div>
-          <button id="btn-capture" type="button" title="현재 화면을 이 페이지의 카메라로 저장">📷 이 위치로 캡처</button>
+          <div id="map-tools">
+            <button id="btn-capture" type="button" title="현재 화면을 이 페이지의 카메라로 저장">📷 이 위치로 캡처</button>
+            <button id="btn-cam-all" type="button" title="현재 지도 위치를 모든 슬라이드에 적용">📌 모든 슬라이드에 이 위치</button>
+            <button id="btn-cam-sync" type="button" title="다른 슬라이드의 위치를 이 슬라이드로 가져오기">🔗 위치 가져오기</button>
+            <div id="cam-sync-pop" hidden></div>
+          </div>
         </div>
         <aside id="content-sidebar">
           <section class="panel">
