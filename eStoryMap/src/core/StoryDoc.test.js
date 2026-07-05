@@ -4,6 +4,7 @@ import {
   createStoryDoc, getPage, nextSourceId, addSource, setLayerVisible, addPage, removePage,
   setPageCamera, setPageContent, setCloudSync,
   setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
+  setLegendVisible, setLegendPos, setLegendOverride,
 } from './StoryDoc.js';
 
 describe('setCloudSync', () => {
@@ -312,5 +313,44 @@ describe('syncCameraFromPage', () => {
     syncCameraFromPage(doc, 'page_999', 'page_1'); // target 없음
     syncCameraFromPage(doc, p2.id, 'page_999');    // source 없음
     expect(getPage(doc, p2.id).camera).toBeNull();
+  });
+});
+
+describe('범례 변이 (setLegendVisible/Pos/Override)', () => {
+  it('meta.legend 없으면 기본값으로 초기화 후 반영한다', () => {
+    const doc = createStoryDoc();
+    expect(doc.meta.legend).toBeUndefined();
+    setLegendVisible(doc, false);
+    expect(doc.meta.legend.visible).toBe(false);
+    expect(doc.meta.legend.pos).toEqual({ x: 0.02, y: 0.04 });
+    expect(doc.meta.legend.overrides).toEqual({});
+  });
+
+  it('setLegendPos는 [0,1]로 클램프한다', () => {
+    const doc = createStoryDoc();
+    setLegendPos(doc, 1.5, -0.2);
+    expect(doc.meta.legend.pos).toEqual({ x: 1, y: 0 });
+  });
+
+  it('setLegendOverride는 key별 label/hidden을 병합한다', () => {
+    const doc = createStoryDoc();
+    setLegendOverride(doc, 'src_1:L_a', { label: '인구' });
+    setLegendOverride(doc, 'src_1:L_a', { hidden: true });
+    expect(doc.meta.legend.overrides['src_1:L_a']).toEqual({ label: '인구', hidden: true });
+  });
+
+  it('빈 key/patch는 no-op(초기화도 안 함)', () => {
+    const doc = createStoryDoc();
+    setLegendOverride(doc, '', { label: 'x' });
+    setLegendOverride(doc, 'k', null);
+    expect(doc.meta.legend).toBeUndefined();
+  });
+
+  it('범례 변이는 meta.updated를 갱신한다', async () => {
+    const doc = createStoryDoc();
+    const before = doc.meta.updated;
+    await new Promise((r) => setTimeout(r, 5));
+    setLegendVisible(doc, true);
+    expect(doc.meta.updated).not.toBe(before);
   });
 });

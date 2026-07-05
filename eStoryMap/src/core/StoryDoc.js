@@ -3,6 +3,7 @@
 // StoryMapDoc(상위 스펙 §2) 생성·변이 — 순수 모듈. OL·DOM 의존 없음.
 // 문서가 단일 진실원이며, 변이 함수는 전달받은 doc을 직접 수정한다.
 // 선택된 페이지(currentPageId)는 에디터 UI 상태로, 문서에 저장하지 않는다.
+import { clampLegendPos, DEFAULT_LEGEND } from './legend.js';
 
 function nowISO() {
   return new Date().toISOString();
@@ -75,6 +76,41 @@ export const PRESENTATION_LAYOUTS = ['band', 'panel', 'card'];
 export function setPresentationLayout(doc, layout) {
   if (!PRESENTATION_LAYOUTS.includes(layout)) return;
   doc.meta.presentationLayout = layout;
+  touch(doc);
+}
+
+/** meta.legend를 기본값으로 보장(구버전 .esm에 없을 수 있음). */
+function ensureLegend(doc) {
+  if (!doc.meta.legend) {
+    doc.meta.legend = {
+      visible: DEFAULT_LEGEND.visible,
+      pos: { ...DEFAULT_LEGEND.pos },
+      overrides: {},
+    };
+  }
+  return doc.meta.legend;
+}
+
+/** 범례 전체 표시/숨김(헤더 토글, 프로젝트 전체). */
+export function setLegendVisible(doc, on) {
+  ensureLegend(doc).visible = !!on;
+  touch(doc);
+}
+
+/** 범례 위치(정규화 좌상단, 드래그). [0,1] 클램프. */
+export function setLegendPos(doc, x, y) {
+  ensureLegend(doc).pos = clampLegendPos(x, y);
+  touch(doc);
+}
+
+/** 레이어 key별 범례 override 병합(label 문자열/hidden 불리언만). 빈 key·patch는 no-op. */
+export function setLegendOverride(doc, key, patch) {
+  if (!key || !patch) return;
+  const legend = ensureLegend(doc);
+  const next = { ...(legend.overrides[key] || {}) };
+  if (typeof patch.label === 'string') next.label = patch.label;
+  if (typeof patch.hidden === 'boolean') next.hidden = patch.hidden;
+  legend.overrides[key] = next;
   touch(doc);
 }
 
