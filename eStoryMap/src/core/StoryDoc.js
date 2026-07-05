@@ -68,6 +68,16 @@ export function setCloudSync(doc, on) {
   touch(doc);
 }
 
+export const PRESENTATION_LAYOUTS = ['band', 'panel', 'card'];
+
+/** 발표 텍스트 레이아웃(프로젝트 전체, M9 확장). 허용 enum만 반영.
+ *  구버전/미설정 = 읽는 쪽에서 'band' 기본(계약). */
+export function setPresentationLayout(doc, layout) {
+  if (!PRESENTATION_LAYOUTS.includes(layout)) return;
+  doc.meta.presentationLayout = layout;
+  touch(doc);
+}
+
 /**
  * 소스를 추가하고, 지정 페이지에만 visible:true 가시성 엔트리를 만든다.
  * (다른 페이지는 미등재 = 숨김. 상위 스펙 §2 가시성 계약)
@@ -130,6 +140,30 @@ export function setPageCamera(doc, pageId, camera) {
   const page = getPage(doc, pageId);
   if (!page || !camera) return;
   page.camera = { center: [...camera.center], zoom: camera.zoom };
+  touch(doc);
+}
+
+/**
+ * 현재 카메라를 모든 페이지에 1회 복사("모든 슬라이드에 이 위치", M9 확장).
+ * 각 페이지가 서로·원본과 참조 독립이도록 깊은 복사. camera 없으면 no-op.
+ */
+export function applyCameraToAllPages(doc, camera) {
+  if (!camera || !Array.isArray(camera.center)) return;
+  for (const page of doc.pages) {
+    page.camera = { center: [...camera.center], zoom: camera.zoom };
+  }
+  touch(doc);
+}
+
+/**
+ * 소스 페이지의 카메라를 대상 페이지로 복사("위치 가져오기", M9 확장).
+ * 페이지 누락 또는 소스 camera 없음이면 no-op. 참조 독립되게 깊은 복사.
+ */
+export function syncCameraFromPage(doc, targetPageId, sourcePageId) {
+  const target = getPage(doc, targetPageId);
+  const source = getPage(doc, sourcePageId);
+  if (!target || !source || !source.camera) return;
+  target.camera = { center: [...source.camera.center], zoom: source.camera.zoom };
   touch(doc);
 }
 

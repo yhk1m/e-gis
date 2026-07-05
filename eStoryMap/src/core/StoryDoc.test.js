@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createStoryDoc, getPage, nextSourceId, addSource, setLayerVisible, addPage, removePage,
   setPageCamera, setPageContent, setCloudSync,
+  setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
 } from './StoryDoc.js';
 
 describe('setCloudSync', () => {
@@ -241,5 +242,75 @@ describe('setPageContent', () => {
     const content = getPage(doc, 'page_1').content;
     expect(content).toEqual({ heading: '유지', body: '', caption: '' });
     expect('evil' in content).toBe(false);
+  });
+});
+
+describe('setPresentationLayout', () => {
+  it('허용 레이아웃만 meta에 반영한다(기본은 미설정 = 읽기 기본값 band)', () => {
+    const doc = createStoryDoc();
+    expect(doc.meta.presentationLayout).toBeUndefined();
+    setPresentationLayout(doc, 'panel');
+    expect(doc.meta.presentationLayout).toBe('panel');
+    setPresentationLayout(doc, 'card');
+    expect(doc.meta.presentationLayout).toBe('card');
+    setPresentationLayout(doc, 'band');
+    expect(doc.meta.presentationLayout).toBe('band');
+  });
+
+  it('허용되지 않은 값은 무시한다', () => {
+    const doc = createStoryDoc();
+    setPresentationLayout(doc, 'band');
+    setPresentationLayout(doc, 'evil');
+    setPresentationLayout(doc, '');
+    expect(doc.meta.presentationLayout).toBe('band');
+  });
+});
+
+describe('applyCameraToAllPages', () => {
+  it('현재 카메라를 모든 페이지에 깊은 복사(페이지 간·원본과 독립)한다', () => {
+    const doc = createStoryDoc();
+    addPage(doc, 'page_1');
+    addPage(doc, 'page_1'); // 3 pages
+    const cam = { center: [129, 35], zoom: 10 };
+    applyCameraToAllPages(doc, cam);
+    for (const p of doc.pages) {
+      expect(p.camera).toEqual({ center: [129, 35], zoom: 10 });
+      expect(p.camera).not.toBe(cam);
+      expect(p.camera.center).not.toBe(cam.center);
+    }
+    expect(doc.pages[0].camera).not.toBe(doc.pages[1].camera);
+    doc.pages[0].camera.center[0] = 0;
+    expect(doc.pages[1].camera.center[0]).toBe(129);
+  });
+
+  it('null/빈 카메라는 no-op', () => {
+    const doc = createStoryDoc();
+    getPage(doc, 'page_1').camera = { center: [1, 2], zoom: 3 };
+    applyCameraToAllPages(doc, null);
+    expect(getPage(doc, 'page_1').camera).toEqual({ center: [1, 2], zoom: 3 });
+  });
+});
+
+describe('syncCameraFromPage', () => {
+  it('소스 페이지의 카메라를 대상 페이지로 깊은 복사한다(참조 독립)', () => {
+    const doc = createStoryDoc();
+    const p2 = addPage(doc, 'page_1'); // page_2 (이 시점 page_1 camera=null이므로 p2도 null)
+    setPageCamera(doc, 'page_1', { center: [127, 37], zoom: 7 });
+    syncCameraFromPage(doc, p2.id, 'page_1');
+    expect(getPage(doc, p2.id).camera).toEqual({ center: [127, 37], zoom: 7 });
+    expect(getPage(doc, p2.id).camera).not.toBe(getPage(doc, 'page_1').camera);
+    getPage(doc, 'page_1').camera.center[0] = 0;
+    expect(getPage(doc, p2.id).camera.center[0]).toBe(127);
+  });
+
+  it('페이지 누락/소스 카메라 없음은 no-op', () => {
+    const doc = createStoryDoc();
+    const p2 = addPage(doc, 'page_1');
+    syncCameraFromPage(doc, p2.id, 'page_1'); // 소스 camera 없음
+    expect(getPage(doc, p2.id).camera).toBeNull();
+    setPageCamera(doc, 'page_1', { center: [1, 2], zoom: 3 });
+    syncCameraFromPage(doc, 'page_999', 'page_1'); // target 없음
+    syncCameraFromPage(doc, p2.id, 'page_999');    // source 없음
+    expect(getPage(doc, p2.id).camera).toBeNull();
   });
 });
