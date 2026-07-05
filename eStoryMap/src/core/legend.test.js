@@ -29,8 +29,8 @@ describe('buildLegendItems', () => {
     const doc = docWithLayers();
     const items = buildLegendItems(doc, getPage(doc, 'page_1'));
     expect(items).toEqual([
-      { key: 'src_1:L_pop', label: '인구밀도', kind: 'swatch', color: '#e11d48' },
-      { key: 'src_1:L_dem', label: '고도', kind: 'ramp', color: '#3b82f6' },
+      { key: 'src_1:L_pop', label: '인구밀도', kind: 'swatch', color: '#e11d48', hidden: false },
+      { key: 'src_1:L_dem', label: '고도', kind: 'ramp', color: '#3b82f6', hidden: false },
     ]);
   });
 
@@ -41,7 +41,7 @@ describe('buildLegendItems', () => {
     expect(items.map((i) => i.key)).toEqual(['src_1:L_pop']);
   });
 
-  it('override 라벨을 적용하고, hidden override는 제외한다', () => {
+  it('override 라벨을 적용하고, hidden은 플래그로 실어 보낸다(제외 안 함)', () => {
     const doc = docWithLayers();
     doc.meta.legend = {
       ...DEFAULT_LEGEND,
@@ -51,8 +51,12 @@ describe('buildLegendItems', () => {
       },
     };
     const items = buildLegendItems(doc, getPage(doc, 'page_1'));
-    expect(items).toHaveLength(1);
-    expect(items[0].label).toBe('인구 (명/km²)');
+    expect(items).toHaveLength(2);
+    const pop = items.find((i) => i.key === 'src_1:L_pop');
+    const dem = items.find((i) => i.key === 'src_1:L_dem');
+    expect(pop.label).toBe('인구 (명/km²)');
+    expect(pop.hidden).toBe(false);
+    expect(dem.hidden).toBe(true);
   });
 
   it('조회 불가한 가시성 엔트리는 스킵한다(방어)', () => {

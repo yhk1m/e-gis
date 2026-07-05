@@ -9,6 +9,7 @@ import {
   createStoryDoc, addSource, addPage, removePage, getPage, setLayerVisible, nextSourceId,
   setPageCamera, setPageContent, setCloudSync,
   setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
+  setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
 import { createCloudSync } from './core/CloudSync.js';
 import { parseGeoTiff } from './core/GeoTiffLoader.js';
@@ -21,6 +22,7 @@ import { createStartScreen } from './editor/StartScreen.js';
 import { createAuthManager } from './core/AuthManager.js';
 import { createSupabaseClient } from './core/supabaseClient.js';
 import { createPresentationShell } from './viewer/PresentationShell.js';
+import { createLegend } from './editor/Legend.js';
 
 const mapView = new MapView('map');
 const status = document.getElementById('status');
@@ -68,6 +70,24 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
   },
 });
 
+// 범례: #map 자식 오버레이. 편집기=편집(드래그·라벨·숨김), 발표=정적. 재부모 시 지도와 동행.
+const legend = createLegend(document.getElementById('legend'), {
+  getDoc: () => doc,
+  onChange: onLegendChange,
+});
+
+function onLegendChange(change) {
+  if (!doc) return;
+  if (change.pos) {
+    setLegendPos(doc, change.pos.x, change.pos.y); // 드래그 위치는 재렌더 없이 저장
+    scheduleSave();
+  } else if (change.override) {
+    setLegendOverride(doc, change.override.key, change.override);
+    scheduleSave();
+    legend.render(getPage(doc, currentPageId), { editable: true }); // 라벨/숨김 반영
+  }
+}
+
 // M9 발표 셸: #map 노드를 4:3 스테이지로 재부모(소스·레이어 유지). 종료 시 편집기 원복.
 const presentation = createPresentationShell(document.getElementById('presentation'), {
   mapEl: document.getElementById('map'),
@@ -75,6 +95,7 @@ const presentation = createPresentationShell(document.getElementById('presentati
   mapView,
   animator,
   registry,
+  legend,
   getDoc: () => doc,
   onExit: exitPresentation,
 });
@@ -97,6 +118,15 @@ layoutSelect.addEventListener('change', () => {
   if (!doc) return;
   setPresentationLayout(doc, layoutSelect.value);
   scheduleSave();
+});
+
+// 범례 표시 토글(프로젝트 전체)
+const legendToggle = document.getElementById('legend-toggle');
+legendToggle.addEventListener('change', () => {
+  if (!doc) return;
+  setLegendVisible(doc, legendToggle.checked);
+  scheduleSave();
+  legend.render(getPage(doc, currentPageId), { editable: true });
 });
 
 // M9 확장: 카메라 위치 도구 (모두 적용 / 위치 가져오기 팝오버)
@@ -293,6 +323,7 @@ function enterEditor() {
   document.title = `${doc.meta.title} — e-GIStory`;
   updateCloudToggle();
   layoutSelect.value = doc.meta.presentationLayout || 'band'; // 발표 레이아웃 현재값 반영
+  legendToggle.checked = doc.meta.legend ? doc.meta.legend.visible : true; // 범례 표시 현재값
   refresh();
   const page = getPage(doc, currentPageId);
   if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 즉시 복원
@@ -318,6 +349,7 @@ function refresh() {
   pageList.render(doc, currentPageId);
   contentEditor.render(page);
   camSyncBtn.disabled = doc.pages.length <= 1; // 가져올 다른 슬라이드가 없으면 비활성
+  legend.render(page, { editable: true });
 }
 
 /** .egis 형식 문서를 소스로 추가(공통 플로우 — .tif도 래핑 후 여기로). */

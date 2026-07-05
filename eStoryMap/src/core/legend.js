@@ -15,8 +15,9 @@ export function clampLegendPos(x, y) {
 
 /**
  * 현재 페이지의 보이는 레이어들 → 범례 항목 배열.
- * 레이어 메타는 소스 egis를 정규화(parseEgisDoc)해 조회. override(label/hidden) 적용.
- * @returns {{key:string, label:string, kind:'swatch'|'ramp', color:string}[]}
+ * 레이어 메타는 소스 egis를 정규화(parseEgisDoc)해 조회. override(label) 적용.
+ * hidden은 제외하지 않고 플래그로 실어 보낸다(편집기는 흐리게 표시해 되켜기 가능, 발표는 필터).
+ * @returns {{key:string, label:string, kind:'swatch'|'ramp', color:string, hidden:boolean}[]}
  */
 export function buildLegendItems(doc, page) {
   if (!page) return [];
@@ -42,12 +43,12 @@ export function buildLegendItems(doc, page) {
 
     const key = `${entry.sourceId}:${entry.layerId}`;
     const ov = overrides[key] || {};
-    if (ov.hidden) continue;
     items.push({
       key,
       label: ov.label != null ? ov.label : layer.name,
       kind: layer.type === 'raster' ? 'ramp' : 'swatch',
       color: layer.color,
+      hidden: !!ov.hidden,
     });
   }
   return items;

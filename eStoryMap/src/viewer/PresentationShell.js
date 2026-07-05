@@ -18,7 +18,7 @@ import { navReduce, indicatorDots, buildOverlay } from './presentationNav.js';
  * @param {() => object} deps.getDoc - 현재 StoryDoc 반환
  * @param {() => void} deps.onExit - 종료 시 편집기 원복(main의 refresh 등)
  */
-export function createPresentationShell(root, { mapEl, mapHome, mapView, animator, registry, getDoc, onExit }) {
+export function createPresentationShell(root, { mapEl, mapHome, mapView, animator, registry, legend, getDoc, onExit }) {
   root.innerHTML = '';
   root.style.display = 'none';
 
@@ -65,6 +65,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     if (!page) return;
     applyPageVisibility(page, registry);
     animator.flyTo(page.camera); // camera null이면 no-op(그 자리 유지)
+    if (legend) legend.render(page, { editable: false }); // 발표: 정적 범례(이 슬라이드 레이어)
 
     const vm = buildOverlay(page.content);
     overlay.style.display = vm.empty ? 'none' : '';
