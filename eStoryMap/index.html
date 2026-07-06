@@ -11,6 +11,10 @@
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>e-GIStory</title>
+    <!-- 저장된 테마를 첫 페인트 전에 적용(다크→라이트 깜빡임 방지). 기본은 다크. -->
+    <script>
+      try { if (localStorage.getItem('egis-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+    </script>
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
@@ -34,6 +38,7 @@
         <label id="cloud-toggle-label" title="로그인하면 이 스토리맵을 클라우드에도 자동 저장합니다"><input type="checkbox" id="cloud-toggle" disabled /> 클라우드 동기화</label>
         <span id="save-status"></span>
         <span id="status"></span>
+        <button id="btn-theme" type="button" title="테마 전환">☀️</button>
       </header>
       <div id="workspace">
         <aside id="sidebar">

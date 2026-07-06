@@ -145,6 +145,21 @@ document.getElementById('btn-report').addEventListener('click', () => {
   report.open(); // 비동기: 페이지별 캡처 후 표시. 닫기(exitReport)에서 inert 해제
 });
 
+// 테마(편집기 UI만): 다크 기본, localStorage 기억. 발표=다크 무대·보고서=흰 종이는 고정.
+const btnTheme = document.getElementById('btn-theme');
+function applyTheme(theme) {
+  const t = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+  btnTheme.textContent = t === 'light' ? '🌙' : '☀️';
+  btnTheme.title = t === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환';
+}
+applyTheme(localStorage.getItem('egis-theme') || 'dark');
+btnTheme.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  try { localStorage.setItem('egis-theme', next); } catch (e) { /* private 모드 등 무시 */ }
+  applyTheme(next);
+});
+
 // M9 확장: 발표 레이아웃 선택(프로젝트 전체, doc.meta.presentationLayout)
 const layoutSelect = document.getElementById('layout-select');
 layoutSelect.addEventListener('change', () => {

@@ -161,6 +161,52 @@ html, body, #app { height: 100%; margin: 0; }
 }
 #cloud-toggle-label:has(#cloud-toggle:disabled) { opacity: 0.5; cursor: default; }
 
+/* ============ 라이트 모드 (편집기 UI 전용 — 발표=다크 무대·보고서=흰 종이는 고정) ============ */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="light"] #toolbar { background: #eef2f7; color: #1e293b; }
+:root[data-theme="light"] #map { background: #e2e8f0; }
+:root[data-theme="light"] #sidebar,
+:root[data-theme="light"] #content-sidebar { background: #f8fafc; color: #1e293b; border-color: #e2e8f0; }
+:root[data-theme="light"] .panel { border-bottom-color: #e2e8f0; }
+:root[data-theme="light"] .start-auth { border-top-color: #e2e8f0; }
+:root[data-theme="light"] #start-screen { background: #f8fafc; }
+:root[data-theme="light"] .start-box { color: #1e293b; }
+/* 입력·버튼·셀렉트(흰 배경) */
+:root[data-theme="light"] #toolbar button,
+:root[data-theme="light"] #layout-select,
+:root[data-theme="light"] #content-panel input,
+:root[data-theme="light"] #content-panel textarea,
+:root[data-theme="light"] #content-panel select,
+:root[data-theme="light"] .start-new input,
+:root[data-theme="light"] .auth-row input,
+:root[data-theme="light"] .auth-row button {
+  background: #ffffff; color: #1e293b; border-color: #cbd5e1;
+}
+:root[data-theme="light"] #toolbar button:hover { background: #e2e8f0; }
+:root[data-theme="light"] .start-item { background: #ffffff; color: #1e293b; border-color: #e2e8f0; }
+:root[data-theme="light"] #btn-add-page { border-color: #cbd5e1; color: #64748b; }
+:root[data-theme="light"] #btn-add-page:hover { border-color: #94a3b8; color: #1e293b; }
+:root[data-theme="light"] .md-preview { border-color: #cbd5e1; }
+:root[data-theme="light"] .page-row.selected { background: #2563eb; color: #ffffff; }
+/* 은은한 라벨·보조 텍스트 */
+:root[data-theme="light"] #status,
+:root[data-theme="light"] #save-status,
+:root[data-theme="light"] .panel-title,
+:root[data-theme="light"] .panel-empty,
+:root[data-theme="light"] .content-label,
+:root[data-theme="light"] .start-list-title,
+:root[data-theme="light"] .start-empty,
+:root[data-theme="light"] .auth-user,
+:root[data-theme="light"] .page-del,
+:root[data-theme="light"] .page-drag-handle,
+:root[data-theme="light"] #layout-select-label,
+:root[data-theme="light"] #legend-toggle-label,
+:root[data-theme="light"] #cloud-toggle-label { color: #64748b; }
+/* 강조색 대비 보정 */
+:root[data-theme="light"] .start-error,
+:root[data-theme="light"] .auth-error { color: #dc2626; }
+:root[data-theme="light"] .auth-signup { color: #2563eb; }
+
 /* --- M9 프레젠테이션 셸 --- */
 #presentation {
   position: fixed; inset: 0; z-index: 200; background: #000;
