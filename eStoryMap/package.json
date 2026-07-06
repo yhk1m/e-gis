@@ -8,8 +8,9 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build && electron-builder",
-    "build:unpack": "vite build && electron-builder --dir",
+    "clean": "node scripts/clean.js",
+    "build": "node scripts/clean.js && vite build && electron-builder",
+    "build:unpack": "node scripts/clean.js && vite build && electron-builder --dir",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -30,5 +31,33 @@
     "vite-plugin-electron": "^0.28.6",
     "vite-plugin-electron-renderer": "^0.14.5",
     "vitest": "^1.6.0"
+  },
+  "build": {
+    "appId": "kr.egis.egistory",
+    "productName": "e-GIStory",
+    "copyright": "© 2026 김용현",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "dist-electron/**",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "e-GIStory"
+    },
+    "artifactName": "${productName}-Setup-${version}.${ext}"
   }
 }
