@@ -1,7 +1,7 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
 import { buildReportSections } from './reportModel.js';
-import { createStoryDoc, addSource, setPageContent, addPage } from '../core/StoryDoc.js';
+import { createStoryDoc, addSource, setPageContent, addPage, setPageKind } from '../core/StoryDoc.js';
 
 function docWithContent() {
   const doc = createStoryDoc();
@@ -56,5 +56,29 @@ describe('buildReportSections', () => {
     const p2 = addPage(doc, 'page_1');
     const sections = buildReportSections(doc, {});
     expect(sections.map((s) => s.id)).toEqual(['page_1', p2.id]);
+  });
+
+  it('기본 kind는 map이고 캡처 이미지·범례를 담는다', () => {
+    const doc = docWithContent();
+    const s = buildReportSections(doc, { page_1: 'data:img1' })[0];
+    expect(s.kind).toBe('map');
+    expect(s.image).toBe('data:img1');
+    expect(s.legend.length).toBe(1);
+  });
+
+  it('title/media 슬라이드는 이미지·범례 없이 담는다(kind 유지)', () => {
+    const doc = docWithContent();
+    setPageKind(doc, 'page_1', 'title');
+    let s = buildReportSections(doc, { page_1: 'data:img1' })[0];
+    expect(s.kind).toBe('title');
+    expect(s.image).toBeNull(); // 지도 캡처 안 씀
+    expect(s.legend).toEqual([]);
+    expect(s.heading).toBe('부산'); // 표지 제목은 유지
+
+    setPageKind(doc, 'page_1', 'media');
+    s = buildReportSections(doc, { page_1: 'data:img1' })[0];
+    expect(s.kind).toBe('media');
+    expect(s.image).toBeNull();
+    expect(s.legend).toEqual([]);
   });
 });

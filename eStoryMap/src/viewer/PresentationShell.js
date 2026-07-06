@@ -33,6 +33,17 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
   const oCaption = document.createElement('div'); oCaption.className = 'pres-caption';
   overlay.append(oHeading, oBody, oCaption);
 
+  // 제목/미디어 슬라이드용 전체화면 커버(지도를 불투명하게 가림). 종류는 클래스로 스타일 분기.
+  const cover = document.createElement('div');
+  cover.className = 'pres-cover';
+  cover.style.display = 'none';
+  const cInner = document.createElement('div'); cInner.className = 'pres-cover-inner';
+  const cHeading = document.createElement('div'); cHeading.className = 'pres-cover-heading';
+  const cBody = document.createElement('div'); cBody.className = 'pres-cover-body md-preview';
+  const cCaption = document.createElement('div'); cCaption.className = 'pres-cover-caption';
+  cInner.append(cHeading, cBody, cCaption);
+  cover.appendChild(cInner);
+
   const indicator = document.createElement('div');
   indicator.className = 'pres-indicator';
 
@@ -40,7 +51,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
   const nextBtn = mkBtn('▸', 'pres-arrow pres-next', '다음 (→)', () => go('next'));
   const exitBtn = mkBtn('✕', 'pres-exit', '발표 종료 (Esc)', () => exit());
 
-  stage.append(overlay, indicator, prevBtn, nextBtn, exitBtn);
+  stage.append(cover, overlay, indicator, prevBtn, nextBtn, exitBtn);
   root.appendChild(stage);
 
   let index = 0;
@@ -63,18 +74,29 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     const list = pages();
     const page = list[index];
     if (!page) return;
-    applyPageVisibility(page, registry);
-    animator.flyTo(page.camera); // camera null이면 no-op(그 자리 유지)
-    if (legend) legend.render(page, { editable: false }); // 발표: 정적 범례(이 슬라이드 레이어)
+    const kind = page.kind || 'map';
+    const layout = getDoc().meta.presentationLayout || 'band';
+    stage.className = 'pres-stage pres-layout-' + layout + ' pres-kind-' + kind;
 
-    const vm = buildOverlay(page.content);
-    overlay.style.display = vm.empty ? 'none' : '';
-    oHeading.textContent = vm.heading;
-    oHeading.style.display = vm.heading ? '' : 'none';
-    oBody.innerHTML = vm.bodyHtml; // renderMarkdown이 DOMPurify로 살균한 HTML
-    oBody.style.display = vm.bodyHtml ? '' : 'none';
-    oCaption.textContent = vm.caption;
-    oCaption.style.display = vm.caption ? '' : 'none';
+    const vm = buildOverlay(page.content); // {heading, bodyHtml(살균), caption, empty}
+
+    if (kind === 'map') {
+      applyPageVisibility(page, registry);
+      animator.flyTo(page.camera); // camera null이면 no-op(그 자리 유지)
+      if (legend) legend.render(page, { editable: false }); // 발표: 정적 범례(이 슬라이드 레이어)
+      cover.style.display = 'none';
+      overlay.style.display = vm.empty ? 'none' : '';
+      oHeading.textContent = vm.heading; oHeading.style.display = vm.heading ? '' : 'none';
+      oBody.innerHTML = vm.bodyHtml; oBody.style.display = vm.bodyHtml ? '' : 'none';
+      oCaption.textContent = vm.caption; oCaption.style.display = vm.caption ? '' : 'none';
+    } else {
+      // 제목/미디어: 지도 숨김(불투명 커버) + 오버레이 숨김. body가 미디어(미디어)거나 부제(제목).
+      overlay.style.display = 'none';
+      cover.style.display = '';
+      cHeading.textContent = vm.heading; cHeading.style.display = vm.heading ? '' : 'none';
+      cBody.innerHTML = vm.bodyHtml; cBody.style.display = vm.bodyHtml ? '' : 'none';
+      cCaption.textContent = vm.caption; cCaption.style.display = vm.caption ? '' : 'none';
+    }
 
     indicator.innerHTML = '';
     for (const dot of indicatorDots(list.length, index)) {

@@ -31,6 +31,7 @@ function makePage(id, title) {
   return {
     id,
     title,
+    kind: 'map', // 'map'(기본·지도) | 'title'(제목 표지) | 'media'(지도 없이 사진/영상)
     camera: null, // {center:[lon,lat], zoom} — 캡처/적용은 M4
     layerVisibility: [], // [{sourceId, layerId, visible}] — 미등재 = 숨김
     overrides: {}, // v2 자리
@@ -215,6 +216,33 @@ export function setPageContent(doc, pageId, patch) {
   for (const field of CONTENT_FIELDS) {
     if (typeof patch[field] === 'string') page.content[field] = patch[field];
   }
+  touch(doc);
+}
+
+export const SLIDE_KINDS = ['map', 'title', 'media'];
+
+/** 슬라이드 종류 설정(지도/제목/미디어). 허용 enum만 반영.
+ *  구버전 .esm/미설정 페이지는 읽는 쪽에서 'map' 기본(계약). */
+export function setPageKind(doc, pageId, kind) {
+  if (!SLIDE_KINDS.includes(kind)) return;
+  const page = getPage(doc, pageId);
+  if (!page) return;
+  page.kind = kind;
+  touch(doc);
+}
+
+/** 슬라이드 순서를 orderedIds 순열대로 재배치(드래그 앤 드롭). 현재 id들의 순열이 아니면 no-op(방어). */
+export function setPageOrder(doc, orderedIds) {
+  if (!Array.isArray(orderedIds) || orderedIds.length !== doc.pages.length) return;
+  const byId = new Map(doc.pages.map((p) => [p.id, p]));
+  const next = [];
+  for (const id of orderedIds) {
+    const page = byId.get(id);
+    if (!page) return; // 알 수 없거나 중복된 id → 안전하게 중단
+    byId.delete(id);
+    next.push(page);
+  }
+  doc.pages.splice(0, doc.pages.length, ...next); // 배열 참조를 유지하며 내용 교체
   touch(doc);
 }
 

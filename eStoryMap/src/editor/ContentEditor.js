@@ -1,17 +1,37 @@
 // © 2026 김용현
 // eStoryMap/src/editor/ContentEditor.js
-// 우측 CONTENT 패널: 현재 페이지의 heading/body(마크다운)/caption 편집(상위 스펙 §4).
+// 우측 CONTENT 패널: 현재 페이지의 종류(지도/제목/미디어) + heading/body/caption 편집.
 // 필드는 팩토리에서 1회 생성 — 입력 중 재렌더가 없어야 포커스가 유지된다.
-// 타이핑은 onChange로 문서에만 반영하고(전체 refresh 금지), 미리보기는 자체 갱신.
-// MVP는 순수 마크다운 입력(서식 툴바는 v2 — 스펙 §0).
+// 타이핑은 onChange로 문서에만 반영(전체 refresh 금지). 종류 변경은 refresh 필요(발표/목록 반영)라 상위에서 처리.
 import { renderMarkdown } from '../shared/markdown.js';
+
+const KIND_OPTIONS = [
+  ['map', '지도'],
+  ['title', '제목(표지)'],
+  ['media', '사진/영상'],
+];
+// 종류별 heading/body 라벨·힌트
+const KIND_HINTS = {
+  map: { heading: '제목', body: '본문', bodyPh: '본문 (마크다운: # 제목, **굵게**, - 목록)' },
+  title: { heading: '큰 제목', body: '부제', bodyPh: '부제 · 설명 (선택)' },
+  media: { heading: '제목 (선택)', body: '사진/영상', bodyPh: '이미지·YouTube·구글드라이브 링크를 한 줄에 붙여넣기' },
+};
 
 /**
  * @param {HTMLElement} container
- * @param {{onChange(field:'heading'|'body'|'caption', value:string):void}} handlers
+ * @param {{onChange(field:'kind'|'heading'|'body'|'caption', value:string):void}} handlers
  */
 export function createContentEditor(container, { onChange }) {
   container.innerHTML = '';
+
+  const kind = document.createElement('select');
+  kind.id = 'content-kind';
+  for (const [val, label] of KIND_OPTIONS) {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = label;
+    kind.appendChild(opt);
+  }
 
   const heading = document.createElement('input');
   heading.type = 'text';
@@ -20,7 +40,6 @@ export function createContentEditor(container, { onChange }) {
 
   const body = document.createElement('textarea');
   body.id = 'content-body';
-  body.placeholder = '본문 (마크다운: # 제목, **굵게**, - 목록)';
   body.rows = 10;
 
   const preview = document.createElement('div');
@@ -32,6 +51,20 @@ export function createContentEditor(container, { onChange }) {
   caption.id = 'content-caption';
   caption.placeholder = '지도 하단 캡션';
 
+  const headingLabel = document.createElement('div'); // 종류별로 텍스트 갱신
+  const bodyLabel = document.createElement('div');
+
+  function applyKind(k) {
+    const hint = KIND_HINTS[k] || KIND_HINTS.map;
+    headingLabel.textContent = hint.heading;
+    bodyLabel.textContent = hint.body;
+    body.placeholder = hint.bodyPh;
+  }
+
+  kind.addEventListener('change', () => {
+    applyKind(kind.value);
+    onChange('kind', kind.value); // 상위가 setPageKind + refresh
+  });
   heading.addEventListener('input', () => onChange('heading', heading.value));
   body.addEventListener('input', () => {
     preview.innerHTML = renderMarkdown(body.value); // 살균된 HTML만 삽입
@@ -39,19 +72,28 @@ export function createContentEditor(container, { onChange }) {
   });
   caption.addEventListener('input', () => onChange('caption', caption.value));
 
-  for (const [label, el] of [['제목', heading], ['본문', body], ['미리보기', preview], ['캡션', caption]]) {
+  function field(label, el) {
     const wrap = document.createElement('div');
     wrap.className = 'content-field';
-    const lab = document.createElement('div');
+    const lab = typeof label === 'string' ? document.createElement('div') : label;
     lab.className = 'content-label';
-    lab.textContent = label;
+    if (typeof label === 'string') lab.textContent = label;
     wrap.appendChild(lab);
     wrap.appendChild(el);
     container.appendChild(wrap);
   }
 
-  /** 페이지 전환 시 현재 페이지 콘텐츠로 필드를 채운다. */
+  field('슬라이드 종류', kind);
+  field(headingLabel, heading);
+  field(bodyLabel, body);
+  field('미리보기', preview);
+  field('캡션', caption);
+
+  /** 페이지 전환 시 현재 페이지 값으로 필드를 채운다. */
   function render(page) {
+    const k = page.kind || 'map';
+    kind.value = k;
+    applyKind(k);
     heading.value = page.content.heading;
     body.value = page.content.body;
     caption.value = page.content.caption;

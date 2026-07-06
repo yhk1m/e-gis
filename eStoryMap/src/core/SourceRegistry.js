@@ -65,6 +65,12 @@ export class SourceRegistry {
     return this.layers.get(this.key(sourceId, layerId)) || null;
   }
 
+  /** 등록된 모든 레이어를 지도에서 제거하고 레지스트리를 비운다(프로젝트 전환 시). */
+  clear() {
+    for (const layer of this.layers.values()) this.mapView.removeLayer(layer);
+    this.layers.clear();
+  }
+
   /** 등록 순서대로 [{sourceId, layerId, layer}]. sourceId에는 '/'가 없다(src_N). */
   entriesList() {
     return [...this.layers.entries()].map(([k, layer]) => {

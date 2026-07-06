@@ -44,6 +44,7 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
     const n = doc.pages.length;
     for (let i = 0; i < n; i++) {
       const page = doc.pages[i];
+      if ((page.kind || 'map') !== 'map') continue; // 제목/미디어 슬라이드는 지도 캡처 없음
       loading.textContent = `보고서 생성 중… ${i + 1}/${n}`;
       applyPageVisibility(page, registry);
       if (page.camera) mapView.setView(page.camera.center, page.camera.zoom);
@@ -91,8 +92,26 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
 
   function makeReportSection(s) {
     const pg = document.createElement('section');
-    pg.className = 'report-section';
+    pg.className = 'report-section report-kind-' + (s.kind || 'map');
 
+    // 제목(표지) 슬라이드 = 보고서 표지: 큰 제목 + 부제. 지도·범례·캡션 없음.
+    if (s.kind === 'title') {
+      if (s.heading) {
+        const t = document.createElement('h1');
+        t.className = 'report-cover-title';
+        t.textContent = s.heading;
+        pg.appendChild(t);
+      }
+      if (s.bodyHtml) {
+        const sub = document.createElement('div');
+        sub.className = 'report-cover-subtitle md-preview';
+        sub.innerHTML = s.bodyHtml; // 살균된 HTML
+        pg.appendChild(sub);
+      }
+      return pg;
+    }
+
+    // map / media — media는 image=null·legend=[]이라 자연히 미디어 본문·캡션만 렌더된다.
     if (s.heading) {
       const h = document.createElement('h1');
       h.className = 'report-heading';

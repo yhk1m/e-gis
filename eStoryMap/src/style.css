@@ -29,9 +29,15 @@ html, body, #app { height: 100%; margin: 0; }
   padding: 5px 8px; border-radius: 6px; font-size: 13px; cursor: pointer;
 }
 .page-row.selected { background: #1d4ed8; }
+.page-kind { flex: none; margin-right: 6px; font-size: 12px; line-height: 1; }
 .page-row .page-name { flex: 1; }
 .page-del { border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 14px; }
 .page-del:disabled { opacity: 0.3; cursor: default; }
+.page-drag-handle { flex: none; cursor: grab; color: #64748b; font-size: 12px; margin-right: 4px; line-height: 1; user-select: none; }
+.page-drag-handle:active { cursor: grabbing; }
+.page-row.dragging { opacity: 0.4; }
+.page-row.drop-before { box-shadow: inset 0 2px 0 0 #3b82f6; }  /* 이 행 앞에 삽입 */
+.page-row.drop-after { box-shadow: inset 0 -2px 0 0 #3b82f6; } /* 이 행 뒤에 삽입 */
 #btn-add-page {
   margin-top: 6px; width: 100%; padding: 5px; border: 1px dashed #334155;
   background: none; color: #94a3b8; border-radius: 6px; cursor: pointer;
@@ -72,10 +78,11 @@ html, body, #app { height: 100%; margin: 0; }
 }
 .content-field { margin-bottom: 12px; }
 .content-label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
-#content-panel input, #content-panel textarea {
+#content-panel input, #content-panel textarea, #content-panel select {
   width: 100%; padding: 6px 8px; border: 1px solid #334155; border-radius: 6px;
   background: #1e293b; color: #e5e7eb; font-size: 13px; font-family: inherit; resize: vertical;
 }
+#content-panel select { cursor: pointer; }
 .md-preview {
   border: 1px dashed #334155; border-radius: 6px; padding: 8px;
   font-size: 13px; min-height: 40px; overflow-wrap: break-word;
@@ -86,6 +93,18 @@ html, body, #app { height: 100%; margin: 0; }
 .md-preview img { max-width: 100%; }
 .md-preview pre { overflow-x: auto; }
 .md-preview table { display: block; max-width: 100%; overflow-x: auto; }
+/* 미디어 임베드(#3): YouTube 반응형 16:9 + Drive 이미지 */
+.md-preview .embed-video { position: relative; width: 100%; padding-top: 56.25%; margin: 8px 0; }
+.md-preview .embed-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 6px; }
+.md-preview .embed-image { display: block; max-width: 100%; height: auto; margin: 8px 0; border-radius: 6px; }
+/* 보고서/PDF용 YouTube 정적 썸네일 + ▶ 오버레이 */
+.md-preview .embed-video-static { position: relative; display: inline-block; max-width: 100%; margin: 8px 0; }
+.md-preview .embed-video-static img { display: block; max-width: 100%; height: auto; border-radius: 6px; }
+.md-preview .embed-play {
+  position: absolute; inset: 0; margin: auto; width: 54px; height: 54px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(220, 38, 38, 0.9); color: #fff; border-radius: 50%; font-size: 22px;
+}
 
 /* --- M6 시작 화면 + 저장 상태 --- */
 #save-status { margin-left: auto; font-size: 12px; color: #64748b; }
@@ -147,11 +166,9 @@ html, body, #app { height: 100%; margin: 0; }
   position: fixed; inset: 0; z-index: 200; background: #000;
   display: flex; align-items: center; justify-content: center;
 }
-.pres-stage {                                  /* 4:3 레터박스 스테이지 — 검은 여백 */
+.pres-stage {                                  /* 전체화면 스테이지 — 지도가 화면 전체를 채움 */
   position: relative; display: flex;           /* #map flex:1이 스테이지를 채움 */
-  aspect-ratio: 4 / 3;
-  width: min(100vw, 133.333vh);                /* 4/3 = 화면에 맞춰 최대, 나머지는 레터박스 */
-  max-width: 100vw; max-height: 100vh;
+  width: 100vw; height: 100vh;
   background: #0b0f14; overflow: hidden;
 }
 .pres-overlay {                                /* 공통: 색/위치기준만. 배경·기하는 레이아웃별 */
@@ -165,19 +182,16 @@ html, body, #app { height: 100%; margin: 0; }
 }
 /* band — 우측 세로 밴드, 안쪽(좌) 경계가 지도로 페이드 */
 .pres-layout-band .pres-overlay {
-  right: 0; top: 0; bottom: 0; width: 34%; padding: 8% 5% 8% 7%;
+  right: 0; top: 0; bottom: 0; width: 34%; padding: 8% 68px 8% 7%; /* 오른쪽 = 가장자리 next 버튼 자리 확보 */
   display: flex; flex-direction: column; justify-content: center;
   background: linear-gradient(to right, rgba(11, 15, 20, 0) 0%, rgba(11, 15, 20, 0.82) 26%);
 }
 /* panel — 우측 단단한 사이드패널(하드 라인) */
 .pres-layout-panel .pres-overlay {
-  right: 0; top: 0; bottom: 0; width: 32%; padding: 8% 5%;
+  right: 0; top: 0; bottom: 0; width: 32%; padding: 8% 68px 8% 5%; /* 오른쪽 = 가장자리 next 버튼 자리 확보 */
   display: flex; flex-direction: column; justify-content: center;
   background: rgba(11, 15, 20, 0.9); border-left: 1px solid rgba(255, 255, 255, 0.15);
 }
-/* 사이드 레이아웃에선 next 화살표를 밴드 왼쪽으로 비켜 배치(텍스트와 겹침 방지) */
-.pres-layout-band .pres-next { right: 36%; }
-.pres-layout-panel .pres-next { right: 34%; }
 .pres-heading { font-size: clamp(18px, 2.6vw, 34px); font-weight: 700; margin-bottom: 6px; }
 .pres-body {                                   /* .md-preview의 점선 박스 룩만 제거, 이미지/표 규칙은 유지 */
   font-size: clamp(13px, 1.5vw, 19px); line-height: 1.5;
@@ -207,6 +221,23 @@ html, body, #app { height: 100%; margin: 0; }
   color: #f8fafc; font-size: 15px; cursor: pointer;
 }
 .pres-exit:hover { background: rgba(220, 38, 38, 0.8); }
+/* 제목/미디어 슬라이드용 전체화면 커버(지도를 불투명하게 가림). 종류는 스테이지 pres-kind-*로 분기 */
+.pres-cover {
+  position: absolute; inset: 0; z-index: 15; background: #0b0f14;
+  display: flex; align-items: center; justify-content: center;
+  color: #f8fafc; box-sizing: border-box; padding: 4%;
+}
+.pres-cover-inner { max-width: 92%; width: 100%; text-align: center; }
+.pres-cover-body { border: none; padding: 0; min-height: 0; }
+.pres-cover-caption { margin-top: 14px; font-size: clamp(12px, 1.4vw, 17px); color: #cbd5e1; }
+/* 제목(표지): 큰 제목 + 부제 */
+.pres-kind-title .pres-cover-heading { font-size: clamp(30px, 6.5vw, 88px); font-weight: 800; line-height: 1.12; }
+.pres-kind-title .pres-cover-body { font-size: clamp(16px, 2.6vw, 34px); color: #cbd5e1; margin-top: 3%; }
+/* 미디어: 사진/영상이 화면을 채움 */
+.pres-kind-media .pres-cover-heading { font-size: clamp(16px, 2.4vw, 30px); font-weight: 600; margin-bottom: 14px; }
+.pres-kind-media .pres-cover-body img,
+.pres-kind-media .pres-cover-body .embed-image { max-height: 82vh; width: auto; max-width: 100%; margin: 0 auto; }
+.pres-kind-media .pres-cover-body .embed-video { width: min(90vw, 142vh); margin: 0 auto; } /* 16:9 최대 */
 
 /* 헤더 레이아웃 셀렉트 */
 #layout-select-label {
@@ -287,6 +318,10 @@ html, body, #app { height: 100%; margin: 0; }
   font-size: 12pt; line-height: 1.6; color: #222; border: none; padding: 0; min-height: 0;
 }
 .report-caption { margin-top: 4mm; font-size: 10pt; color: #666; }
+/* 보고서 제목(표지) 슬라이드 = 문서 표지 */
+.report-kind-title { text-align: center; padding: 10mm 0 8mm; border-bottom: 1px solid #e2e8f0; }
+.report-cover-title { font-size: 26pt; font-weight: 800; color: #111; margin: 0 0 4mm; }
+.report-cover-subtitle { font-size: 13pt; color: #444; border: none; padding: 0; min-height: 0; }
 
 @page { size: A4; margin: 15mm; }
 @media print {

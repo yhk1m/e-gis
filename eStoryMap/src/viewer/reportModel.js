@@ -13,12 +13,17 @@ import { buildLegendItems } from '../core/legend.js';
  */
 export function buildReportSections(doc, imagesByPageId = {}) {
   const legendOn = doc.meta.legend ? doc.meta.legend.visible : true; // 없으면 기본 표시
-  return doc.pages.map((page) => ({
-    id: page.id,
-    heading: page.content.heading,
-    image: imagesByPageId[page.id] || null,
-    legend: legendOn ? buildLegendItems(doc, page).filter((i) => !i.hidden) : [],
-    bodyHtml: renderMarkdown(page.content.body),
-    caption: page.content.caption,
-  }));
+  return doc.pages.map((page) => {
+    const kind = page.kind || 'map'; // 구버전/미설정 = 지도
+    const isMap = kind === 'map';
+    return {
+      id: page.id,
+      kind, // 'map' | 'title'(표지) | 'media'(지도 없는 사진/영상)
+      heading: page.content.heading,
+      image: isMap ? imagesByPageId[page.id] || null : null, // 지도 슬라이드만 캡처 이미지
+      legend: isMap && legendOn ? buildLegendItems(doc, page).filter((i) => !i.hidden) : [],
+      bodyHtml: renderMarkdown(page.content.body, { staticMedia: true }), // 보고서: YouTube=썸네일+링크
+      caption: page.content.caption,
+    };
+  });
 }

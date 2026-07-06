@@ -6,8 +6,8 @@ import { parseEgisDoc } from './core/egisParse.js';
 import { SourceRegistry } from './core/SourceRegistry.js';
 import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
-  createStoryDoc, addSource, addPage, removePage, getPage, setLayerVisible, nextSourceId,
-  setPageCamera, setPageContent, setCloudSync,
+  createStoryDoc, addSource, addPage, removePage, setPageOrder, getPage, setLayerVisible, nextSourceId,
+  setPageCamera, setPageContent, setPageKind, setCloudSync,
   setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
@@ -61,12 +61,22 @@ const pageList = createPageList(document.getElementById('page-list'), {
     refresh();
     scheduleSave();
   },
+  onReorder(orderedIds) {
+    setPageOrder(doc, orderedIds); // 드래그 앤 드롭 순열대로 재배치
+    refresh();
+    scheduleSave();
+  },
 });
 
 const contentEditor = createContentEditor(document.getElementById('content-panel'), {
   onChange(field, value) {
-    // 전체 refresh 없음 — 타이핑 중 포커스 유지(콘텐츠는 지도/패널에 영향 없음)
-    setPageContent(doc, currentPageId, { [field]: value });
+    if (field === 'kind') {
+      setPageKind(doc, currentPageId, value); // 종류 변경 → 목록 배지·발표/보고서 렌더 반영
+      refresh();
+    } else {
+      // 전체 refresh 없음 — 타이핑 중 포커스 유지(콘텐츠는 지도/패널에 영향 없음)
+      setPageContent(doc, currentPageId, { [field]: value });
+    }
     scheduleSave();
   },
 });
@@ -351,6 +361,24 @@ function enterEditor() {
   const page = getPage(doc, currentPageId);
   if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 즉시 복원
 }
+
+/** 현재 프로젝트를 저장하고 시작 화면(프로젝트 목록 + 로그인/로그아웃)으로 돌아간다. */
+async function backToStart() {
+  if (!doc) return;
+  await saveNow(); // 저장 완료 후에 전환 — doSaveNow는 doc=null이면 no-op이라 순서가 중요
+  registry.clear(); // 이전 프로젝트의 소스 레이어를 지도에서 제거(다음 프로젝트와 섞이지 않게)
+  doc = null;
+  currentPageId = null;
+  projectName = null;
+  document.getElementById('app').inert = true;
+  document.getElementById('start-screen').style.display = '';
+  document.title = 'e-GIStory';
+  saveStatus.textContent = '';
+  startScreen.updateAuth({ user: authManager.getUser() });
+  await boot(); // 프로젝트 목록 새로고침(방금 저장분 포함)
+  refreshCloudList();
+}
+document.getElementById('btn-projects').addEventListener('click', backToStart);
 
 async function boot() {
   try {

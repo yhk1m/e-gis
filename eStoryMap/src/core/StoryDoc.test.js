@@ -5,7 +5,51 @@ import {
   setPageCamera, setPageContent, setCloudSync,
   setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
+  setPageKind, setPageOrder,
 } from './StoryDoc.js';
+
+describe('setPageOrder', () => {
+  function threePages() {
+    const doc = createStoryDoc('t');
+    const p2 = addPage(doc, 'page_1');
+    const p3 = addPage(doc, 'page_1');
+    return { doc, ids: ['page_1', p2.id, p3.id] };
+  }
+  it('주어진 순열대로 페이지를 재배치한다', () => {
+    const { doc, ids } = threePages();
+    setPageOrder(doc, [ids[2], ids[0], ids[1]]);
+    expect(doc.pages.map((p) => p.id)).toEqual([ids[2], ids[0], ids[1]]);
+  });
+  it('순열이 아니면(길이 불일치·미지의 id·중복) no-op', () => {
+    const { doc, ids } = threePages();
+    const before = doc.pages.map((p) => p.id);
+    setPageOrder(doc, [ids[0], ids[1]]); // 길이 부족
+    setPageOrder(doc, [ids[0], ids[1], 'nope']); // 미지의 id
+    setPageOrder(doc, [ids[0], ids[0], ids[1]]); // 중복
+    expect(doc.pages.map((p) => p.id)).toEqual(before);
+  });
+});
+
+describe('setPageKind', () => {
+  it('새 페이지는 기본이 map이다', () => {
+    const doc = createStoryDoc('t');
+    expect(doc.pages[0].kind).toBe('map');
+  });
+  it('title/media로 바꾸고, 허용 외 값은 무시한다', () => {
+    const doc = createStoryDoc('t');
+    const id = doc.pages[0].id;
+    setPageKind(doc, id, 'title');
+    expect(getPage(doc, id).kind).toBe('title');
+    setPageKind(doc, id, 'media');
+    expect(getPage(doc, id).kind).toBe('media');
+    setPageKind(doc, id, 'video'); // 허용 외 enum
+    expect(getPage(doc, id).kind).toBe('media'); // 변화 없음
+  });
+  it('없는 페이지면 no-op(throw 안 함)', () => {
+    const doc = createStoryDoc('t');
+    expect(() => setPageKind(doc, 'nope', 'title')).not.toThrow();
+  });
+});
 
 describe('setCloudSync', () => {
   it('새 문서에는 cloudSync가 없고(구버전 .esm 호환 계약), 토글로 불리언 설정된다', () => {
