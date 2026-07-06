@@ -3,6 +3,12 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
+    <!-- CSP: 외부 리소스를 필요한 출처로만 제한(추적 비콘·내부망 프로빙 차단). script/style은 Vite·OL 호환 위해 unsafe-inline
+         (실질 XSS 방어는 DOMPurify). 허용: OSM 타일, Supabase(REST+realtime), YouTube 임베드/썸네일, 구글드라이브 이미지, 보고서 캡처(data:). -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.googleusercontent.com https://img.youtube.com https://*.ytimg.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; connect-src 'self' ws://localhost:* http://localhost:* https://lufbotdmhgsuvejlytgh.supabase.co wss://lufbotdmhgsuvejlytgh.supabase.co; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>e-GIStory</title>
     <link rel="stylesheet" href="./src/style.css" />
