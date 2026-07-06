@@ -1,6 +1,8 @@
 # M10 보고서 셸 (Report) 설계 — 2026-07-06
 
-> **상태: 사용자 승인 완료.** A4 세로 보고서 + Electron printToPDF. 지도는 페이지별 캡처 이미지, 범례는 지도 아래 HTML 행. 경량 프로세스: 순수 로직 TDD, 캡처·DOM·PDF는 스모크.
+> **상태: 사용자 승인 완료.** A4 폭 **연속 시트** 보고서(섹션이 세로로 흐르고 인쇄 시 자연 페이지네이션) + Electron printToPDF. 지도는 페이지별 캡처 이미지, 범례는 지도 아래 HTML 행. 경량 프로세스: 순수 로직 TDD, 캡처·DOM·PDF는 스모크.
+>
+> **레이아웃 정정(2026-07-06 스모크):** 초안의 "섹션당 A4 한 장 고정(`break-after:page`)"은 짧은 섹션에서 여백이 과다 → **연속 시트**로 전환. 하나의 `.report-doc`(A4 폭) 안에 `.report-section`이 세로로 흐르고, `break-inside:avoid`로 섹션이 페이지 경계서 쪼개지지 않으며, 페이지 넘김은 인쇄 엔진의 자연 페이지네이션에 맡김.
 
 ## 0. 개요
 
@@ -23,14 +25,14 @@
 
 **`src/viewer/ReportShell.js`** — `createReportShell(container, { mapView, registry, getDoc, onExit, onSavePDF })` → `{ open(), close() }`:
 - `open()`: "생성 중 n/N" 로딩 표시 → **페이지별 순차**: `applyPageVisibility(page, registry)` + `mapView.setView(page.camera)` → `captureMapImage` → 이미지 수집. (지도는 오버레이 뒤에서 렌더/캡처.) → `buildReportSections`로 DOM 조립 → 표시. camera 없는 페이지는 현재 뷰로 캡처.
-- DOM: `.report-page`(A4) × N, 각 heading/figure(img)/legend(swatch·ramp 행)/body(살균 HTML)/caption. 상단 툴바(화면 전용): `📄 PDF 저장` · `닫기`.
+- DOM: `.report-doc`(A4 폭 연속 시트) 안에 `.report-section` × N, 각 heading/figure(img)/legend(swatch·ramp 행)/body(살균 HTML)/caption. 섹션은 세로로 흐르고 `break-inside:avoid`로 페이지 경계서 쪼개지지 않음. 지도 이미지는 고정 높이 `max-height:85mm`(A4 세로의 ~1/3). 상단 툴바(화면 전용): `📄 PDF 저장` · `닫기`.
 - `close()` → onExit(main이 refresh + 현재 페이지 카메라 원복).
 - `📄 PDF 저장` → `onSavePDF(doc.meta.title)`.
 
 ## 4. PDF (Electron)
 
 - **preload** `egisFS.savePDF(title)` → **main `report:savePDF`**: `mainWindow.webContents.printToPDF({ pageSize:'A4', printBackground:true, margins:{top:0,bottom:0,left:0,right:0} })` → `dialog.showSaveDialog`(기본 `baseDir()/{title}.pdf`) → `fsp.writeFile` → 저장 경로 반환(취소=null).
-- **`@media print`**: `#app,#start-screen,#presentation` 및 `.report-toolbar` 숨김, `#report`만. `@page{size:A4;margin:0}` + `.report-page{break-after:page}` → 페이지당 A4 1장.
+- **`@media print`**: `#app,#start-screen,#presentation` 및 `.report-toolbar` 숨김, `#report`만. `@page{size:A4;margin:15mm}`(여백은 @page가 담당 — printToPDF `margins`는 0) + `.report-doc{width:auto;padding:0}` + `.report-section{break-inside:avoid}` → 연속 시트를 인쇄 엔진이 A4로 자연 분할.
 
 ## 5. 배선
 

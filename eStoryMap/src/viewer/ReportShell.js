@@ -82,13 +82,16 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
 
     const pages = document.createElement('div');
     pages.className = 'report-pages';
-    for (const s of sections) pages.appendChild(makeReportPage(s));
+    const docEl = document.createElement('div');
+    docEl.className = 'report-doc'; // A4 폭 연속 시트 — 섹션이 세로로 흐르고 인쇄 시 자연 페이지네이션
+    for (const s of sections) docEl.appendChild(makeReportSection(s));
+    pages.appendChild(docEl);
     root.appendChild(pages);
   }
 
-  function makeReportPage(s) {
+  function makeReportSection(s) {
     const pg = document.createElement('section');
-    pg.className = 'report-page';
+    pg.className = 'report-section';
 
     if (s.heading) {
       const h = document.createElement('h1');

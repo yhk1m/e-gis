@@ -265,30 +265,34 @@ html, body, #app { height: 100%; margin: 0; }
 }
 .report-toolbar button:hover:not(:disabled) { background: #334155; }
 .report-toolbar button:disabled { opacity: 0.6; cursor: default; }
-.report-pages { padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.report-page {
-  width: 210mm; min-height: 297mm; box-sizing: border-box; padding: 20mm 18mm;
+.report-pages { padding: 20px 0; display: flex; justify-content: center; }
+.report-doc {                                  /* A4 폭 연속 시트 — 섹션이 세로로 흐름, 인쇄 시 자연 페이지네이션 */
+  width: 210mm; box-sizing: border-box; padding: 18mm;
   background: #fff; color: #111; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
-.report-heading { font-size: 22pt; margin: 0 0 8mm; color: #111; }
-.report-figure { margin: 0 0 5mm; }
-.report-figure img { width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; display: block; }
+.report-section { margin-bottom: 12mm; break-inside: avoid; } /* 섹션이 페이지 경계서 쪼개지지 않게 */
+.report-section:last-child { margin-bottom: 0; }
+.report-heading { font-size: 18pt; margin: 0 0 4mm; color: #111; }
+.report-figure { margin: 0 0 3mm; text-align: center; }
+.report-figure img {                           /* 고정 높이 지도(마스터 §5) — A4의 ~1/3, 종횡비 유지 */
+  max-height: 85mm; width: auto; max-width: 100%;
+  border: 1px solid #ddd; border-radius: 4px;
+}
 .report-legend {
-  display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 6mm;
+  display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 4mm;
   padding: 6px 10px; background: #f1f5f9; border-radius: 4px; font-size: 10pt; color: #333;
 }
 .report-legend .legend-mark { border-color: rgba(0, 0, 0, 0.25); }
 .report-body {
   font-size: 12pt; line-height: 1.6; color: #222; border: none; padding: 0; min-height: 0;
 }
-.report-caption { margin-top: 5mm; font-size: 10pt; color: #666; }
+.report-caption { margin-top: 4mm; font-size: 10pt; color: #666; }
 
-@page { size: A4; margin: 0; }
+@page { size: A4; margin: 15mm; }
 @media print {
   #app, #start-screen, #presentation { display: none !important; }
   #report { position: static; overflow: visible; background: #fff; }
   .report-toolbar, .report-loading { display: none !important; }
-  .report-pages { padding: 0; gap: 0; }
-  .report-page { box-shadow: none; break-after: page; }
-  .report-page:last-child { break-after: auto; }
+  .report-pages { padding: 0; display: block; }
+  .report-doc { width: auto; box-shadow: none; padding: 0; } /* 여백은 @page margin이 담당 */
 }
