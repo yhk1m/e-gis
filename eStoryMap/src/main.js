@@ -7,7 +7,7 @@ import { SourceRegistry } from './core/SourceRegistry.js';
 import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
   createStoryDoc, addSource, addPage, removePage, setPageOrder, getPage, setLayerVisible, nextSourceId,
-  setPageCamera, setPageContent, setPageKind, setCloudSync,
+  setPageCamera, setPageContent, setPageKind, setPageTitle, setCloudSync,
   setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
@@ -16,6 +16,8 @@ import { parseGeoTiff } from './core/GeoTiffLoader.js';
 import { createSourcePanel } from './editor/SourcePanel.js';
 import { createPageList } from './editor/PageList.js';
 import { createContentEditor } from './editor/ContentEditor.js';
+import { createSlidePreview } from './editor/SlidePreview.js';
+import { confirmDialog } from './editor/confirmDialog.js';
 import { CameraAnimator } from './shared/CameraAnimator.js';
 import { serializeStoryDoc, deserializeStoryDoc, createAutosaver } from './core/LocalStore.js';
 import { createStartScreen } from './editor/StartScreen.js';
@@ -28,7 +30,8 @@ import { createLegend } from './editor/Legend.js';
 const mapView = new MapView('map');
 const status = document.getElementById('status');
 const registry = new SourceRegistry(mapView);
-const animator = new CameraAnimator(mapView.map.getView());
+const animator = new CameraAnimator(mapView.map.getView(), { zoomForView: (z) => mapView.toRawZoom(z) });
+const slidePreview = createSlidePreview(document.getElementById('slide-preview')); // 지도 위 발표 미리보기
 const saveStatus = document.getElementById('save-status');
 let doc = null; // 시작 화면에서 생성/로드 후 배정
 let currentPageId = null;
@@ -55,7 +58,10 @@ const pageList = createPageList(document.getElementById('page-list'), {
     refresh();
     scheduleSave();
   },
-  onRemove(pageId) {
+  async onRemove(pageId) {
+    const page = getPage(doc, pageId);
+    const label = page ? page.title : '이 슬라이드';
+    if (!(await confirmDialog(`'${label}' 슬라이드를 삭제할까요?`))) return; // 삭제 전 확인
     const removed = removePage(doc, pageId);
     if (removed && currentPageId === pageId) currentPageId = doc.pages[0].id;
     refresh();
@@ -63,6 +69,11 @@ const pageList = createPageList(document.getElementById('page-list'), {
   },
   onReorder(orderedIds) {
     setPageOrder(doc, orderedIds); // 드래그 앤 드롭 순열대로 재배치
+    refresh();
+    scheduleSave();
+  },
+  onRename(pageId, title) {
+    setPageTitle(doc, pageId, title); // 페이지(슬라이드) 이름 변경
     refresh();
     scheduleSave();
   },
@@ -76,6 +87,7 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
     } else {
       // 전체 refresh 없음 — 타이핑 중 포커스 유지(콘텐츠는 지도/패널에 영향 없음)
       setPageContent(doc, currentPageId, { [field]: value });
+      slidePreview.render(getPage(doc, currentPageId), doc.meta); // 편집 즉시 미리보기 갱신
     }
     scheduleSave();
   },
@@ -102,7 +114,7 @@ function onLegendChange(change) {
 // M9 발표 셸: #map 노드를 4:3 스테이지로 재부모(소스·레이어 유지). 종료 시 편집기 원복.
 const presentation = createPresentationShell(document.getElementById('presentation'), {
   mapEl: document.getElementById('map'),
-  mapHome: document.getElementById('map-stage'),
+  mapHome: document.getElementById('slide-canvas'), // 지도 원위치 = 16:9 슬라이드 캔버스
   mapView,
   animator,
   registry,
@@ -165,6 +177,7 @@ const layoutSelect = document.getElementById('layout-select');
 layoutSelect.addEventListener('change', () => {
   if (!doc) return;
   setPresentationLayout(doc, layoutSelect.value);
+  slidePreview.render(getPage(doc, currentPageId), doc.meta); // 레이아웃 바뀌면 미리보기도 반영
   scheduleSave();
 });
 
@@ -175,6 +188,16 @@ legendToggle.addEventListener('change', () => {
   setLegendVisible(doc, legendToggle.checked);
   scheduleSave();
   legend.render(getPage(doc, currentPageId), { editable: true });
+});
+
+// 발표 미리보기 토글(지도 위 오버레이 표시/숨김). 로컬 기억(기본 켜짐).
+const previewToggle = document.getElementById('preview-toggle');
+previewToggle.checked = localStorage.getItem('egis-preview') !== 'off';
+slidePreview.setVisible(previewToggle.checked);
+previewToggle.addEventListener('change', () => {
+  slidePreview.setVisible(previewToggle.checked);
+  try { localStorage.setItem('egis-preview', previewToggle.checked ? 'on' : 'off'); } catch (e) { /* private 모드 무시 */ }
+  if (doc) slidePreview.render(getPage(doc, currentPageId), doc.meta);
 });
 
 // M9 확장: 카메라 위치 도구 (모두 적용 / 위치 가져오기 팝오버)
@@ -372,6 +395,7 @@ function enterEditor() {
   updateCloudToggle();
   layoutSelect.value = doc.meta.presentationLayout || 'band'; // 발표 레이아웃 현재값 반영
   legendToggle.checked = doc.meta.legend ? doc.meta.legend.visible : true; // 범례 표시 현재값
+  mapView.updateSize(); // 슬라이드 캔버스(16:9) 크기 반영 후에 카메라 적용 — 줌 정규화 정확도
   refresh();
   const page = getPage(doc, currentPageId);
   if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 즉시 복원
@@ -416,6 +440,7 @@ function refresh() {
   contentEditor.render(page);
   camSyncBtn.disabled = doc.pages.length <= 1; // 가져올 다른 슬라이드가 없으면 비활성
   legend.render(page, { editable: true });
+  slidePreview.render(page, doc.meta); // 지도 위 발표 미리보기(발표와 동일한 오버레이/커버)
 }
 
 /** .egis 형식 문서를 소스로 추가(공통 플로우 — .tif도 래핑 후 여기로). */
@@ -425,7 +450,7 @@ function addSourceFromEgis(filename, rawJson) {
   const { builtLayerIds, skipped, olLayers } = registry.addSource(sourceId, parsed);
   addSource(doc, { sourceId, filename, egis: rawJson }, builtLayerIds, currentPageId);
   // 카메라: .egis 저장 뷰 우선, 없으면 새 레이어 범위로. (페이지 카메라는 M4)
-  if (parsed.view) mapView.setView(parsed.view.center, parsed.view.zoom);
+  if (parsed.view) mapView.setViewRaw(parsed.view.center, parsed.view.zoom); // .egis 원본 프레이밍 보존(정규화 X)
   else if (olLayers.length) mapView.fitToLayers(olLayers);
   refresh();
   scheduleSave();

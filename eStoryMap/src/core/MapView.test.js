@@ -73,3 +73,17 @@ describe('MapView.getCamera', () => {
     expect(mv.getCamera().center).not.toBe(mv.getCamera().center);
   });
 });
+
+describe('MapView 줌 정규화(캔버스 폭 무관 같은 extent)', () => {
+  it('정규화↔역정규화는 같은 폭에서 라운드트립한다', () => {
+    const mv = new MapView('nonexistent-target');
+    mv.mapWidth = () => 1200;
+    expect(mv.toRawZoom(mv.toNormZoom(10))).toBeCloseTo(10, 10);
+  });
+  it('참조 폭 절반(960)에선 저장 줌이 +1 (같은 범위 유지 위해)', () => {
+    const mv = new MapView('nonexistent-target');
+    mv.mapWidth = () => 960; // REF_WIDTH 1920의 절반 → log2(1920/960)=1
+    expect(mv.toNormZoom(10)).toBeCloseTo(11, 6); // 실제 줌 10 → 저장 11
+    expect(mv.toRawZoom(11)).toBeCloseTo(10, 6); // 저장 11 → 이 캔버스선 실제 10
+  });
+});

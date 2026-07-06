@@ -10,7 +10,7 @@ const KIND_TITLE = { map: '지도 슬라이드', title: '제목(표지) 슬라�
  * @param {{onSelect(pageId):void, onAdd():void, onRemove(pageId):void,
  *          onReorder(orderedIds:string[]):void}} handlers
  */
-export function createPageList(container, { onSelect, onAdd, onRemove, onReorder }) {
+export function createPageList(container, { onSelect, onAdd, onRemove, onReorder, onRename }) {
   let draggedId = null; // 드래그 세션 동안 유지(렌더 재생성과 무관하게 클로저에 보존)
 
   function clearDropMarks() {
@@ -46,7 +46,35 @@ export function createPageList(container, { onSelect, onAdd, onRemove, onReorder
       const name = document.createElement('span');
       name.className = 'page-name';
       name.textContent = page.title;
-      name.addEventListener('click', () => onSelect(page.id));
+      name.addEventListener('click', () => { if (!name.isContentEditable) onSelect(page.id); });
+      // 인라인 이름 편집(✏️로 시작 / Enter 저장 / Esc 취소 / 빈값·무변경은 원복)
+      function startRename() {
+        name.contentEditable = 'true';
+        name.spellcheck = false;
+        name.focus();
+        const sel = document.getSelection();
+        if (sel) sel.selectAllChildren(name);
+      }
+      name.addEventListener('keydown', (e) => {
+        if (!name.isContentEditable) return;
+        e.stopPropagation(); // 편집 키가 목록/전역 핸들러로 새지 않게
+        if (e.key === 'Enter') { e.preventDefault(); name.blur(); }
+        else if (e.key === 'Escape') { e.preventDefault(); name.textContent = page.title; name.blur(); }
+      });
+      name.addEventListener('blur', () => {
+        if (!name.isContentEditable) return;
+        name.contentEditable = 'false';
+        const v = name.textContent.trim();
+        if (v && v !== page.title) onRename(page.id, v);
+        else name.textContent = page.title; // 빈값·무변경 → 원복
+      });
+
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'page-edit';
+      edit.textContent = '✏️';
+      edit.title = '이름 변경';
+      edit.addEventListener('click', (e) => { e.stopPropagation(); startRename(); });
 
       const del = document.createElement('button');
       del.type = 'button';
@@ -95,7 +123,7 @@ export function createPageList(container, { onSelect, onAdd, onRemove, onReorder
         onReorder(order); // 상위가 setPageOrder + refresh
       });
 
-      row.append(handle, icon, name, del);
+      row.append(handle, icon, name, edit, del);
       container.appendChild(row);
     });
 

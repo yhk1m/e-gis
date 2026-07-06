@@ -126,11 +126,20 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     }
   }
 
-  // 전체화면 진입 완료 → 지도 리사이즈. 전체화면 해제(브라우저 Esc 포함) → 발표 종료.
+  /** 현재 페이지 카메라를 현재 스테이지 크기로 즉시 재적용(줌 정규화 → extent 유지). */
+  function applyCurrentCamera() {
+    const page = pages()[index];
+    if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom);
+  }
+
+  // 전체화면 진입 완료 → 지도 리사이즈 + 카메라 재정규화(창→전체화면 크기 변화 반영).
+  // 전체화면 해제(브라우저 Esc 포함) → 발표 종료.
   function onFsChange() {
     if (!active) return;
-    if (document.fullscreenElement) mapView.updateSize();
-    else exit();
+    if (document.fullscreenElement) {
+      mapView.updateSize();
+      applyCurrentCamera(); // 전체화면 폭 기준으로 줌 재계산 → 편집기와 같은 범위
+    } else exit();
   }
 
   /** 발표 시작. 진입했으면 true, 조건 미충족으로 건너뛰면 false(호출부 inert 격리 판단용). */
@@ -144,6 +153,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     stage.className = 'pres-stage pres-layout-' + (doc.meta.presentationLayout || 'band');
     stage.insertBefore(mapEl, stage.firstChild); // 지도 노드를 스테이지 배경으로
     root.style.display = '';
+    mapView.updateSize(); // 스테이지(16:9) 크기 반영 후 카메라 계산 — 줌 정규화가 정확해짐
     renderPage();
 
     window.addEventListener('keydown', onKey);

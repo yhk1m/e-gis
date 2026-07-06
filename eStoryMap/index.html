@@ -35,6 +35,7 @@
           </select>
         </label>
         <label id="legend-toggle-label" title="지도 위 범례 표시"><input type="checkbox" id="legend-toggle" checked /> 범례</label>
+        <label id="preview-toggle-label" title="지도 위에 발표 화면 미리보기 표시"><input type="checkbox" id="preview-toggle" checked /> 미리보기</label>
         <label id="cloud-toggle-label" title="로그인하면 이 스토리맵을 클라우드에도 자동 저장합니다"><input type="checkbox" id="cloud-toggle" disabled /> 클라우드 동기화</label>
         <span id="save-status"></span>
         <span id="status"></span>
@@ -52,7 +53,10 @@
           </section>
         </aside>
         <div id="map-stage">
-          <div id="map"><div id="legend" hidden></div></div>
+          <div id="slide-canvas">
+            <div id="map"><div id="legend" hidden></div></div>
+            <div id="slide-preview"></div>
+          </div>
           <div id="map-tools">
             <button id="btn-capture" type="button" title="현재 화면을 이 페이지의 카메라로 저장">📷 이 위치로 캡처</button>
             <button id="btn-cam-all" type="button" title="현재 지도 위치를 모든 슬라이드에 적용">📌 모든 슬라이드에 이 위치</button>

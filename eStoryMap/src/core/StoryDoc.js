@@ -219,6 +219,17 @@ export function setPageContent(doc, pageId, patch) {
   touch(doc);
 }
 
+/** 페이지(슬라이드) 이름 변경 — 편집기 목록 라벨(page.title). 공백은 무시, 최대 80자. */
+export function setPageTitle(doc, pageId, title) {
+  if (typeof title !== 'string') return;
+  const trimmed = title.trim();
+  if (!trimmed) return; // 빈 이름은 무시(원래 이름 유지)
+  const page = getPage(doc, pageId);
+  if (!page) return;
+  page.title = trimmed.slice(0, 80);
+  touch(doc);
+}
+
 export const SLIDE_KINDS = ['map', 'title', 'media'];
 
 /** 슬라이드 종류 설정(지도/제목/미디어). 허용 enum만 반영.

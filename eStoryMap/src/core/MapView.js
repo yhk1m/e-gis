@@ -8,6 +8,10 @@ import OSM from 'ol/source/OSM';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 
+// 줌 정규화 기준 폭. 카메라 줌을 "이 폭에서의 줌"으로 저장하면, 편집기 캔버스든 발표
+// 전체화면이든 캔버스 픽셀 폭과 무관하게 같은 지리적 범위(extent)를 보여준다(PPT식 슬라이드).
+const REF_WIDTH = 1920;
+
 /** 레이어들의 범위 합집합. ImageLayer는 명시 extent, 벡터는 소스 extent 사용. */
 export function unionExtent(olLayers) {
   const ext = createEmpty();
@@ -59,20 +63,43 @@ export class MapView {
     for (const l of egisLayers) this.map.removeLayer(l);
   }
 
-  /** center: [경도, 위도] (EPSG:4326, .egis view.center 포맷). */
+  /** 현재 지도 픽셀 폭(미측정 시 REF_WIDTH). 줌 정규화 기준. */
+  mapWidth() {
+    const size = this.map.getSize();
+    return size && size[0] ? size[0] : REF_WIDTH;
+  }
+
+  /** 현재 캔버스 줌 → 저장용 정규화 줌(REF_WIDTH 기준, 같은 extent). */
+  toNormZoom(rawZoom) {
+    return rawZoom + Math.log2(REF_WIDTH / this.mapWidth());
+  }
+
+  /** 저장된 정규화 줌 → 현재 캔버스에 적용할 실제 줌(같은 extent 유지). */
+  toRawZoom(normZoom) {
+    return normZoom + Math.log2(this.mapWidth() / REF_WIDTH);
+  }
+
+  /** center: [경도, 위도] (EPSG:4326, .egis view.center 포맷). zoom은 정규화 줌. */
   setView(center, zoom) {
     const view = this.map.getView();
     if (Array.isArray(center)) view.setCenter(fromLonLat(center));
-    if (typeof zoom === 'number' && !Number.isNaN(zoom)) view.setZoom(zoom);
+    if (typeof zoom === 'number' && !Number.isNaN(zoom)) view.setZoom(this.toRawZoom(zoom));
+  }
+
+  /** 정규화 없이 실제 줌으로 설정(.egis 원본 view 등 외부 raw 줌용 — 초기 프레이밍 보존). */
+  setViewRaw(center, rawZoom) {
+    const view = this.map.getView();
+    if (Array.isArray(center)) view.setCenter(fromLonLat(center));
+    if (typeof rawZoom === 'number' && !Number.isNaN(rawZoom)) view.setZoom(rawZoom);
   }
 
   /**
-   * 현재 카메라 — {center:[경도,위도](EPSG:4326), zoom}.
+   * 현재 카메라 — {center:[경도,위도](EPSG:4326), zoom(정규화)}.
    * page.camera / .egis view와 동일 포맷. e-GIS MapManager.getCenter/getZoom 이식.
    */
   getCamera() {
     const view = this.map.getView();
-    return { center: toLonLat(view.getCenter()), zoom: view.getZoom() };
+    return { center: toLonLat(view.getCenter()), zoom: this.toNormZoom(view.getZoom()) };
   }
 
   /** 주어진 OL 레이어들(벡터·래스터)의 합집합 범위로 맞춤. */

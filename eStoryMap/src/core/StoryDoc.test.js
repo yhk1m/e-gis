@@ -5,8 +5,23 @@ import {
   setPageCamera, setPageContent, setCloudSync,
   setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
-  setPageKind, setPageOrder,
+  setPageKind, setPageOrder, setPageTitle,
 } from './StoryDoc.js';
+
+describe('setPageTitle', () => {
+  it('이름을 바꾸고 앞뒤 공백은 다듬는다', () => {
+    const doc = createStoryDoc('t');
+    setPageTitle(doc, 'page_1', '  부산 인구  ');
+    expect(getPage(doc, 'page_1').title).toBe('부산 인구');
+  });
+  it('빈 이름은 무시(기존 유지), 없는 페이지는 no-op', () => {
+    const doc = createStoryDoc('t');
+    const before = getPage(doc, 'page_1').title;
+    setPageTitle(doc, 'page_1', '   ');
+    expect(getPage(doc, 'page_1').title).toBe(before);
+    expect(() => setPageTitle(doc, 'nope', 'x')).not.toThrow();
+  });
+});
 
 describe('setPageOrder', () => {
   function threePages() {
