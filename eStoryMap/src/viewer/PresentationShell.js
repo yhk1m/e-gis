@@ -5,6 +5,8 @@
 // 핵심: 단일 OL 맵 노드(#map)를 발표 스테이지로 재부모 → 소스·레이어 그대로 유지(재파싱 없음).
 // 접착 컴포넌트라 단위 테스트 없음 — 수동 스모크(스펙 §6). 순수 로직만 presentationNav.test.js.
 import { applyPageVisibility } from '../core/StoryMapRenderer.js';
+import { slideBgOf } from '../core/StoryDoc.js';
+import { applySlideColors } from '../shared/color.js';
 import { navReduce, indicatorDots, buildOverlay } from './presentationNav.js';
 
 /**
@@ -77,6 +79,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     const kind = page.kind || 'map';
     const layout = getDoc().meta.presentationLayout || 'band';
     stage.className = 'pres-stage pres-layout-' + layout + ' pres-kind-' + kind;
+    applySlideColors(stage, slideBgOf(getDoc(), page)); // 슬라이드 배경/글자색(페이지 override > 프로젝트 기본)
 
     const vm = buildOverlay(page.content); // {heading, bodyHtml(살균), caption, empty}
 

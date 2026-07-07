@@ -16,12 +16,13 @@ async function createWindow() {
     height: 800,
     minWidth: 1024,
     minHeight: 640,
-    title: 'e-GIStory',
+    title: 'e-GIS',
     backgroundColor: '#0b0f14',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      webviewTag: true, // e-GIS 웹앱을 앱 내 탭(<webview>)으로 임베드하기 위함(우리 사이트만 로드)
     },
   });
 

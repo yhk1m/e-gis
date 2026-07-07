@@ -7,10 +7,10 @@
          (실질 XSS 방어는 DOMPurify). 허용: OSM 타일, Supabase(REST+realtime), YouTube 임베드/썸네일, 구글드라이브 이미지, 보고서 캡처(data:). -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.googleusercontent.com https://img.youtube.com https://*.ytimg.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; connect-src 'self' ws://localhost:* http://localhost:* https://lufbotdmhgsuvejlytgh.supabase.co wss://lufbotdmhgsuvejlytgh.supabase.co; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.googleusercontent.com https://img.youtube.com https://*.ytimg.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://e-gis.kr; connect-src 'self' ws://localhost:* http://localhost:* https://lufbotdmhgsuvejlytgh.supabase.co wss://lufbotdmhgsuvejlytgh.supabase.co; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>e-GIStory</title>
+    <title>e-GIS</title>
     <!-- 저장된 테마를 첫 페인트 전에 적용(다크→라이트 깜빡임 방지). 기본은 다크. -->
     <script>
       try { if (localStorage.getItem('egis-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
@@ -18,6 +18,10 @@
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
+    <div id="app-tabs">
+      <button id="tab-egis" class="app-tab" type="button">e-GIS</button>
+      <button id="tab-estory" class="app-tab active" type="button">e-GIStory</button>
+    </div>
     <div id="app" inert>
       <header id="toolbar">
         <strong class="brand">e-GIStory</strong>
@@ -34,6 +38,7 @@
             <option value="card">카드</option>
           </select>
         </label>
+        <label id="slide-bg-label" title="슬라이드 기본 배경색 (프로젝트 전체)">배경 <input type="color" id="slide-bg" value="#0b0f14" /></label>
         <label id="legend-toggle-label" title="지도 위 범례 표시"><input type="checkbox" id="legend-toggle" checked /> 범례</label>
         <label id="preview-toggle-label" title="지도 위에 발표 화면 미리보기 표시"><input type="checkbox" id="preview-toggle" checked /> 미리보기</label>
         <label id="cloud-toggle-label" title="로그인하면 이 스토리맵을 클라우드에도 자동 저장합니다"><input type="checkbox" id="cloud-toggle" disabled /> 클라우드 동기화</label>
@@ -75,6 +80,7 @@
     <div id="start-screen"></div>
     <div id="presentation"></div>
     <div id="report" hidden></div>
+    <div id="egis-pane"><webview id="egis-webview"></webview></div>
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>

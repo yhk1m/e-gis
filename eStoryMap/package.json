@@ -1,8 +1,8 @@
 {
   "name": "e-gistory",
-  "productName": "e-GIStory",
+  "productName": "e-GIS",
   "version": "0.1.0",
-  "description": "e-GIStory(이지스토리) — 지도 스토리텔링 데스크톱 앱 (e-GIS 연동)",
+  "description": "e-GIS 데스크톱 — 웹 GIS + 스토리맵(e-GIStory) 통합 앱",
   "main": "dist-electron/main.js",
   "author": "김용현",
   "private": true,
@@ -34,7 +34,7 @@
   },
   "build": {
     "appId": "kr.egis.egistory",
-    "productName": "e-GIStory",
+    "productName": "e-GIS",
     "copyright": "© 2026 김용현",
     "directories": {
       "output": "release",

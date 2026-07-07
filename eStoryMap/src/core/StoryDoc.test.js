@@ -6,7 +6,28 @@ import {
   setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
   setPageKind, setPageOrder, setPageTitle,
+  setSlideBg, setPageBg, slideBgOf,
 } from './StoryDoc.js';
+
+describe('슬라이드 배경색', () => {
+  it('setSlideBg는 #rrggbb만, slideBgOf는 프로젝트 기본으로 반영', () => {
+    const doc = createStoryDoc('t');
+    expect(slideBgOf(doc, doc.pages[0])).toBe('#0b0f14'); // 기본값
+    setSlideBg(doc, 'white'); // 무효
+    expect(doc.meta.slideBg).toBeUndefined();
+    setSlideBg(doc, '#ffffff');
+    expect(slideBgOf(doc, doc.pages[0])).toBe('#ffffff');
+  });
+  it('setPageBg override가 프로젝트 기본보다 우선, 무효값이면 override 제거', () => {
+    const doc = createStoryDoc('t');
+    setSlideBg(doc, '#ffffff');
+    setPageBg(doc, 'page_1', '#123456');
+    expect(slideBgOf(doc, getPage(doc, 'page_1'))).toBe('#123456'); // override 우선
+    setPageBg(doc, 'page_1', ''); // 제거
+    expect(getPage(doc, 'page_1').bg).toBeUndefined();
+    expect(slideBgOf(doc, getPage(doc, 'page_1'))).toBe('#ffffff'); // 다시 프로젝트 기본
+  });
+});
 
 describe('setPageTitle', () => {
   it('이름을 바꾸고 앞뒤 공백은 다듬는다', () => {

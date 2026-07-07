@@ -72,6 +72,20 @@ export function createContentEditor(container, { onChange }) {
   });
   caption.addEventListener('input', () => onChange('caption', caption.value));
 
+  // 페이지별 배경색(색상 선택 = override / '프로젝트 기본' = override 제거)
+  const bg = document.createElement('input');
+  bg.type = 'color';
+  bg.id = 'content-bg';
+  const bgReset = document.createElement('button');
+  bgReset.type = 'button';
+  bgReset.id = 'content-bg-reset';
+  bgReset.textContent = '프로젝트 기본';
+  bg.addEventListener('input', () => onChange('bg', bg.value));
+  bgReset.addEventListener('click', () => onChange('bg', ''));
+  const bgRow = document.createElement('div');
+  bgRow.className = 'content-bg-row';
+  bgRow.append(bg, bgReset);
+
   function field(label, el) {
     const wrap = document.createElement('div');
     wrap.className = 'content-field';
@@ -84,16 +98,18 @@ export function createContentEditor(container, { onChange }) {
   }
 
   field('슬라이드 종류', kind);
+  field('슬라이드 배경', bgRow);
   field(headingLabel, heading);
   field(bodyLabel, body);
   field('미리보기', preview);
   field('캡션', caption);
 
   /** 페이지 전환 시 현재 페이지 값으로 필드를 채운다. */
-  function render(page) {
+  function render(page, effectiveBg) {
     const k = page.kind || 'map';
     kind.value = k;
     applyKind(k);
+    bg.value = effectiveBg || '#0b0f14'; // 페이지 override 있으면 그 색, 없으면 프로젝트 기본
     heading.value = page.content.heading;
     body.value = page.content.body;
     caption.value = page.content.caption;

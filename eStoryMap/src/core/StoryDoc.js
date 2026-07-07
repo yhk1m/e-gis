@@ -4,6 +4,7 @@
 // 문서가 단일 진실원이며, 변이 함수는 전달받은 doc을 직접 수정한다.
 // 선택된 페이지(currentPageId)는 에디터 UI 상태로, 문서에 저장하지 않는다.
 import { clampLegendPos, DEFAULT_LEGEND } from './legend.js';
+import { isHexColor, DEFAULT_SLIDE_BG } from '../shared/color.js';
 
 function nowISO() {
   return new Date().toISOString();
@@ -228,6 +229,29 @@ export function setPageTitle(doc, pageId, title) {
   if (!page) return;
   page.title = trimmed.slice(0, 80);
   touch(doc);
+}
+
+/** 프로젝트 기본 슬라이드 배경색(발표/미리보기 전체). #rrggbb만 반영. */
+export function setSlideBg(doc, color) {
+  if (!isHexColor(color)) return;
+  doc.meta.slideBg = color;
+  touch(doc);
+}
+
+/** 페이지별 배경색 override. 유효하지 않으면(빈값/null 포함) override 제거 → 프로젝트 기본 사용. */
+export function setPageBg(doc, pageId, color) {
+  const page = getPage(doc, pageId);
+  if (!page) return;
+  if (isHexColor(color)) page.bg = color;
+  else delete page.bg;
+  touch(doc);
+}
+
+/** 페이지 유효 배경색: 페이지 override > 프로젝트 기본 > 기본값. */
+export function slideBgOf(doc, page) {
+  if (page && isHexColor(page.bg)) return page.bg;
+  if (doc && isHexColor(doc.meta.slideBg)) return doc.meta.slideBg;
+  return DEFAULT_SLIDE_BG;
 }
 
 export const SLIDE_KINDS = ['map', 'title', 'media'];

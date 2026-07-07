@@ -7,7 +7,8 @@ import { SourceRegistry } from './core/SourceRegistry.js';
 import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
   createStoryDoc, addSource, addPage, removePage, setPageOrder, getPage, setLayerVisible, nextSourceId,
-  setPageCamera, setPageContent, setPageKind, setPageTitle, setCloudSync,
+  setPageCamera, setPageContent, setPageKind, setPageTitle,
+  setSlideBg, setPageBg, slideBgOf, setCloudSync,
   setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
@@ -18,6 +19,7 @@ import { createPageList } from './editor/PageList.js';
 import { createContentEditor } from './editor/ContentEditor.js';
 import { createSlidePreview } from './editor/SlidePreview.js';
 import { confirmDialog } from './editor/confirmDialog.js';
+import { applySlideColors } from './shared/color.js';
 import { CameraAnimator } from './shared/CameraAnimator.js';
 import { serializeStoryDoc, deserializeStoryDoc, createAutosaver } from './core/LocalStore.js';
 import { createStartScreen } from './editor/StartScreen.js';
@@ -32,6 +34,7 @@ const status = document.getElementById('status');
 const registry = new SourceRegistry(mapView);
 const animator = new CameraAnimator(mapView.map.getView(), { zoomForView: (z) => mapView.toRawZoom(z) });
 const slidePreview = createSlidePreview(document.getElementById('slide-preview')); // 지도 위 발표 미리보기
+const slideCanvas = document.getElementById('slide-canvas'); // 16:9 슬라이드(배경색 변수 세팅 대상)
 const saveStatus = document.getElementById('save-status');
 let doc = null; // 시작 화면에서 생성/로드 후 배정
 let currentPageId = null;
@@ -84,6 +87,15 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
     if (field === 'kind') {
       setPageKind(doc, currentPageId, value); // 종류 변경 → 목록 배지·발표/보고서 렌더 반영
       refresh();
+    } else if (field === 'bg') {
+      setPageBg(doc, currentPageId, value); // 페이지 배경색 override
+      const page = getPage(doc, currentPageId);
+      if (value) { // 색 선택(드래그) — 입력요소 재생성 없이 가볍게 갱신(picker 안 끊기게)
+        applySlideColors(slideCanvas, slideBgOf(doc, page));
+        slidePreview.render(page, doc.meta);
+      } else {
+        refresh(); // '프로젝트 기본' 리셋 — 전체 갱신(색상 입력값도 기본으로)
+      }
     } else {
       // 전체 refresh 없음 — 타이핑 중 포커스 유지(콘텐츠는 지도/패널에 영향 없음)
       setPageContent(doc, currentPageId, { [field]: value });
@@ -172,12 +184,41 @@ btnTheme.addEventListener('click', () => {
   applyTheme(next);
 });
 
+// 상단 앱 전환 탭: e-GIStory ↔ e-GIS(웹앱 임베드, 동등). e-GIS는 처음 전환 시에만 로드.
+const tabEstory = document.getElementById('tab-estory');
+const tabEgis = document.getElementById('tab-egis');
+const egisPane = document.getElementById('egis-pane');
+const egisWebview = document.getElementById('egis-webview');
+let egisLoaded = false;
+function switchApp(toEgis) {
+  tabEstory.classList.toggle('active', !toEgis);
+  tabEgis.classList.toggle('active', toEgis);
+  egisPane.classList.toggle('active', toEgis);
+  if (toEgis && !egisLoaded) {
+    egisWebview.src = 'https://e-gis.kr'; // 지연 로드
+    egisLoaded = true;
+  }
+}
+tabEstory.addEventListener('click', () => switchApp(false));
+tabEgis.addEventListener('click', () => switchApp(true));
+
 // M9 확장: 발표 레이아웃 선택(프로젝트 전체, doc.meta.presentationLayout)
 const layoutSelect = document.getElementById('layout-select');
 layoutSelect.addEventListener('change', () => {
   if (!doc) return;
   setPresentationLayout(doc, layoutSelect.value);
   slidePreview.render(getPage(doc, currentPageId), doc.meta); // 레이아웃 바뀌면 미리보기도 반영
+  scheduleSave();
+});
+
+// 프로젝트 기본 슬라이드 배경색(헤더)
+const slideBgInput = document.getElementById('slide-bg');
+slideBgInput.addEventListener('input', () => {
+  if (!doc) return;
+  setSlideBg(doc, slideBgInput.value);
+  const page = getPage(doc, currentPageId);
+  applySlideColors(slideCanvas, slideBgOf(doc, page)); // 가볍게 갱신(입력요소 재생성 방지)
+  slidePreview.render(page, doc.meta);
   scheduleSave();
 });
 
@@ -391,10 +432,11 @@ function enterEditor() {
   currentPageId = doc.pages[0].id;
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('app').inert = false; // 시작 화면 동안 편집기 전체(포커스·포인터) 비활성
-  document.title = `${doc.meta.title} — e-GIStory`;
+  document.title = `${doc.meta.title} — e-GIS`;
   updateCloudToggle();
   layoutSelect.value = doc.meta.presentationLayout || 'band'; // 발표 레이아웃 현재값 반영
   legendToggle.checked = doc.meta.legend ? doc.meta.legend.visible : true; // 범례 표시 현재값
+  slideBgInput.value = slideBgOf(doc, null); // 프로젝트 기본 배경색 현재값
   mapView.updateSize(); // 슬라이드 캔버스(16:9) 크기 반영 후에 카메라 적용 — 줌 정규화 정확도
   refresh();
   const page = getPage(doc, currentPageId);
@@ -411,7 +453,7 @@ async function backToStart() {
   projectName = null;
   document.getElementById('app').inert = true;
   document.getElementById('start-screen').style.display = '';
-  document.title = 'e-GIStory';
+  document.title = 'e-GIS';
   saveStatus.textContent = '';
   startScreen.updateAuth({ user: authManager.getUser() });
   await boot(); // 프로젝트 목록 새로고침(방금 저장분 포함)
@@ -437,9 +479,10 @@ function refresh() {
   applyPageVisibility(page, registry);
   sourcePanel.render(doc, page, registry);
   pageList.render(doc, currentPageId);
-  contentEditor.render(page);
+  contentEditor.render(page, slideBgOf(doc, page));
   camSyncBtn.disabled = doc.pages.length <= 1; // 가져올 다른 슬라이드가 없으면 비활성
   legend.render(page, { editable: true });
+  applySlideColors(slideCanvas, slideBgOf(doc, page)); // 슬라이드 배경/글자색(페이지 override > 프로젝트 기본)
   slidePreview.render(page, doc.meta); // 지도 위 발표 미리보기(발표와 동일한 오버레이/커버)
 }
 

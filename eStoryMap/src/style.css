@@ -2,8 +2,20 @@
 /* eStoryMap/src/style.css */
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
-html, body, #app { height: 100%; margin: 0; }
-#app { display: flex; flex-direction: column; font-family: system-ui, "Segoe UI", sans-serif; }
+html, body { height: 100%; margin: 0; }
+body { display: flex; flex-direction: column; }
+#app { flex: 1; min-height: 0; display: flex; flex-direction: column; font-family: system-ui, "Segoe UI", sans-serif; }
+/* 상단 앱 전환 탭 (e-GIStory | e-GIS 동등) */
+#app-tabs { flex: none; height: 36px; display: flex; align-items: flex-end; gap: 4px; padding: 0 8px; background: #0b0f14; }
+.app-tab {
+  padding: 6px 16px; border: 1px solid #334155; border-bottom: none;
+  border-radius: 6px 6px 0 0; background: #0f172a; color: #94a3b8;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.app-tab.active { background: #1e293b; color: #e5e7eb; }
+#egis-pane { position: fixed; top: 36px; left: 0; right: 0; bottom: 0; z-index: 250; display: none; background: #fff; }
+#egis-pane.active { display: block; }
+#egis-webview { width: 100%; height: 100%; border: none; }
 #toolbar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #0b0f14; color: #e5e7eb; }
 #toolbar .brand { margin-right: 8px; }
 #toolbar button { padding: 6px 12px; border: 1px solid #334155; background: #1e293b; color: #e5e7eb; border-radius: 6px; cursor: pointer; }
@@ -75,7 +87,7 @@ html, body, #app { height: 100%; margin: 0; }
 #slide-canvas {
   position: relative; aspect-ratio: 16 / 9;
   width: 100%; max-width: 100%; max-height: 100%;
-  container-type: size; overflow: hidden; background: #0b0f14;
+  container-type: size; overflow: hidden; background: var(--slide-bg, #0b0f14);
 }
 /* 발표 미리보기 오버레이 — 지도 위(범례보다 위, 맵툴보다 아래). 클릭은 지도로 통과. */
 #slide-preview { position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
@@ -116,6 +128,13 @@ html, body, #app { height: 100%; margin: 0; }
   background: #1e293b; color: #e5e7eb; font-size: 13px; font-family: inherit; resize: vertical;
 }
 #content-panel select { cursor: pointer; }
+/* 슬라이드 배경색 입력 */
+#slide-bg-label { font-size: 12px; color: #94a3b8; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+#slide-bg { width: 28px; height: 22px; padding: 0; border: 1px solid #334155; border-radius: 4px; background: none; cursor: pointer; }
+.content-bg-row { display: flex; align-items: center; gap: 8px; }
+#content-panel #content-bg { width: 44px; height: 28px; padding: 2px; flex: none; resize: none; cursor: pointer; }
+#content-bg-reset { padding: 5px 10px; border: 1px solid #334155; background: #1e293b; color: #e5e7eb; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+#content-bg-reset:hover { background: #334155; }
 .md-preview {
   border: 1px dashed #334155; border-radius: 6px; padding: 8px;
   font-size: 13px; min-height: 40px; overflow-wrap: break-word;
@@ -143,7 +162,7 @@ html, body, #app { height: 100%; margin: 0; }
 #save-status { margin-left: auto; font-size: 12px; color: #64748b; }
 #status { margin-left: 12px; } /* 기존 margin-left:auto는 save-status로 이동 */
 #start-screen {
-  position: fixed; inset: 0; z-index: 100; background: #0b0f14;
+  position: fixed; top: 36px; left: 0; right: 0; bottom: 0; z-index: 100; background: #0b0f14;
   display: flex; align-items: center; justify-content: center;
 }
 .start-box { width: 420px; color: #e5e7eb; }
@@ -197,6 +216,9 @@ html, body, #app { height: 100%; margin: 0; }
 /* ============ 라이트 모드 (편집기 UI 전용 — 발표=다크 무대·보고서=흰 종이는 고정) ============ */
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="light"] #toolbar { background: #eef2f7; color: #1e293b; }
+:root[data-theme="light"] #app-tabs { background: #eef2f7; } /* 툴바와 같은 색(연속된 헤더 띠) */
+:root[data-theme="light"] .app-tab { background: #dfe6ee; color: #64748b; border-color: #cbd5e1; }
+:root[data-theme="light"] .app-tab.active { background: #ffffff; color: #1e293b; }
 :root[data-theme="light"] #map { background: #e2e8f0; }
 :root[data-theme="light"] #sidebar,
 :root[data-theme="light"] #content-sidebar { background: #f8fafc; color: #1e293b; border-color: #e2e8f0; }
@@ -240,7 +262,10 @@ html, body, #app { height: 100%; margin: 0; }
 :root[data-theme="light"] #layout-select-label,
 :root[data-theme="light"] #legend-toggle-label,
 :root[data-theme="light"] #preview-toggle-label,
+:root[data-theme="light"] #slide-bg-label,
 :root[data-theme="light"] #cloud-toggle-label { color: #64748b; }
+:root[data-theme="light"] #content-bg-reset { background: #ffffff; color: #1e293b; border-color: #cbd5e1; }
+:root[data-theme="light"] #content-bg-reset:hover { background: #e2e8f0; }
 /* 강조색 대비 보정 */
 :root[data-theme="light"] .start-error,
 :root[data-theme="light"] .auth-error { color: #dc2626; }
@@ -255,36 +280,36 @@ html, body, #app { height: 100%; margin: 0; }
   position: relative;
   aspect-ratio: 16 / 9;
   width: min(100vw, calc(100vh * 16 / 9)); max-width: 100vw; max-height: 100vh;
-  background: #0b0f14; overflow: hidden;
+  background: var(--slide-bg, #0b0f14); overflow: hidden;
   container-type: size;                        /* cqw/cqh 스케일 기준 → 미리보기와 동일 비율 */
 }
 .pres-overlay {                                /* 공통: 색/위치기준만. 배경·기하는 레이아웃별 */
-  position: absolute; z-index: 20; color: #f8fafc; box-sizing: border-box;
+  position: absolute; z-index: 20; color: var(--slide-fg, #f8fafc); box-sizing: border-box;
 }
 /* card — 좌하단 플로팅 카드 + 가장자리 그라데이션 */
 .pres-layout-card .pres-overlay {
   left: 4%; bottom: 8%; max-width: 46%; padding: 16px 20px; border-radius: 10px;
-  background: linear-gradient(135deg, rgba(11, 15, 20, 0.9), rgba(11, 15, 20, 0.55));
+  background: linear-gradient(135deg, rgba(var(--slide-bg-rgb, 11, 15, 20), 0.9), rgba(var(--slide-bg-rgb, 11, 15, 20), 0.55));
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
 }
 /* band — 우측 세로 밴드, 안쪽(좌) 경계가 지도로 페이드 */
 .pres-layout-band .pres-overlay {
   right: 0; top: 0; bottom: 0; width: 34%; padding: 8% 3.5cqw 8% 7%; /* 오른쪽 = 가장자리 next 버튼 자리 확보 */
   display: flex; flex-direction: column; justify-content: center;
-  background: linear-gradient(to right, rgba(11, 15, 20, 0) 0%, rgba(11, 15, 20, 0.82) 26%);
+  background: linear-gradient(to right, rgba(var(--slide-bg-rgb, 11, 15, 20), 0) 0%, rgba(var(--slide-bg-rgb, 11, 15, 20), 0.82) 26%);
 }
 /* panel — 우측 단단한 사이드패널(하드 라인) */
 .pres-layout-panel .pres-overlay {
   right: 0; top: 0; bottom: 0; width: 32%; padding: 8% 3.5cqw 8% 5%; /* 오른쪽 = 가장자리 next 버튼 자리 확보 */
   display: flex; flex-direction: column; justify-content: center;
-  background: rgba(11, 15, 20, 0.9); border-left: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(var(--slide-bg-rgb, 11, 15, 20), 0.9); border-left: 1px solid rgba(128, 128, 128, 0.25);
 }
 .pres-heading { font-size: 1.8cqw; font-weight: 700; margin-bottom: 0.3em; }
 .pres-body {                                   /* .md-preview의 점선 박스 룩만 제거, 이미지/표 규칙은 유지 */
   font-size: 1cqw; line-height: 1.5;
   border: none; padding: 0; min-height: 0;
 }
-.pres-caption { margin-top: 0.5em; font-size: 0.75cqw; color: #cbd5e1; }
+.pres-caption { margin-top: 0.5em; font-size: 0.75cqw; color: inherit; opacity: 0.8; }
 .pres-indicator {
   position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); z-index: 20;
   display: flex; gap: 8px;
@@ -310,16 +335,16 @@ html, body, #app { height: 100%; margin: 0; }
 .pres-exit:hover { background: rgba(220, 38, 38, 0.8); }
 /* 제목/미디어 슬라이드용 전체화면 커버(지도를 불투명하게 가림). 종류는 스테이지 pres-kind-*로 분기 */
 .pres-cover {
-  position: absolute; inset: 0; z-index: 15; background: #0b0f14;
+  position: absolute; inset: 0; z-index: 15; background: var(--slide-bg, #0b0f14);
   display: flex; align-items: center; justify-content: center;
-  color: #f8fafc; box-sizing: border-box; padding: 4%;
+  color: var(--slide-fg, #f8fafc); box-sizing: border-box; padding: 4%;
 }
 .pres-cover-inner { max-width: 92%; width: 100%; text-align: center; }
 .pres-cover-body { border: none; padding: 0; min-height: 0; }
-.pres-cover-caption { margin-top: 0.6em; font-size: 0.9cqw; color: #cbd5e1; }
+.pres-cover-caption { margin-top: 0.6em; font-size: 0.9cqw; color: inherit; opacity: 0.72; }
 /* 제목(표지): 큰 제목 + 부제 */
 .pres-kind-title .pres-cover-heading { font-size: 4.6cqw; font-weight: 800; line-height: 1.12; }
-.pres-kind-title .pres-cover-body { font-size: 1.8cqw; color: #cbd5e1; margin-top: 3%; }
+.pres-kind-title .pres-cover-body { font-size: 1.8cqw; color: inherit; opacity: 0.82; margin-top: 3%; }
 /* 미디어: 사진/영상이 화면을 채움 */
 .pres-kind-media .pres-cover-heading { font-size: 1.6cqw; font-weight: 600; margin-bottom: 0.6em; }
 .pres-kind-media .pres-cover-body img,
@@ -367,7 +392,7 @@ html, body, #app { height: 100%; margin: 0; }
 
 /* --- M10 보고서 셸 --- */
 #report {
-  position: fixed; inset: 0; z-index: 210; overflow: auto; background: #4b5563; /* A4 뒤 회색 */
+  position: fixed; top: 36px; left: 0; right: 0; bottom: 0; z-index: 210; overflow: auto; background: #4b5563; /* A4 뒤 회색 */
 }
 .report-loading {
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
