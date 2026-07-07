@@ -77,8 +77,10 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     const page = list[index];
     if (!page) return;
     const kind = page.kind || 'map';
-    const layout = getDoc().meta.presentationLayout || 'band';
-    stage.className = 'pres-stage pres-layout-' + layout + ' pres-kind-' + kind;
+    const meta = getDoc().meta;
+    const layout = meta.presentationLayout || 'band';
+    const pos = meta.presentationPos || 'right';
+    stage.className = 'pres-stage pres-layout-' + layout + ' pres-kind-' + kind + ' pres-pos-' + pos;
     applySlideColors(stage, slideBgOf(getDoc(), page)); // 슬라이드 배경/글자색(페이지 override > 프로젝트 기본)
 
     const vm = buildOverlay(page.content); // {heading, bodyHtml(살균), caption, empty}

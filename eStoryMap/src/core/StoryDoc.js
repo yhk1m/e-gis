@@ -81,6 +81,15 @@ export function setPresentationLayout(doc, layout) {
   touch(doc);
 }
 
+export const PRESENTATION_POSITIONS = ['left', 'right', 'top', 'bottom'];
+
+/** 발표 텍스트 레이아웃 위치(상/하/좌/우, 프로젝트 전체). 허용 enum만. 미설정=읽는 쪽 'right' 기본. */
+export function setPresentationPos(doc, pos) {
+  if (!PRESENTATION_POSITIONS.includes(pos)) return;
+  doc.meta.presentationPos = pos;
+  touch(doc);
+}
+
 /** meta.legend를 기본값으로 보장(구버전 .esm에 없을 수 있음). */
 function ensureLegend(doc) {
   if (!doc.meta.legend) {
@@ -244,6 +253,14 @@ export function setPageBg(doc, pageId, color) {
   if (!page) return;
   if (isHexColor(color)) page.bg = color;
   else delete page.bg;
+  touch(doc);
+}
+
+/** 이 배경색을 모든 슬라이드에 적용(프로젝트 기본으로 설정 + 페이지 override 전부 제거). */
+export function applySlideBgToAll(doc, color) {
+  if (!isHexColor(color)) return;
+  doc.meta.slideBg = color;
+  for (const page of doc.pages) delete page.bg;
   touch(doc);
 }
 

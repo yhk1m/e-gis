@@ -21,7 +21,7 @@ const KIND_HINTS = {
  * @param {HTMLElement} container
  * @param {{onChange(field:'kind'|'heading'|'body'|'caption', value:string):void}} handlers
  */
-export function createContentEditor(container, { onChange }) {
+export function createContentEditor(container, { onChange, onApplyBgAll }) {
   container.innerHTML = '';
 
   const kind = document.createElement('select');
@@ -82,9 +82,15 @@ export function createContentEditor(container, { onChange }) {
   bgReset.textContent = '프로젝트 기본';
   bg.addEventListener('input', () => onChange('bg', bg.value));
   bgReset.addEventListener('click', () => onChange('bg', ''));
+  const bgAll = document.createElement('button');
+  bgAll.type = 'button';
+  bgAll.id = 'content-bg-all';
+  bgAll.textContent = '모두 적용';
+  bgAll.title = '이 배경색을 모든 슬라이드에 적용';
+  bgAll.addEventListener('click', () => onApplyBgAll(bg.value));
   const bgRow = document.createElement('div');
   bgRow.className = 'content-bg-row';
-  bgRow.append(bg, bgReset);
+  bgRow.append(bg, bgReset, bgAll);
 
   function field(label, el) {
     const wrap = document.createElement('div');

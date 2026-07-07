@@ -36,7 +36,8 @@ export function createSlidePreview(root) {
     root.style.display = '';
     const kind = page.kind || 'map';
     const layout = (meta && meta.presentationLayout) || 'band';
-    root.className = 'pres-layout-' + layout + ' pres-kind-' + kind; // pres CSS가 적용되도록(발표와 동일)
+    const pos = (meta && meta.presentationPos) || 'right';
+    root.className = 'pres-layout-' + layout + ' pres-kind-' + kind + ' pres-pos-' + pos; // pres CSS 적용(발표와 동일)
     const vm = buildOverlay(page.content); // {heading, bodyHtml(살균), caption, empty}
 
     if (kind === 'map') {

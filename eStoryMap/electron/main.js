@@ -1,6 +1,6 @@
 // © 2026 김용현
 // eStoryMap/electron/main.js
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from 'electron';
 import path from 'node:path';
 import fsp from 'node:fs/promises';
 import {
@@ -53,6 +53,7 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null); // 기본 메뉴바(File/Edit/View/…) 제거. 복사/붙여넣기 등은 Chromium이 기본 처리
   ensureBaseDir();
   createWindow();
   app.on('activate', () => {

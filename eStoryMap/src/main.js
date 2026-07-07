@@ -8,8 +8,8 @@ import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
   createStoryDoc, addSource, addPage, removePage, setPageOrder, getPage, setLayerVisible, nextSourceId,
   setPageCamera, setPageContent, setPageKind, setPageTitle,
-  setSlideBg, setPageBg, slideBgOf, setCloudSync,
-  setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
+  setSlideBg, setPageBg, slideBgOf, applySlideBgToAll, setCloudSync,
+  setPresentationLayout, setPresentationPos, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
 import { createCloudSync } from './core/CloudSync.js';
@@ -102,6 +102,12 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
       slidePreview.render(getPage(doc, currentPageId), doc.meta); // 편집 즉시 미리보기 갱신
     }
     scheduleSave();
+  },
+  onApplyBgAll(color) {
+    applySlideBgToAll(doc, color); // 이 배경색을 모든 슬라이드에(프로젝트 기본 + override 제거)
+    refresh();
+    scheduleSave();
+    status.textContent = `배경색을 ${doc.pages.length}개 슬라이드 전체에 적용했습니다.`;
   },
 });
 
@@ -208,6 +214,15 @@ layoutSelect.addEventListener('change', () => {
   if (!doc) return;
   setPresentationLayout(doc, layoutSelect.value);
   slidePreview.render(getPage(doc, currentPageId), doc.meta); // 레이아웃 바뀌면 미리보기도 반영
+  scheduleSave();
+});
+
+// 발표 레이아웃 위치(상/하/좌/우, 프로젝트 전체)
+const posSelect = document.getElementById('pos-select');
+posSelect.addEventListener('change', () => {
+  if (!doc) return;
+  setPresentationPos(doc, posSelect.value);
+  slidePreview.render(getPage(doc, currentPageId), doc.meta); // 미리보기 즉시 반영
   scheduleSave();
 });
 
@@ -435,6 +450,7 @@ function enterEditor() {
   document.title = `${doc.meta.title} — e-GIS`;
   updateCloudToggle();
   layoutSelect.value = doc.meta.presentationLayout || 'band'; // 발표 레이아웃 현재값 반영
+  posSelect.value = doc.meta.presentationPos || 'right'; // 레이아웃 위치 현재값
   legendToggle.checked = doc.meta.legend ? doc.meta.legend.visible : true; // 범례 표시 현재값
   slideBgInput.value = slideBgOf(doc, null); // 프로젝트 기본 배경색 현재값
   mapView.updateSize(); // 슬라이드 캔버스(16:9) 크기 반영 후에 카메라 적용 — 줌 정규화 정확도

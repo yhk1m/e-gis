@@ -131,10 +131,10 @@ body { display: flex; flex-direction: column; }
 /* 슬라이드 배경색 입력 */
 #slide-bg-label { font-size: 12px; color: #94a3b8; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 #slide-bg { width: 28px; height: 22px; padding: 0; border: 1px solid #334155; border-radius: 4px; background: none; cursor: pointer; }
-.content-bg-row { display: flex; align-items: center; gap: 8px; }
+.content-bg-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 #content-panel #content-bg { width: 44px; height: 28px; padding: 2px; flex: none; resize: none; cursor: pointer; }
-#content-bg-reset { padding: 5px 10px; border: 1px solid #334155; background: #1e293b; color: #e5e7eb; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
-#content-bg-reset:hover { background: #334155; }
+#content-bg-reset, #content-bg-all { padding: 5px 10px; border: 1px solid #334155; background: #1e293b; color: #e5e7eb; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+#content-bg-reset:hover, #content-bg-all:hover { background: #334155; }
 .md-preview {
   border: 1px dashed #334155; border-radius: 6px; padding: 8px;
   font-size: 13px; min-height: 40px; overflow-wrap: break-word;
@@ -229,6 +229,7 @@ body { display: flex; flex-direction: column; }
 /* 입력·버튼·셀렉트(흰 배경) */
 :root[data-theme="light"] #toolbar button,
 :root[data-theme="light"] #layout-select,
+:root[data-theme="light"] #pos-select,
 :root[data-theme="light"] #content-panel input,
 :root[data-theme="light"] #content-panel textarea,
 :root[data-theme="light"] #content-panel select,
@@ -260,12 +261,15 @@ body { display: flex; flex-direction: column; }
 :root[data-theme="light"] .page-del,
 :root[data-theme="light"] .page-drag-handle,
 :root[data-theme="light"] #layout-select-label,
+:root[data-theme="light"] #pos-select-label,
 :root[data-theme="light"] #legend-toggle-label,
 :root[data-theme="light"] #preview-toggle-label,
 :root[data-theme="light"] #slide-bg-label,
 :root[data-theme="light"] #cloud-toggle-label { color: #64748b; }
-:root[data-theme="light"] #content-bg-reset { background: #ffffff; color: #1e293b; border-color: #cbd5e1; }
-:root[data-theme="light"] #content-bg-reset:hover { background: #e2e8f0; }
+:root[data-theme="light"] #content-bg-reset,
+:root[data-theme="light"] #content-bg-all { background: #ffffff; color: #1e293b; border-color: #cbd5e1; }
+:root[data-theme="light"] #content-bg-reset:hover,
+:root[data-theme="light"] #content-bg-all:hover { background: #e2e8f0; }
 /* 강조색 대비 보정 */
 :root[data-theme="light"] .start-error,
 :root[data-theme="light"] .auth-error { color: #dc2626; }
@@ -286,30 +290,51 @@ body { display: flex; flex-direction: column; }
 .pres-overlay {                                /* 공통: 색/위치기준만. 배경·기하는 레이아웃별 */
   position: absolute; z-index: 20; color: var(--slide-fg, #f8fafc); box-sizing: border-box;
 }
-/* card — 좌하단 플로팅 카드 + 가장자리 그라데이션 */
+/* --- 레이아웃 스타일(밴드=그라데이션 / 패널=단색 / 카드=플로팅). 위치는 아래 pres-pos-* --- */
 .pres-layout-card .pres-overlay {
-  left: 4%; bottom: 8%; max-width: 46%; padding: 16px 20px; border-radius: 10px;
+  max-width: 46%; padding: 16px 20px; border-radius: 10px;
   background: linear-gradient(135deg, rgba(var(--slide-bg-rgb, 11, 15, 20), 0.9), rgba(var(--slide-bg-rgb, 11, 15, 20), 0.55));
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
 }
-/* band — 우측 세로 밴드, 안쪽(좌) 경계가 지도로 페이드 */
-.pres-layout-band .pres-overlay {
-  right: 0; top: 0; bottom: 0; width: 34%; padding: 8% 3.5cqw 8% 7%; /* 오른쪽 = 가장자리 next 버튼 자리 확보 */
-  display: flex; flex-direction: column; justify-content: center;
-  background: linear-gradient(to right, rgba(var(--slide-bg-rgb, 11, 15, 20), 0) 0%, rgba(var(--slide-bg-rgb, 11, 15, 20), 0.82) 26%);
+.pres-layout-band .pres-overlay, .pres-layout-panel .pres-overlay {
+  display: flex; flex-direction: column; justify-content: center; padding: 7%;
 }
-/* panel — 우측 단단한 사이드패널(하드 라인) */
-.pres-layout-panel .pres-overlay {
-  right: 0; top: 0; bottom: 0; width: 32%; padding: 8% 3.5cqw 8% 5%; /* 오른쪽 = 가장자리 next 버튼 자리 확보 */
-  display: flex; flex-direction: column; justify-content: center;
-  background: rgba(var(--slide-bg-rgb, 11, 15, 20), 0.9); border-left: 1px solid rgba(128, 128, 128, 0.25);
-}
+.pres-layout-band .pres-overlay { background: var(--band-grad, linear-gradient(to right, rgba(var(--slide-bg-rgb, 11, 15, 20), 0) 0%, rgba(var(--slide-bg-rgb, 11, 15, 20), 0.82) 26%)); }
+.pres-layout-panel .pres-overlay { background: rgba(var(--slide-bg-rgb, 11, 15, 20), 0.9); }
+
+/* --- 레이아웃 위치(상/하/좌/우) — 스테이지 pres-pos-* --- */
+/* 밴드/패널 스트립 기하 */
+.pres-pos-right .pres-overlay  { right: 0; left: auto; top: 0; bottom: 0; width: 34%; height: auto; }
+.pres-pos-left .pres-overlay   { left: 0; right: auto; top: 0; bottom: 0; width: 34%; height: auto; }
+.pres-pos-top .pres-overlay    { top: 0; bottom: auto; left: 0; right: 0; height: 42%; width: auto; }
+.pres-pos-bottom .pres-overlay { bottom: 0; top: auto; left: 0; right: 0; height: 42%; width: auto; }
+/* 밴드 그라데이션 방향(안쪽 = 지도 쪽 페이드) */
+.pres-layout-band.pres-pos-right .pres-overlay  { --band-grad: linear-gradient(to right,  rgba(var(--slide-bg-rgb, 11, 15, 20), 0) 0%, rgba(var(--slide-bg-rgb, 11, 15, 20), 0.82) 26%); }
+.pres-layout-band.pres-pos-left .pres-overlay   { --band-grad: linear-gradient(to left,   rgba(var(--slide-bg-rgb, 11, 15, 20), 0) 0%, rgba(var(--slide-bg-rgb, 11, 15, 20), 0.82) 26%); }
+.pres-layout-band.pres-pos-top .pres-overlay    { --band-grad: linear-gradient(to top,    rgba(var(--slide-bg-rgb, 11, 15, 20), 0) 0%, rgba(var(--slide-bg-rgb, 11, 15, 20), 0.82) 26%); }
+.pres-layout-band.pres-pos-bottom .pres-overlay { --band-grad: linear-gradient(to bottom, rgba(var(--slide-bg-rgb, 11, 15, 20), 0) 0%, rgba(var(--slide-bg-rgb, 11, 15, 20), 0.82) 26%); }
+/* 패널 안쪽 경계선 */
+.pres-layout-panel.pres-pos-right .pres-overlay  { border-left: 1px solid rgba(128, 128, 128, 0.25); }
+.pres-layout-panel.pres-pos-left .pres-overlay   { border-right: 1px solid rgba(128, 128, 128, 0.25); }
+.pres-layout-panel.pres-pos-top .pres-overlay    { border-bottom: 1px solid rgba(128, 128, 128, 0.25); }
+.pres-layout-panel.pres-pos-bottom .pres-overlay { border-top: 1px solid rgba(128, 128, 128, 0.25); }
+/* 카드는 플로팅 박스 — 위치별 코너/사이드(스트립 기하 override) */
+.pres-layout-card.pres-pos-bottom .pres-overlay { left: 4%; right: auto; bottom: 8%; top: auto; width: auto; height: auto; transform: none; }
+.pres-layout-card.pres-pos-top .pres-overlay    { left: 4%; right: auto; top: 8%; bottom: auto; width: auto; height: auto; transform: none; }
+.pres-layout-card.pres-pos-left .pres-overlay   { left: 4%; right: auto; top: 50%; bottom: auto; width: auto; height: auto; transform: translateY(-50%); }
+.pres-layout-card.pres-pos-right .pres-overlay  { right: 4%; left: auto; top: 50%; bottom: auto; width: auto; height: auto; transform: translateY(-50%); }
 .pres-heading { font-size: 1.8cqw; font-weight: 700; margin-bottom: 0.3em; }
 .pres-body {                                   /* .md-preview의 점선 박스 룩만 제거, 이미지/표 규칙은 유지 */
   font-size: 1cqw; line-height: 1.5;
   border: none; padding: 0; min-height: 0;
 }
 .pres-caption { margin-top: 0.5em; font-size: 0.75cqw; color: inherit; opacity: 0.8; }
+/* 오버레이 본문 미디어(사진/영상)가 컨테이너를 넘어 지도를 가리지 않게 — 위치별 높이 맞춤 */
+.pres-overlay { overflow: hidden; }
+.pres-body .embed-image, .pres-body img { max-height: 66cqh; }
+.pres-pos-top .pres-body .embed-image, .pres-pos-top .pres-body img,
+.pres-pos-bottom .pres-body .embed-image, .pres-pos-bottom .pres-body img { max-height: 26cqh; } /* 가로 밴드(높이 42%)에 맞춤 */
+.pres-pos-top .pres-body .embed-video, .pres-pos-bottom .pres-body .embed-video { width: min(100%, 46cqh); margin: 0 auto; } /* 높이 기준으로 16:9 폭 제한 */
 .pres-indicator {
   position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); z-index: 20;
   display: flex; gap: 8px;
@@ -352,11 +377,13 @@ body { display: flex; flex-direction: column; }
 .pres-kind-media .pres-cover-body .embed-video { width: min(90cqw, 142cqh); margin: 0 auto; } /* 16:9 최대 */
 
 /* 헤더 레이아웃 셀렉트 */
-#layout-select-label {
+#layout-select-label,
+#pos-select-label {
   font-size: 12px; color: #94a3b8; display: inline-flex; align-items: center;
   gap: 4px; white-space: nowrap;
 }
-#layout-select {
+#layout-select,
+#pos-select {
   background: #1e293b; color: #e5e7eb; border: 1px solid #334155;
   border-radius: 6px; padding: 3px 6px; cursor: pointer;
 }

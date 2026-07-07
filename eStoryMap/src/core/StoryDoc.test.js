@@ -3,10 +3,10 @@ import { describe, it, expect } from 'vitest';
 import {
   createStoryDoc, getPage, nextSourceId, addSource, setLayerVisible, addPage, removePage,
   setPageCamera, setPageContent, setCloudSync,
-  setPresentationLayout, applyCameraToAllPages, syncCameraFromPage,
+  setPresentationLayout, setPresentationPos, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
   setPageKind, setPageOrder, setPageTitle,
-  setSlideBg, setPageBg, slideBgOf,
+  setSlideBg, setPageBg, slideBgOf, applySlideBgToAll,
 } from './StoryDoc.js';
 
 describe('슬라이드 배경색', () => {
@@ -26,6 +26,17 @@ describe('슬라이드 배경색', () => {
     setPageBg(doc, 'page_1', ''); // 제거
     expect(getPage(doc, 'page_1').bg).toBeUndefined();
     expect(slideBgOf(doc, getPage(doc, 'page_1'))).toBe('#ffffff'); // 다시 프로젝트 기본
+  });
+  it('applySlideBgToAll: 프로젝트 기본 설정 + 모든 페이지 override 제거', () => {
+    const doc = createStoryDoc('t');
+    const p2 = addPage(doc, 'page_1');
+    setPageBg(doc, 'page_1', '#111111');
+    setPageBg(doc, p2.id, '#222222');
+    applySlideBgToAll(doc, '#00ff00');
+    expect(doc.meta.slideBg).toBe('#00ff00');
+    expect(getPage(doc, 'page_1').bg).toBeUndefined();
+    expect(getPage(doc, p2.id).bg).toBeUndefined();
+    expect(slideBgOf(doc, getPage(doc, p2.id))).toBe('#00ff00'); // 모두 프로젝트 기본색
   });
 });
 
@@ -63,6 +74,17 @@ describe('setPageOrder', () => {
     setPageOrder(doc, [ids[0], ids[1], 'nope']); // 미지의 id
     setPageOrder(doc, [ids[0], ids[0], ids[1]]); // 중복
     expect(doc.pages.map((p) => p.id)).toEqual(before);
+  });
+});
+
+describe('setPresentationPos', () => {
+  it('상/하/좌/우만 반영, 그 외는 무시', () => {
+    const doc = createStoryDoc('t');
+    expect(doc.meta.presentationPos).toBeUndefined();
+    setPresentationPos(doc, 'diagonal'); // 무효
+    expect(doc.meta.presentationPos).toBeUndefined();
+    setPresentationPos(doc, 'top');
+    expect(doc.meta.presentationPos).toBe('top');
   });
 });
 
