@@ -32,7 +32,7 @@ function makePage(id, title) {
   return {
     id,
     title,
-    kind: 'map', // 'map'(기본·지도) | 'title'(제목 표지) | 'media'(지도 없이 사진/영상)
+    kind: 'map', // 'map'(기본·지도) | 'title'(제목 표지) | 'media'(지도 없이 사진/영상) | 'text'(글만)
     camera: null, // {center:[lon,lat], zoom} — 캡처/적용은 M4
     layerVisibility: [], // [{sourceId, layerId, visible}] — 미등재 = 숨김
     overrides: {}, // v2 자리
@@ -271,7 +271,7 @@ export function slideBgOf(doc, page) {
   return DEFAULT_SLIDE_BG;
 }
 
-export const SLIDE_KINDS = ['map', 'title', 'media'];
+export const SLIDE_KINDS = ['map', 'title', 'media', 'text'];
 
 /** 슬라이드 종류 설정(지도/제목/미디어). 허용 enum만 반영.
  *  구버전 .esm/미설정 페이지는 읽는 쪽에서 'map' 기본(계약). */

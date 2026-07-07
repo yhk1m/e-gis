@@ -13,3 +13,8 @@ contextBridge.exposeInMainWorld('egisFS', {
   openExternal: (url) => ipcRenderer.invoke('app:openExternal', url), // 외부 브라우저(http(s)만, M7 가입 안내)
   savePDF: (title) => ipcRenderer.invoke('report:savePDF', title),    // 보고서 PDF 저장 → 경로 | null (M10)
 });
+
+contextBridge.exposeInMainWorld('egisUpdate', {
+  // 켤 때 메인 프로세스가 새 버전을 찾으면 콜백. info={version,name,notes,url}
+  onAvailable: (cb) => ipcRenderer.on('update-available', (_e, info) => cb(info)),
+});

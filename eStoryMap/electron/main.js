@@ -3,12 +3,50 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from 'electron';
 import path from 'node:path';
 import fsp from 'node:fs/promises';
+import https from 'node:https';
 import {
   ensureBaseDir, baseDir, listProjects, readProject, writeProject, backupProject,
 } from './fileService.js';
+import { isNewerVersion } from '../src/shared/version.js';
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
+const UPDATE_REPO = 'yhk1m/e-gis'; // 업데이트 확인 대상 GitHub 저장소(릴리스)
 let mainWindow = null;
+
+// 켤 때 1회: GitHub 최신 릴리스와 현재 버전 비교 → 새 버전이면 렌더러에 알림 전송.
+// CSP는 렌더러에만 적용되므로 확인은 메인 프로세스(Node https)에서. 네트워크 실패는 조용히 무시.
+function checkForUpdate(win) {
+  const req = https.get({
+    hostname: 'api.github.com',
+    path: `/repos/${UPDATE_REPO}/releases/latest`,
+    headers: { 'User-Agent': 'e-GIS-app', Accept: 'application/vnd.github+json' },
+    timeout: 8000,
+  }, (res) => {
+    if (res.statusCode !== 200) { res.resume(); return; } // 릴리스 없음(404) 등 → 무시
+    let data = '';
+    res.setEncoding('utf8');
+    res.on('data', (c) => { data += c; });
+    res.on('end', () => {
+      try {
+        const rel = JSON.parse(data);
+        const latest = rel.tag_name || rel.name;
+        if (latest && isNewerVersion(latest, app.getVersion()) && win && !win.isDestroyed()) {
+          // 릴리스에 첨부된 설치 파일(.exe)이 있으면 그 직접 다운로드 URL도 전달
+          const exe = Array.isArray(rel.assets) ? rel.assets.find((a) => /\.exe$/i.test(a.name || '')) : null;
+          win.webContents.send('update-available', {
+            version: String(latest).replace(/^v/i, ''),
+            name: rel.name || String(latest),
+            notes: rel.body || '',
+            url: rel.html_url || `https://github.com/${UPDATE_REPO}/releases/latest`,
+            downloadUrl: exe ? exe.browser_download_url : null,
+          });
+        }
+      } catch { /* 파싱 실패 무시 */ }
+    });
+  });
+  req.on('error', () => {}); // 오프라인 등 무시
+  req.on('timeout', () => req.destroy());
+}
 
 async function createWindow() {
   mainWindow = new BrowserWindow({
@@ -40,6 +78,9 @@ async function createWindow() {
     if (/^https?:/i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
+
+  // 켤 때 한 번 업데이트 확인(렌더러 로드 완료 후 → 리스너가 준비된 뒤 알림)
+  mainWindow.webContents.once('did-finish-load', () => checkForUpdate(mainWindow));
 
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
     // dev 의존성 재최적화 리로드로 초기 로드가 중단(ERR_ABORTED)돼도

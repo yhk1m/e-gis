@@ -9,12 +9,14 @@ const KIND_OPTIONS = [
   ['map', '지도'],
   ['title', '제목(표지)'],
   ['media', '사진/영상'],
+  ['text', '글'],
 ];
 // 종류별 heading/body 라벨·힌트
 const KIND_HINTS = {
   map: { heading: '제목', body: '본문', bodyPh: '본문 (마크다운: # 제목, **굵게**, - 목록)' },
   title: { heading: '큰 제목', body: '부제', bodyPh: '부제 · 설명 (선택)' },
   media: { heading: '제목 (선택)', body: '사진/영상', bodyPh: '이미지·YouTube·구글드라이브 링크를 한 줄에 붙여넣기' },
+  text: { heading: '제목 (선택)', body: '본문', bodyPh: '본문 (마크다운: # 제목, **굵게**, - 목록). 지도 없이 글만' },
 };
 
 /**

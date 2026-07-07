@@ -27,6 +27,7 @@ import { createAuthManager } from './core/AuthManager.js';
 import { createSupabaseClient } from './core/supabaseClient.js';
 import { createPresentationShell } from './viewer/PresentationShell.js';
 import { openLightbox } from './viewer/lightbox.js';
+import { showUpdateModal } from './editor/updateModal.js';
 import { createReportShell } from './viewer/ReportShell.js';
 import { createLegend } from './editor/Legend.js';
 
@@ -213,6 +214,9 @@ tabEgis.addEventListener('click', () => switchApp(true));
 document.getElementById('content-preview').addEventListener('click', (e) => {
   if (e.target && e.target.tagName === 'IMG') openLightbox(e.target.currentSrc || e.target.src);
 });
+
+// 켤 때 업데이트 확인 결과(메인 프로세스) 수신 → 알림창
+if (window.egisUpdate) window.egisUpdate.onAvailable((info) => showUpdateModal(info));
 
 // M9 확장: 발표 레이아웃 선택(프로젝트 전체, doc.meta.presentationLayout)
 const layoutSelect = document.getElementById('layout-select');
