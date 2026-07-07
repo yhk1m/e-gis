@@ -7,6 +7,7 @@
 import { applyPageVisibility } from '../core/StoryMapRenderer.js';
 import { slideBgOf } from '../core/StoryDoc.js';
 import { applySlideColors } from '../shared/color.js';
+import { openLightbox } from './lightbox.js';
 import { navReduce, indicatorDots, buildOverlay } from './presentationNav.js';
 
 /**
@@ -55,6 +56,11 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
 
   stage.append(cover, overlay, indicator, prevBtn, nextBtn, exitBtn);
   root.appendChild(stage);
+
+  // 발표 중 사진 클릭 → 라이트박스로 확대. 전체화면 안에서 보이게 root(#presentation)에 붙인다.
+  stage.addEventListener('click', (e) => {
+    if (e.target && e.target.tagName === 'IMG') openLightbox(e.target.currentSrc || e.target.src, root);
+  });
 
   let index = 0;
   let active = false;

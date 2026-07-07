@@ -26,6 +26,7 @@ import { createStartScreen } from './editor/StartScreen.js';
 import { createAuthManager } from './core/AuthManager.js';
 import { createSupabaseClient } from './core/supabaseClient.js';
 import { createPresentationShell } from './viewer/PresentationShell.js';
+import { openLightbox } from './viewer/lightbox.js';
 import { createReportShell } from './viewer/ReportShell.js';
 import { createLegend } from './editor/Legend.js';
 
@@ -207,6 +208,11 @@ function switchApp(toEgis) {
 }
 tabEstory.addEventListener('click', () => switchApp(false));
 tabEgis.addEventListener('click', () => switchApp(true));
+
+// 콘텐츠 미리보기의 사진 클릭 → 라이트박스 확대(편집 중 확인용)
+document.getElementById('content-preview').addEventListener('click', (e) => {
+  if (e.target && e.target.tagName === 'IMG') openLightbox(e.target.currentSrc || e.target.src);
+});
 
 // M9 확장: 발표 레이아웃 선택(프로젝트 전체, doc.meta.presentationLayout)
 const layoutSelect = document.getElementById('layout-select');

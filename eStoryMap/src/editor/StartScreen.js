@@ -28,7 +28,10 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
 
     const brand = document.createElement('h1');
     brand.className = 'start-brand';
-    brand.textContent = 'e-GIStory';
+    const brandE = document.createElement('span');
+    brandE.className = 'brand-e';
+    brandE.textContent = 'e';
+    brand.append(brandE, document.createTextNode('-GIStory')); // 'e'만 파란색(브랜드 강조)
     box.appendChild(brand);
 
     const row = document.createElement('div');

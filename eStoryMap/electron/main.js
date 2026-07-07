@@ -17,6 +17,7 @@ async function createWindow() {
     minWidth: 1024,
     minHeight: 640,
     title: 'e-GIS',
+    icon: isDev ? path.join(__dirname, '../build/icon.ico') : undefined, // dev 창 아이콘=e-GIS(prod는 exe 아이콘)
     backgroundColor: '#0b0f14',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

@@ -18,6 +18,7 @@ body { display: flex; flex-direction: column; }
 #egis-webview { width: 100%; height: 100%; border: none; }
 #toolbar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #0b0f14; color: #e5e7eb; }
 #toolbar .brand { margin-right: 8px; }
+.brand-e { color: #1d4ed8; } /* 'e-GIStory'의 e = '새로 만들기' 버튼 파란색 */
 #toolbar button { padding: 6px 12px; border: 1px solid #334155; background: #1e293b; color: #e5e7eb; border-radius: 6px; cursor: pointer; }
 #toolbar button:hover { background: #334155; }
 #status { font-size: 13px; color: #94a3b8; }
@@ -143,6 +144,7 @@ body { display: flex; flex-direction: column; }
 .md-preview p { margin: 4px 0; }
 .md-preview ul, .md-preview ol { margin: 4px 0 4px 18px; padding: 0; }
 .md-preview img { max-width: 100%; }
+#content-preview img { cursor: zoom-in; } /* 클릭 확대 힌트 */
 .md-preview pre { overflow-x: auto; }
 .md-preview table { display: block; max-width: 100%; overflow-x: auto; }
 /* 미디어 임베드(#3): YouTube 반응형 16:9 + Drive 이미지 */
@@ -329,12 +331,19 @@ body { display: flex; flex-direction: column; }
   border: none; padding: 0; min-height: 0;
 }
 .pres-caption { margin-top: 0.5em; font-size: 0.75cqw; color: inherit; opacity: 0.8; }
-/* 오버레이 본문 미디어(사진/영상)가 컨테이너를 넘어 지도를 가리지 않게 — 위치별 높이 맞춤 */
-.pres-overlay { overflow: hidden; }
-.pres-body .embed-image, .pres-body img { max-height: 66cqh; }
+/* 오버레이 본문 미디어(사진/영상): 컨테이너에 맞춰 전체가 보이게(클리핑 없음). 사진은 클릭 확대. */
+.pres-body .embed-image, .pres-body img { max-height: 62cqh; cursor: zoom-in; }
+/* 가로 밴드(위/아래)는 세로 여백 축소(padding %는 폭 기준이라 가로 밴드선 과함) */
+.pres-layout-band.pres-pos-top .pres-overlay, .pres-layout-panel.pres-pos-top .pres-overlay,
+.pres-layout-band.pres-pos-bottom .pres-overlay, .pres-layout-panel.pres-pos-bottom .pres-overlay { padding: 3.5% 6%; }
+/* 가로 밴드: 미디어를 오른쪽 정렬 + 컨테이너 높이에 맞춤(전체 보이게) */
 .pres-pos-top .pres-body .embed-image, .pres-pos-top .pres-body img,
-.pres-pos-bottom .pres-body .embed-image, .pres-pos-bottom .pres-body img { max-height: 26cqh; } /* 가로 밴드(높이 42%)에 맞춤 */
-.pres-pos-top .pres-body .embed-video, .pres-pos-bottom .pres-body .embed-video { width: min(100%, 46cqh); margin: 0 auto; } /* 높이 기준으로 16:9 폭 제한 */
+.pres-pos-bottom .pres-body .embed-image, .pres-pos-bottom .pres-body img {
+  max-height: 24cqh; width: auto; max-width: 50%; display: block; margin: 4px 0 4px auto;
+}
+.pres-pos-top .pres-body .embed-video, .pres-pos-bottom .pres-body .embed-video {
+  width: min(100%, 42cqh); margin: 8px 0 8px auto;
+}
 .pres-indicator {
   position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); z-index: 20;
   display: flex; gap: 8px;
@@ -373,7 +382,14 @@ body { display: flex; flex-direction: column; }
 /* 미디어: 사진/영상이 화면을 채움 */
 .pres-kind-media .pres-cover-heading { font-size: 1.6cqw; font-weight: 600; margin-bottom: 0.6em; }
 .pres-kind-media .pres-cover-body img,
-.pres-kind-media .pres-cover-body .embed-image { max-height: 82cqh; width: auto; max-width: 100%; margin: 0 auto; }
+.pres-kind-media .pres-cover-body .embed-image { max-height: 82cqh; width: auto; max-width: 100%; margin: 0 auto; cursor: zoom-in; }
+/* 이미지 라이트박스(사진 클릭 확대) */
+.lightbox {
+  position: fixed; inset: 0; z-index: 600;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.88); cursor: zoom-out;
+}
+.lightbox img { max-width: 92vw; max-height: 92vh; object-fit: contain; border-radius: 4px; box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6); }
 .pres-kind-media .pres-cover-body .embed-video { width: min(90cqw, 142cqh); margin: 0 auto; } /* 16:9 최대 */
 
 /* 헤더 레이아웃 셀렉트 */
