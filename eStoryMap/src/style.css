@@ -519,11 +519,33 @@ body { display: flex; flex-direction: column; }
 .report-cover-title { font-size: 26pt; font-weight: 800; color: #111; margin: 0 0 4mm; }
 .report-cover-subtitle { font-size: 13pt; color: #444; border: none; padding: 0; min-height: 0; }
 
-@page { size: A4; margin: 15mm; }
+/* 발표 PDF — 각 페이지를 16:9 슬라이드로(발표 화면 재현). 인쇄 시 슬라이드=1페이지 */
+.slide-pdf-pages { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px; }
+.slide-pdf-page {
+  width: min(100%, 1000px); aspect-ratio: 16 / 9; position: relative;
+  container-type: size; overflow: hidden; background: #000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); border-radius: 4px;
+}
+.slide-pdf-page .pres-stage {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  max-width: none; max-height: none; container-type: size;
+}
+.slide-pdf-map { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* 지도 캡처(보고서·발표 PDF) 동안만 1920×1080으로 렌더 → 고해상도. 화면 밖(offscreen)에 배치 */
+#map.map-hires-capture { position: fixed; inset: auto; left: -10000px; top: 0; width: 1920px; height: 1080px; z-index: -1; }
+
+/* @page 크기는 저장 직전 JS가 #pdf-page-rule에 주입(보고서=A4 / 발표=16:9). printToPDF는 preferCSSPageSize:true */
 @media print {
-  #app, #start-screen, #presentation { display: none !important; }
+  #app-tabs, #app, #start-screen, #presentation, #egis-pane { display: none !important; }
   #report { position: static; overflow: visible; background: #fff; }
   .report-toolbar, .report-loading { display: none !important; }
   .report-pages { padding: 0; display: block; }
   .report-doc { width: auto; box-shadow: none; padding: 0; } /* 여백은 @page margin이 담당 */
+  /* 발표 PDF: 각 슬라이드가 한 페이지(@page 16:9)를 꽉 채움 */
+  .slide-pdf-pages { display: block; gap: 0; padding: 0; }
+  .slide-pdf-page {
+    width: 100%; height: 100vh; max-width: none; aspect-ratio: auto;
+    box-shadow: none; border-radius: 0; break-after: page; page-break-after: always;
+  }
+  .slide-pdf-page:last-child { break-after: auto; page-break-after: auto; }
 }

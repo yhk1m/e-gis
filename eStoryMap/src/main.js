@@ -13,7 +13,6 @@ import {
   setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
 import { createCloudSync } from './core/CloudSync.js';
-import { parseGeoTiff } from './core/GeoTiffLoader.js';
 import { createSourcePanel } from './editor/SourcePanel.js';
 import { createPageList } from './editor/PageList.js';
 import { createContentEditor } from './editor/ContentEditor.js';
@@ -177,6 +176,12 @@ document.getElementById('btn-report').addEventListener('click', () => {
   report.open(); // 비동기: 페이지별 캡처 후 표시. 닫기(exitReport)에서 inert 해제
 });
 
+document.getElementById('btn-slidepdf').addEventListener('click', () => {
+  if (!doc || !doc.pages.length) return;
+  document.getElementById('app').inert = true;
+  report.open('slides'); // 발표 슬라이드 PDF(16:9). 캡처 재사용, 닫기는 exitReport 공용
+});
+
 // 테마(편집기 UI만): 다크 기본, localStorage 기억. 발표=다크 무대·보고서=흰 종이는 고정.
 const btnTheme = document.getElementById('btn-theme');
 function applyTheme(theme) {
@@ -206,6 +211,8 @@ function switchApp(toEgis) {
     egisWebview.src = 'https://e-gis.kr'; // 지연 로드
     egisLoaded = true;
   }
+  // e-GIS 탭에선 창 제목을 'e-GIS'로(스토리 제목 숨김), e-GIStory 탭에선 스토리 제목 복원
+  document.title = toEgis ? 'e-GIS' : (doc ? `${doc.meta.title} — e-GIS` : 'e-GIS');
 }
 tabEstory.addEventListener('click', () => switchApp(false));
 tabEgis.addEventListener('click', () => switchApp(true));
@@ -256,15 +263,7 @@ legendToggle.addEventListener('change', () => {
   legend.render(getPage(doc, currentPageId), { editable: true });
 });
 
-// 발표 미리보기 토글(지도 위 오버레이 표시/숨김). 로컬 기억(기본 켜짐).
-const previewToggle = document.getElementById('preview-toggle');
-previewToggle.checked = localStorage.getItem('egis-preview') !== 'off';
-slidePreview.setVisible(previewToggle.checked);
-previewToggle.addEventListener('change', () => {
-  slidePreview.setVisible(previewToggle.checked);
-  try { localStorage.setItem('egis-preview', previewToggle.checked ? 'on' : 'off'); } catch (e) { /* private 모드 무시 */ }
-  if (doc) slidePreview.render(getPage(doc, currentPageId), doc.meta);
-});
+// 발표 미리보기는 항상 표시(지도 위 오버레이 = WYSIWYG). SlidePreview 기본값 visible=true 사용.
 
 // M9 확장: 카메라 위치 도구 (모두 적용 / 위치 가져오기 팝오버)
 const camSyncBtn = document.getElementById('btn-cam-sync');
@@ -534,19 +533,6 @@ document.getElementById('btn-import').addEventListener('click', async () => {
     addSourceFromEgis(picked.filename, JSON.parse(picked.text));
   } catch (e) {
     status.textContent = `불러오기 실패: ${e.message}`;
-    console.error(e);
-  }
-});
-
-document.getElementById('btn-tif').addEventListener('click', async () => {
-  try {
-    const picked = await window.egisFS.importTif();
-    if (!picked) return;
-    status.textContent = `${picked.filename} 파싱 중…`;
-    const egisLike = await parseGeoTiff(picked.data, picked.filename);
-    addSourceFromEgis(picked.filename, egisLike);
-  } catch (e) {
-    status.textContent = `GeoTIFF 로드 실패: ${e.message}`;
     console.error(e);
   }
 });

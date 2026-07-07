@@ -107,6 +107,17 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
+// e-GIS 웹앱(<webview>) 안에서 새 창(target=_blank, 예: 커뮤니티 카페 링크) 요청은
+// 임베드 창을 만들지 않고 기본 브라우저로 연다(webview는 allowpopups 필요).
+app.on('web-contents-created', (_e, contents) => {
+  if (contents.getType() === 'webview') {
+    contents.setWindowOpenHandler(({ url }) => {
+      if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+      return { action: 'deny' };
+    });
+  }
+});
+
 // .egis 열기 (Task 6에서 renderer가 사용)
 ipcMain.handle('egis:import', async () => {
   if (!mainWindow) return null;
@@ -150,9 +161,8 @@ ipcMain.handle('report:savePDF', async (_e, title) => {
   let data;
   try {
     data = await mainWindow.webContents.printToPDF({
-      pageSize: 'A4',
       printBackground: true,
-      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+      preferCSSPageSize: true, // 크기·여백은 CSS @page(#pdf-page-rule)가 결정: 보고서=A4 15mm / 발표=16:9 0
     });
   } catch (err) {
     console.warn('[main] printToPDF 실패:', err);

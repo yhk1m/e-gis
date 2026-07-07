@@ -6,6 +6,9 @@ import { applyPageVisibility } from '../core/StoryMapRenderer.js';
 import { buildReportSections } from './reportModel.js';
 import { captureMapImage } from './mapCapture.js';
 import { DEM_COLOR_RAMP } from '../core/rasterColor.js';
+import { buildOverlay } from './presentationNav.js';
+import { applySlideColors } from '../shared/color.js';
+import { slideBgOf } from '../core/StoryDoc.js';
 
 function rampGradientCss() {
   const stops = DEM_COLOR_RAMP.map(
@@ -28,7 +31,7 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
   root.hidden = true;
   let active = false;
 
-  async function open() {
+  async function open(mode = 'report') {
     const doc = getDoc();
     if (active || !doc || !doc.pages.length) return;
     active = true;
@@ -40,37 +43,59 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
     root.appendChild(loading);
 
     // 페이지별로 카메라·레이어 세팅 후 지도 이미지 캡처(순차).
+    const label = mode === 'slides' ? '발표 PDF' : '보고서';
     const images = {};
     const n = doc.pages.length;
-    for (let i = 0; i < n; i++) {
-      const page = doc.pages[i];
-      if ((page.kind || 'map') !== 'map') continue; // 제목/미디어 슬라이드는 지도 캡처 없음
-      loading.textContent = `보고서 생성 중… ${i + 1}/${n}`;
-      applyPageVisibility(page, registry);
-      if (page.camera) mapView.setView(page.camera.center, page.camera.zoom);
-      // eslint-disable-next-line no-await-in-loop
-      images[page.id] = await captureMapImage(mapView.map);
+    // 캡처 동안 지도를 1920×1080(발표 정규화 폭)으로 키워 고해상도로 캡처. 편집기는 inert·#report로 가려짐.
+    const mapEl = mapView.map.getTargetElement();
+    mapEl.classList.add('map-hires-capture');
+    mapView.updateSize();
+    try {
+      for (let i = 0; i < n; i++) {
+        const page = doc.pages[i];
+        if ((page.kind || 'map') !== 'map') continue; // 제목/미디어/글 슬라이드는 지도 캡처 없음
+        loading.textContent = `${label} 생성 중… ${i + 1}/${n}`;
+        applyPageVisibility(page, registry);
+        if (page.camera) mapView.setView(page.camera.center, page.camera.zoom);
+        // eslint-disable-next-line no-await-in-loop
+        images[page.id] = await captureMapImage(mapView.map);
+      }
+    } finally {
+      mapEl.classList.remove('map-hires-capture'); // 지도 원래 크기로 복원(닫기/실패에도)
+      mapView.updateSize();
     }
 
     if (!active) return; // 캡처 중 닫혔으면 중단
-    renderReport(buildReportSections(doc, images), doc);
+    if (mode === 'slides') renderSlides(doc, images);
+    else renderReport(buildReportSections(doc, images), doc);
   }
 
-  function renderReport(sections, doc) {
-    root.innerHTML = '';
+  // @page 크기는 저장 직전 JS가 주입(보고서=A4 / 발표=16:9). printToPDF는 preferCSSPageSize:true 사용.
+  function setPdfPageRule(mode) {
+    const el = document.getElementById('pdf-page-rule');
+    if (el) {
+      el.textContent = mode === 'slides'
+        ? '@page { size: 338.66mm 190.5mm; margin: 0; }' // 13.333in×7.5in = 16:9 가로
+        : '@page { size: A4; margin: 15mm; }';
+    }
+  }
 
+  // 툴바(제목·PDF 저장·닫기) — 보고서/발표 공용. PDF 버튼은 모드별 @page를 세팅한다.
+  function makeToolbar(doc, mode) {
     const toolbar = document.createElement('div');
     toolbar.className = 'report-toolbar';
     const title = document.createElement('span');
     title.className = 'report-title';
-    title.textContent = doc.meta.title;
+    title.textContent = mode === 'slides' ? `${doc.meta.title} — 발표 PDF` : doc.meta.title;
     const pdfBtn = document.createElement('button');
     pdfBtn.type = 'button';
     pdfBtn.textContent = '📄 PDF 저장';
     pdfBtn.addEventListener('click', async () => {
       pdfBtn.disabled = true;
       pdfBtn.textContent = '저장 중…';
-      const result = onSavePDF ? await onSavePDF(doc.meta.title) : null;
+      setPdfPageRule(mode); // 인쇄 직전 @page 크기 결정
+      const pdfTitle = mode === 'slides' ? `${doc.meta.title} 발표` : doc.meta.title;
+      const result = onSavePDF ? await onSavePDF(pdfTitle) : null;
       pdfBtn.textContent = result ? '저장됨 ✓' : '📄 PDF 저장';
       pdfBtn.disabled = false;
     });
@@ -79,7 +104,71 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
     closeBtn.textContent = '닫기';
     closeBtn.addEventListener('click', close);
     toolbar.append(title, pdfBtn, closeBtn);
-    root.appendChild(toolbar);
+    return toolbar;
+  }
+
+  // 발표 PDF: 각 페이지를 발표 화면과 동일한 16:9 슬라이드로(지도=캡처 이미지 배경 + 오버레이/커버)
+  function renderSlides(doc, images) {
+    root.innerHTML = '';
+    root.appendChild(makeToolbar(doc, 'slides'));
+    const pagesEl = document.createElement('div');
+    pagesEl.className = 'slide-pdf-pages';
+    const layout = doc.meta.presentationLayout || 'band';
+    const pos = doc.meta.presentationPos || 'right';
+    for (const page of doc.pages) pagesEl.appendChild(makeSlidePage(doc, page, images, layout, pos));
+    root.appendChild(pagesEl);
+  }
+
+  function makeSlidePage(doc, page, images, layout, pos) {
+    const kind = page.kind || 'map';
+    const slide = document.createElement('div');
+    slide.className = 'slide-pdf-page';
+    const stage = document.createElement('div');
+    stage.className = `pres-stage pres-layout-${layout} pres-kind-${kind} pres-pos-${pos}`;
+    applySlideColors(stage, slideBgOf(doc, page));
+    const vm = buildOverlay(page.content); // {heading, bodyHtml(살균), caption, empty}
+
+    const fill = (el, cls, html, text) => {
+      const d = document.createElement('div');
+      d.className = cls;
+      if (html != null) d.innerHTML = html; else d.textContent = text;
+      if (!(html || text)) d.style.display = 'none';
+      el.appendChild(d);
+    };
+
+    if (kind === 'map') {
+      if (images[page.id]) {
+        const img = document.createElement('img');
+        img.className = 'slide-pdf-map';
+        img.src = images[page.id];
+        stage.appendChild(img);
+      }
+      if (!vm.empty) {
+        const overlay = document.createElement('div');
+        overlay.className = 'pres-overlay';
+        fill(overlay, 'pres-heading', null, vm.heading);
+        fill(overlay, 'pres-body md-preview', vm.bodyHtml, null);
+        fill(overlay, 'pres-caption', null, vm.caption);
+        stage.appendChild(overlay);
+      }
+    } else {
+      const cover = document.createElement('div');
+      cover.className = 'pres-cover';
+      const inner = document.createElement('div');
+      inner.className = 'pres-cover-inner';
+      fill(inner, 'pres-cover-heading', null, vm.heading);
+      fill(inner, 'pres-cover-body md-preview', vm.bodyHtml, null);
+      fill(inner, 'pres-cover-caption', null, vm.caption);
+      cover.appendChild(inner);
+      stage.appendChild(cover);
+    }
+    slide.appendChild(stage);
+    return slide;
+  }
+
+  function renderReport(sections, doc) {
+    root.innerHTML = '';
+    root.appendChild(makeToolbar(doc, 'report'));
 
     const pages = document.createElement('div');
     pages.className = 'report-pages';
