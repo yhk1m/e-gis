@@ -30,6 +30,7 @@ import { createContentEditor } from './editor/ContentEditor.js';
 import { createSlidePreview } from './editor/SlidePreview.js';
 import { confirmDialog } from './editor/confirmDialog.js';
 import { applySlideColors } from './shared/color.js';
+import { applySlideFont } from './shared/slideFont.js';
 import { CameraAnimator } from './shared/CameraAnimator.js';
 import { serializeStoryDoc, deserializeStoryDoc, createAutosaver } from './core/LocalStore.js';
 import { createStartScreen } from './editor/StartScreen.js';
@@ -268,18 +269,7 @@ posSelect.addEventListener('change', () => {
   scheduleSave();
 });
 
-// 슬라이드 글꼴(프로젝트 전체). --slide-font 변수로 슬라이드/발표/보고서에 일괄 적용.
-const SLIDE_FONT_STACKS = {
-  default: 'system-ui, "Segoe UI", "Malgun Gothic", sans-serif',
-  sans: "'Noto Sans KR', system-ui, sans-serif",
-  serif: "'Noto Serif KR', serif",
-};
-function applySlideFont(font, custom) {
-  const stack = font === 'system' && custom
-    ? `"${custom}", system-ui, "Segoe UI", sans-serif` // custom은 setSlideFontCustom에서 이미 살균됨
-    : SLIDE_FONT_STACKS[font] || SLIDE_FONT_STACKS.default;
-  document.documentElement.style.setProperty('--slide-font', stack);
-}
+// 슬라이드 글꼴(프로젝트 전체). --slide-font 변수 적용은 shared/slideFont.js(웹뷰어와 공유).
 const fontSelect = document.getElementById('font-select');
 const fontCustom = document.getElementById('font-custom');
 fontSelect.addEventListener('change', () => {
