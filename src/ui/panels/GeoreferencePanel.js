@@ -34,7 +34,7 @@ class GeoreferencePanel {
         <button class="georef-close" type="button" title="닫기">×</button>
       </div>
       <div class="georef-body">
-        <p class="georef-hint">① 이미지를 불러온 뒤 ② 이미지의 한 점을 클릭하고 ③ 지도에서 같은 위치를 클릭하세요. 기준점 3쌍 이상이면 지도에 자동으로 맞춰 표시됩니다(점이 많을수록 정확).</p>
+        <p class="georef-hint">① 이미지를 불러온 뒤 ② 이미지의 한 점을 클릭하고 ③ 지도에서 같은 위치를 클릭하세요. 기준점 3쌍 이상이면 지도에 자동으로 맞춰 표시됩니다. <b>원하는 만큼 계속 추가</b>할 수 있고, 점이 많을수록 정확합니다.</p>
         <input type="file" id="georef-file" accept="image/png,image/jpeg,image/svg+xml,.png,.jpg,.jpeg,.svg" />
         <div id="georef-canvas-wrap" class="georef-canvas-wrap" hidden><canvas id="georef-canvas"></canvas></div>
         <div id="georef-zoom" class="georef-zoom" hidden>
@@ -192,7 +192,7 @@ class GeoreferencePanel {
     this.el.querySelector('#georef-apply').disabled = !res.ok;
     this.el.querySelector('#georef-opacity-row').hidden = !res.ok;
     if (res.ok) {
-      let msg = `기준점 ${this.gcps.length}개 — 지도에 미리보기 표시됨`;
+      let msg = `기준점 ${this.gcps.length}개 — 미리보기 표시됨 (더 찍을수록 정확)`;
       if (this.mode === 'projective' && res.type === 'affine') msg += ' (원근은 4점 이상 필요 → 지금은 아핀)';
       this._setStatus(msg);
     } else {

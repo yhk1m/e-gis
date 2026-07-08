@@ -173,8 +173,13 @@ class GeoreferenceTool {
   pickMapPoint(callback) {
     const map = mapManager.getMap();
     this.cancelPick();
+    if (this.previewLayer) this.previewLayer.setVisible(false); // 지도 잘 보이게 미리보기 잠시 숨김
     map.getTargetElement().style.cursor = 'crosshair';
-    this.pickHandler = (evt) => { this.cancelPick(); callback(evt.coordinate); };
+    this.pickHandler = (evt) => {
+      this.cancelPick();
+      if (this.previewLayer) this.previewLayer.setVisible(true);
+      callback(evt.coordinate);
+    };
     map.on('click', this.pickHandler);
   }
 
@@ -204,6 +209,7 @@ class GeoreferenceTool {
       this.renderState.transform = t; // srcData는 이미지 동일하므로 유지(원근 재계산 시 재사용)
       this.previewLayer.setExtent(ext);
       this.previewLayer.setOpacity(this.opacity);
+      this.previewLayer.setVisible(true); // 점 선택 중 숨겼던 미리보기 복원
       this.previewLayer.getSource().changed();
     }
     return { ok: true, type: t.type };
