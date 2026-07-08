@@ -640,3 +640,22 @@ body { display: flex; flex-direction: column; }
   }
   .slide-pdf-page:last-child { break-after: auto; page-break-after: auto; }
 }
+
+/* 웹뷰어(게시된 스토리맵 — viewer.html) */
+body.webviewer { margin: 0; background: #000; }
+#viewer-status {
+  position: fixed; inset: 0; display: grid; place-content: center; text-align: center; gap: 12px;
+  color: #dbe2ef; font: 15px/1.6 system-ui, "Segoe UI", "Malgun Gothic", sans-serif;
+}
+#viewer-status.error { color: #fca5a5; }
+#viewer-status button {
+  justify-self: center; padding: 7px 18px; border: 1px solid #334155; border-radius: 6px;
+  background: #1e293b; color: #e5e7eb; font-size: 13px; cursor: pointer;
+}
+#viewer-status button:hover { background: #334155; }
+#viewer-brand {
+  position: fixed; right: 12px; bottom: 8px; z-index: 250; font-size: 12px;
+  color: #94a3b8; text-decoration: none; opacity: 0.8;
+  font-family: system-ui, "Segoe UI", "Malgun Gothic", sans-serif;
+}
+#viewer-brand:hover { opacity: 1; text-decoration: underline; }

@@ -1,0 +1,21 @@
+<!-- © 2026 김용현 -->
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- 데스크톱 index.html과 같은 취지의 CSP. 지도 타일·임의 웹 이미지=img https:, YouTube 임베드, Supabase 조회 -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; frame-src https://www.youtube-nocookie.com https://www.youtube.com; connect-src 'self' https://lufbotdmhgsuvejlytgh.supabase.co; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>e-GIS 스토리맵</title>
+  </head>
+  <body class="webviewer">
+    <div id="viewer-status">스토리맵을 불러오는 중…</div>
+    <div id="map-home" hidden><div id="map"><div id="legend" hidden></div></div></div>
+    <div id="presentation"></div>
+    <a id="viewer-brand" href="https://e-gis.kr" target="_blank" rel="noopener">e-GIS로 제작</a>
+    <script type="module" src="./src/webviewer/main.js"></script>
+  </body>
+</html>
