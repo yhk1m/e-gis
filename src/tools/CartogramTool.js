@@ -13,6 +13,7 @@ import VectorLayer from 'ol/layer/Vector';
 import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
 import { makeDraggable } from '../utils/DraggableElement.js';
 import { choroplethTool } from './ChoroplethTool.js';
+import { eventBus, Events } from '../utils/EventBus.js';
 
 class CartogramTool {
   constructor() {
@@ -24,6 +25,15 @@ class CartogramTool {
       purples: ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486'],
       spectral: ['#3288bd', '#66c2a5', '#abdda4', '#e6f598', '#fee08b', '#fdae61', '#f46d43', '#d53e4f']
     };
+
+    // 레이어 이름 변경 → 카토그램 범례 제목 동기화
+    eventBus.on(Events.LAYER_RENAMED, (data) => {
+      if (!data || !data.layerId) return;
+      const legendEl = document.getElementById(`legend-${data.layerId}`);
+      if (!legendEl) return;
+      const titleEl = legendEl.querySelector('.legend-title');
+      if (titleEl && titleEl.textContent !== data.name) titleEl.textContent = data.name;
+    });
   }
 
   /**

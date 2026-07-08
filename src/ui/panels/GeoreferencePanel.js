@@ -30,7 +30,7 @@ class GeoreferencePanel {
   _html() {
     return `
       <div class="georef-header">
-        <strong>🗺️ 이미지 지리참조</strong>
+        <strong>🗺️ 지리참조 (Georeferencing)</strong>
         <button class="georef-close" type="button" title="닫기">×</button>
       </div>
       <div class="georef-body">

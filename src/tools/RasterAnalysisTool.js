@@ -35,6 +35,21 @@ class RasterAnalysisTool {
         this.removeLegend(data.layerId);
       }
     });
+
+    // 레이어 이름 변경 → 래스터 범례 제목 동기화
+    eventBus.on(Events.LAYER_RENAMED, (data) => {
+      if (data && data.layerId) {
+        this.onLayerRenamed(data.layerId, data.name);
+      }
+    });
+  }
+
+  /** 래스터 레이어 이름 변경 시 범례 제목(.raster-legend-title)을 새 이름으로 갱신. */
+  onLayerRenamed(layerId, name) {
+    const legendEl = this.legends.get(layerId);
+    if (!legendEl) return;
+    const titleEl = legendEl.querySelector('.raster-legend-title');
+    if (titleEl && titleEl.textContent !== name) titleEl.textContent = name;
   }
 
   /**

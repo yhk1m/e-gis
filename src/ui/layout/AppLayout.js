@@ -113,7 +113,7 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="analysis-raster-filter">래스터 계산기 (값 필터)</div>
                 <div class="dropdown-item" data-action="analysis-contour">등고선 생성</div>
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-item" data-action="georeference">이미지 지리참조 (지도에 맞추기)</div>
+                <div class="dropdown-item" data-action="georeference">지리참조 (Georeferencing)</div>
               </div>
             </div>
             <div class="menu-item dropdown" data-menu="thematic-map">

@@ -33,6 +33,15 @@ class DEMLoader {
     eventBus.on(Events.LAYER_REMOVED, (data) => {
       if (data && data.layerId) this.removeLegend(data.layerId);
     });
+
+    // 레이어 이름 변경 → DEM 범례 제목 동기화
+    eventBus.on(Events.LAYER_RENAMED, (data) => {
+      if (!data || !data.layerId) return;
+      const legendEl = this.legends.get(data.layerId);
+      if (!legendEl) return;
+      const titleEl = legendEl.querySelector('.raster-legend-title');
+      if (titleEl && titleEl.textContent !== data.name) titleEl.textContent = data.name;
+    });
   }
 
   /**
