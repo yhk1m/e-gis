@@ -75,6 +75,14 @@ export function setCloudSync(doc, on) {
   touch(doc);
 }
 
+/** 웹 게시 정보 기록/제거(Publisher가 게시/취소 시 호출). info=null이면 제거.
+ *  .esm/클라우드 왕복에서 유지된다(구버전 .esm에는 없음 = 미게시 취급). */
+export function setPublishInfo(doc, info) {
+  if (info) doc.meta.publish = { id: info.id, handle: info.handle, seq: info.seq };
+  else delete doc.meta.publish;
+  touch(doc);
+}
+
 export const PRESENTATION_LAYOUTS = ['band', 'panel', 'card'];
 
 /** 발표 텍스트 레이아웃(프로젝트 전체, M9 확장). 허용 enum만 반영.

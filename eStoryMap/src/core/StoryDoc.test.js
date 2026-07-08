@@ -7,7 +7,22 @@ import {
   setLegendVisible, setLegendPos, setLegendOverride,
   setPageKind, setPageOrder, setPageTitle,
   setSlideBg, setPageBg, slideBgOf, applySlideBgToAll,
+  setPublishInfo,
 } from './StoryDoc.js';
+
+describe('setPublishInfo', () => {
+  it('게시 정보를 meta.publish에 기록한다', () => {
+    const doc = createStoryDoc('t');
+    setPublishInfo(doc, { id: 'row1', handle: 'fkv777gmail', seq: 3 });
+    expect(doc.meta.publish).toEqual({ id: 'row1', handle: 'fkv777gmail', seq: 3 });
+  });
+  it('null이면 meta.publish를 제거한다(게시 취소)', () => {
+    const doc = createStoryDoc('t');
+    setPublishInfo(doc, { id: 'row1', handle: 'h', seq: 1 });
+    setPublishInfo(doc, null);
+    expect(doc.meta.publish).toBeUndefined();
+  });
+});
 
 describe('슬라이드 배경색', () => {
   it('setSlideBg는 #rrggbb만, slideBgOf는 프로젝트 기본으로 반영', () => {
