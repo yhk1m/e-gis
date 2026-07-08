@@ -29,6 +29,7 @@ import { spatialOperationsPanel } from './ui/panels/SpatialOperationsPanel.js';
 import { heatmapPanel } from './ui/panels/HeatmapPanel.js';
 import { bookmarkPanel } from './ui/panels/BookmarkPanel.js';
 import { coordinateImportPanel } from './ui/panels/CoordinateImportPanel.js';
+import { georeferencePanel } from './ui/panels/GeoreferencePanel.js';
 import { chartMapPanel } from './ui/panels/ChartMapPanel.js';
 import { isochronePanel } from './ui/panels/IsochronePanel.js';
 import { routingPanel } from './ui/panels/RoutingPanel.js';
@@ -755,6 +756,9 @@ function handleMenuAction(action) {
       break;
     case 'analysis-contour':
       rasterAnalysisPanel.showContour();
+      break;
+    case 'georeference':
+      georeferencePanel.show();
       break;
 
     // ===== 내장 데이터 =====
