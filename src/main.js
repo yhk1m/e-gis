@@ -1334,7 +1334,7 @@ function showUserManual() {
 
           <div style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
             <strong>문의:</strong> bgnlkim@gmail.com<br>
-            <strong>버전:</strong> e-GIS v0.2.0
+            <strong>버전:</strong> e-GIS v0.1.1
           </div>
         </div>
         <div class="modal-footer" style="padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); text-align: right;">
