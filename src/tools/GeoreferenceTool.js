@@ -267,11 +267,11 @@ class GeoreferenceTool {
   /** 저장된 georefData에서 지리참조 레이어를 재구성(프로젝트 복원용). Promise<layerId|null>. */
   restoreGeoref(georefData, name) {
     return new Promise((resolve) => {
-      if (!georefData || !georefData.imageDataUrl) { resolve(null); return; }
+      if (!georefData || !georefData.imageDataUrl) { console.warn('[georef] restore: imageDataUrl 없음'); resolve(null); return; }
       const img = new Image();
       img.onload = () => {
         const t = buildTransform(georefData.gcps || [], georefData.mode);
-        if (!t) { resolve(null); return; }
+        if (!t) { console.warn('[georef] restore: 변환 계산 실패(GCP', (georefData.gcps || []).length, ')'); resolve(null); return; }
         const op = typeof georefData.opacity === 'number' ? georefData.opacity : 0.7;
         const { layer } = makeWarpLayer(img, t, op);
         const layerId = layerManager.addLayer({
@@ -279,9 +279,10 @@ class GeoreferenceTool {
         });
         const info = layerManager.getLayer(layerId);
         if (info) { info.opacity = op; info.georefData = georefData; } // 재저장 시에도 유지
+        console.log('[georef] restore: 레이어 추가됨', layerId, '이미지', img.naturalWidth + 'x' + img.naturalHeight);
         resolve(layerId);
       };
-      img.onerror = () => resolve(null);
+      img.onerror = () => { console.warn('[georef] restore: 이미지 로드 실패(데이터 손상/과대 가능성)'); resolve(null); };
       img.src = georefData.imageDataUrl;
     });
   }

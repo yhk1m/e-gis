@@ -115,6 +115,8 @@ export class ProjectManager {
             return { ...base, rasterKind: 'analysis', raster: encodeRasterMeta(layer.analysisData) };
           }
           if (layer.georefData) {
+            const kb = Math.round((layer.georefData.imageDataUrl || '').length / 1024);
+            console.log(`[georef] 저장: "${layer.name}" 이미지 ${kb}KB, GCP ${(layer.georefData.gcps || []).length}개`);
             return { ...base, rasterKind: 'georef', georef: layer.georefData };
           }
           // 복원 가능한 데이터가 없는 래스터 — 메타데이터만 보존(복원 시 건너뜀)
@@ -174,12 +176,16 @@ export class ProjectManager {
           } else if (layerData.rasterKind === 'analysis' && layerData.raster) {
             layerId = rasterAnalysisTool.buildAnalysisLayer(decodeRasterMeta(layerData.raster), layerData.name);
           } else if (layerData.rasterKind === 'georef' && layerData.georef) {
+            console.log(`[georef] 복원 시작: "${layerData.name}" (GCP ${(layerData.georef.gcps || []).length}개, 모드 ${layerData.georef.mode})`);
             layerId = await georeferenceTool.restoreGeoref(layerData.georef, layerData.name);
             if (!layerId) {
-              console.warn(`지리참조 레이어 "${layerData.name}" 복원 실패, 건너뜁니다.`);
+              console.warn(`[georef] 복원 실패, 건너뜁니다: "${layerData.name}"`);
               continue;
             }
           } else {
+            if (layerData.type === 'raster' && layerData.rasterKind === 'unknown') {
+              console.warn(`[georef] "${layerData.name}"가 rasterKind:'unknown'으로 저장됨 — 저장 시점에 지리참조 데이터가 없었음(옛 코드 캐시 가능성).`);
+            }
             console.warn(`래스터 레이어 "${layerData.name}"에 복원 가능한 데이터가 없어 건너뜁니다.`);
             continue;
           }
