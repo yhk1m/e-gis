@@ -21,7 +21,7 @@ import { navReduce, indicatorDots, buildOverlay } from './presentationNav.js';
  * @param {() => object} deps.getDoc - 현재 StoryDoc 반환
  * @param {() => void} deps.onExit - 종료 시 편집기 원복(main의 refresh 등)
  */
-export function createPresentationShell(root, { mapEl, mapHome, mapView, animator, registry, legend, getDoc, onExit }) {
+export function createPresentationShell(root, { mapEl, mapHome, mapView, animator, registry, legend, getDoc, onExit, standalone = false }) {
   root.innerHTML = '';
   root.style.display = 'none';
 
@@ -55,6 +55,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
   const prevBtn = mkBtn('◂', 'pres-arrow pres-prev', '이전 (←)', () => go('prev'));
   const nextBtn = mkBtn('▸', 'pres-arrow pres-next', '다음 (→)', () => go('next'));
   const exitBtn = mkBtn('✕', 'pres-exit', '발표 종료 (Esc)', () => exit());
+  if (standalone) exitBtn.style.display = 'none'; // 웹뷰어: 발표가 곧 페이지 — 종료 없음
 
   stage.append(cover, overlay, indicator, prevBtn, nextBtn, exitBtn);
   root.appendChild(stage);
@@ -147,7 +148,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
       case 'ArrowLeft': case 'PageUp': e.preventDefault(); go('prev'); break;
       case 'Home': e.preventDefault(); go('first'); break;
       case 'End': e.preventDefault(); go('last'); break;
-      case 'Escape': e.preventDefault(); exit(); break;
+      case 'Escape': if (!standalone) { e.preventDefault(); exit(); } break;
       default: break;
     }
   }
@@ -165,7 +166,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     if (document.fullscreenElement) {
       mapView.updateSize();
       applyCurrentCamera(); // 전체화면 폭 기준으로 줌 재계산 → 편집기와 같은 범위
-    } else exit();
+    } else if (!standalone) exit();
   }
 
   /** 발표 시작. 진입했으면 true, 조건 미충족으로 건너뛰면 false(호출부 inert 격리 판단용). */
@@ -184,8 +185,9 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
 
     window.addEventListener('keydown', onKey);
     document.addEventListener('fullscreenchange', onFsChange);
-    // 전체화면 시도(실패해도 fixed 컨테이너라 발표는 창 안에서 동작)
-    if (root.requestFullscreen) root.requestFullscreen().catch(() => {});
+    // 전체화면 시도(실패해도 fixed 컨테이너라 발표는 창 안에서 동작).
+    // 웹뷰어는 제스처 없이 불가 + 페이지 자체가 무대라 생략.
+    if (!standalone && root.requestFullscreen) root.requestFullscreen().catch(() => {});
     // 레이아웃 반영 후 지도 크기 갱신(전체화면 미지원/거부 대비 즉시도 1회)
     requestAnimationFrame(() => mapView.updateSize());
     return true;
