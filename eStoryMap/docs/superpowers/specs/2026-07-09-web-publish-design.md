@@ -51,9 +51,11 @@
 ```json
 {
   "cleanUrls": true,
-  "rewrites": [{ "source": "/:handle/:seq(\\d+)", "destination": "/story/index.html" }]
+  "rewrites": [{ "source": "/:handle/:seq(\\d+)", "destination": "/story" }]
 }
 ```
+
+⚠️ 목적지는 `/story`(클린 URL)여야 한다 — `cleanUrls: true`가 `.html`로 끝나는 rewrite 목적지를 404로 만든다(2026-07-09 배포에서 확인).
 
 실제 파일이 우선이므로 기존 사이트 경로 영향 없음. 스토리맵 수가 늘어도 Vercel 파일은 불변(문서는 Supabase 행) — 한계는 Supabase 용량이며, 필요 시 게시 용량 경고·Storage 이전으로 대응(현 설계 범위 밖).
 
