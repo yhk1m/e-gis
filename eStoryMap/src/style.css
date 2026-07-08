@@ -83,6 +83,17 @@ body { display: flex; flex-direction: column; }
 .confirm-actions .confirm-cancel:hover { background: #334155; }
 .confirm-actions .confirm-ok.danger { background: #dc2626; border-color: #dc2626; color: #fff; }
 .confirm-actions .confirm-ok.danger:hover { background: #b91c1c; border-color: #b91c1c; }
+/* 게시 대화상자 */
+.publish-box { min-width: 420px; }
+.publish-box .confirm-actions { flex-wrap: wrap; }
+.publish-box .confirm-ok.primary { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.publish-box .confirm-ok.primary:hover { background: #1e40af; border-color: #1e40af; }
+.publish-url {
+  width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 7px 10px;
+  background: #1e293b; color: #e5e7eb; border: 1px solid #334155; border-radius: 6px;
+  font-size: 13px;
+}
+.publish-note { min-height: 1.2em; font-size: 12px; color: #94a3b8; margin-bottom: 10px; }
 #btn-add-page {
   margin-top: 6px; width: 100%; padding: 5px; border: 1px dashed #334155;
   background: none; color: #94a3b8; border-radius: 6px; cursor: pointer;
@@ -303,6 +314,8 @@ body { display: flex; flex-direction: column; }
 :root[data-theme="light"] .confirm-actions button { background: #ffffff; color: #1e293b; border-color: #cbd5e1; }
 :root[data-theme="light"] .confirm-actions .confirm-cancel:hover { background: #e2e8f0; }
 :root[data-theme="light"] .confirm-actions .confirm-ok.danger { background: #dc2626; color: #fff; border-color: #dc2626; }
+:root[data-theme="light"] .publish-box .confirm-ok.primary { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+:root[data-theme="light"] .publish-url { background: #ffffff; color: #1e293b; border-color: #cbd5e1; }
 /* 은은한 라벨·보조 텍스트 */
 :root[data-theme="light"] #status,
 :root[data-theme="light"] #save-status,

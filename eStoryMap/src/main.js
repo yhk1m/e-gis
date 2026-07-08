@@ -22,6 +22,8 @@ import {
   setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
 import { createCloudSync } from './core/CloudSync.js';
+import { createPublisher } from './core/Publisher.js';
+import { openPublishDialog } from './editor/publishDialog.js';
 import { createSourcePanel } from './editor/SourcePanel.js';
 import { createPageList } from './editor/PageList.js';
 import { createContentEditor } from './editor/ContentEditor.js';
@@ -394,6 +396,22 @@ function scheduleSave() {
 const supabase = createSupabaseClient();
 const authManager = createAuthManager({ client: supabase });
 const cloudSync = createCloudSync({ client: supabase, getUser: () => authManager.getUser() });
+const publisher = createPublisher({ client: supabase, getUser: () => authManager.getUser() });
+
+// 웹 게시(공개 스냅샷) — 클라우드 동기화(비공개 백업)와 독립
+document.getElementById('btn-publish').addEventListener('click', () => {
+  if (!doc) return;
+  if (!authManager.isLoggedIn()) {
+    status.textContent = '게시하려면 🗂 프로젝트 화면에서 로그인하세요.';
+    return;
+  }
+  openPublishDialog({
+    doc,
+    publisher,
+    openExternal: (url) => window.egisFS.openExternal(url),
+    onChanged: () => scheduleSave(), // meta.publish 변경을 .esm(+클라우드)에 저장
+  });
+});
 
 let knownNames = [];
 let opening = false;
