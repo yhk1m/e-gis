@@ -69,6 +69,25 @@ class ChartMapTool {
         });
       }
     });
+
+    // 레이어 이름 변경 → 범례 제목 동기화
+    eventBus.on(Events.LAYER_RENAMED, (data) => {
+      if (!data || !data.layerId) return;
+      this.onLayerRenamed(data.layerId, data.name);
+    });
+  }
+
+  /**
+   * 파생(도형표현도) 레이어 이름 변경 시 범례 제목을 새 이름으로 갱신.
+   * _chartMapConfig.title에도 반영해 재생성·복원 후에도 유지된다.
+   */
+  onLayerRenamed(layerId, name) {
+    const legendEl = this.legends.get(layerId);
+    if (!legendEl) return;
+    const titleEl = legendEl.querySelector('.chart-legend-title');
+    if (titleEl && titleEl.textContent !== name) titleEl.textContent = name;
+    const layerInfo = layerManager.getLayer(layerId);
+    if (layerInfo && layerInfo._chartMapConfig) layerInfo._chartMapConfig.title = name;
   }
 
   cleanupOverlays(derivedLayerId) {
@@ -356,7 +375,11 @@ class ChartMapTool {
     legendEl.className = 'chart-map-legend';
     legendEl.id = `chart-legend-${layerId}`;
 
-    let legendHTML = `<div class="chart-legend-title">${layerName} - ${this.getChartTypeLabel(chartType)} 차트</div>`;
+    // 이름 변경으로 저장된 커스텀 제목이 있으면 그것을, 없으면 기본 제목을 사용
+    const renamedInfo = layerManager.getLayer(layerId);
+    const customTitle = renamedInfo && renamedInfo._chartMapConfig && renamedInfo._chartMapConfig.title;
+    const titleText = customTitle || `${layerName} - ${this.getChartTypeLabel(chartType)} 차트`;
+    let legendHTML = '<div class="chart-legend-title"></div>';
     legendHTML += '<div class="chart-legend-items">';
 
     fields.forEach((field, i) => {
@@ -378,6 +401,7 @@ class ChartMapTool {
 
     legendHTML += '</div>';
     legendEl.innerHTML = legendHTML;
+    legendEl.querySelector('.chart-legend-title').textContent = titleText;
 
     // 지도 컨테이너에 추가
     const mapContainer = document.getElementById('map');

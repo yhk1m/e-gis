@@ -62,6 +62,7 @@ export const Events = {
   // 레이어 관련
   LAYER_ADDED: 'layer:added',
   LAYER_REMOVED: 'layer:removed',
+  LAYER_RENAMED: 'layer:renamed',
   LAYER_VISIBILITY_CHANGED: 'layer:visibility',
   LAYER_SELECTED: 'layer:selected',
   LAYER_ORDER_CHANGED: 'layer:order',

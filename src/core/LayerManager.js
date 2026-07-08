@@ -428,6 +428,8 @@ class LayerManager {
     const layerInfo = this.layers.get(layerId);
     if (layerInfo) {
       layerInfo.name = newName;
+      // 파생 레이어(단계구분도·도형표현도 등) 범례 제목 동기화용
+      eventBus.emit(Events.LAYER_RENAMED, { layerId, name: newName });
       eventBus.emit(Events.LAYER_ADDED, { layer: layerInfo });
     }
   }

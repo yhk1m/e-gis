@@ -96,11 +96,6 @@ export class AppLayout {
             <div class="menu-item dropdown" data-menu="vector-analysis">
               <button class="menu-button" title="벡터 분석"><span class="menu-btn-icon">📊</span><span class="menu-btn-label">벡터 분석</span></button>
               <div class="dropdown-menu" id="menu-vector-analysis">
-                <div class="dropdown-item" data-action="analysis-choropleth">단계구분도</div>
-                <div class="dropdown-item" data-action="analysis-chart-map">도형표현도</div>
-                <div class="dropdown-item" data-action="analysis-heatmap">히트맵</div>
-                <div class="dropdown-item" data-action="analysis-cartogram">카토그램</div>
-                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="analysis-buffer">버퍼 분석</div>
                 <div class="dropdown-item" data-action="analysis-spatial-ops">공간 연산</div>
                 <div class="dropdown-divider"></div>
@@ -117,6 +112,15 @@ export class AppLayout {
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="analysis-raster-filter">래스터 계산기 (값 필터)</div>
                 <div class="dropdown-item" data-action="analysis-contour">등고선 생성</div>
+              </div>
+            </div>
+            <div class="menu-item dropdown" data-menu="thematic-map">
+              <button class="menu-button" title="주제도"><span class="menu-btn-icon">🗺️</span><span class="menu-btn-label">주제도</span></button>
+              <div class="dropdown-menu" id="menu-thematic-map">
+                <div class="dropdown-item" data-action="analysis-choropleth">단계구분도</div>
+                <div class="dropdown-item" data-action="analysis-chart-map">도형표현도</div>
+                <div class="dropdown-item" data-action="analysis-heatmap">히트맵</div>
+                <div class="dropdown-item" data-action="analysis-cartogram">카토그램</div>
               </div>
             </div>
             <div class="menu-item" data-menu="builtin-data">

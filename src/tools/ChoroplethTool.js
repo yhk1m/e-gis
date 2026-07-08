@@ -43,6 +43,24 @@ class ChoroplethTool {
     eventBus.on(Events.LAYER_REMOVED, (data) => {
       this.onLayerRemoved(data.layerId);
     });
+
+    // 레이어 이름 변경 → 범례 제목 동기화
+    eventBus.on(Events.LAYER_RENAMED, (data) => {
+      if (data) this.onLayerRenamed(data.layerId, data.name);
+    });
+  }
+
+  /**
+   * 파생(단계구분도) 레이어 이름 변경 시 범례 제목을 새 이름으로 갱신.
+   * cfg.title에도 반영해 재생성·저장/복원 후에도 유지된다.
+   */
+  onLayerRenamed(layerId, name) {
+    const legendEl = this.legends.get(layerId);
+    if (!legendEl) return;
+    const titleEl = legendEl.querySelector('.choropleth-legend-title');
+    if (titleEl && titleEl.textContent !== name) titleEl.textContent = name;
+    const layerInfo = layerManager.getLayer(layerId);
+    if (layerInfo && layerInfo._choroplethConfig) layerInfo._choroplethConfig.title = name;
   }
 
   /**
