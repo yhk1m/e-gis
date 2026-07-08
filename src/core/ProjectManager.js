@@ -8,6 +8,7 @@ import { coordinateSystem } from './CoordinateSystem.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { demLoader } from '../loaders/DEMLoader.js';
 import { rasterAnalysisTool } from '../tools/RasterAnalysisTool.js';
+import { georeferenceTool } from '../tools/GeoreferenceTool.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 const PROJECT_VERSION = '1.0';
@@ -113,6 +114,9 @@ export class ProjectManager {
           if (layer.analysisData) {
             return { ...base, rasterKind: 'analysis', raster: encodeRasterMeta(layer.analysisData) };
           }
+          if (layer.georefData) {
+            return { ...base, rasterKind: 'georef', georef: layer.georefData };
+          }
           // 복원 가능한 데이터가 없는 래스터 — 메타데이터만 보존(복원 시 건너뜀)
           return { ...base, rasterKind: 'unknown' };
         }
@@ -169,6 +173,12 @@ export class ProjectManager {
             layerId = demLoader.buildDEMLayer(decodeRasterMeta(layerData.raster), layerData.name, { doFit: false });
           } else if (layerData.rasterKind === 'analysis' && layerData.raster) {
             layerId = rasterAnalysisTool.buildAnalysisLayer(decodeRasterMeta(layerData.raster), layerData.name);
+          } else if (layerData.rasterKind === 'georef' && layerData.georef) {
+            layerId = await georeferenceTool.restoreGeoref(layerData.georef, layerData.name);
+            if (!layerId) {
+              console.warn(`지리참조 레이어 "${layerData.name}" 복원 실패, 건너뜁니다.`);
+              continue;
+            }
           } else {
             console.warn(`래스터 레이어 "${layerData.name}"에 복원 가능한 데이터가 없어 건너뜁니다.`);
             continue;

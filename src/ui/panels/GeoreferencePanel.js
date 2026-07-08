@@ -204,7 +204,7 @@ class GeoreferencePanel {
   _setStatus(t) { const s = this.el && this.el.querySelector('#georef-status'); if (s) s.textContent = t; }
 
   _apply() {
-    georeferenceTool.commit('지리참조 이미지');
+    georeferenceTool.commit('지리참조 이미지', this.gcps, this.mode);
     georeferenceTool.cleanup();
     this.close();
   }

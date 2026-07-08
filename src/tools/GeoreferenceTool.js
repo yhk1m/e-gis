@@ -135,6 +135,18 @@ function renderLayerCanvas(rs, extent, size) {
   return canvas;
 }
 
+/** 이미지+변환으로 워핑 ImageLayer 생성(지도엔 아직 미추가). {layer, rs} 반환. */
+function makeWarpLayer(image, transform, opacity) {
+  const rs = { image, srcData: null, transform };
+  const source = new ImageCanvasSource({
+    canvasFunction: (extent, resolution, pixelRatio, size) => renderLayerCanvas(rs, extent, size),
+    ratio: 1,
+  });
+  const ext = cornersExtent(transform, image.naturalWidth, image.naturalHeight);
+  const layer = new ImageLayer({ source, extent: ext, opacity, zIndex: 500 });
+  return { layer, rs };
+}
+
 class GeoreferenceTool {
   constructor() {
     this.image = null;
@@ -197,13 +209,9 @@ class GeoreferenceTool {
     if (!t || !this.image || !map) { this.removePreview(); return { ok: false }; }
     const ext = cornersExtent(t, this.image.naturalWidth, this.image.naturalHeight);
     if (!this.previewLayer) {
-      const rs = { image: this.image, srcData: null, transform: t };
+      const { layer, rs } = makeWarpLayer(this.image, t, this.opacity);
       this.renderState = rs;
-      const source = new ImageCanvasSource({
-        canvasFunction: (extent, resolution, pixelRatio, size) => renderLayerCanvas(rs, extent, size),
-        ratio: 1,
-      });
-      this.previewLayer = new ImageLayer({ source, extent: ext, opacity: this.opacity, zIndex: 500 });
+      this.previewLayer = layer;
       map.addLayer(this.previewLayer);
     } else {
       this.renderState.transform = t; // srcData는 이미지 동일하므로 유지(원근 재계산 시 재사용)
@@ -228,19 +236,54 @@ class GeoreferenceTool {
   }
 
   /** 미리보기 레이어를 정식 레이어(layerManager)로 승격. 레이어의 클로저가 rs를 붙들고 있어 자립적. */
-  commit(name) {
+  commit(name, gcps, mode) {
     if (!this.previewLayer) return null;
     const map = mapManager.getMap();
     const layer = this.previewLayer;
+    const img = this.renderState && this.renderState.image;
     map.removeLayer(layer);
     const layerId = layerManager.addLayer({
       name: name || '지리참조 이미지', type: 'raster', olLayer: layer, source: null, geometryType: 'Raster',
     });
     const info = layerManager.getLayer(layerId);
-    if (info) info.opacity = layer.getOpacity();
+    if (info) {
+      const op = layer.getOpacity();
+      info.opacity = op;
+      // 프로젝트 저장·복원용(이미지 base64 + 기준점 + 모드). deserialize에서 restoreGeoref로 재구성.
+      if (img) {
+        info.georefData = {
+          imageDataUrl: img.src,
+          mode,
+          opacity: op,
+          gcps: (gcps || []).map((g) => ({ imgX: g.imgX, imgY: g.imgY, mapX: g.mapX, mapY: g.mapY })),
+        };
+      }
+    }
     this.previewLayer = null;
     this.renderState = null; // rs는 레이어 클로저가 계속 참조 → GC 안 됨, 커밋 후에도 렌더 유지
     return layerId;
+  }
+
+  /** 저장된 georefData에서 지리참조 레이어를 재구성(프로젝트 복원용). Promise<layerId|null>. */
+  restoreGeoref(georefData, name) {
+    return new Promise((resolve) => {
+      if (!georefData || !georefData.imageDataUrl) { resolve(null); return; }
+      const img = new Image();
+      img.onload = () => {
+        const t = buildTransform(georefData.gcps || [], georefData.mode);
+        if (!t) { resolve(null); return; }
+        const op = typeof georefData.opacity === 'number' ? georefData.opacity : 0.7;
+        const { layer } = makeWarpLayer(img, t, op);
+        const layerId = layerManager.addLayer({
+          name: name || '지리참조 이미지', type: 'raster', olLayer: layer, source: null, geometryType: 'Raster',
+        });
+        const info = layerManager.getLayer(layerId);
+        if (info) { info.opacity = op; info.georefData = georefData; } // 재저장 시에도 유지
+        resolve(layerId);
+      };
+      img.onerror = () => resolve(null);
+      img.src = georefData.imageDataUrl;
+    });
   }
 
   /** 세션 정리 — 커밋된 레이어에는 영향 없음(각자 rs 캡처). */
