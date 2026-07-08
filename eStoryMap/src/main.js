@@ -47,6 +47,14 @@ const sourcePanel = createSourcePanel(document.getElementById('source-panel'), {
     refresh();
     scheduleSave();
   },
+  // 전체 선택/해제: 모든 소스의 모든 레이어를 한 번에 토글(refresh·save는 1회)
+  onSetAll(visible) {
+    for (const { sourceId, layerId } of registry.entriesList()) {
+      setLayerVisible(doc, currentPageId, sourceId, layerId, visible);
+    }
+    refresh();
+    scheduleSave();
+  },
 });
 
 const pageList = createPageList(document.getElementById('page-list'), {
@@ -168,12 +176,6 @@ function exitPresentation() {
 document.getElementById('btn-present').addEventListener('click', () => {
   // 진입에 성공한 경우에만 편집기 비활성(실패 시 inert 굳음 방지). 항상 페이지 1부터(사용자 확정).
   if (presentation.enter(0)) document.getElementById('app').inert = true;
-});
-
-document.getElementById('btn-report').addEventListener('click', () => {
-  if (!doc || !doc.pages.length) return;
-  document.getElementById('app').inert = true; // 생성·열람 중 편집기 비활성
-  report.open(); // 비동기: 페이지별 캡처 후 표시. 닫기(exitReport)에서 inert 해제
 });
 
 document.getElementById('btn-slidepdf').addEventListener('click', () => {

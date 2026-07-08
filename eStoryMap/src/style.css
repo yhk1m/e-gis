@@ -34,6 +34,12 @@ body { display: flex; flex-direction: column; }
 .panel { padding: 10px 12px; border-bottom: 1px solid #1e293b; }
 .panel-title { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: #94a3b8; letter-spacing: 0.05em; }
 .panel-empty { font-size: 12px; color: #64748b; }
+.source-bulk { display: flex; gap: 6px; margin-bottom: 8px; }
+.source-bulk-btn {
+  flex: 1; padding: 3px 6px; font-size: 11px; cursor: pointer;
+  background: #1e293b; color: #cbd5e1; border: 1px solid #334155; border-radius: 5px;
+}
+.source-bulk-btn:hover { background: #334155; }
 .source-item { margin-bottom: 10px; }
 .source-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
 .layer-row { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 2px 0 2px 10px; cursor: pointer; }
@@ -225,6 +231,8 @@ body { display: flex; flex-direction: column; }
 :root[data-theme="light"] #sidebar,
 :root[data-theme="light"] #content-sidebar { background: #f8fafc; color: #1e293b; border-color: #e2e8f0; }
 :root[data-theme="light"] .panel { border-bottom-color: #e2e8f0; }
+:root[data-theme="light"] .source-bulk-btn { background: #fff; color: #334155; border-color: #cbd5e1; }
+:root[data-theme="light"] .source-bulk-btn:hover { background: #f1f5f9; }
 :root[data-theme="light"] .start-auth { border-top-color: #e2e8f0; }
 :root[data-theme="light"] #start-screen { background: #f8fafc; }
 :root[data-theme="light"] .start-box { color: #1e293b; }

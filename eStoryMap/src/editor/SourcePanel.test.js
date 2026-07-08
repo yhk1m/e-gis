@@ -76,4 +76,24 @@ describe('SourcePanel', () => {
     panel.render(DOC, pageWith([]), REG);
     expect(el.querySelector('input[type=checkbox]').checked).toBe(false);
   });
+
+  it('전체 선택/해제 버튼이 onSetAll(true/false)를 호출한다', () => {
+    const el = document.createElement('div');
+    const onSetAll = vi.fn();
+    const panel = createSourcePanel(el, { onToggleLayer: vi.fn(), onSetAll });
+    panel.render(DOC, pageWith([]), REG);
+    const btns = [...el.querySelectorAll('.source-bulk-btn')];
+    expect(btns.map((b) => b.textContent)).toEqual(['전체 선택', '전체 해제']);
+    btns[0].click();
+    expect(onSetAll).toHaveBeenLastCalledWith(true);
+    btns[1].click();
+    expect(onSetAll).toHaveBeenLastCalledWith(false);
+  });
+
+  it('소스가 없으면 전체 선택/해제 버튼도 없다', () => {
+    const el = document.createElement('div');
+    const panel = createSourcePanel(el, { onToggleLayer: vi.fn(), onSetAll: vi.fn() });
+    panel.render({ sources: [] }, pageWith([]), fakeRegistry([]));
+    expect(el.querySelector('.source-bulk')).toBeNull();
+  });
 });

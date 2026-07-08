@@ -5,9 +5,12 @@
 
 /**
  * @param {HTMLElement} container
- * @param {{onToggleLayer(sourceId:string, layerId:string, visible:boolean):void}} handlers
+ * @param {{
+ *   onToggleLayer(sourceId:string, layerId:string, visible:boolean):void,
+ *   onSetAll(visible:boolean):void,
+ * }} handlers
  */
-export function createSourcePanel(container, { onToggleLayer }) {
+export function createSourcePanel(container, { onToggleLayer, onSetAll }) {
   function render(doc, page, registry) {
     container.innerHTML = '';
 
@@ -18,6 +21,23 @@ export function createSourcePanel(container, { onToggleLayer }) {
       container.appendChild(empty);
       return;
     }
+
+    // 전체 선택/해제: 현재 페이지의 모든 레이어 가시성을 한 번에 토글
+    const bulk = document.createElement('div');
+    bulk.className = 'source-bulk';
+    const allBtn = document.createElement('button');
+    allBtn.type = 'button';
+    allBtn.className = 'source-bulk-btn';
+    allBtn.textContent = '전체 선택';
+    allBtn.addEventListener('click', () => onSetAll(true));
+    const noneBtn = document.createElement('button');
+    noneBtn.type = 'button';
+    noneBtn.className = 'source-bulk-btn';
+    noneBtn.textContent = '전체 해제';
+    noneBtn.addEventListener('click', () => onSetAll(false));
+    bulk.appendChild(allBtn);
+    bulk.appendChild(noneBtn);
+    container.appendChild(bulk);
 
     const entries = registry.entriesList();
     for (const source of doc.sources) {
