@@ -1,0 +1,2 @@
+# 데스크톱 앱(Electron) 폴더 — 웹 배포와 무관하며 빌드 산출물(release/win-unpacked, node_modules)이 100MB 제한을 초과함
+eStoryMap
