@@ -379,7 +379,7 @@ class ChartMapTool {
     const renamedInfo = layerManager.getLayer(layerId);
     const customTitle = renamedInfo && renamedInfo._chartMapConfig && renamedInfo._chartMapConfig.title;
     const titleText = customTitle || `${layerName} - ${this.getChartTypeLabel(chartType)} 차트`;
-    let legendHTML = '<div class="chart-legend-title"></div>';
+    let legendHTML = '<div class="chart-legend-title" contenteditable="plaintext-only" spellcheck="false"></div>';
     legendHTML += '<div class="chart-legend-items">';
 
     fields.forEach((field, i) => {
@@ -401,7 +401,21 @@ class ChartMapTool {
 
     legendHTML += '</div>';
     legendEl.innerHTML = legendHTML;
-    legendEl.querySelector('.chart-legend-title').textContent = titleText;
+    const titleEl = legendEl.querySelector('.chart-legend-title');
+    titleEl.textContent = titleText;
+    // 제목 편집 → 설정 저장(라이브) + 편집 완료(blur/Enter) 시 레이어 이름 동기화(양방향)
+    titleEl.addEventListener('input', () => {
+      const info = layerManager.getLayer(layerId);
+      if (info && info._chartMapConfig) info._chartMapConfig.title = titleEl.textContent;
+    });
+    titleEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); }
+    });
+    titleEl.addEventListener('blur', () => {
+      const name = titleEl.textContent.trim();
+      const info = layerManager.getLayer(layerId);
+      if (name && info && name !== info.name) layerManager.renameLayer(layerId, name);
+    });
 
     // 지도 컨테이너에 추가
     const mapContainer = document.getElementById('map');

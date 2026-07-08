@@ -392,6 +392,12 @@ class ChoroplethTool {
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
       });
+      // 제목 편집 완료 → 레이어 이름에 반영(양방향 동기화). 빈 값이면 이름 유지.
+      el.addEventListener('blur', () => {
+        if (el.getAttribute('data-field') !== 'title') return;
+        const name = el.textContent.trim();
+        if (name && name !== layerInfo.name) layerManager.renameLayer(layerId, name);
+      });
     });
 
     const rerenderItems = () => {

@@ -2377,6 +2377,7 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: var(--spacing-sm);
   padding-bottom: var(--spacing-xs);
   border-bottom: 1px solid var(--border-color);
+  cursor: text; /* 클릭해 제목 편집 가능(레이어 이름과 양방향 동기화) */
 }
 
 .chart-legend-items {

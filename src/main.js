@@ -1290,13 +1290,14 @@ function showUserManual() {
             <li><strong>측정 삭제:</strong> 메뉴 → 측정 → 측정 결과 지우기</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">🎨 9. 시각화</h4>
+          <h4 style="margin-top: 24px; color: var(--primary-color);">🎨 9. 주제도 · 시각화</h4>
           <p style="color: var(--text-secondary); font-style: italic; margin-bottom: 8px;">※ 아래 기능들은 먼저 좌측 레이어 패널에서 대상 레이어를 선택한 후 실행해야 합니다.</p>
           <ul>
-            <li><strong>단계구분도:</strong> 레이어 선택 → 메뉴 → 벡터 분석 → 단계구분도 (수치 속성 기반 색상 표현)</li>
-            <li><strong>도형표현도:</strong> 레이어 선택 → 메뉴 → 벡터 분석 → 도형표현도 (파이/막대 차트 오버레이)</li>
-            <li><strong>히트맵:</strong> 메뉴 → 벡터 분석 → 히트맵 (점 데이터 밀도 시각화)</li>
-            <li><strong>카토그램:</strong> 메뉴 → 벡터 분석 → 카토그램 (면적 왜곡 시각화)</li>
+            <li><strong>단계구분도:</strong> 레이어 선택 → 메뉴 → 주제도 → 단계구분도 (수치 속성 기반 색상 표현)</li>
+            <li><strong>도형표현도:</strong> 레이어 선택 → 메뉴 → 주제도 → 도형표현도 (파이/막대 차트 오버레이)</li>
+            <li><strong>히트맵:</strong> 메뉴 → 주제도 → 히트맵 (점 데이터 밀도 시각화)</li>
+            <li><strong>카토그램:</strong> 메뉴 → 주제도 → 카토그램 (면적 왜곡 시각화)</li>
+            <li><strong>범례 제목 편집:</strong> 단계구분도·도형표현도의 지도 위 범례 제목을 클릭해 직접 수정할 수 있고, 레이어 이름과 양방향으로 동기화됩니다 (한쪽을 바꾸면 다른 쪽도 함께 변경).</li>
             <li><strong>라벨:</strong> 레이어 선택 → 메뉴 → 레이어 → 라벨 설정</li>
           </ul>
 
@@ -1333,7 +1334,7 @@ function showUserManual() {
 
           <div style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
             <strong>문의:</strong> bgnlkim@gmail.com<br>
-            <strong>버전:</strong> e-GIS v0.1.0
+            <strong>버전:</strong> e-GIS v0.2.0
           </div>
         </div>
         <div class="modal-footer" style="padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); text-align: right;">
