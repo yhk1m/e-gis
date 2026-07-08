@@ -11,6 +11,7 @@
     "clean": "node scripts/clean.js",
     "build": "node scripts/clean.js && vite build && electron-builder",
     "build:unpack": "node scripts/clean.js && vite build && electron-builder --dir",
+    "build:viewer": "node scripts/build-viewer.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
