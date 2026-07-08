@@ -47,6 +47,30 @@
             <option value="bottom">아래</option>
           </select>
         </label>
+        <label id="font-select-label" title="슬라이드 글꼴 (프로젝트 전체)">글꼴
+          <select id="font-select">
+            <option value="default">맑은 고딕</option>
+            <option value="sans">Noto Sans</option>
+            <option value="serif">Noto Serif</option>
+            <option value="system">시스템 글꼴…</option>
+          </select>
+        </label>
+        <input id="font-custom" list="font-suggestions" placeholder="글꼴 이름" title="컴퓨터에 설치된 글꼴 이름 입력" hidden />
+        <datalist id="font-suggestions">
+          <option value="굴림"></option>
+          <option value="돋움"></option>
+          <option value="바탕"></option>
+          <option value="궁서"></option>
+          <option value="나눔고딕"></option>
+          <option value="나눔명조"></option>
+          <option value="나눔스퀘어"></option>
+          <option value="본고딕"></option>
+          <option value="함초롬바탕"></option>
+          <option value="Arial"></option>
+          <option value="Times New Roman"></option>
+          <option value="Georgia"></option>
+          <option value="Consolas"></option>
+        </datalist>
         <label id="legend-toggle-label" title="지도 위 범례 표시"><input type="checkbox" id="legend-toggle" checked /> 범례</label>
         <label id="cloud-toggle-label" title="로그인하면 이 스토리맵을 클라우드에도 자동 저장합니다"><input type="checkbox" id="cloud-toggle" disabled /> 클라우드 동기화</label>
         <span id="save-status"></span>

@@ -1,15 +1,24 @@
 // © 2026 김용현
 // eStoryMap/src/main.js
 import 'ol/ol.css';
+// 슬라이드 글꼴(번들) — 한국어+라틴 subset만. Noto Sans KR / Noto Serif KR.
+import '@fontsource/noto-sans-kr/korean-400.css';
+import '@fontsource/noto-sans-kr/korean-700.css';
+import '@fontsource/noto-sans-kr/latin-400.css';
+import '@fontsource/noto-sans-kr/latin-700.css';
+import '@fontsource/noto-serif-kr/korean-400.css';
+import '@fontsource/noto-serif-kr/korean-700.css';
+import '@fontsource/noto-serif-kr/latin-400.css';
+import '@fontsource/noto-serif-kr/latin-700.css';
 import { MapView } from './core/MapView.js';
 import { parseEgisDoc } from './core/egisParse.js';
 import { SourceRegistry } from './core/SourceRegistry.js';
 import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
   createStoryDoc, addSource, addPage, removePage, setPageOrder, getPage, setLayerVisible, nextSourceId,
-  setPageCamera, setPageContent, setPageKind, setPageAlign, setPageSplit, setPageSplitRatio, setPageTitle,
+  setPageCamera, setPageContent, setPageKind, setPageAlign, setPageSplit, setPageSplitRatio, setPageBasemap, setPageTitle,
   setPageBg, slideBgOf, applySlideBgToAll, setCloudSync,
-  setPresentationLayout, setPresentationPos, applyCameraToAllPages, syncCameraFromPage,
+  setPresentationLayout, setPresentationPos, setSlideFont, setSlideFontCustom, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
 import { createCloudSync } from './core/CloudSync.js';
@@ -114,6 +123,9 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
     } else if (field === 'splitRatio') {
       setPageSplitRatio(doc, currentPageId, value); // 좌우 너비 비율 — 미리보기만 갱신
       slidePreview.render(getPage(doc, currentPageId), doc.meta);
+    } else if (field === 'basemap') {
+      setPageBasemap(doc, currentPageId, value); // 지도 배경(일반/위성/위성+라벨) — 지도에 즉시 반영
+      mapView.setBasemap(value);
     } else {
       // 전체 refresh 없음 — 타이핑 중 포커스 유지(콘텐츠는 지도/패널에 영향 없음)
       setPageContent(doc, currentPageId, { [field]: value });
@@ -251,6 +263,34 @@ posSelect.addEventListener('change', () => {
   if (!doc) return;
   setPresentationPos(doc, posSelect.value);
   slidePreview.render(getPage(doc, currentPageId), doc.meta); // 미리보기 즉시 반영
+  scheduleSave();
+});
+
+// 슬라이드 글꼴(프로젝트 전체). --slide-font 변수로 슬라이드/발표/보고서에 일괄 적용.
+const SLIDE_FONT_STACKS = {
+  default: 'system-ui, "Segoe UI", "Malgun Gothic", sans-serif',
+  sans: "'Noto Sans KR', system-ui, sans-serif",
+  serif: "'Noto Serif KR', serif",
+};
+function applySlideFont(font, custom) {
+  const stack = font === 'system' && custom
+    ? `"${custom}", system-ui, "Segoe UI", sans-serif` // custom은 setSlideFontCustom에서 이미 살균됨
+    : SLIDE_FONT_STACKS[font] || SLIDE_FONT_STACKS.default;
+  document.documentElement.style.setProperty('--slide-font', stack);
+}
+const fontSelect = document.getElementById('font-select');
+const fontCustom = document.getElementById('font-custom');
+fontSelect.addEventListener('change', () => {
+  if (!doc) return;
+  setSlideFont(doc, fontSelect.value);
+  fontCustom.hidden = fontSelect.value !== 'system';
+  applySlideFont(fontSelect.value, doc.meta.slideFontCustom);
+  scheduleSave();
+});
+fontCustom.addEventListener('input', () => {
+  if (!doc) return;
+  setSlideFontCustom(doc, fontCustom.value);
+  applySlideFont('system', doc.meta.slideFontCustom);
   scheduleSave();
 });
 
@@ -460,6 +500,10 @@ function enterEditor() {
   updateCloudToggle();
   layoutSelect.value = doc.meta.presentationLayout || 'band'; // 발표 레이아웃 현재값 반영
   posSelect.value = doc.meta.presentationPos || 'right'; // 레이아웃 위치 현재값
+  fontSelect.value = doc.meta.slideFont || 'default'; // 슬라이드 글꼴 현재값
+  fontCustom.value = doc.meta.slideFontCustom || '';
+  fontCustom.hidden = (doc.meta.slideFont || 'default') !== 'system';
+  applySlideFont(doc.meta.slideFont || 'default', doc.meta.slideFontCustom);
   legendToggle.checked = doc.meta.legend ? doc.meta.legend.visible : true; // 범례 표시 현재값
   mapView.updateSize(); // 슬라이드 캔버스(16:9) 크기 반영 후에 카메라 적용 — 줌 정규화 정확도
   refresh();
@@ -501,6 +545,7 @@ function refresh() {
   if (!getPage(doc, currentPageId)) currentPageId = doc.pages[0].id; // 방어: 표시·기록이 갈라지지 않게 id 자체를 복구
   const page = getPage(doc, currentPageId);
   applyPageVisibility(page, registry);
+  mapView.setBasemap(page.basemap || 'standard'); // 슬라이드별 배경지도(일반/위성/위성+라벨)
   sourcePanel.render(doc, page, registry);
   pageList.render(doc, currentPageId);
   contentEditor.render(page, slideBgOf(doc, page));

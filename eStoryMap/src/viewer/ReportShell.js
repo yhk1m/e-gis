@@ -56,6 +56,7 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
         if ((page.kind || 'map') !== 'map') continue; // 제목/미디어/글 슬라이드는 지도 캡처 없음
         loading.textContent = `${label} 생성 중… ${i + 1}/${n}`;
         applyPageVisibility(page, registry);
+        mapView.setBasemap(page.basemap || 'standard'); // 슬라이드별 배경지도(캡처 전 반영 → 새 타일 로드 후 캡처)
         if (page.camera) mapView.setView(page.camera.center, page.camera.zoom);
         // eslint-disable-next-line no-await-in-loop
         images[page.id] = await captureMapImage(mapView.map);

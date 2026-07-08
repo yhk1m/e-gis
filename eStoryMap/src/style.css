@@ -5,6 +5,8 @@
 html, body { height: 100%; margin: 0; }
 body { display: flex; flex-direction: column; }
 #app { flex: 1; min-height: 0; display: flex; flex-direction: column; font-family: system-ui, "Segoe UI", sans-serif; }
+/* 슬라이드 글꼴(프로젝트 전체) — main.js가 --slide-font 지정. 기본=맑은 고딕(system-ui). */
+#slide-canvas, #presentation, #report { font-family: var(--slide-font, system-ui, "Segoe UI", "Malgun Gothic", sans-serif); }
 /* 상단 앱 전환 탭 (e-GIStory | e-GIS 동등) */
 #app-tabs { flex: none; height: 36px; display: flex; align-items: flex-end; gap: 4px; padding: 0 8px; background: #0b0f14; }
 .app-tab {
@@ -149,9 +151,9 @@ body { display: flex; flex-direction: column; }
 #content-panel #content-split { width: auto; flex: none; margin: 0; cursor: pointer; }
 :root[data-theme="light"] .content-split { color: #1e293b; }
 /* 2단 좌우 너비 비율 슬라이더 */
-.content-ratio-row { display: flex; align-items: center; gap: 8px; }
+.content-ratio-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 #content-panel #content-splitratio { flex: 1; width: auto; padding: 0; border: none; background: none; cursor: pointer; }
-.content-ratio-text { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+.content-ratio-text { font-size: 12px; color: #94a3b8; }
 :root[data-theme="light"] .content-ratio-text { color: #64748b; }
 /* 본문 마크다운 서식 툴바 + 도움말 */
 .md-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 6px; }
@@ -281,6 +283,7 @@ body { display: flex; flex-direction: column; }
 :root[data-theme="light"] #toolbar button,
 :root[data-theme="light"] #layout-select,
 :root[data-theme="light"] #pos-select,
+:root[data-theme="light"] #font-select,
 :root[data-theme="light"] #content-panel input,
 :root[data-theme="light"] #content-panel textarea,
 :root[data-theme="light"] #content-panel select,
@@ -313,6 +316,7 @@ body { display: flex; flex-direction: column; }
 :root[data-theme="light"] .page-drag-handle,
 :root[data-theme="light"] #layout-select-label,
 :root[data-theme="light"] #pos-select-label,
+:root[data-theme="light"] #font-select-label,
 :root[data-theme="light"] #legend-toggle-label,
 :root[data-theme="light"] #preview-toggle-label,
 :root[data-theme="light"] #slide-bg-label,
@@ -501,15 +505,22 @@ body { display: flex; flex-direction: column; }
 
 /* 헤더 레이아웃 셀렉트 */
 #layout-select-label,
-#pos-select-label {
+#pos-select-label,
+#font-select-label {
   font-size: 12px; color: #94a3b8; display: inline-flex; align-items: center;
   gap: 4px; white-space: nowrap;
 }
 #layout-select,
-#pos-select {
+#pos-select,
+#font-select {
   background: #1e293b; color: #e5e7eb; border: 1px solid #334155;
   border-radius: 6px; padding: 3px 6px; cursor: pointer;
 }
+#font-custom {
+  width: 110px; background: #1e293b; color: #e5e7eb; border: 1px solid #334155;
+  border-radius: 6px; padding: 3px 6px; font-size: 12px;
+}
+:root[data-theme="light"] #font-custom { background: #fff; color: #1e293b; border-color: #cbd5e1; }
 #legend-toggle-label,
 #preview-toggle-label {
   font-size: 12px; color: #94a3b8; display: inline-flex; align-items: center;

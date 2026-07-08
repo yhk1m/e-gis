@@ -33,6 +33,7 @@ function makePage(id, title) {
     id,
     title,
     kind: 'map', // 'map'(기본·지도) | 'title'(제목 표지) | 'media'(지도 없이 사진/영상) | 'text'(글만)
+    basemap: 'standard', // 지도 슬라이드 배경지도: 'standard'(일반) | 'satellite'(위성) | 'satellite-labels'(위성+라벨)
     align: 'center', // 미디어(사진) 슬라이드 정렬: 'left' | 'center'(기본) | 'right'
     split: false, // 미디어 2단(사진 + 옆 글) 레이아웃 여부
     splitRatio: 50, // 2단 좌우 너비 비율(사진 열 %). 20~80.
@@ -90,6 +91,22 @@ export const PRESENTATION_POSITIONS = ['left', 'right', 'top', 'bottom'];
 export function setPresentationPos(doc, pos) {
   if (!PRESENTATION_POSITIONS.includes(pos)) return;
   doc.meta.presentationPos = pos;
+  touch(doc);
+}
+
+export const SLIDE_FONTS = ['default', 'sans', 'serif', 'system'];
+
+/** 슬라이드 글꼴(프로젝트 전체): 'default'(맑은 고딕) | 'sans'(Noto Sans) | 'serif'(Noto Serif) | 'system'(설치된 글꼴).
+ *  허용 enum만. 미설정 = 읽는 쪽 'default' 기본. */
+export function setSlideFont(doc, font) {
+  if (!SLIDE_FONTS.includes(font)) return;
+  doc.meta.slideFont = font;
+  touch(doc);
+}
+
+/** 'system' 선택 시 쓸 설치 글꼴 이름(사용자 입력). CSS 주입 방지 위해 안전 문자만·60자 제한. */
+export function setSlideFontCustom(doc, name) {
+  doc.meta.slideFontCustom = String(name || '').replace(/[^\w\s가-힣ㄱ-ㅎㅏ-ㅣ.\-]/g, '').slice(0, 60);
   touch(doc);
 }
 
@@ -302,6 +319,17 @@ export function setPageSplit(doc, pageId, on) {
   const page = getPage(doc, pageId);
   if (!page) return;
   page.split = !!on;
+  touch(doc);
+}
+
+export const SLIDE_BASEMAPS = ['standard', 'satellite', 'satellite-labels'];
+
+/** 지도 슬라이드 배경지도. 허용 enum만. 미설정 페이지는 읽는 쪽 'standard' 기본. */
+export function setPageBasemap(doc, pageId, basemap) {
+  if (!SLIDE_BASEMAPS.includes(basemap)) return;
+  const page = getPage(doc, pageId);
+  if (!page) return;
+  page.basemap = basemap;
   touch(doc);
 }
 

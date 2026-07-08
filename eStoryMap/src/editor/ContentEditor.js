@@ -60,6 +60,7 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
   let splitFieldWrap = null;    // '2단 레이아웃' 토글 래퍼 — media에서만
   let sideTextFieldWrap = null; // '옆 글' 래퍼 — media + 2단에서만(render에서 토글)
   let ratioFieldWrap = null;    // '칸 너비' 비율 래퍼 — media + 2단에서만
+  let basemapFieldWrap = null;  // '배경 지도' 래퍼 — map에서만
 
   function applyKind(k) {
     const hint = KIND_HINTS[k] || KIND_HINTS.map;
@@ -69,6 +70,7 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
     const isMedia = k === 'media';
     if (alignFieldWrap) alignFieldWrap.style.display = isMedia ? '' : 'none';
     if (splitFieldWrap) splitFieldWrap.style.display = isMedia ? '' : 'none';
+    if (basemapFieldWrap) basemapFieldWrap.style.display = k === 'map' ? '' : 'none';
   }
 
   kind.addEventListener('change', () => {
@@ -118,6 +120,16 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
     const cur = val || 'center';
     for (const [k, b] of Object.entries(alignBtns)) b.classList.toggle('active', k === cur);
   }
+
+  // 지도 슬라이드 배경지도(일반/위성/위성+라벨) — map 종류에서만 노출(applyKind)
+  const basemapSelect = document.createElement('select');
+  basemapSelect.id = 'content-basemap';
+  for (const [val, label] of [['standard', '일반도'], ['satellite', '위성'], ['satellite-labels', '위성 + 라벨']]) {
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = label;
+    basemapSelect.appendChild(opt);
+  }
+  basemapSelect.addEventListener('change', () => onChange('basemap', basemapSelect.value));
 
   // 2단(사진 + 옆 글) 레이아웃 토글 — media 종류에서만 노출
   const splitCheckbox = document.createElement('input');
@@ -239,6 +251,7 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
 
   field('슬라이드 종류', kind);
   field('슬라이드 배경', bgRow);
+  basemapFieldWrap = field('배경 지도', basemapSelect);
   alignFieldWrap = field(alignLabel, alignRow);
   splitFieldWrap = field('레이아웃', splitControl);
   field(headingLabel, heading);
@@ -253,6 +266,7 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
     const k = page.kind || 'map';
     kind.value = k;
     applyKind(k);
+    basemapSelect.value = page.basemap || 'standard'; // 배경 지도 현재값
     setAlign(page.align); // 정렬 버튼 활성 표시(미설정=중앙)
     const split = !!page.split;
     splitCheckbox.checked = split;

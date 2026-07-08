@@ -5,6 +5,7 @@ import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
+import XYZ from 'ol/source/XYZ';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import { createEmpty, extend, isEmpty } from 'ol/extent';
 
@@ -30,11 +31,25 @@ export function unionExtent(olLayers) {
 export class MapView {
   /** @param {string} target - 지도 컨테이너 DOM id */
   constructor(target) {
-    // crossOrigin: 보고서 캡처(toDataURL) 시 베이스 타일이 canvas를 오염시키지 않도록(M10). OSM은 CORS 지원.
-    this.baseLayer = new TileLayer({ source: new OSM({ crossOrigin: 'anonymous' }), properties: { type: 'base' } });
+    // crossOrigin: 보고서 캡처(toDataURL) 시 타일이 canvas를 오염시키지 않도록(M10). OSM·Esri 모두 CORS 지원.
+    this.osmSource = new OSM({ crossOrigin: 'anonymous' });
+    this.satSource = new XYZ({
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      crossOrigin: 'anonymous', maxZoom: 19, attributions: 'Tiles © Esri',
+    });
+    this.baseLayer = new TileLayer({ source: this.osmSource, properties: { type: 'base' } });
+    // 위성+라벨용 라벨(경계·지명) 오버레이 — 기본 숨김, 베이스 위·데이터 아래.
+    this.labelLayer = new TileLayer({
+      source: new XYZ({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        crossOrigin: 'anonymous',
+      }),
+      visible: false,
+      properties: { type: 'base' },
+    });
     this.map = new Map({
       target,
-      layers: [this.baseLayer],
+      layers: [this.baseLayer, this.labelLayer],
       view: new View({
         center: fromLonLat([127.5, 36.5]), // 한국 중심(경위도 → 3857)
         zoom: 7,
@@ -42,6 +57,14 @@ export class MapView {
         maxZoom: 19,
       }),
     });
+  }
+
+  /** 슬라이드별 배경지도: 'standard'(일반) | 'satellite'(위성) | 'satellite-labels'(위성+라벨). */
+  setBasemap(kind) {
+    const wantSat = kind === 'satellite' || kind === 'satellite-labels';
+    const next = wantSat ? this.satSource : this.osmSource;
+    if (this.baseLayer.getSource() !== next) this.baseLayer.setSource(next);
+    this.labelLayer.setVisible(kind === 'satellite-labels');
   }
 
   addLayer(olLayer) {

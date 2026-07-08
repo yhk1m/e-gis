@@ -100,6 +100,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
 
     if (kind === 'map') {
       applyPageVisibility(page, registry);
+      mapView.setBasemap(page.basemap || 'standard'); // 슬라이드별 배경지도
       animator.flyTo(page.camera); // camera null이면 no-op(그 자리 유지)
       if (legend) legend.render(page, { editable: false }); // 발표: 정적 범례(이 슬라이드 레이어)
       cover.style.display = 'none';
