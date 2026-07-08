@@ -7,8 +7,8 @@ import { SourceRegistry } from './core/SourceRegistry.js';
 import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
   createStoryDoc, addSource, addPage, removePage, setPageOrder, getPage, setLayerVisible, nextSourceId,
-  setPageCamera, setPageContent, setPageKind, setPageTitle,
-  setSlideBg, setPageBg, slideBgOf, applySlideBgToAll, setCloudSync,
+  setPageCamera, setPageContent, setPageKind, setPageAlign, setPageSplit, setPageSplitRatio, setPageTitle,
+  setPageBg, slideBgOf, applySlideBgToAll, setCloudSync,
   setPresentationLayout, setPresentationPos, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
@@ -105,6 +105,15 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
       } else {
         refresh(); // '프로젝트 기본' 리셋 — 전체 갱신(색상 입력값도 기본으로)
       }
+    } else if (field === 'align') {
+      setPageAlign(doc, currentPageId, value); // 미디어 정렬 — 미리보기만 갱신(지도/패널 무관)
+      slidePreview.render(getPage(doc, currentPageId), doc.meta);
+    } else if (field === 'split') {
+      setPageSplit(doc, currentPageId, value); // 2단 토글 — 콘텐츠 패널(옆 글 칸)·미리보기 갱신
+      refresh();
+    } else if (field === 'splitRatio') {
+      setPageSplitRatio(doc, currentPageId, value); // 좌우 너비 비율 — 미리보기만 갱신
+      slidePreview.render(getPage(doc, currentPageId), doc.meta);
     } else {
       // 전체 refresh 없음 — 타이핑 중 포커스 유지(콘텐츠는 지도/패널에 영향 없음)
       setPageContent(doc, currentPageId, { [field]: value });
@@ -242,17 +251,6 @@ posSelect.addEventListener('change', () => {
   if (!doc) return;
   setPresentationPos(doc, posSelect.value);
   slidePreview.render(getPage(doc, currentPageId), doc.meta); // 미리보기 즉시 반영
-  scheduleSave();
-});
-
-// 프로젝트 기본 슬라이드 배경색(헤더)
-const slideBgInput = document.getElementById('slide-bg');
-slideBgInput.addEventListener('input', () => {
-  if (!doc) return;
-  setSlideBg(doc, slideBgInput.value);
-  const page = getPage(doc, currentPageId);
-  applySlideColors(slideCanvas, slideBgOf(doc, page)); // 가볍게 갱신(입력요소 재생성 방지)
-  slidePreview.render(page, doc.meta);
   scheduleSave();
 });
 
@@ -463,7 +461,6 @@ function enterEditor() {
   layoutSelect.value = doc.meta.presentationLayout || 'band'; // 발표 레이아웃 현재값 반영
   posSelect.value = doc.meta.presentationPos || 'right'; // 레이아웃 위치 현재값
   legendToggle.checked = doc.meta.legend ? doc.meta.legend.visible : true; // 범례 표시 현재값
-  slideBgInput.value = slideBgOf(doc, null); // 프로젝트 기본 배경색 현재값
   mapView.updateSize(); // 슬라이드 캔버스(16:9) 크기 반영 후에 카메라 적용 — 줌 정규화 정확도
   refresh();
   const page = getPage(doc, currentPageId);

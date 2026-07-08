@@ -38,7 +38,9 @@ export function buildOverlay(content) {
   const heading = (c.heading || '').trim();
   const caption = (c.caption || '').trim();
   const body = c.body || '';
+  const sideText = c.sideText || '';
   const bodyHtml = renderMarkdown(body);
-  const empty = !heading && !caption && !body.trim();
-  return { heading, bodyHtml, caption, empty };
+  const sideHtml = renderMarkdown(sideText); // 2단 레이아웃의 '옆 글'
+  const empty = !heading && !caption && !body.trim() && !sideText.trim();
+  return { heading, bodyHtml, sideHtml, caption, empty };
 }

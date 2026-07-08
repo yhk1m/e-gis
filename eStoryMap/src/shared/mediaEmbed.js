@@ -3,6 +3,7 @@
 // 본문 마크다운의 미디어 링크를 임베드로 변환하는 순수 로직(DOM/네트워크 의존 없음, 테스트 대상).
 // - YouTube 링크(단독 줄) → 반응형 iframe(youtube-nocookie + sandbox)
 // - Google Drive 링크(단독 줄 또는 ![](...)) → 직접 이미지 표시 URL로 정규화
+// - 일반 이미지 URL(단독 줄, 확장자 기반) → 이미지 태그(임의 웹 이미지 지원)
 // 실제 살균은 markdown.js의 DOMPurify(iframe은 YouTube만 화이트리스트).
 
 /** YouTube URL → 11자 videoId(없으면 null). watch/youtu.be/embed/shorts + 뒤 파라미터 허용. */
@@ -72,10 +73,22 @@ export function gdriveImageUrl(url) {
 }
 
 /**
+ * 이미지 파일처럼 보이는 http(s) URL이면 그대로, 아니면 null.
+ * 확장자 기반 판별(쿼리스트링·프래그먼트 허용) — 임의 링크가 깨진 이미지로 바뀌는 것을 막는다.
+ * (확장자가 없는 이미지는 마크다운 이미지 문법 ![](url)로 넣으면 그대로 렌더된다.)
+ */
+export function imageUrl(url) {
+  if (typeof url !== 'string') return null;
+  const u = url.trim();
+  return /^https?:\/\/\S+\.(?:jpe?g|png|gif|webp|svg|bmp|avif|apng)(?:[?#]\S*)?$/i.test(u) ? u : null;
+}
+
+/**
  * 본문 마크다운에서 미디어 링크를 임베드로 변환.
  * ① ![alt](gdrive-url) 안의 URL → 직접 이미지 URL로 정규화(마크다운 이미지 유지)
  * ② 한 줄이 통째로 YouTube URL → 비디오 iframe 블록
  * ③ 한 줄이 통째로 Google Drive URL → 이미지 태그
+ * ④ 한 줄이 통째로 이미지 URL(확장자 기반) → 이미지 태그
  * @param {string} markdown
  * @param {{staticMedia?:boolean}} [opts] - staticMedia=true면 YouTube를 재생 iframe 대신
  *   썸네일+링크로(보고서/PDF용).
@@ -100,6 +113,8 @@ export function embedMediaLinks(markdown, { staticMedia = false } = {}) {
       if (yt) return yt;
       const img = gdriveImageUrl(url);
       if (img) return `<img class="embed-image" src="${img}" alt="" loading="lazy">`;
+      const direct = imageUrl(url);
+      if (direct) return `<img class="embed-image" src="${direct}" alt="" loading="lazy">`;
       return line;
     })
     .join('\n');

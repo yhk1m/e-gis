@@ -121,10 +121,15 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
 
   function makeSlidePage(doc, page, images, layout, pos) {
     const kind = page.kind || 'map';
+    const align = page.align || 'center';
+    const split = kind === 'media' && !!page.split;
     const slide = document.createElement('div');
     slide.className = 'slide-pdf-page';
     const stage = document.createElement('div');
-    stage.className = `pres-stage pres-layout-${layout} pres-kind-${kind} pres-pos-${pos}`;
+    stage.className = `pres-stage pres-layout-${layout} pres-kind-${kind} pres-pos-${pos} pres-align-${align}${split ? ' pres-split' : ''}`;
+    const ratio = Math.min(80, Math.max(20, page.splitRatio || 50)); // 2단 좌우 너비 비율(사진 %)
+    stage.style.setProperty('--split-photo', ratio);
+    stage.style.setProperty('--split-side', 100 - ratio);
     applySlideColors(stage, slideBgOf(doc, page));
     const vm = buildOverlay(page.content); // {heading, bodyHtml(살균), caption, empty}
 
@@ -156,9 +161,19 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
       cover.className = 'pres-cover';
       const inner = document.createElement('div');
       inner.className = 'pres-cover-inner';
-      fill(inner, 'pres-cover-heading', null, vm.heading);
-      fill(inner, 'pres-cover-body md-preview', vm.bodyHtml, null);
-      fill(inner, 'pres-cover-caption', null, vm.caption);
+      if (split) {
+        fill(inner, 'pres-cover-body md-preview', vm.bodyHtml, null); // 사진 열
+        const side = document.createElement('div');
+        side.className = 'pres-cover-side'; // 글 열(제목+옆글+캡션)
+        fill(side, 'pres-cover-heading', null, vm.heading);
+        fill(side, 'pres-cover-sidetext md-preview', vm.sideHtml, null);
+        fill(side, 'pres-cover-caption', null, vm.caption);
+        inner.appendChild(side);
+      } else {
+        fill(inner, 'pres-cover-heading', null, vm.heading);
+        fill(inner, 'pres-cover-body md-preview', vm.bodyHtml, null);
+        fill(inner, 'pres-cover-caption', null, vm.caption);
+      }
       cover.appendChild(inner);
       stage.appendChild(cover);
     }

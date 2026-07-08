@@ -43,7 +43,9 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
   const cInner = document.createElement('div'); cInner.className = 'pres-cover-inner';
   const cHeading = document.createElement('div'); cHeading.className = 'pres-cover-heading';
   const cBody = document.createElement('div'); cBody.className = 'pres-cover-body md-preview';
+  const cSideText = document.createElement('div'); cSideText.className = 'pres-cover-sidetext md-preview'; // 2단 옆 글
   const cCaption = document.createElement('div'); cCaption.className = 'pres-cover-caption';
+  const cSide = document.createElement('div'); cSide.className = 'pres-cover-side'; // 2단에서 글 열(제목+옆글+캡션)
   cInner.append(cHeading, cBody, cCaption);
   cover.appendChild(cInner);
 
@@ -83,10 +85,15 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     const page = list[index];
     if (!page) return;
     const kind = page.kind || 'map';
+    const align = page.align || 'center';
+    const split = kind === 'media' && !!page.split;
     const meta = getDoc().meta;
     const layout = meta.presentationLayout || 'band';
     const pos = meta.presentationPos || 'right';
-    stage.className = 'pres-stage pres-layout-' + layout + ' pres-kind-' + kind + ' pres-pos-' + pos;
+    stage.className = 'pres-stage pres-layout-' + layout + ' pres-kind-' + kind + ' pres-pos-' + pos + ' pres-align-' + align + (split ? ' pres-split' : '');
+    const ratio = Math.min(80, Math.max(20, page.splitRatio || 50)); // 2단 좌우 너비 비율(사진 %)
+    stage.style.setProperty('--split-photo', ratio);
+    stage.style.setProperty('--split-side', 100 - ratio);
     applySlideColors(stage, slideBgOf(getDoc(), page)); // 슬라이드 배경/글자색(페이지 override > 프로젝트 기본)
 
     const vm = buildOverlay(page.content); // {heading, bodyHtml(살균), caption, empty}
@@ -106,7 +113,14 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
       cover.style.display = '';
       cHeading.textContent = vm.heading; cHeading.style.display = vm.heading ? '' : 'none';
       cBody.innerHTML = vm.bodyHtml; cBody.style.display = vm.bodyHtml ? '' : 'none';
+      cSideText.innerHTML = vm.sideHtml; cSideText.style.display = split && vm.sideHtml ? '' : 'none';
       cCaption.textContent = vm.caption; cCaption.style.display = vm.caption ? '' : 'none';
+      if (split) {
+        cSide.append(cHeading, cSideText, cCaption); // 글 열로 묶기(사진과 좌우 배치)
+        cInner.replaceChildren(cBody, cSide); // 좌우 순서는 pres-align-*로 CSS 처리
+      } else {
+        cInner.replaceChildren(cHeading, cBody, cCaption); // 기존 세로 배치
+      }
     }
 
     indicator.innerHTML = '';

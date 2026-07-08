@@ -2,7 +2,7 @@
 // eStoryMap/src/shared/mediaEmbed.test.js
 import { describe, it, expect } from 'vitest';
 import {
-  youtubeId, youtubeEmbedHtml, youtubeThumbHtml, gdriveFileId, gdriveImageUrl, embedMediaLinks,
+  youtubeId, youtubeEmbedHtml, youtubeThumbHtml, gdriveFileId, gdriveImageUrl, imageUrl, embedMediaLinks,
 } from './mediaEmbed.js';
 
 describe('youtubeId', () => {
@@ -61,7 +61,28 @@ describe('gdriveFileId / gdriveImageUrl', () => {
   });
 });
 
+describe('imageUrl', () => {
+  it('이미지 확장자 URL이면 그대로 돌려준다(대소문자·쿼리 허용)', () => {
+    expect(imageUrl('https://example.com/photo.jpg')).toBe('https://example.com/photo.jpg');
+    expect(imageUrl('https://cdn.site.com/a/b.PNG?w=800')).toBe('https://cdn.site.com/a/b.PNG?w=800');
+    expect(imageUrl('http://old.site/x.gif')).toBe('http://old.site/x.gif');
+    expect(imageUrl('https://site.com/i.webp#frag')).toBe('https://site.com/i.webp#frag');
+  });
+  it('이미지가 아니거나 URL이 아니면 null', () => {
+    expect(imageUrl('https://example.com/page')).toBeNull();
+    expect(imageUrl('https://drive.google.com/file/d/ABC/view')).toBeNull();
+    expect(imageUrl('그냥 텍스트')).toBeNull();
+    expect(imageUrl(null)).toBeNull();
+  });
+});
+
 describe('embedMediaLinks', () => {
+  it('단독 줄 이미지 URL → 이미지 태그', () => {
+    const out = embedMediaLinks('앞\n\nhttps://example.com/photo.jpg\n\n뒤');
+    expect(out).toContain('<img class="embed-image" src="https://example.com/photo.jpg"');
+    expect(out).toContain('앞');
+    expect(out).toContain('뒤');
+  });
   it('단독 줄 YouTube URL → 비디오 iframe', () => {
     const out = embedMediaLinks('앞\n\nhttps://youtu.be/dQw4w9WgXcQ\n\n뒤');
     expect(out).toContain('embed-video');

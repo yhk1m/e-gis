@@ -133,7 +133,7 @@ describe('createStoryDoc', () => {
     expect(page.camera).toBeNull();
     expect(page.layerVisibility).toEqual([]);
     expect(page.overrides).toEqual({});
-    expect(page.content).toEqual({ heading: '', body: '', caption: '' });
+    expect(page.content).toEqual({ heading: '', body: '', caption: '', sideText: '' });
   });
 
   it('meta.id는 UUID, created=updated ISO', () => {
@@ -244,7 +244,7 @@ describe('addPage', () => {
     expect(doc.pages[1]).toBe(p2);
     expect(p2.id).toBe('page_2');
     expect(p2.title).toBe('페이지 2');
-    expect(p2.content).toEqual({ heading: '', body: '', caption: '' });
+    expect(p2.content).toEqual({ heading: '', body: '', caption: '', sideText: '' });
     expect(p2.overrides).toEqual({});
   });
 
@@ -320,7 +320,7 @@ describe('setPageContent', () => {
     setPageContent(doc, 'page_1', { heading: '부산의 인구' });
     setPageContent(doc, 'page_1', { body: '# 개요' });
     expect(getPage(doc, 'page_1').content).toEqual({
-      heading: '부산의 인구', body: '# 개요', caption: '',
+      heading: '부산의 인구', body: '# 개요', caption: '', sideText: '',
     });
   });
 
@@ -328,7 +328,7 @@ describe('setPageContent', () => {
     const doc = createStoryDoc();
     setPageContent(doc, 'page_1', { heading: '제목', body: '본문', caption: '캡션' });
     expect(getPage(doc, 'page_1').content).toEqual({
-      heading: '제목', body: '본문', caption: '캡션',
+      heading: '제목', body: '본문', caption: '캡션', sideText: '',
     });
   });
 
@@ -343,7 +343,7 @@ describe('setPageContent', () => {
     const doc = createStoryDoc();
     setPageContent(doc, 'page_1', { heading: '유지', evil: 'x', body: 123 });
     const content = getPage(doc, 'page_1').content;
-    expect(content).toEqual({ heading: '유지', body: '', caption: '' });
+    expect(content).toEqual({ heading: '유지', body: '', caption: '', sideText: '' });
     expect('evil' in content).toBe(false);
   });
 });

@@ -4,10 +4,10 @@
   <head>
     <meta charset="UTF-8" />
     <!-- CSP: 외부 리소스를 필요한 출처로만 제한(추적 비콘·내부망 프로빙 차단). script/style은 Vite·OL 호환 위해 unsafe-inline
-         (실질 XSS 방어는 DOMPurify). 허용: OSM 타일, Supabase(REST+realtime), YouTube 임베드/썸네일, 구글드라이브 이미지, 보고서 캡처(data:). -->
+         (실질 XSS 방어는 DOMPurify). 허용: 이미지=모든 https(임의 웹 이미지 URL 지원)+data:/blob:, Supabase(REST+realtime), YouTube 임베드. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.googleusercontent.com https://img.youtube.com https://*.ytimg.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://e-gis.kr; connect-src 'self' ws://localhost:* http://localhost:* https://lufbotdmhgsuvejlytgh.supabase.co wss://lufbotdmhgsuvejlytgh.supabase.co; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://e-gis.kr; connect-src 'self' ws://localhost:* http://localhost:* https://lufbotdmhgsuvejlytgh.supabase.co wss://lufbotdmhgsuvejlytgh.supabase.co; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>e-GIS</title>
@@ -47,7 +47,6 @@
             <option value="bottom">아래</option>
           </select>
         </label>
-        <label id="slide-bg-label" title="슬라이드 기본 배경색 (프로젝트 전체)">배경 <input type="color" id="slide-bg" value="#0b0f14" /></label>
         <label id="legend-toggle-label" title="지도 위 범례 표시"><input type="checkbox" id="legend-toggle" checked /> 범례</label>
         <label id="cloud-toggle-label" title="로그인하면 이 스토리맵을 클라우드에도 자동 저장합니다"><input type="checkbox" id="cloud-toggle" disabled /> 클라우드 동기화</label>
         <span id="save-status"></span>

@@ -13,6 +13,8 @@ body { display: flex; flex-direction: column; }
   font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .app-tab.active { background: #1e293b; color: #e5e7eb; }
+/* 활성 e-GIStory 탭은 바로 아래 툴바 색과 통일(연속된 헤더) — e-GIS 탭이 흰 화면과 이어지는 것과 동일 */
+#tab-estory.active { background: #0b0f14; }
 #egis-pane { position: fixed; top: 36px; left: 0; right: 0; bottom: 0; z-index: 250; display: none; background: #fff; }
 #egis-pane.active { display: block; }
 #egis-webview { width: 100%; height: 100%; border: none; }
@@ -142,6 +144,44 @@ body { display: flex; flex-direction: column; }
 #content-panel #content-bg { width: 44px; height: 28px; padding: 2px; flex: none; resize: none; cursor: pointer; }
 #content-bg-reset, #content-bg-all { padding: 5px 10px; border: 1px solid #334155; background: #1e293b; color: #e5e7eb; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
 #content-bg-reset:hover, #content-bg-all:hover { background: #334155; }
+/* 2단 레이아웃 토글(체크박스는 일반 input 100% 규칙에서 제외) */
+.content-split { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #e5e7eb; cursor: pointer; }
+#content-panel #content-split { width: auto; flex: none; margin: 0; cursor: pointer; }
+:root[data-theme="light"] .content-split { color: #1e293b; }
+/* 2단 좌우 너비 비율 슬라이더 */
+.content-ratio-row { display: flex; align-items: center; gap: 8px; }
+#content-panel #content-splitratio { flex: 1; width: auto; padding: 0; border: none; background: none; cursor: pointer; }
+.content-ratio-text { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+:root[data-theme="light"] .content-ratio-text { color: #64748b; }
+/* 본문 마크다운 서식 툴바 + 도움말 */
+.md-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 6px; }
+.md-toolbar button {
+  padding: 3px 8px; font-size: 12px; line-height: 1.4; cursor: pointer;
+  background: #1e293b; color: #cbd5e1; border: 1px solid #334155; border-radius: 5px;
+}
+.md-toolbar button:hover { background: #334155; }
+.md-toolbar .md-help-btn { margin-left: auto; }
+.md-help {
+  margin: 6px 0; padding: 8px 10px; font-size: 12px; line-height: 1.8;
+  background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #cbd5e1;
+}
+.md-help code { background: #1e293b; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+:root[data-theme="light"] .md-toolbar button { background: #fff; color: #334155; border-color: #cbd5e1; }
+:root[data-theme="light"] .md-toolbar button:hover { background: #f1f5f9; }
+:root[data-theme="light"] .md-help { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
+:root[data-theme="light"] .md-help code { background: #e2e8f0; }
+/* 사진 슬라이드 정렬 선택(좌/중앙/우) */
+.content-align { display: flex; gap: 4px; }
+.content-align button {
+  flex: 1; padding: 4px 0; font-size: 12px; cursor: pointer;
+  background: #1e293b; color: #cbd5e1; border: 1px solid #334155; border-radius: 5px;
+}
+.content-align button:hover { background: #334155; }
+.content-align button.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+:root[data-theme="light"] .content-align button { background: #fff; color: #334155; border-color: #cbd5e1; }
+:root[data-theme="light"] .content-align button:hover { background: #f1f5f9; }
+.content-align button.active,
+:root[data-theme="light"] .content-align button.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
 .md-preview {
   border: 1px dashed #334155; border-radius: 6px; padding: 8px;
   font-size: 13px; min-height: 40px; overflow-wrap: break-word;
@@ -227,6 +267,7 @@ body { display: flex; flex-direction: column; }
 :root[data-theme="light"] #app-tabs { background: #eef2f7; } /* 툴바와 같은 색(연속된 헤더 띠) */
 :root[data-theme="light"] .app-tab { background: #dfe6ee; color: #64748b; border-color: #cbd5e1; }
 :root[data-theme="light"] .app-tab.active { background: #ffffff; color: #1e293b; }
+:root[data-theme="light"] #tab-estory.active { background: #eef2f7; } /* 툴바(#eef2f7)와 통일 */
 :root[data-theme="light"] #map { background: #e2e8f0; }
 :root[data-theme="light"] #sidebar,
 :root[data-theme="light"] #content-sidebar { background: #f8fafc; color: #1e293b; border-color: #e2e8f0; }
@@ -333,7 +374,7 @@ body { display: flex; flex-direction: column; }
 .pres-layout-card.pres-pos-top .pres-overlay    { left: 4%; right: auto; top: 8%; bottom: auto; width: auto; height: auto; transform: none; }
 .pres-layout-card.pres-pos-left .pres-overlay   { left: 4%; right: auto; top: 50%; bottom: auto; width: auto; height: auto; transform: translateY(-50%); }
 .pres-layout-card.pres-pos-right .pres-overlay  { right: 4%; left: auto; top: 50%; bottom: auto; width: auto; height: auto; transform: translateY(-50%); }
-.pres-heading { font-size: 1.8cqw; font-weight: 700; margin-bottom: 0.3em; }
+.pres-heading { font-size: 2.6cqw; font-weight: 700; margin-bottom: 0.3em; } /* 제목 = 마크다운 h1급으로 (본문 1cqw 대비 큰 제목) */
 .pres-body {                                   /* .md-preview의 점선 박스 룩만 제거, 이미지/표 규칙은 유지 */
   font-size: 1cqw; line-height: 1.5;
   border: none; padding: 0; min-height: 0;
@@ -391,6 +432,24 @@ body { display: flex; flex-direction: column; }
 .pres-kind-media .pres-cover-heading { font-size: 1.6cqw; font-weight: 600; margin-bottom: 0.6em; }
 .pres-kind-media .pres-cover-body img,
 .pres-kind-media .pres-cover-body .embed-image { max-height: 82cqh; width: auto; max-width: 100%; margin: 0 auto; cursor: zoom-in; }
+/* 사진(미디어) 슬라이드 정렬 — 좌/중앙(기본)/우 */
+.pres-kind-media.pres-align-left  .pres-cover-inner { text-align: left; }
+.pres-kind-media.pres-align-right .pres-cover-inner { text-align: right; }
+.pres-kind-media.pres-align-left  .pres-cover-body img,
+.pres-kind-media.pres-align-left  .pres-cover-body .embed-image { margin: 0 auto 0 0; }
+.pres-kind-media.pres-align-right .pres-cover-body img,
+.pres-kind-media.pres-align-right .pres-cover-body .embed-image { margin: 0 0 0 auto; }
+/* 2단(사진 + 옆 글): 사진 열 | 글 열. 좌우 순서는 pres-align-*(좌=사진 왼쪽, 우=사진 오른쪽) */
+.pres-kind-media.pres-split .pres-cover-inner { display: flex; align-items: center; gap: 4cqw; text-align: left; }
+.pres-kind-media.pres-split.pres-align-right .pres-cover-inner { flex-direction: row-reverse; }
+/* 사진 열·글 열 동일 너비(basis 0 + grow 1 = gap 제외 후 정확히 반반). min-width:0=이미지가 열을 넘기지 않게 */
+.pres-kind-media.pres-split .pres-cover-body { flex: var(--split-photo, 1) 1 0; min-width: 0; }
+.pres-kind-media.pres-split .pres-cover-side { flex: var(--split-side, 1) 1 0; min-width: 0; }
+.pres-kind-media.pres-split .pres-cover-body img,
+.pres-kind-media.pres-split .pres-cover-body .embed-image { max-height: 74cqh; max-width: 100%; margin: 0 auto; }
+.pres-kind-media.pres-split .pres-cover-body .embed-video { width: 100%; margin: 0 auto; } /* 영상도 열 너비에 맞춤(전체폭 규칙 override) */
+.pres-kind-media.pres-split .pres-cover-heading { margin-bottom: 0.5em; }
+.pres-cover-sidetext { font-size: 1.5cqw; line-height: 1.6; border: none; padding: 0; min-height: 0; } /* 글상자 점선 테두리 제거 */
 /* 글: 지도 없이 제목 + 본문 텍스트(읽기용, 왼쪽 정렬 · 넉넉한 줄간격) */
 .pres-kind-text .pres-cover-inner { text-align: left; max-width: 80%; }
 .pres-kind-text .pres-cover-heading { font-size: 2.6cqw; font-weight: 700; margin-bottom: 0.7em; }

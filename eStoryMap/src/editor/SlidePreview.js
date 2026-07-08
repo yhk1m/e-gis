@@ -22,7 +22,9 @@ export function createSlidePreview(root) {
   const cInner = document.createElement('div'); cInner.className = 'pres-cover-inner';
   const cHeading = document.createElement('div'); cHeading.className = 'pres-cover-heading';
   const cBody = document.createElement('div'); cBody.className = 'pres-cover-body md-preview';
+  const cSideText = document.createElement('div'); cSideText.className = 'pres-cover-sidetext md-preview'; // 2단 옆 글
   const cCaption = document.createElement('div'); cCaption.className = 'pres-cover-caption';
+  const cSide = document.createElement('div'); cSide.className = 'pres-cover-side'; // 2단 글 열
   cInner.append(cHeading, cBody, cCaption);
   cover.appendChild(cInner);
 
@@ -35,9 +37,14 @@ export function createSlidePreview(root) {
     if (!visible || !page) { root.style.display = 'none'; return; }
     root.style.display = '';
     const kind = page.kind || 'map';
+    const align = page.align || 'center';
+    const split = kind === 'media' && !!page.split;
     const layout = (meta && meta.presentationLayout) || 'band';
     const pos = (meta && meta.presentationPos) || 'right';
-    root.className = 'pres-layout-' + layout + ' pres-kind-' + kind + ' pres-pos-' + pos; // pres CSS 적용(발표와 동일)
+    root.className = 'pres-layout-' + layout + ' pres-kind-' + kind + ' pres-pos-' + pos + ' pres-align-' + align + (split ? ' pres-split' : ''); // pres CSS 적용(발표와 동일)
+    const ratio = Math.min(80, Math.max(20, page.splitRatio || 50)); // 2단 좌우 너비 비율(사진 %)
+    root.style.setProperty('--split-photo', ratio);
+    root.style.setProperty('--split-side', 100 - ratio);
     const vm = buildOverlay(page.content); // {heading, bodyHtml(살균), caption, empty}
 
     if (kind === 'map') {
@@ -51,7 +58,14 @@ export function createSlidePreview(root) {
       cover.style.display = '';
       cHeading.textContent = vm.heading; cHeading.style.display = vm.heading ? '' : 'none';
       cBody.innerHTML = vm.bodyHtml; cBody.style.display = vm.bodyHtml ? '' : 'none';
+      cSideText.innerHTML = vm.sideHtml; cSideText.style.display = split && vm.sideHtml ? '' : 'none';
       cCaption.textContent = vm.caption; cCaption.style.display = vm.caption ? '' : 'none';
+      if (split) {
+        cSide.append(cHeading, cSideText, cCaption);
+        cInner.replaceChildren(cBody, cSide);
+      } else {
+        cInner.replaceChildren(cHeading, cBody, cCaption);
+      }
     }
   }
 

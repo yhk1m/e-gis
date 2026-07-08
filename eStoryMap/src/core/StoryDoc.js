@@ -33,10 +33,13 @@ function makePage(id, title) {
     id,
     title,
     kind: 'map', // 'map'(기본·지도) | 'title'(제목 표지) | 'media'(지도 없이 사진/영상) | 'text'(글만)
+    align: 'center', // 미디어(사진) 슬라이드 정렬: 'left' | 'center'(기본) | 'right'
+    split: false, // 미디어 2단(사진 + 옆 글) 레이아웃 여부
+    splitRatio: 50, // 2단 좌우 너비 비율(사진 열 %). 20~80.
     camera: null, // {center:[lon,lat], zoom} — 캡처/적용은 M4
     layerVisibility: [], // [{sourceId, layerId, visible}] — 미등재 = 숨김
     overrides: {}, // v2 자리
-    content: { heading: '', body: '', caption: '' }, // M5 자리
+    content: { heading: '', body: '', caption: '', sideText: '' }, // M5 자리 + 2단 옆 글
   };
 }
 
@@ -214,7 +217,7 @@ export function syncCameraFromPage(doc, targetPageId, sourcePageId) {
   touch(doc);
 }
 
-const CONTENT_FIELDS = ['heading', 'body', 'caption'];
+const CONTENT_FIELDS = ['heading', 'body', 'caption', 'sideText'];
 
 /**
  * 페이지 콘텐츠 부분 패치(M5). 허용 필드(heading/body/caption)의 문자열 값만
@@ -280,6 +283,35 @@ export function setPageKind(doc, pageId, kind) {
   const page = getPage(doc, pageId);
   if (!page) return;
   page.kind = kind;
+  touch(doc);
+}
+
+export const SLIDE_ALIGNS = ['left', 'center', 'right'];
+
+/** 미디어(사진/영상) 슬라이드 정렬. 허용 enum만 반영. 미설정 페이지는 읽는 쪽 'center' 기본. */
+export function setPageAlign(doc, pageId, align) {
+  if (!SLIDE_ALIGNS.includes(align)) return;
+  const page = getPage(doc, pageId);
+  if (!page) return;
+  page.align = align;
+  touch(doc);
+}
+
+/** 미디어 슬라이드 2단(사진 + 옆 글) 레이아웃 토글. 미설정 페이지는 읽는 쪽 false 기본. */
+export function setPageSplit(doc, pageId, on) {
+  const page = getPage(doc, pageId);
+  if (!page) return;
+  page.split = !!on;
+  touch(doc);
+}
+
+/** 2단 좌우 너비 비율(사진 열 %) 설정. 20~80으로 클램프. 미설정 페이지는 읽는 쪽 50 기본. */
+export function setPageSplitRatio(doc, pageId, ratio) {
+  const r = Math.round(Number(ratio));
+  if (!Number.isFinite(r)) return;
+  const page = getPage(doc, pageId);
+  if (!page) return;
+  page.splitRatio = Math.min(80, Math.max(20, r));
   touch(doc);
 }
 
