@@ -9,6 +9,7 @@ class ChartMapPanel {
     this.modal = null;
     this.selectedLayerId = null;
     this.selectedFields = [];
+    this.fieldColors = new Map(); // field → 사용자 지정 색(기본 팔레트로 초기화)
   }
 
   /**
@@ -71,6 +72,12 @@ class ChartMapPanel {
         <div class="form-group">
           <label id="field-select-label">표시할 필드 (2개 이상 선택)</label>
           <div class="field-list" id="chart-field-list"></div>
+        </div>
+        <div class="form-group">
+          <label class="field-checkbox">
+            <input type="checkbox" id="chart-show-values">
+            수치 라벨 표시 (파이·100% 막대는 %, 막대는 값)
+          </label>
         </div>
         <div class="form-group">
           <label for="chart-size-field">크기 기준 필드 (선택)</label>
@@ -160,18 +167,29 @@ class ChartMapPanel {
     const fields = chartMapTool.getNumericFields(this.selectedLayerId);
     const colors = chartMapTool.getColors();
 
-    // 필드 체크박스 목록
+    // 필드 체크박스 목록 — 색은 피커로 직접 지정 가능(기본 팔레트로 초기화)
+    this.fieldColors = new Map();
     let fieldHTML = '';
     fields.forEach((field, i) => {
       const color = colors[i % colors.length];
+      this.fieldColors.set(field, color);
       fieldHTML += `
         <label class="field-checkbox">
-          <input type="checkbox" value="${field}" data-color="${color}">
-          <span class="color-box" style="background:${color}"></span>
+          <input type="checkbox" value="${field}">
+          <input type="color" class="field-color" data-field="${field}" value="${color}" title="필드 색 지정">
           ${field}
         </label>`;
     });
     fieldListEl.innerHTML = fieldHTML || '<div class="no-fields">숫자 필드가 없습니다</div>';
+
+    // 색 피커 이벤트 — 클릭이 체크박스 토글로 번지지 않게 차단
+    fieldListEl.querySelectorAll('input.field-color').forEach(picker => {
+      picker.addEventListener('click', (e) => e.stopPropagation());
+      picker.addEventListener('input', (e) => {
+        this.fieldColors.set(e.target.dataset.field, e.target.value);
+        this.updateLegend();
+      });
+    });
 
     // 크기 필드 옵션
     let sizeOptions = '<option value="">고정 크기</option>';
@@ -218,7 +236,7 @@ class ChartMapPanel {
 
     let html = '';
     this.selectedFields.forEach((field, i) => {
-      const color = colors[i % colors.length];
+      const color = this.fieldColors.get(field) || colors[i % colors.length];
       html += `<div class="legend-item">
         <span class="legend-color" style="background:${color}"></span>
         <span class="legend-label">${field}</span>
@@ -248,12 +266,16 @@ class ChartMapPanel {
     applyBtn.textContent = '적용 중...';
 
     try {
+      const defaultColors = chartMapTool.getColors();
       const result = chartMapTool.createChartMap(this.selectedLayerId, {
         chartType,
         fields: this.selectedFields,
         sizeField: sizeField || null,
         minSize,
-        maxSize
+        maxSize,
+        // 필드별 지정 색(fields와 같은 순서) + 수치 라벨 표시 여부
+        colors: this.selectedFields.map((f, i) => this.fieldColors.get(f) || defaultColors[i % defaultColors.length]),
+        showValues: document.getElementById('chart-show-values').checked
       });
 
       alert(`도형표현도 생성 완료!\n차트 수: ${result.chartCount}`);

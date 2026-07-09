@@ -2301,6 +2301,18 @@ input:focus, select:focus, textarea:focus {
   flex-shrink: 0;
 }
 
+/* 필드별 색 지정 피커 (color-box 대체) */
+.chart-map-modal .field-color {
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--border-color, #94a3b8);
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .chart-map-modal .no-fields {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);

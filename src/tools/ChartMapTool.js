@@ -127,7 +127,11 @@ class ChartMapTool {
       sizeField: options.sizeField || null,  // 크기 기준 필드 (없으면 고정 크기)
       minSize: options.minSize !== undefined ? options.minSize : 20,
       maxSize: options.maxSize !== undefined ? options.maxSize : 60,
-      showLabels: options.showLabels || false
+      showLabels: options.showLabels || false,
+      // 필드별 색(fields와 같은 순서). 없으면 기본 팔레트.
+      colors: Array.isArray(options.colors) && options.colors.length ? options.colors : null,
+      // 수치 라벨: 파이·100%막대=%, 막대=절댓값
+      showValues: !!options.showValues
     };
 
     const layerInfo = layerManager.getLayer(layerId);
@@ -203,6 +207,8 @@ class ChartMapTool {
    */
   renderChartMap(derivedLayerId, sourceLayerId, config) {
     const { chartType, fields, sizeField, minSize, maxSize } = config;
+    const colors = (config.colors && config.colors.length) ? config.colors : this.colors;
+    const showValues = !!config.showValues;
 
     const sourceInfo = layerManager.getLayer(sourceLayerId);
     if (!sourceInfo) return 0;
@@ -263,13 +269,13 @@ class ChartMapTool {
       // 차트 SVG 생성
       let svg;
       if (chartType === 'pie') {
-        svg = this.createPieChart(values, fields, size);
+        svg = this.createPieChart(values, fields, size, colors, showValues);
       } else if (chartType === '100bar') {
         // 100% 누적 막대: 피처별 합계를 100%로 정규화
-        svg = this.createStackedBar100Chart(values, fields, size);
+        svg = this.createStackedBar100Chart(values, fields, size, colors, showValues);
       } else {
         // 막대 차트는 전체 최대값 기준으로 높이 계산
-        svg = this.createBarChart(values, fields, size, fields.map(f => globalMaxValues[f]));
+        svg = this.createBarChart(values, fields, size, fields.map(f => globalMaxValues[f]), colors, showValues);
       }
       if (!svg) return;
 
@@ -287,7 +293,7 @@ class ChartMapTool {
     derivedInfo.geometryType = 'Point';
 
     // 범례 생성 (파생 레이어 기준)
-    this.createLegend(derivedLayerId, sourceInfo.name, chartType, fields, globalMaxValues);
+    this.createLegend(derivedLayerId, sourceInfo.name, chartType, fields, globalMaxValues, colors);
 
     // 파생 레이어가 숨김 상태면 범례도 숨김 (차트는 레이어 가시성이 처리)
     if (derivedInfo.visible === false) {
@@ -376,7 +382,7 @@ class ChartMapTool {
   /**
    * 범례 생성
    */
-  createLegend(layerId, layerName, chartType, fields, globalMaxValues) {
+  createLegend(layerId, layerName, chartType, fields, globalMaxValues, colors = this.colors) {
     // 기존 범례 제거
     this.removeLegend(layerId);
 
@@ -392,7 +398,7 @@ class ChartMapTool {
     legendHTML += '<div class="chart-legend-items">';
 
     fields.forEach((field, i) => {
-      const color = this.colors[i % this.colors.length];
+      const color = colors[i % colors.length];
       let label = field;
 
       // 막대 차트인 경우 최대값 표시
@@ -461,15 +467,24 @@ class ChartMapTool {
   /**
    * 파이 차트 SVG 생성
    */
-  createPieChart(values, fields, size) {
+  /** 수치 라벨용 SVG <text> — 흰 글자 + 검은 외곽선(paint-order)로 어떤 색 위에서도 읽힘. */
+  valueLabelSvg(x, y, text, fontSize) {
+    return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle"
+            font-family="sans-serif" font-weight="bold" font-size="${fontSize}"
+            fill="#fff" stroke="#000" stroke-width="${(fontSize * 0.18).toFixed(1)}" paint-order="stroke">${text}</text>`;
+  }
+
+  createPieChart(values, fields, size, colors = this.colors, showValues = false) {
     const total = values.reduce((a, b) => a + b, 0);
     if (total === 0) return '';
 
     const cx = size / 2;
     const cy = size / 2;
     const r = size / 2 - 2;
+    const fs = Math.max(7, Math.round(size * 0.16));
 
     let paths = '';
+    let labels = '';
     let startAngle = -Math.PI / 2;
 
     values.forEach((value, i) => {
@@ -486,13 +501,20 @@ class ChartMapTool {
       const largeArc = angle > Math.PI ? 1 : 0;
 
       paths += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z"
-                fill="${this.colors[i % this.colors.length]}"
+                fill="${colors[i % colors.length]}"
                 stroke="white" stroke-width="1"/>`;
+
+      // 수치 라벨(%): 조각 중간 각도, 반지름 0.6 지점. 5% 미만 조각은 겹침 방지 생략
+      const pct = Math.round((value / total) * 100);
+      if (showValues && pct >= 5) {
+        const mid = startAngle + angle / 2;
+        labels += this.valueLabelSvg(cx + r * 0.6 * Math.cos(mid), cy + r * 0.6 * Math.sin(mid), `${pct}%`, fs);
+      }
 
       startAngle = endAngle;
     });
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}${labels}</svg>`;
   }
 
   /**
@@ -502,21 +524,25 @@ class ChartMapTool {
    * @param {number} size - 차트 크기
    * @param {number[]} globalMaxValues - 각 필드의 전체 최대값 (선택)
    */
-  createBarChart(values, fields, size, globalMaxValues = null) {
+  createBarChart(values, fields, size, globalMaxValues = null, colors = this.colors, showValues = false) {
     // 전체 최대값이 제공되면 그것을 사용, 아니면 현재 값 중 최대값 사용
     const maxVals = globalMaxValues || values.map(() => Math.max(...values));
     const overallMax = Math.max(...maxVals);
     if (overallMax === 0) return '';
 
+    const fs = Math.max(7, Math.round(size * 0.14));
+    const labelSpace = showValues ? fs + 3 : 0; // 라벨은 막대 위 — 그만큼 막대 높이를 줄여 자리 확보
+
     // 막대 너비를 절반으로 줄이고 중앙 정렬
     const totalBarWidth = size / 2;
     const barWidth = totalBarWidth / values.length;
     const offsetX = (size - totalBarWidth) / 2;
-    const maxHeight = size - 4;
+    const maxHeight = size - 4 - labelSpace;
 
     const baselineY = size - 2;
 
     let bars = '';
+    let labels = '';
     values.forEach((value, i) => {
       // 각 막대는 해당 필드의 전체 최대값 기준으로 높이 계산
       const fieldMax = globalMaxValues ? globalMaxValues[i] : overallMax;
@@ -525,8 +551,13 @@ class ChartMapTool {
       const y = baselineY - height;
 
       bars += `<rect x="${x + 1}" y="${y}" width="${barWidth - 2}" height="${height}"
-               fill="${this.colors[i % this.colors.length]}"
+               fill="${colors[i % colors.length]}"
                stroke="white" stroke-width="2" stroke-linejoin="round"/>`;
+
+      // 수치 라벨(절댓값): 막대 위
+      if (showValues && value > 0) {
+        labels += this.valueLabelSvg(x + barWidth / 2, y - fs * 0.6, this.formatNumber(value), fs);
+      }
     });
 
     // 하단 가로축
@@ -536,6 +567,7 @@ class ChartMapTool {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
       ${axis}
       ${bars}
+      ${labels}
     </svg>`;
   }
 
@@ -546,24 +578,30 @@ class ChartMapTool {
    * @param {string[]} fields - 필드 이름 목록
    * @param {number} size - 차트 크기
    */
-  createStackedBar100Chart(values, fields, size) {
+  createStackedBar100Chart(values, fields, size, colors = this.colors, showValues = false) {
     const total = values.reduce((a, b) => a + b, 0);
     if (total === 0) return '';
 
     const barWidth = size / 3; // 기존 0.5*size 대비 약 2/3로 축소
     const offsetX = (size - barWidth) / 2;
     const maxHeight = size - 4;
+    const fs = Math.max(7, Math.round(size * 0.14));
 
     const baselineY = 2 + maxHeight; // 막대 하단
 
     let segments = '';
+    let labels = '';
     let yTop = 2; // 위에서부터 아래로 누적
     values.forEach((value, i) => {
       if (value <= 0) return;
       const h = (value / total) * maxHeight;
       segments += `<rect x="${offsetX}" y="${yTop}" width="${barWidth}" height="${h}"
-               fill="${this.colors[i % this.colors.length]}"
+               fill="${colors[i % colors.length]}"
                stroke="white" stroke-width="2" stroke-linejoin="round"/>`;
+      // 수치 라벨(%): 구간 안에 들어갈 때만(작은 구간은 생략 — 겹침 방지)
+      if (showValues && h >= fs + 2) {
+        labels += this.valueLabelSvg(offsetX + barWidth / 2, yTop + h / 2, `${Math.round((value / total) * 100)}%`, fs);
+      }
       yTop += h;
     });
 
@@ -574,6 +612,7 @@ class ChartMapTool {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
       ${axis}
       ${segments}
+      ${labels}
     </svg>`;
   }
 

@@ -148,7 +148,8 @@ export class ProjectManager {
           const c = layer._chartMapConfig;
           base.chartMapConfig = {
             sourceLayerId: c.sourceLayerId, chartType: c.chartType, fields: c.fields,
-            sizeField: c.sizeField, minSize: c.minSize, maxSize: c.maxSize, showLabels: c.showLabels
+            sizeField: c.sizeField, minSize: c.minSize, maxSize: c.maxSize, showLabels: c.showLabels,
+            colors: c.colors, showValues: c.showValues
           };
         }
         if (layer._cartogramConfig) {

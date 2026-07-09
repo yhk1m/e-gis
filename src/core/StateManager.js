@@ -191,7 +191,9 @@ class StateManager {
             sizeField: c.sizeField,
             minSize: c.minSize,
             maxSize: c.maxSize,
-            showLabels: c.showLabels
+            showLabels: c.showLabels,
+            colors: c.colors,        // 필드별 지정 색
+            showValues: c.showValues // 수치 라벨 표시
           };
         }
 
