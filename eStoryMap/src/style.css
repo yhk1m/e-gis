@@ -421,7 +421,10 @@ body { display: flex; flex-direction: column; }
   width: 44px; height: 44px; border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(11, 15, 20, 0.5);
   color: #f8fafc; font-size: 20px; cursor: pointer;
+  transition: opacity 0.3s;
 }
+/* 유휴(마우스·키보드 2초 무동작) 시 화살표 숨김 — 활동하면 즉시 복귀(PresentationShell) */
+.pres-stage.pres-idle .pres-arrow { opacity: 0; pointer-events: none; }
 .pres-arrow:hover:not(:disabled) { background: rgba(29, 78, 216, 0.75); }
 .pres-arrow:disabled { opacity: 0.25; cursor: default; }
 .pres-prev { left: 16px; }

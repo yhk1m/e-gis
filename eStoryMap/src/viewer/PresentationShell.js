@@ -68,6 +68,22 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
   let index = 0;
   let active = false;
 
+  // 좌우 화살표 자동 숨김: 마우스·키보드가 2초 무동작이면 숨기고, 활동하면 즉시 복귀.
+  // renderPage가 stage.className을 통째로 갈아 클래스가 지워질 수 있지만, 페이지 전환=활동이라 의도와 일치.
+  const IDLE_HIDE_MS = 2000;
+  let idleTimer = null;
+  function wakeControls() {
+    stage.classList.remove('pres-idle');
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => stage.classList.add('pres-idle'), IDLE_HIDE_MS);
+  }
+  function stopIdleWatch() {
+    if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+    stage.classList.remove('pres-idle');
+    window.removeEventListener('pointermove', wakeControls);
+    window.removeEventListener('pointerdown', wakeControls);
+  }
+
   function mkBtn(text, cls, title, onClick) {
     const b = document.createElement('button');
     b.type = 'button';
@@ -143,6 +159,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
 
   function onKey(e) {
     if (!active) return;
+    wakeControls(); // 키보드 활동도 화살표 표시로 취급
     switch (e.key) {
       case 'ArrowRight': case ' ': case 'PageDown': e.preventDefault(); go('next'); break;
       case 'ArrowLeft': case 'PageUp': e.preventDefault(); go('prev'); break;
@@ -185,6 +202,9 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
 
     window.addEventListener('keydown', onKey);
     document.addEventListener('fullscreenchange', onFsChange);
+    window.addEventListener('pointermove', wakeControls);
+    window.addEventListener('pointerdown', wakeControls);
+    wakeControls(); // 진입 직후 2초 카운트 시작
     // 전체화면 시도(실패해도 fixed 컨테이너라 발표는 창 안에서 동작).
     // 웹뷰어는 제스처 없이 불가 + 페이지 자체가 무대라 생략.
     if (!standalone && root.requestFullscreen) root.requestFullscreen().catch(() => {});
@@ -198,6 +218,7 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     active = false; // 먼저 내려 onFsChange 재진입 차단
     window.removeEventListener('keydown', onKey);
     document.removeEventListener('fullscreenchange', onFsChange);
+    stopIdleWatch();
     if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
 
     mapHome.insertBefore(mapEl, mapHome.firstChild); // 지도 원위치(#map-stage 첫 자식, 캡처 버튼 앞)
