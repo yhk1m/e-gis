@@ -14,11 +14,40 @@ describe('hexToRgba', () => {
   });
 });
 
+describe('createVectorStyle — 세부 스타일(.egis 스타일 필드)', () => {
+  it('fillColor/fillOpacity가 채우기에, strokeColor가 테두리에 반영된다', () => {
+    const s = createVectorStyle({
+      color: '#ff0000', fillColor: '#00ff00', fillOpacity: 0.5, strokeColor: '#0000ff',
+    }, 'Polygon');
+    expect(s.getFill().getColor()).toBe('rgba(0, 255, 0, 0.5)');
+    expect(s.getStroke().getColor()).toBe('rgba(0, 0, 255, 1)');
+  });
+  it('strokeDash·strokeWidth가 테두리에 반영된다', () => {
+    const s = createVectorStyle({ color: '#ff0000', strokeDash: 'dashed', strokeWidth: 4 }, 'Polygon');
+    expect(s.getStroke().getLineDash()).toEqual([10, 10]);
+    expect(s.getStroke().getWidth()).toBe(4);
+  });
+  it('Point는 pointRadius·strokeColor가 반영된다(세부 스타일 존재 시)', () => {
+    const s = createVectorStyle({ color: '#ff0000', pointRadius: 10, strokeColor: '#0000ff' }, 'Point');
+    expect(s.getImage().getRadius()).toBe(10);
+    expect(s.getImage().getStroke().getColor()).toBe('rgba(0, 0, 255, 1)');
+  });
+  it('세부 필드가 하나라도 있으면 나머지는 color로 폴백한다', () => {
+    const s = createVectorStyle({ color: '#ff0000', strokeWidth: 5 }, 'LineString');
+    expect(s.getStroke().getColor()).toBe('rgba(255, 0, 0, 1)');
+    expect(s.getStroke().getWidth()).toBe(5);
+  });
+});
+
 describe('createVectorStyle', () => {
   it('Point는 image(원) 스타일, fill 없음', () => {
     const s = createVectorStyle('#3b82f6', 'Point');
     expect(s.getImage()).toBeTruthy();
     expect(s.getFill()).toBeFalsy();
+  });
+  it('세부 필드 없는 구버전 Point는 기존 모양(흰 테두리) 유지', () => {
+    const s = createVectorStyle('#3b82f6', 'Point');
+    expect(s.getImage().getStroke().getColor()).toBe('#ffffff');
   });
   it('LineString은 stroke만', () => {
     const s = createVectorStyle('#3b82f6', 'LineString');

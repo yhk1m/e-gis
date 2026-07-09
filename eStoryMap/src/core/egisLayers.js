@@ -18,8 +18,59 @@ export function hexToRgba(hex, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-/** 색 + 지오메트리 타입 → OL Style. e-GIS LayerManager.createStyle 이식. */
-export function createVectorStyle(color, geometryType = 'Polygon') {
+// 파선 매핑 — e-GIS LayerManager.STROKE_DASH_OPTIONS 이식(양쪽 동일해야 함)
+const STROKE_DASH_OPTIONS = {
+  solid: null,
+  dashed: [10, 10],
+  dotted: [2, 6],
+  'dash-dot': [10, 5, 2, 5],
+};
+
+/** 세부 스타일 필드가 하나라도 있는지 — 없으면 구버전 .egis(단일색 폴백). */
+function hasDetailStyle(s) {
+  return s.strokeColor != null || s.fillColor != null || s.fillOpacity != null
+    || s.strokeOpacity != null || s.strokeWidth != null || s.strokeDash != null
+    || s.pointRadius != null;
+}
+
+/**
+ * 스타일(정규화 레이어 또는 hex 문자열) + 지오메트리 타입 → OL Style.
+ * - 세부 필드 있음(신버전 .egis): e-GIS LayerManager.updateLayerStyle 이식 — 채우기/테두리
+ *   색·불투명도·굵기·파선·점 크기를 웹에서 지정한 대로 재현.
+ * - 세부 필드 없음(구버전): 기존 단일색 스타일 유지(LayerManager.createStyle 이식) — 하위 호환.
+ */
+export function createVectorStyle(style, geometryType = 'Polygon') {
+  const s = typeof style === 'string' ? { color: style } : (style || {});
+  const color = s.color || '#3b82f6';
+
+  if (hasDetailStyle(s)) {
+    const strokeColor = s.strokeColor || color;
+    const fillColor = s.fillColor || color;
+    const fillOpacity = s.fillOpacity != null ? s.fillOpacity : 0.3;
+    const strokeOpacity = s.strokeOpacity != null ? s.strokeOpacity : 1.0;
+    const strokeWidth = s.strokeWidth != null ? s.strokeWidth : 2;
+    const lineDash = STROKE_DASH_OPTIONS[s.strokeDash || 'solid'] || null;
+    const rgbaFill = hexToRgba(fillColor, fillOpacity);
+    const rgbaStroke = hexToRgba(strokeColor, strokeOpacity);
+
+    if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+      return new Style({
+        image: new CircleStyle({
+          radius: s.pointRadius != null ? s.pointRadius : 6,
+          fill: new Fill({ color: rgbaFill }),
+          stroke: new Stroke({ color: rgbaStroke, width: strokeWidth }),
+        }),
+      });
+    }
+    if (geometryType === 'LineString' || geometryType === 'MultiLineString') {
+      return new Style({ stroke: new Stroke({ color: rgbaStroke, width: strokeWidth, lineDash }) });
+    }
+    return new Style({
+      fill: new Fill({ color: rgbaFill }),
+      stroke: new Stroke({ color: rgbaStroke, width: strokeWidth, lineDash }),
+    });
+  }
+
   if (geometryType === 'Point' || geometryType === 'MultiPoint') {
     return new Style({
       image: new CircleStyle({
@@ -55,7 +106,7 @@ export function buildVectorLayer(layerData) {
     layerData.geometryType || (firstGeom && firstGeom.getType()) || 'Polygon';
   const layer = new VectorLayer({
     source: new VectorSource({ features }),
-    style: createVectorStyle(layerData.color, geometryType),
+    style: createVectorStyle(layerData, geometryType), // 세부 스타일 포함(색·불투명도·파선 등)
     visible: layerData.visible,
     opacity: layerData.opacity,
   });

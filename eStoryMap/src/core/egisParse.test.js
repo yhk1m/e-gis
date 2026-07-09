@@ -86,6 +86,42 @@ describe('parseEgisDoc', () => {
     expect(doc.view.zoom).toBe(0);
   });
 
+  it('세부 스타일 필드(채우기/테두리/파선 등)를 통과시킨다', () => {
+    const doc = parseEgisDoc({
+      version: '1.0',
+      layers: [{
+        type: 'vector', color: '#ff0000',
+        strokeColor: '#0000ff', fillColor: '#00ff00',
+        fillOpacity: 0.5, strokeOpacity: 0.8, strokeWidth: 4,
+        strokeDash: 'dashed', pointRadius: 10,
+      }],
+    });
+    const l = doc.layers[0];
+    expect(l.strokeColor).toBe('#0000ff');
+    expect(l.fillColor).toBe('#00ff00');
+    expect(l.fillOpacity).toBe(0.5);
+    expect(l.strokeOpacity).toBe(0.8);
+    expect(l.strokeWidth).toBe(4);
+    expect(l.strokeDash).toBe('dashed');
+    expect(l.pointRadius).toBe(10);
+  });
+
+  it('세부 스타일 필드가 없으면(구버전 .egis) null', () => {
+    const doc = parseEgisDoc({ version: '1.0', layers: [{ type: 'vector' }] });
+    const l = doc.layers[0];
+    expect(l.strokeColor).toBeNull();
+    expect(l.fillColor).toBeNull();
+    expect(l.fillOpacity).toBeNull();
+    expect(l.strokeWidth).toBeNull();
+    expect(l.strokeDash).toBeNull();
+    expect(l.pointRadius).toBeNull();
+  });
+
+  it('fillOpacity 0은 0으로 보존된다(투명 채우기)', () => {
+    const doc = parseEgisDoc({ version: '1.0', layers: [{ type: 'vector', fillOpacity: 0 }] });
+    expect(doc.layers[0].fillOpacity).toBe(0);
+  });
+
   it('반환된 center는 입력 배열과 다른 참조(복사본)다', () => {
     const raw = { version: '1.0', view: { center: [1, 2], zoom: 5 }, layers: [] };
     const doc = parseEgisDoc(raw);

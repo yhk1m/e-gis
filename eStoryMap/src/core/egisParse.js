@@ -55,6 +55,15 @@ function normalizeLayer(layer, i) {
     visible: layer.visible !== false,
     color: layer.color || '#3b82f6',
     opacity: typeof layer.opacity === 'number' ? layer.opacity : 1,
+    // 세부 스타일(e-GIS 웹 LayerManager 스타일 필드) — 구버전 .egis에는 없음 = null.
+    // null이면 egisLayers가 기존 단일색 스타일로 폴백한다(하위 호환).
+    strokeColor: layer.strokeColor || null,
+    fillColor: layer.fillColor || null,
+    fillOpacity: typeof layer.fillOpacity === 'number' ? layer.fillOpacity : null,
+    strokeOpacity: typeof layer.strokeOpacity === 'number' ? layer.strokeOpacity : null,
+    strokeWidth: typeof layer.strokeWidth === 'number' ? layer.strokeWidth : null,
+    strokeDash: layer.strokeDash || null,
+    pointRadius: typeof layer.pointRadius === 'number' ? layer.pointRadius : null,
     features: layer.features || null,      // 벡터: GeoJSON FC (EPSG:4326)
     rasterKind: layer.rasterKind || null,  // 래스터: 'dem'|'analysis'|'unknown' (M2)
     raster: layer.raster || null,
