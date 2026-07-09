@@ -95,13 +95,23 @@ class ChartMapTool {
     this.removeLegend(derivedLayerId);
   }
 
+  /** 데이터 URL 속 SVG에 xmlns가 없으면 주입 — xmlns 없는 SVG는 이미지(Icon)로
+   *  렌더되지 않는다(브라우저 규칙). 초기 버전이 구운 파일 하위 호환용. */
+  ensureSvgXmlns(dataUrl) {
+    const prefix = 'data:image/svg+xml;utf8,';
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith(prefix)) return dataUrl;
+    const svg = decodeURIComponent(dataUrl.slice(prefix.length));
+    if (/<svg[^>]*\sxmlns=/.test(svg)) return dataUrl;
+    return prefix + encodeURIComponent(svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
+  }
+
   /** 피처에 구운 차트 SVG(_chartSvg)를 아이콘으로 그리는 스타일 함수. */
   chartIconStyle = (feature) => {
     const src = feature.get('_chartSvg');
     if (!src) return null;
     let style = this.iconStyleCache.get(src);
     if (!style) {
-      style = new Style({ image: new Icon({ src }) });
+      style = new Style({ image: new Icon({ src: this.ensureSvgXmlns(src) }) });
       this.iconStyleCache.set(src, style);
     }
     return style;
@@ -482,7 +492,7 @@ class ChartMapTool {
       startAngle = endAngle;
     });
 
-    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>`;
   }
 
   /**
@@ -523,7 +533,7 @@ class ChartMapTool {
     const axis = `<line x1="${offsetX - 1}" y1="${baselineY}" x2="${offsetX + totalBarWidth + 1}" y2="${baselineY}"
                stroke="#333" stroke-width="1.5"/>`;
 
-    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
       ${axis}
       ${bars}
     </svg>`;
@@ -561,7 +571,7 @@ class ChartMapTool {
     const axis = `<line x1="${offsetX - 2}" y1="${baselineY}" x2="${offsetX + barWidth + 2}" y2="${baselineY}"
                stroke="#333" stroke-width="1.5"/>`;
 
-    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
       ${axis}
       ${segments}
     </svg>`;

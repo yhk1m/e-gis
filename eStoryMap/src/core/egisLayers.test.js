@@ -3,16 +3,32 @@ import { describe, it, expect } from 'vitest';
 import { Feature } from 'ol';
 import {
   hexToRgba, createVectorStyle, readVectorFeatures, buildVectorLayer,
-  createChoroplethStyle, createCartogramStyle, createChartIconStyle,
+  createChoroplethStyle, createCartogramStyle, createChartIconStyle, ensureSvgXmlns,
 } from './egisLayers.js';
+
+describe('ensureSvgXmlns — xmlns 없는 SVG는 이미지로 렌더되지 않음(브라우저 규칙)', () => {
+  it('xmlns 없는 SVG 데이터 URL에 xmlns를 주입한다', () => {
+    const raw = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg width="30" height="30"></svg>');
+    const fixed = ensureSvgXmlns(raw);
+    expect(decodeURIComponent(fixed.split(',')[1])).toContain('xmlns="http://www.w3.org/2000/svg"');
+  });
+  it('이미 xmlns가 있으면 그대로 반환', () => {
+    const ok = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="30"></svg>');
+    expect(ensureSvgXmlns(ok)).toBe(ok);
+  });
+  it('SVG 데이터 URL이 아니면 그대로 반환', () => {
+    expect(ensureSvgXmlns('https://x.com/a.png')).toBe('https://x.com/a.png');
+    expect(ensureSvgXmlns(null)).toBeNull();
+  });
+});
 
 describe('createChartIconStyle — 도형표현도(구운 SVG 아이콘)', () => {
   const SVG_URL = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg width="30" height="30"></svg>');
-  it('_chartSvg 피처를 아이콘 스타일로 그린다', () => {
+  it('_chartSvg 피처를 아이콘 스타일로 그린다(xmlns 보정 포함)', () => {
     const styleFn = createChartIconStyle();
     const s = styleFn(new Feature({ _chartSvg: SVG_URL }));
     expect(s.getImage()).toBeTruthy();
-    expect(s.getImage().getSrc()).toBe(SVG_URL);
+    expect(decodeURIComponent(s.getImage().getSrc().split(',')[1])).toContain('xmlns=');
   });
   it('같은 SVG는 스타일 객체를 재사용한다(캐시)', () => {
     const styleFn = createChartIconStyle();

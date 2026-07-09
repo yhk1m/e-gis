@@ -161,6 +161,17 @@ export function createCartogramStyle(cfg) {
   };
 }
 
+const SVG_DATA_PREFIX = 'data:image/svg+xml;utf8,';
+
+/** 데이터 URL 속 SVG에 xmlns가 없으면 주입(순수) — xmlns 없는 SVG는 <img>류(Icon)로
+ *  렌더되지 않는다(브라우저 규칙). 초기 버전 웹이 구운 파일 하위 호환. */
+export function ensureSvgXmlns(dataUrl) {
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith(SVG_DATA_PREFIX)) return dataUrl;
+  const svg = decodeURIComponent(dataUrl.slice(SVG_DATA_PREFIX.length));
+  if (/<svg[^>]*\sxmlns=/.test(svg)) return dataUrl;
+  return SVG_DATA_PREFIX + encodeURIComponent(svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
+}
+
 /**
  * 도형표현도 스타일 함수 — 웹 ChartMapTool이 피처에 구운 차트 SVG(_chartSvg 데이터 URL)를
  * 아이콘으로 그린다(캔버스 렌더 → 발표·PDF 캡처에 그대로 실림). 스타일 객체는 SVG별 캐시.
@@ -172,7 +183,7 @@ export function createChartIconStyle() {
     if (!src) return null;
     let style = cache.get(src);
     if (!style) {
-      style = new Style({ image: new Icon({ src }) });
+      style = new Style({ image: new Icon({ src: ensureSvgXmlns(src) }) });
       cache.set(src, style);
     }
     return style;
