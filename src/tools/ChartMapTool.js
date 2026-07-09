@@ -3,13 +3,15 @@
  * 피처 위치에 파이/막대 그래프를 표시
  */
 
-import Overlay from 'ol/Overlay';
 import { getCenter } from 'ol/extent';
 import { fromLonLat } from 'ol/proj';
 import GeoJSON from 'ol/format/GeoJSON';
 import * as turf from '@turf/turf';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import { Style, Icon } from 'ol/style';
 import { layerManager } from '../core/LayerManager.js';
 import { mapManager } from '../core/MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
@@ -17,7 +19,9 @@ import { makeDraggable } from '../utils/DraggableElement.js';
 
 class ChartMapTool {
   constructor() {
-    this.overlays = new Map();          // derivedLayerId -> overlay[]
+    // 차트는 HTML 오버레이가 아니라 피처에 구운 SVG 아이콘으로 지도 캔버스에 그린다.
+    // → 레이어 가시성/순서/저장(.egis)/이미지 내보내기/스토리맵이 일반 벡터와 동일하게 동작.
+    this.iconStyleCache = new Map();    // svg dataURL -> ol Style (프레임마다 재생성 방지)
     this.legends = new Map();           // derivedLayerId -> legend element
     this.derivedBySource = new Map();   // sourceLayerId -> derivedLayerId
     this.sourceByDerived = new Map();   // derivedLayerId -> sourceLayerId
@@ -61,13 +65,9 @@ class ChartMapTool {
 
     eventBus.on(Events.LAYER_VISIBILITY_CHANGED, (data) => {
       if (!data || !data.layerId) return;
-      const overlays = this.overlays.get(data.layerId);
-      if (overlays) {
-        overlays.forEach(o => {
-          const el = o.getElement();
-          if (el) el.style.display = data.visible ? '' : 'none';
-        });
-      }
+      // 차트 자체는 레이어(피처)라 OL 가시성이 처리 — 범례만 함께 토글
+      const legendEl = this.legends.get(data.layerId);
+      if (legendEl) legendEl.style.display = data.visible ? '' : 'none';
     });
 
     // 레이어 이름 변경 → 범례 제목 동기화
@@ -91,14 +91,21 @@ class ChartMapTool {
   }
 
   cleanupOverlays(derivedLayerId) {
-    const overlays = this.overlays.get(derivedLayerId);
-    if (overlays) {
-      const map = mapManager.getMap();
-      overlays.forEach(o => map && map.removeOverlay(o));
-      this.overlays.delete(derivedLayerId);
-    }
+    // 차트 피처는 레이어 제거/재렌더 때 source가 함께 정리된다 — 범례만 치운다
     this.removeLegend(derivedLayerId);
   }
+
+  /** 피처에 구운 차트 SVG(_chartSvg)를 아이콘으로 그리는 스타일 함수. */
+  chartIconStyle = (feature) => {
+    const src = feature.get('_chartSvg');
+    if (!src) return null;
+    let style = this.iconStyleCache.get(src);
+    if (!style) {
+      style = new Style({ image: new Icon({ src }) });
+      this.iconStyleCache.set(src, style);
+    }
+    return style;
+  };
 
   /**
    * 도형표현도 생성
@@ -190,10 +197,12 @@ class ChartMapTool {
     const sourceInfo = layerManager.getLayer(sourceLayerId);
     if (!sourceInfo) return 0;
 
-    const features = sourceInfo.olLayer.getSource().getFeatures();
-    const map = mapManager.getMap();
+    const derivedInfo = layerManager.getLayer(derivedLayerId);
+    if (!derivedInfo || !derivedInfo.source) return 0;
 
-    // 기존 오버레이가 있으면 정리 (재렌더 대비)
+    const features = sourceInfo.olLayer.getSource().getFeatures();
+
+    // 기존 범례 정리 (재렌더 대비 — 차트 피처는 아래에서 source.clear로 교체)
     this.cleanupOverlays(derivedLayerId);
 
     // 크기 범위 계산
@@ -221,7 +230,7 @@ class ChartMapTool {
       });
     }
 
-    const overlays = [];
+    const chartFeatures = [];
 
     features.forEach((feature) => {
       // 피처 위치 계산 (폴리곤은 무게중심)
@@ -241,52 +250,42 @@ class ChartMapTool {
         size = minSize + ratio * (maxSize - minSize);
       }
 
-      // 차트 요소 생성
-      const chartEl = document.createElement('div');
-      chartEl.className = 'chart-overlay';
-      chartEl.style.width = size + 'px';
-      chartEl.style.height = size + 'px';
-
+      // 차트 SVG 생성
+      let svg;
       if (chartType === 'pie') {
-        chartEl.innerHTML = this.createPieChart(values, fields, size);
+        svg = this.createPieChart(values, fields, size);
       } else if (chartType === '100bar') {
         // 100% 누적 막대: 피처별 합계를 100%로 정규화
-        chartEl.innerHTML = this.createStackedBar100Chart(values, fields, size);
+        svg = this.createStackedBar100Chart(values, fields, size);
       } else {
         // 막대 차트는 전체 최대값 기준으로 높이 계산
-        const maxVals = fields.map(f => globalMaxValues[f]);
-        chartEl.innerHTML = this.createBarChart(values, fields, size, maxVals);
+        svg = this.createBarChart(values, fields, size, fields.map(f => globalMaxValues[f]));
       }
+      if (!svg) return;
 
-      // 오버레이 생성
-      const overlay = new Overlay({
-        element: chartEl,
-        position: center,
-        positioning: 'center-center',
-        stopEvent: false
-      });
-
-      map.addOverlay(overlay);
-      overlays.push(overlay);
+      // 차트를 피처에 굽는다 — 지도 캔버스에 그려져 .egis 저장·스토리맵·이미지 내보내기에 그대로 실림
+      const chartFeature = new Feature({ geometry: new Point(center) });
+      chartFeature.set('_chartSvg', 'data:image/svg+xml;utf8,' + encodeURIComponent(svg));
+      chartFeature.set('_chartSize', size);
+      chartFeatures.push(chartFeature);
     });
 
-    this.overlays.set(derivedLayerId, overlays);
+    this.iconStyleCache.clear(); // 재렌더 시 이전 아이콘 캐시 정리
+    derivedInfo.source.clear();
+    derivedInfo.source.addFeatures(chartFeatures);
+    derivedInfo.olLayer.setStyle(this.chartIconStyle);
+    derivedInfo.geometryType = 'Point';
 
     // 범례 생성 (파생 레이어 기준)
     this.createLegend(derivedLayerId, sourceInfo.name, chartType, fields, globalMaxValues);
 
-    // 파생 레이어가 숨김 상태면 오버레이·범례도 숨김
-    const derivedLayer = layerManager.getLayer(derivedLayerId);
-    if (derivedLayer && derivedLayer.visible === false) {
-      overlays.forEach(o => {
-        const el = o.getElement();
-        if (el) el.style.display = 'none';
-      });
+    // 파생 레이어가 숨김 상태면 범례도 숨김 (차트는 레이어 가시성이 처리)
+    if (derivedInfo.visible === false) {
       const legendEl = this.legends.get(derivedLayerId);
       if (legendEl) legendEl.style.display = 'none';
     }
 
-    return overlays.length;
+    return chartFeatures.length;
   }
 
   /**

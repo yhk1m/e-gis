@@ -287,8 +287,10 @@ class AutoSaveManager {
         );
       }
 
-      // 도형표현도(chartmap) 복원 — 원본 레이어 기준으로 오버레이/범례 재생성
+      // 도형표현도(chartmap) 복원 — 구운 차트 아이콘 스타일을 먼저 걸고(원본 없어도 표시),
+      // 원본이 있으면 재계산(범례 포함)으로 갱신
       if (layerData.type === 'chartmap' && layerData.chartMapConfig) {
+        restoredLayer.olLayer.setStyle(chartMapTool.chartIconStyle);
         const cfg = layerData.chartMapConfig;
         chartMapTool.restoreChartMap(layerId, cfg.sourceLayerId, cfg);
       }

@@ -5,7 +5,7 @@
 import GeoJSON from 'ol/format/GeoJSON';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
+import { Style, Fill, Stroke, Circle as CircleStyle, Text, Icon } from 'ol/style';
 
 /** hex 색을 rgba 문자열로. e-GIS LayerManager.hexToRgba 이식. */
 export function hexToRgba(hex, alpha = 1) {
@@ -161,6 +161,24 @@ export function createCartogramStyle(cfg) {
   };
 }
 
+/**
+ * 도형표현도 스타일 함수 — 웹 ChartMapTool이 피처에 구운 차트 SVG(_chartSvg 데이터 URL)를
+ * 아이콘으로 그린다(캔버스 렌더 → 발표·PDF 캡처에 그대로 실림). 스타일 객체는 SVG별 캐시.
+ */
+export function createChartIconStyle() {
+  const cache = new Map(); // dataURL → Style
+  return function (feature) {
+    const src = feature.get('_chartSvg');
+    if (!src) return null;
+    let style = cache.get(src);
+    if (!style) {
+      style = new Style({ image: new Icon({ src }) });
+      cache.set(src, style);
+    }
+    return style;
+  };
+}
+
 /** .egis features(GeoJSON FC, EPSG:4326) → OL Feature[] (지도 투영 EPSG:3857). */
 export function readVectorFeatures(featuresGeoJSON) {
   if (!featuresGeoJSON) return [];
@@ -176,9 +194,10 @@ export function buildVectorLayer(layerData) {
   const firstGeom = features[0] && features[0].getGeometry();
   const geometryType =
     layerData.geometryType || (firstGeom && firstGeom.getType()) || 'Polygon';
-  // 스타일: 주제도(단계구분도/카토그램)는 분류색 함수, 그 외는 세부/단일색 스타일
+  // 스타일: 주제도(도형표현도/단계구분도/카토그램)는 전용 함수, 그 외는 세부/단일색 스타일
   let style;
-  if (layerData.choroplethConfig) style = createChoroplethStyle(layerData.choroplethConfig, layerData);
+  if (layerData.chartMapConfig) style = createChartIconStyle();
+  else if (layerData.choroplethConfig) style = createChoroplethStyle(layerData.choroplethConfig, layerData);
   else if (layerData.cartogramConfig) style = createCartogramStyle(layerData.cartogramConfig);
   else style = createVectorStyle(layerData, geometryType);
   const layer = new VectorLayer({

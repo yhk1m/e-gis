@@ -563,6 +563,10 @@ class LayerManager {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
 
+    // 도형표현도: 피처에 구운 차트 아이콘(ChartMapTool.chartIconStyle)이 스타일의 전부
+    // — 색/두께 재계산으로 덮어쓰면 차트가 사라진다
+    if (layerInfo.type === 'chartmap') return;
+
     // 단계구분도: 분류별 색상 유지, 투명도/테두리 굵기만 반영
     if (layerInfo.type === 'choropleth' && layerInfo._choroplethConfig) {
       const cfg = layerInfo._choroplethConfig;

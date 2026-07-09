@@ -288,7 +288,9 @@ export class ProjectManager {
             );
             layerManager.updateLayerStyle(layerId); // 분류색 스타일 함수 적용
           } else if (layerData.type === 'chartmap' && layerData.chartMapConfig) {
-            // 도형표현도 복원 — 원본 레이어(id 보존됨) 기준으로 차트 오버레이·범례 재생성
+            // 도형표현도 복원 — 먼저 구운 차트 아이콘 스타일을 걸어(원본이 없어도 저장된
+            // 차트 피처가 보이게) 원본이 있으면 재계산(범례 포함)으로 갱신
+            layerInfo.olLayer.setStyle(chartMapTool.chartIconStyle);
             const cfg = layerData.chartMapConfig;
             chartMapTool.restoreChartMap(layerId, cfg.sourceLayerId, cfg);
           } else if (layerData.cartogramConfig) {

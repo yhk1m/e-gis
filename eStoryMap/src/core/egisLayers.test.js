@@ -3,8 +3,28 @@ import { describe, it, expect } from 'vitest';
 import { Feature } from 'ol';
 import {
   hexToRgba, createVectorStyle, readVectorFeatures, buildVectorLayer,
-  createChoroplethStyle, createCartogramStyle,
+  createChoroplethStyle, createCartogramStyle, createChartIconStyle,
 } from './egisLayers.js';
+
+describe('createChartIconStyle — 도형표현도(구운 SVG 아이콘)', () => {
+  const SVG_URL = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg width="30" height="30"></svg>');
+  it('_chartSvg 피처를 아이콘 스타일로 그린다', () => {
+    const styleFn = createChartIconStyle();
+    const s = styleFn(new Feature({ _chartSvg: SVG_URL }));
+    expect(s.getImage()).toBeTruthy();
+    expect(s.getImage().getSrc()).toBe(SVG_URL);
+  });
+  it('같은 SVG는 스타일 객체를 재사용한다(캐시)', () => {
+    const styleFn = createChartIconStyle();
+    const a = styleFn(new Feature({ _chartSvg: SVG_URL }));
+    const b = styleFn(new Feature({ _chartSvg: SVG_URL }));
+    expect(a).toBe(b);
+  });
+  it('_chartSvg가 없는 피처는 그리지 않는다(null)', () => {
+    const styleFn = createChartIconStyle();
+    expect(styleFn(new Feature({}))).toBeNull();
+  });
+});
 
 describe('createChoroplethStyle — 단계구분도 분류색(웹 ChoroplethTool 이식)', () => {
   const cfg = { attribute: 'pop', breaks: [0, 10, 20, 30], colors: ['#111111', '#222222', '#333333'] };
@@ -41,6 +61,15 @@ describe('createCartogramStyle — 카토그램 분류색(웹 CartogramTool 이�
 });
 
 describe('buildVectorLayer — 주제도 스타일 선택', () => {
+  it('chartMapConfig가 있으면 차트 아이콘 스타일 함수를 쓴다', () => {
+    const layer = buildVectorLayer({
+      id: 'L_cm', name: '도형표현', type: 'vector', geometryType: 'Point',
+      visible: true, color: '#ef4444', opacity: 1,
+      chartMapConfig: { sourceLayerId: 'x', chartType: 'pie', fields: ['a'] },
+      features: { type: 'FeatureCollection', features: [] },
+    });
+    expect(typeof layer.getStyle()).toBe('function');
+  });
   it('choroplethConfig가 있으면 스타일 함수(분류색)를 쓴다', () => {
     const layer = buildVectorLayer({
       id: 'L_c', name: '단계구분', type: 'vector', geometryType: 'Polygon',
