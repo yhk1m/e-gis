@@ -79,6 +79,12 @@ async function createWindow() {
     return { action: 'deny' };
   });
 
+  // e-GIS 웹앱 탭(<webview>)에 저장 브릿지 preload 주입 — 웹뷰 안 blob 다운로드가
+  // 조용히 실패하는 Electron 제약 우회(.egis 저장 등을 네이티브 대화상자로).
+  mainWindow.webContents.on('will-attach-webview', (_e, webPreferences) => {
+    webPreferences.preload = path.join(__dirname, 'webviewPreload.js');
+  });
+
   // 켤 때 한 번 업데이트 확인(렌더러 로드 완료 후 → 리스너가 준비된 뒤 알림)
   mainWindow.webContents.once('did-finish-load', () => checkForUpdate(mainWindow));
 
@@ -176,6 +182,26 @@ ipcMain.handle('report:savePDF', async (_e, title) => {
   });
   if (r.canceled || !r.filePath) return null;
   await fsp.writeFile(r.filePath, data);
+  return r.filePath;
+});
+
+// e-GIS 웹앱 탭(<webview>)의 파일 저장 — webviewPreload의 egisDesktop.saveTextFile.
+// 우리 사이트(e-gis.kr)에서 온 요청만 허용(웹뷰는 원격 콘텐츠라 발신자 검증 필수).
+ipcMain.handle('webview:saveTextFile', async (e, filename, text) => {
+  if (!mainWindow) return null;
+  const senderUrl = e.sender.getURL() || '';
+  if (!/^https:\/\/(www\.)?e-gis\.kr\//i.test(senderUrl)) return null;
+  if (typeof filename !== 'string' || typeof text !== 'string') return null;
+  if (text.length > 512 * 1024 * 1024) return null; // 비정상 크기 방어
+  const safe = filename.replace(/[\\/:*?"<>|]/g, '_').slice(0, 120) || 'project.egis';
+  const ext = (safe.match(/\.([a-z0-9]+)$/i) || [, 'egis'])[1];
+  const r = await dialog.showSaveDialog(mainWindow, {
+    title: '파일로 저장',
+    defaultPath: path.join(app.getPath('documents'), safe),
+    filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+  });
+  if (r.canceled || !r.filePath) return null;
+  await fsp.writeFile(r.filePath, text, 'utf-8');
   return r.filePath;
 });
 

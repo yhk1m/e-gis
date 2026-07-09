@@ -8,6 +8,7 @@ import { AppLayout } from './ui/layout/AppLayout.js';
 import { mapManager } from './core/MapManager.js';
 import { layerManager } from './core/LayerManager.js';
 import { themeManager } from './utils/ThemeManager.js';
+import { askText } from './utils/askText.js';
 import { eventBus, Events } from './utils/EventBus.js';
 import { LayerPanel } from './ui/panels/LayerPanel.js';
 import { BrowserPanel } from './ui/panels/BrowserPanel.js';
@@ -530,13 +531,14 @@ function handleMenuAction(action) {
       break;
       
     case 'project-save': {
-      const currentName = projectManager.getProjectName();
-      const newName = prompt('프로젝트 이름을 입력하세요:', currentName);
-      if (newName && newName.trim()) {
+      // Electron webview는 prompt() 미지원 → askText(데스크톱=모달, 브라우저=prompt)
+      askText('프로젝트 이름을 입력하세요:', projectManager.getProjectName()).then((newName) => {
+        if (!newName || !newName.trim()) return;
         projectManager.setProjectName(newName.trim());
-        projectManager.saveToFile();
-        showStatusMessage('프로젝트가 저장되었습니다: ' + newName.trim());
-      }
+        projectManager.saveToFile().then((ok) => {
+          if (ok) showStatusMessage('프로젝트가 저장되었습니다: ' + newName.trim());
+        });
+      });
       break;
     }
     case 'project-export':
@@ -613,11 +615,12 @@ function handleMenuAction(action) {
 
     // ===== 레이어 메뉴 =====
     case 'layer-add': {
-      const layerName = prompt('새 레이어 이름:', '새 레이어');
-      if (layerName && layerName.trim()) {
-        layerManager.addLayer({ name: layerName.trim() });
-        showStatusMessage('레이어가 추가되었습니다: ' + layerName.trim());
-      }
+      askText('새 레이어 이름:', '새 레이어').then((layerName) => {
+        if (layerName && layerName.trim()) {
+          layerManager.addLayer({ name: layerName.trim() });
+          showStatusMessage('레이어가 추가되었습니다: ' + layerName.trim());
+        }
+      });
       break;
     }
     case 'layer-from-coords':
@@ -640,11 +643,12 @@ function handleMenuAction(action) {
       const selLayerId = layerManager.getSelectedLayerId();
       if (selLayerId) {
         const layer = layerManager.getLayer(selLayerId);
-        const newName = prompt('새 이름:', layer.name);
-        if (newName && newName.trim()) {
-          layerManager.renameLayer(selLayerId, newName.trim());
-          showStatusMessage('레이어 이름이 변경되었습니다.');
-        }
+        askText('새 이름:', layer.name).then((newName) => {
+          if (newName && newName.trim()) {
+            layerManager.renameLayer(selLayerId, newName.trim());
+            showStatusMessage('레이어 이름이 변경되었습니다.');
+          }
+        });
       } else {
         showStatusMessage('먼저 레이어를 선택해주세요.');
       }

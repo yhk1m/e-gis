@@ -3,6 +3,7 @@
  */
 
 import { eventBus, Events } from '../../utils/EventBus.js';
+import { askText } from '../../utils/askText.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { mapManager } from '../../core/MapManager.js';
 import { rasterAnalysisTool } from '../../tools/RasterAnalysisTool.js';
@@ -533,10 +534,12 @@ export class LayerPanel {
     const layer = layerManager.getLayer(layerId);
     if (!layer) return;
 
-    const newName = prompt('새 레이어 이름:', layer.name);
-    if (newName && newName.trim()) {
-      layerManager.renameLayer(layerId, newName.trim());
-    }
+    // Electron webview는 prompt() 미지원 → askText(데스크톱=모달, 브라우저=prompt)
+    askText('새 레이어 이름:', layer.name).then((newName) => {
+      if (newName && newName.trim()) {
+        layerManager.renameLayer(layerId, newName.trim());
+      }
+    });
   }
 
 

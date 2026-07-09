@@ -321,13 +321,31 @@ export class ProjectManager {
   /**
    * 프로젝트를 파일로 저장
    */
-  saveToFile(filename = null) {
+  async saveToFile(filename = null) {
     const projectData = this.serialize();
     const jsonString = JSON.stringify(projectData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
 
     const name = filename || this.currentProjectName || '프로젝트';
     const safeName = name.replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+
+    // e-GIS 데스크톱 앱(webview) 안에서는 blob 다운로드가 동작하지 않아
+    // 주입된 브릿지(egisDesktop.saveTextFile)로 네이티브 저장 대화상자를 쓴다.
+    if (window.egisDesktop && typeof window.egisDesktop.saveTextFile === 'function') {
+      try {
+        const savedPath = await window.egisDesktop.saveTextFile(safeName + PROJECT_EXTENSION, jsonString);
+        if (savedPath) {
+          this.isDirty = false;
+          eventBus.emit(Events.PROJECT_SAVED, { name: this.currentProjectName });
+          console.log('프로젝트 저장됨(데스크톱):', savedPath);
+          return true;
+        }
+        return false; // 사용자가 취소
+      } catch (err) {
+        console.error('데스크톱 저장 실패, 브라우저 다운로드로 폴백:', err);
+      }
+    }
+
+    const blob = new Blob([jsonString], { type: 'application/json' });
 
     // 다운로드 링크 생성
     const url = URL.createObjectURL(blob);
