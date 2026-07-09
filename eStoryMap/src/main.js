@@ -15,7 +15,7 @@ import { parseEgisDoc } from './core/egisParse.js';
 import { SourceRegistry } from './core/SourceRegistry.js';
 import { applyPageVisibility } from './core/StoryMapRenderer.js';
 import {
-  createStoryDoc, addSource, addPage, removePage, setPageOrder, getPage, setLayerVisible, nextSourceId,
+  createStoryDoc, addSource, removeSource, addPage, removePage, setPageOrder, getPage, setLayerVisible, nextSourceId,
   setPageCamera, setPageContent, setPageKind, setPageAlign, setPageSplit, setPageSplitRatio, setPageBasemap, setPageTitle,
   setPageBg, slideBgOf, applySlideBgToAll, setCloudSync,
   setPresentationLayout, setPresentationPos, setSlideFont, setSlideFontCustom, applyCameraToAllPages, syncCameraFromPage,
@@ -66,6 +66,15 @@ const sourcePanel = createSourcePanel(document.getElementById('source-panel'), {
     }
     refresh();
     scheduleSave();
+  },
+  // 소스 제거: 문서(모든 페이지 가시성 포함)와 지도(OL 레이어) 양쪽에서 삭제
+  async onRemoveSource(sourceId, filename) {
+    if (!(await confirmDialog(`'${filename}' 소스를 제거할까요? 모든 슬라이드에서 이 소스의 레이어가 사라집니다.`))) return;
+    removeSource(doc, sourceId);
+    registry.removeSource(sourceId);
+    refresh();
+    scheduleSave();
+    status.textContent = `${filename} 소스를 제거했습니다.`;
   },
 });
 

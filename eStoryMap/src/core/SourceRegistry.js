@@ -65,6 +65,17 @@ export class SourceRegistry {
     return this.layers.get(this.key(sourceId, layerId)) || null;
   }
 
+  /** 한 소스의 모든 레이어를 지도에서 제거하고 레지스트리에서 지운다(소스 제거 버튼). */
+  removeSource(sourceId) {
+    const prefix = `${sourceId}/`;
+    for (const [k, layer] of [...this.layers.entries()]) {
+      if (k.startsWith(prefix)) {
+        this.mapView.removeLayer(layer);
+        this.layers.delete(k);
+      }
+    }
+  }
+
   /** 등록된 모든 레이어를 지도에서 제거하고 레지스트리를 비운다(프로젝트 전환 시). */
   clear() {
     for (const layer of this.layers.values()) this.mapView.removeLayer(layer);

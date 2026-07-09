@@ -175,6 +175,19 @@ export function addSource(doc, source, layerIds, pageId) {
   return source;
 }
 
+/** 소스 제거 — sources에서 빼고 모든 페이지의 해당 layerVisibility 엔트리도 지운다.
+ *  없는 sourceId면 null(no-op). OL 레이어 제거는 SourceRegistry.removeSource가 담당. */
+export function removeSource(doc, sourceId) {
+  const idx = doc.sources.findIndex((s) => s.sourceId === sourceId);
+  if (idx === -1) return null;
+  const [removed] = doc.sources.splice(idx, 1);
+  for (const page of doc.pages) {
+    page.layerVisibility = page.layerVisibility.filter((v) => v.sourceId !== sourceId);
+  }
+  touch(doc);
+  return removed;
+}
+
 /** 페이지의 레이어 가시성 갱신(없으면 생성). */
 export function setLayerVisible(doc, pageId, sourceId, layerId, visible) {
   const page = getPage(doc, pageId);

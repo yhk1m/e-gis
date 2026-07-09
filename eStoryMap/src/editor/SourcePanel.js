@@ -8,9 +8,10 @@
  * @param {{
  *   onToggleLayer(sourceId:string, layerId:string, visible:boolean):void,
  *   onSetAll(visible:boolean):void,
+ *   onRemoveSource(sourceId:string, filename:string):void,
  * }} handlers
  */
-export function createSourcePanel(container, { onToggleLayer, onSetAll }) {
+export function createSourcePanel(container, { onToggleLayer, onSetAll, onRemoveSource }) {
   function render(doc, page, registry) {
     container.innerHTML = '';
 
@@ -46,7 +47,16 @@ export function createSourcePanel(container, { onToggleLayer, onSetAll }) {
 
       const title = document.createElement('div');
       title.className = 'source-name';
-      title.textContent = source.filename;
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'source-name-text';
+      nameSpan.textContent = source.filename;
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'source-remove';
+      removeBtn.textContent = '🗑';
+      removeBtn.title = '이 소스를 프로젝트에서 제거 (모든 슬라이드에서 레이어 삭제)';
+      removeBtn.addEventListener('click', () => onRemoveSource(source.sourceId, source.filename));
+      title.append(nameSpan, removeBtn);
       box.appendChild(title);
 
       for (const { sourceId, layerId, layer } of entries) {

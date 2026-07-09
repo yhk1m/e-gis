@@ -33,10 +33,21 @@ describe('SourcePanel', () => {
     const el = document.createElement('div');
     const panel = createSourcePanel(el, { onToggleLayer: vi.fn() });
     panel.render(DOC, pageWith([]), REG);
-    const names = [...el.querySelectorAll('.source-name')].map((n) => n.textContent);
+    const names = [...el.querySelectorAll('.source-name-text')].map((n) => n.textContent);
     expect(names).toEqual(['부산.egis', '뒷산.tif']);
     const rows = [...el.querySelectorAll('.layer-row')].map((n) => n.textContent);
     expect(rows).toEqual(['인구', '경계', '고도']);
+  });
+
+  it('소스 제거 버튼이 onRemoveSource(sourceId, filename)를 호출한다', () => {
+    const el = document.createElement('div');
+    const onRemoveSource = vi.fn();
+    const panel = createSourcePanel(el, { onToggleLayer: vi.fn(), onRemoveSource });
+    panel.render(DOC, pageWith([]), REG);
+    const btns = [...el.querySelectorAll('.source-remove')];
+    expect(btns).toHaveLength(2);
+    btns[1].click();
+    expect(onRemoveSource).toHaveBeenCalledWith('src_2', '뒷산.tif');
   });
 
   it('체크 상태가 페이지 엔트리를 반영한다(미등재는 unchecked)', () => {

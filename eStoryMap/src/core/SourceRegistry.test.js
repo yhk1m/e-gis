@@ -120,3 +120,30 @@ describe('픽스처 통합', () => {
     expect(result.skipped).toBe(1);
   });
 });
+
+describe('SourceRegistry.removeSource', () => {
+  function fakeMapView2() {
+    const added = [];
+    const removed = [];
+    return { added, removed, addLayer(l) { added.push(l); }, removeLayer(l) { removed.push(l); } };
+  }
+  it('해당 소스의 레이어만 지도·레지스트리에서 제거한다', () => {
+    const mv = fakeMapView2();
+    const reg = new SourceRegistry(mv);
+    reg.addSource('src_1', docWith([VECTOR_LAYER]));
+    reg.addSource('src_2', docWith([VECTOR_LAYER])); // 같은 layerId, 다른 소스
+    reg.removeSource('src_1');
+    expect(mv.removed).toHaveLength(1);
+    expect(reg.getLayer('src_1', 'L_v')).toBeNull();
+    expect(reg.getLayer('src_2', 'L_v')).toBeTruthy();
+    expect(reg.entriesList().map((e) => e.sourceId)).toEqual(['src_2']);
+  });
+  it('없는 sourceId는 no-op', () => {
+    const mv = fakeMapView2();
+    const reg = new SourceRegistry(mv);
+    reg.addSource('src_1', docWith([VECTOR_LAYER]));
+    reg.removeSource('nope');
+    expect(mv.removed).toHaveLength(0);
+    expect(reg.entriesList()).toHaveLength(1);
+  });
+});

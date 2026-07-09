@@ -7,8 +7,30 @@ import {
   setLegendVisible, setLegendPos, setLegendOverride,
   setPageKind, setPageOrder, setPageTitle,
   setSlideBg, setPageBg, slideBgOf, applySlideBgToAll,
-  setPublishInfo,
+  setPublishInfo, removeSource,
 } from './StoryDoc.js';
+
+describe('removeSource', () => {
+  it('소스를 제거하고 모든 페이지의 해당 layerVisibility도 지운다', () => {
+    const doc = createStoryDoc('t');
+    addSource(doc, { sourceId: 'src_1', filename: 'a.egis', egis: {} }, ['L_a', 'L_b'], 'page_1');
+    const p2 = addPage(doc, 'page_1'); // layerVisibility 복제됨
+    addSource(doc, { sourceId: 'src_2', filename: 'b.egis', egis: {} }, ['L_c'], p2.id);
+    const removed = removeSource(doc, 'src_1');
+    expect(removed.sourceId).toBe('src_1');
+    expect(doc.sources.map((s) => s.sourceId)).toEqual(['src_2']);
+    for (const page of doc.pages) {
+      expect(page.layerVisibility.every((v) => v.sourceId !== 'src_1')).toBe(true);
+    }
+    expect(getPage(doc, p2.id).layerVisibility.some((v) => v.sourceId === 'src_2')).toBe(true);
+  });
+  it('없는 sourceId는 null 반환 no-op', () => {
+    const doc = createStoryDoc('t');
+    addSource(doc, { sourceId: 'src_1', filename: 'a.egis', egis: {} }, ['L_a'], 'page_1');
+    expect(removeSource(doc, 'nope')).toBeNull();
+    expect(doc.sources).toHaveLength(1);
+  });
+});
 
 describe('setPublishInfo', () => {
   it('게시 정보를 meta.publish에 기록한다', () => {
