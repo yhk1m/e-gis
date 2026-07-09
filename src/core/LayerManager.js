@@ -424,6 +424,47 @@ class LayerManager {
     eventBus.emit(Events.LAYER_ORDER_CHANGED, { order: this.layerOrder });
   }
 
+  /** '이름 (사본)', '이름 (사본 2)' … 기존 이름과 겹치지 않는 복사본 이름. */
+  duplicateName(name) {
+    const names = new Set(this.getAllLayers().map((l) => l.name));
+    let candidate = `${name} (사본)`;
+    for (let n = 2; names.has(candidate); n++) candidate = `${name} (사본 ${n})`;
+    return candidate;
+  }
+
+  /**
+   * 레이어 복사 — 피처(지오메트리+속성)와 스타일·주제도 설정을 그대로 가진 새 레이어.
+   * 벡터 기반 전용: 래스터·도형표현도(HTML 오버레이라 피처가 없음)는 불가 → null.
+   * @returns {string|null} 새 레이어 id
+   */
+  duplicateLayer(layerId) {
+    const info = this.layers.get(layerId);
+    if (!info || info.type === 'raster' || info.type === 'chartmap'
+        || !info.source || typeof info.source.getFeatures !== 'function') return null;
+
+    const features = info.source.getFeatures().map((f) => f.clone()); // clone은 id 미복사 → 충돌 없음
+    const newId = this.addLayer({
+      name: this.duplicateName(info.name),
+      type: info.type,
+      geometryType: info.geometryType,
+      color: info.color,
+      features: features,
+      visible: true
+    });
+
+    const copy = this.layers.get(newId);
+    if (copy) {
+      const styleFields = ['strokeColor', 'fillColor', 'fillOpacity', 'strokeOpacity', 'strokeWidth', 'strokeDash', 'pointRadius'];
+      const customized = styleFields.some((k) => info[k] !== undefined && info[k] !== copy[k]);
+      styleFields.forEach((k) => { if (info[k] !== undefined) copy[k] = info[k]; });
+      // 주제도 설정 유지(분류색 스타일·.egis 저장용). 범례는 원본 것을 공유하므로 중복 생성 안 함.
+      if (info._choroplethConfig) copy._choroplethConfig = { ...info._choroplethConfig };
+      if (info._cartogramConfig) copy._cartogramConfig = { ...info._cartogramConfig };
+      if (copy._choroplethConfig || customized) this.updateLayerStyle(newId);
+    }
+    return newId;
+  }
+
   renameLayer(layerId, newName) {
     const layerInfo = this.layers.get(layerId);
     if (layerInfo) {
