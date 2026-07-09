@@ -18,7 +18,7 @@ export function createSourcePanel(container, { onToggleLayer, onSetAll, onRemove
     if (!doc.sources.length) {
       const empty = document.createElement('div');
       empty.className = 'panel-empty';
-      empty.textContent = '.egis 열기 / .tif 열기로 소스를 추가하세요';
+      empty.textContent = '.egis 열기로 소스를 추가하세요';
       container.appendChild(empty);
       return;
     }
