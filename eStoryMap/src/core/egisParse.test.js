@@ -122,6 +122,27 @@ describe('parseEgisDoc', () => {
     expect(doc.layers[0].fillOpacity).toBe(0);
   });
 
+  it('주제도 설정(choropleth/cartogram/chartMap Config)을 통과시킨다', () => {
+    const choroplethConfig = { attribute: 'pop', breaks: [0, 10, 20], colors: ['#111111', '#222222'] };
+    const cartogramConfig = { attribute: 'pop', breaks: [0, 10, 20], colors: ['#aaaaaa', '#bbbbbb'], showLabels: true };
+    const chartMapConfig = { sourceLayerId: 'layer-1', chartType: 'pie', fields: ['a', 'b'] };
+    const doc = parseEgisDoc({
+      version: '1.0',
+      layers: [{ type: 'choropleth', choroplethConfig }, { type: 'vector', cartogramConfig }, { type: 'chartmap', chartMapConfig }],
+    });
+    expect(doc.layers[0].choroplethConfig).toEqual(choroplethConfig);
+    expect(doc.layers[1].cartogramConfig).toEqual(cartogramConfig);
+    expect(doc.layers[2].chartMapConfig).toEqual(chartMapConfig);
+    expect(doc.layers[0].type).toBe('vector'); // 렌더 계약상 벡터로 정규화(스타일은 config가 결정)
+  });
+
+  it('주제도 설정이 없으면 null', () => {
+    const doc = parseEgisDoc({ version: '1.0', layers: [{ type: 'vector' }] });
+    expect(doc.layers[0].choroplethConfig).toBeNull();
+    expect(doc.layers[0].cartogramConfig).toBeNull();
+    expect(doc.layers[0].chartMapConfig).toBeNull();
+  });
+
   it('반환된 center는 입력 배열과 다른 참조(복사본)다', () => {
     const raw = { version: '1.0', view: { center: [1, 2], zoom: 5 }, layers: [] };
     const doc = parseEgisDoc(raw);

@@ -9,6 +9,9 @@ import { eventBus, Events } from '../utils/EventBus.js';
 import { demLoader } from '../loaders/DEMLoader.js';
 import { rasterAnalysisTool } from '../tools/RasterAnalysisTool.js';
 import { georeferenceTool } from '../tools/GeoreferenceTool.js';
+import { choroplethTool } from '../tools/ChoroplethTool.js';
+import { chartMapTool } from '../tools/ChartMapTool.js';
+import { cartogramTool } from '../tools/CartogramTool.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 const PROJECT_VERSION = '1.0';
@@ -131,6 +134,31 @@ export class ProjectManager {
           return { ...base, rasterKind: 'unknown' };
         }
 
+        // 주제도 설정 — 자동저장(StateManager.saveLayer)과 동일 규약으로 .egis에도 왕복.
+        // 저장하지 않으면 단계구분도 색·도형표현도(오버레이라 피처가 비어 있음)가 복원 불가.
+        if (layer._choroplethConfig) {
+          const cfg = layer._choroplethConfig;
+          base.choroplethConfig = {
+            attribute: cfg.attribute, breaks: cfg.breaks, colors: cfg.colors,
+            title: cfg.title, unit: cfg.unit, format: cfg.format,
+            rounding: cfg.rounding, controlsHidden: cfg.controlsHidden
+          };
+        }
+        if (layer._chartMapConfig) {
+          const c = layer._chartMapConfig;
+          base.chartMapConfig = {
+            sourceLayerId: c.sourceLayerId, chartType: c.chartType, fields: c.fields,
+            sizeField: c.sizeField, minSize: c.minSize, maxSize: c.maxSize, showLabels: c.showLabels
+          };
+        }
+        if (layer._cartogramConfig) {
+          const c = layer._cartogramConfig;
+          base.cartogramConfig = {
+            attribute: c.attribute, colorScheme: c.colorScheme, method: c.method,
+            colors: c.colors, breaks: c.breaks, showLabels: c.showLabels, cartogramType: c.cartogramType
+          };
+        }
+
         // 벡터 레이어: GeoJSON으로 직렬화 (source가 없으면 빈 피처)
         const features = layer.source ? layer.source.getFeatures() : [];
         const geojsonData = geojsonFormat.writeFeaturesObject(features, {
@@ -171,10 +199,16 @@ export class ProjectManager {
       coordinateSystem.setDisplayCRS(projectData.displayCRS);
     }
 
-    // 레이어 복원
+    // 레이어 복원 — 도형표현도(chartmap)는 원본 레이어가 먼저 있어야 하므로 마지막에
+    // (AutoSaveManager.restoreState와 동일 규약)
     const geojsonFormat = new GeoJSON();
+    const orderedLayers = [...projectData.layers].sort((a, b) => {
+      const ax = a.type === 'chartmap' ? 1 : 0;
+      const bx = b.type === 'chartmap' ? 1 : 0;
+      return ax - bx;
+    });
 
-    for (const layerData of projectData.layers) {
+    for (const layerData of orderedLayers) {
       try {
         // 래스터 레이어 복원
         if (layerData.type === 'raster') {
@@ -220,9 +254,13 @@ export class ProjectManager {
           dataProjection: 'EPSG:4326'
         });
 
-        // 레이어 추가 (features를 직접 전달)
+        // 레이어 추가 — id를 보존해야 chartMapConfig.sourceLayerId 참조가 살아난다
+        // (기존 레이어는 위에서 전부 제거했으므로 충돌 없음)
         const layerId = layerManager.addLayer({
+          id: layerData.id,
           name: layerData.name,
+          type: layerData.type || 'vector',
+          geometryType: layerData.geometryType,
           color: layerData.color,
           features: features,
           visible: layerData.visible !== false
@@ -236,7 +274,30 @@ export class ProjectManager {
         if (layerInfo) {
           const customized = styleFields.some(k => layerData[k] !== undefined && layerData[k] !== layerInfo[k]);
           styleFields.forEach(k => { if (layerData[k] !== undefined) layerInfo[k] = layerData[k]; });
-          if (customized) layerManager.updateLayerStyle(layerId);
+
+          // 단계구분도 복원 — 분류 설정 + 스타일 함수 + 범례 (AutoSaveManager.restoreLayer 규약)
+          if (layerData.type === 'choropleth' && layerData.choroplethConfig) {
+            layerInfo._choroplethConfig = { ...layerData.choroplethConfig, tool: choroplethTool };
+            choroplethTool.sourceByDerived.set(layerId, null);
+            choroplethTool.createLegend(
+              layerId,
+              layerData.name.replace(/_단계구분_.*$/, ''),
+              layerData.choroplethConfig.attribute,
+              layerData.choroplethConfig.breaks,
+              layerData.choroplethConfig.colors
+            );
+            layerManager.updateLayerStyle(layerId); // 분류색 스타일 함수 적용
+          } else if (layerData.type === 'chartmap' && layerData.chartMapConfig) {
+            // 도형표현도 복원 — 원본 레이어(id 보존됨) 기준으로 차트 오버레이·범례 재생성
+            const cfg = layerData.chartMapConfig;
+            chartMapTool.restoreChartMap(layerId, cfg.sourceLayerId, cfg);
+          } else if (layerData.cartogramConfig) {
+            // 카토그램 색상 스타일 복원
+            layerInfo._cartogramConfig = { ...layerData.cartogramConfig };
+            cartogramTool.applyCartogramStyle(layerId);
+          } else if (customized) {
+            layerManager.updateLayerStyle(layerId);
+          }
         }
 
         console.log(`레이어 "${layerData.name}" 복원됨, 피처 수: ${features.length}`);

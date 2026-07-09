@@ -1,6 +1,56 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
-import { hexToRgba, createVectorStyle, readVectorFeatures, buildVectorLayer } from './egisLayers.js';
+import { Feature } from 'ol';
+import {
+  hexToRgba, createVectorStyle, readVectorFeatures, buildVectorLayer,
+  createChoroplethStyle, createCartogramStyle,
+} from './egisLayers.js';
+
+describe('createChoroplethStyle — 단계구분도 분류색(웹 ChoroplethTool 이식)', () => {
+  const cfg = { attribute: 'pop', breaks: [0, 10, 20, 30], colors: ['#111111', '#222222', '#333333'] };
+  it('속성값이 속한 계급의 색으로 채운다(불투명도 0.7 기본)', () => {
+    const styleFn = createChoroplethStyle(cfg, {});
+    const s = styleFn(new Feature({ pop: 15 })); // 2번째 계급(10~20)
+    expect(s.getFill().getColor()).toBe('rgba(34, 34, 34, 0.7)');
+  });
+  it('값이 없는(NaN) 피처는 회색', () => {
+    const styleFn = createChoroplethStyle(cfg, {});
+    const s = styleFn(new Feature({}));
+    expect(s.getFill().getColor()).toContain('128, 128, 128');
+  });
+  it('최댓값 초과는 마지막 계급 색', () => {
+    const styleFn = createChoroplethStyle(cfg, {});
+    const s = styleFn(new Feature({ pop: 999 }));
+    expect(s.getFill().getColor()).toBe('rgba(51, 51, 51, 0.7)');
+  });
+});
+
+describe('createCartogramStyle — 카토그램 분류색(웹 CartogramTool 이식)', () => {
+  const cfg = { attribute: 'pop', breaks: [0, 10, 20], colors: ['#aaaaaa', '#bbbbbb'], showLabels: true };
+  it('분류색으로 채우고(0.85) 라벨 텍스트를 붙인다', () => {
+    const styleFn = createCartogramStyle(cfg);
+    const s = styleFn(new Feature({ pop: 5, name: '부산' }));
+    expect(s.getFill().getColor()).toBe('rgba(170, 170, 170, 0.85)');
+    expect(s.getText().getText()).toBe('부산');
+  });
+  it('showLabels가 아니면 라벨 없음', () => {
+    const styleFn = createCartogramStyle({ ...cfg, showLabels: false });
+    const s = styleFn(new Feature({ pop: 5, name: '부산' }));
+    expect(s.getText()).toBeFalsy();
+  });
+});
+
+describe('buildVectorLayer — 주제도 스타일 선택', () => {
+  it('choroplethConfig가 있으면 스타일 함수(분류색)를 쓴다', () => {
+    const layer = buildVectorLayer({
+      id: 'L_c', name: '단계구분', type: 'vector', geometryType: 'Polygon',
+      visible: true, color: '#ef4444', opacity: 1,
+      choroplethConfig: { attribute: 'pop', breaks: [0, 10], colors: ['#111111'] },
+      features: { type: 'FeatureCollection', features: [] },
+    });
+    expect(typeof layer.getStyle()).toBe('function');
+  });
+});
 
 describe('hexToRgba', () => {
   it('hex를 rgba로 변환', () => {

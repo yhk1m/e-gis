@@ -5,7 +5,7 @@
 import GeoJSON from 'ol/format/GeoJSON';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
+import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
 
 /** hex 색을 rgba 문자열로. e-GIS LayerManager.hexToRgba 이식. */
 export function hexToRgba(hex, alpha = 1) {
@@ -95,6 +95,72 @@ export function createVectorStyle(style, geometryType = 'Polygon') {
   });
 }
 
+/** 계급 인덱스 — 웹 ChoroplethTool.getColorIndex 이식(양쪽 동일해야 함). */
+function getColorIndex(value, breaks) {
+  for (let i = 0; i < breaks.length - 1; i++) {
+    if (value <= breaks[i + 1]) return i;
+  }
+  return breaks.length - 2;
+}
+
+/** hex를 40씩 어둡게 — 웹 ChoroplethTool.darkenColor 이식(테두리색). */
+function darkenColor(hex) {
+  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 40);
+  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 40);
+  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 40);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/**
+ * 단계구분도 스타일 함수 — 웹 LayerManager.updateLayerStyle choropleth 분기 이식.
+ * @param {{attribute:string, breaks:number[], colors:string[]}} cfg
+ * @param {{fillOpacity?:number, strokeWidth?:number}} layerData - 저장된 세부 스타일(선택)
+ */
+export function createChoroplethStyle(cfg, layerData = {}) {
+  const fillOpacity = layerData.fillOpacity != null ? layerData.fillOpacity : 0.7;
+  const strokeWidth = layerData.strokeWidth != null ? layerData.strokeWidth : 1;
+  return function (feature) {
+    const val = parseFloat(feature.get(cfg.attribute));
+    if (isNaN(val)) {
+      return new Style({
+        fill: new Fill({ color: `rgba(128, 128, 128, ${fillOpacity})` }),
+        stroke: new Stroke({ color: '#666', width: strokeWidth }),
+      });
+    }
+    const color = cfg.colors[getColorIndex(val, cfg.breaks)] || cfg.colors[0];
+    return new Style({
+      fill: new Fill({ color: hexToRgba(color, fillOpacity) }),
+      stroke: new Stroke({ color: darkenColor(color), width: strokeWidth }),
+    });
+  };
+}
+
+/**
+ * 카토그램 스타일 함수 — 웹 CartogramTool.cartogramStyle 이식(분류색 + 선택 라벨).
+ * @param {{attribute:string, breaks:number[], colors:string[], showLabels?:boolean}} cfg
+ */
+export function createCartogramStyle(cfg) {
+  const { attribute, colors, breaks, showLabels } = cfg;
+  return function (feature) {
+    const val = parseFloat(feature.get(attribute));
+    const idx = isNaN(val) || !breaks || breaks.length < 2
+      ? 0
+      : Math.max(0, Math.min(getColorIndex(val, breaks), colors.length - 1));
+    const color = colors[idx] || colors[0];
+    return new Style({
+      fill: new Fill({ color: hexToRgba(color, 0.85) }),
+      stroke: new Stroke({ color: '#333', width: 1 }),
+      text: showLabels ? new Text({
+        text: String(feature.get('name') || feature.get('NAME') || ''),
+        font: 'bold 11px sans-serif',
+        fill: new Fill({ color: '#333' }),
+        stroke: new Stroke({ color: '#fff', width: 3 }),
+        overflow: true,
+      }) : undefined,
+    });
+  };
+}
+
 /** .egis features(GeoJSON FC, EPSG:4326) → OL Feature[] (지도 투영 EPSG:3857). */
 export function readVectorFeatures(featuresGeoJSON) {
   if (!featuresGeoJSON) return [];
@@ -110,9 +176,14 @@ export function buildVectorLayer(layerData) {
   const firstGeom = features[0] && features[0].getGeometry();
   const geometryType =
     layerData.geometryType || (firstGeom && firstGeom.getType()) || 'Polygon';
+  // 스타일: 주제도(단계구분도/카토그램)는 분류색 함수, 그 외는 세부/단일색 스타일
+  let style;
+  if (layerData.choroplethConfig) style = createChoroplethStyle(layerData.choroplethConfig, layerData);
+  else if (layerData.cartogramConfig) style = createCartogramStyle(layerData.cartogramConfig);
+  else style = createVectorStyle(layerData, geometryType);
   const layer = new VectorLayer({
     source: new VectorSource({ features }),
-    style: createVectorStyle(layerData, geometryType), // 세부 스타일 포함(색·불투명도·파선 등)
+    style,
     visible: layerData.visible,
     opacity: layerData.opacity,
   });

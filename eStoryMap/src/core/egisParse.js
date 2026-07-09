@@ -64,6 +64,11 @@ function normalizeLayer(layer, i) {
     strokeWidth: typeof layer.strokeWidth === 'number' ? layer.strokeWidth : null,
     strokeDash: layer.strokeDash || null,
     pointRadius: typeof layer.pointRadius === 'number' ? layer.pointRadius : null,
+    // 주제도 설정(웹 주제도 도구가 저장) — 단계구분도/카토그램은 분류색 스타일로 렌더,
+    // chartMapConfig는 보존만(도형표현도는 HTML 오버레이라 e-GIStory 미지원).
+    choroplethConfig: (layer.choroplethConfig && typeof layer.choroplethConfig === 'object') ? layer.choroplethConfig : null,
+    cartogramConfig: (layer.cartogramConfig && typeof layer.cartogramConfig === 'object') ? layer.cartogramConfig : null,
+    chartMapConfig: (layer.chartMapConfig && typeof layer.chartMapConfig === 'object') ? layer.chartMapConfig : null,
     features: layer.features || null,      // 벡터: GeoJSON FC (EPSG:4326)
     rasterKind: layer.rasterKind || null,  // 래스터: 'dem'|'analysis'|'unknown' (M2)
     raster: layer.raster || null,
