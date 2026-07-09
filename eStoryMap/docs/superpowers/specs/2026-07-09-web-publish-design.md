@@ -57,7 +57,7 @@
 
 ⚠️ `cleanUrls: true`는 `.html`로 끝나는 rewrite 목적지를 404로 만든다(2026-07-09 배포에서 확인).
 
-**(추가 2026-07-09) 링크 미리보기 OG 태그**: 카카오톡 등 스크래퍼는 JS를 실행하지 않아 SPA 셸의 고정 제목만 보인다 → rewrite 목적지를 서버 함수 `eGIS/api/story.js`(ESM — 루트 package.json이 type:module)로 변경. 함수가 Supabase에서 제목 조회 → 배포된 `/story/` 셸을 self-fetch → `<title>`+og:title/description/url 주입 후 서빙(엣지 캐시 s-maxage=60). 뷰어 JS·주소 체계는 불변.
+**(2026-07-09) 링크 미리보기 OG 태그 — 시도 후 제거**: 카카오톡 등 스크래퍼는 JS를 실행하지 않아 SPA 셸의 고정 제목만 보인다. 서버 함수(`eGIS/api/story.js`, ESM 필수 — 루트 package.json type:module)로 제목 주입을 구현했으나, 사용자 결정으로 기능을 접고 정적 `/story` rewrite로 복원(커밋 히스토리에 함수 코드 있음). 미리보기에 스토리맵 제목은 나오지 않는다(수용된 트레이드오프).
 
 실제 파일이 우선이므로 기존 사이트 경로 영향 없음. 스토리맵 수가 늘어도 Vercel 파일은 불변(문서는 Supabase 행) — 한계는 Supabase 용량이며, 필요 시 게시 용량 경고·Storage 이전으로 대응(현 설계 범위 밖).
 
