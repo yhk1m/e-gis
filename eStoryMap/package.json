@@ -1,7 +1,7 @@
 {
   "name": "e-gistory",
   "productName": "e-GIS",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "e-GIS 데스크톱 — 웹 GIS + 스토리맵(e-GIStory) 통합 앱",
   "main": "dist-electron/main.js",
   "author": "김용현",
