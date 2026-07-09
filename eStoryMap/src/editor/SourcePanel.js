@@ -53,7 +53,7 @@ export function createSourcePanel(container, { onToggleLayer, onSetAll, onRemove
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'source-remove';
-      removeBtn.textContent = '🗑';
+      removeBtn.textContent = '✕';
       removeBtn.title = '이 소스를 프로젝트에서 제거 (모든 슬라이드에서 레이어 삭제)';
       removeBtn.addEventListener('click', () => onRemoveSource(source.sourceId, source.filename));
       title.append(nameSpan, removeBtn);
