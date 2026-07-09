@@ -26,11 +26,17 @@ const STROKE_DASH_OPTIONS = {
   'dash-dot': [10, 5, 2, 5],
 };
 
-/** 세부 스타일 필드가 하나라도 있는지 — 없으면 구버전 .egis(단일색 폴백). */
+/** 사용자가 세부 스타일을 실제로 바꿨는지 — 필드가 없거나(구버전 .egis) 전부
+ *  기본값(색 파생 포함)이면 false → 기존 단일색 스타일로 렌더(웹 초기 모양과 일치). */
 function hasDetailStyle(s) {
-  return s.strokeColor != null || s.fillColor != null || s.fillOpacity != null
-    || s.strokeOpacity != null || s.strokeWidth != null || s.strokeDash != null
-    || s.pointRadius != null;
+  const c = s.color;
+  return (s.strokeColor != null && s.strokeColor !== c)
+    || (s.fillColor != null && s.fillColor !== c)
+    || (s.fillOpacity != null && s.fillOpacity !== 0.3)
+    || (s.strokeOpacity != null && s.strokeOpacity !== 1)
+    || (s.strokeWidth != null && s.strokeWidth !== 2)
+    || (s.strokeDash != null && s.strokeDash !== 'solid')
+    || (s.pointRadius != null && s.pointRadius !== 6);
 }
 
 /**

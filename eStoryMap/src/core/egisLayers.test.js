@@ -37,6 +37,13 @@ describe('createVectorStyle — 세부 스타일(.egis 스타일 필드)', () =>
     expect(s.getStroke().getColor()).toBe('rgba(255, 0, 0, 1)');
     expect(s.getStroke().getWidth()).toBe(5);
   });
+  it('필드가 있어도 전부 기본값이면(안 건드린 레이어) 초기 스타일 유지 — Point 흰 테두리', () => {
+    const s = createVectorStyle({
+      color: '#ff0000', strokeColor: '#ff0000', fillColor: '#ff0000',
+      fillOpacity: 0.3, strokeOpacity: 1, strokeWidth: 2, strokeDash: 'solid', pointRadius: 6,
+    }, 'Point');
+    expect(s.getImage().getStroke().getColor()).toBe('#ffffff');
+  });
 });
 
 describe('createVectorStyle', () => {

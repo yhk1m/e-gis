@@ -103,7 +103,17 @@ export class ProjectManager {
           geometryType: layer.geometryType,
           visible: layer.visible,
           color: layer.color,
-          opacity: layer.opacity || 1
+          opacity: layer.opacity || 1,
+          // 세부 스타일 — 화면 렌더링(updateLayerStyle)이 쓰는 필드들.
+          // 저장하지 않으면 채우기/테두리 색 등 사용자가 지정한 스타일이 .egis에서 사라진다
+          // (e-GIStory 불러오기·프로젝트 재열기 모두). undefined면 JSON에서 자동 생략.
+          strokeColor: layer.strokeColor,
+          fillColor: layer.fillColor,
+          fillOpacity: layer.fillOpacity,
+          strokeOpacity: layer.strokeOpacity,
+          strokeWidth: layer.strokeWidth,
+          strokeDash: layer.strokeDash,
+          pointRadius: layer.pointRadius
         };
 
         // 래스터 레이어: 벡터 source가 없으므로 demData/analysisData를 직렬화
@@ -217,6 +227,17 @@ export class ProjectManager {
           features: features,
           visible: layerData.visible !== false
         });
+
+        // 세부 스타일 복원 — 저장된 필드를 layerInfo에 반영하고, addLayer 기본값과
+        // 다른 것이 있을 때만 스타일 재계산(손대지 않은 레이어는 초기 스타일 유지 —
+        // 점의 흰 테두리 등 createStyle 모양이 재열기로 바뀌지 않게).
+        const styleFields = ['strokeColor', 'fillColor', 'fillOpacity', 'strokeOpacity', 'strokeWidth', 'strokeDash', 'pointRadius'];
+        const layerInfo = layerManager.getLayer(layerId);
+        if (layerInfo) {
+          const customized = styleFields.some(k => layerData[k] !== undefined && layerData[k] !== layerInfo[k]);
+          styleFields.forEach(k => { if (layerData[k] !== undefined) layerInfo[k] = layerData[k]; });
+          if (customized) layerManager.updateLayerStyle(layerId);
+        }
 
         console.log(`레이어 "${layerData.name}" 복원됨, 피처 수: ${features.length}`);
       } catch (error) {
