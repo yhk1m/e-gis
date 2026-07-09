@@ -1,6 +1,6 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/:handle/:seq(\\d+)", "destination": "/api/story?handle=:handle&seq=:seq" }
+    { "source": "/:handle/:seq(\\d+)", "destination": "/story" }
   ]
 }
