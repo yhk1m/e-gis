@@ -12,6 +12,7 @@ import { georeferenceTool } from '../tools/GeoreferenceTool.js';
 import { choroplethTool } from '../tools/ChoroplethTool.js';
 import { chartMapTool } from '../tools/ChartMapTool.js';
 import { cartogramTool } from '../tools/CartogramTool.js';
+import { saveTextAs } from '../utils/saveFile.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 const PROJECT_VERSION = '1.0';
@@ -331,42 +332,14 @@ export class ProjectManager {
     const name = filename || this.currentProjectName || '프로젝트';
     const safeName = name.replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
 
-    // e-GIS 데스크톱 앱(webview) 안에서는 blob 다운로드가 동작하지 않아
-    // 주입된 브릿지(egisDesktop.saveTextFile)로 네이티브 저장 대화상자를 쓴다.
-    if (window.egisDesktop && typeof window.egisDesktop.saveTextFile === 'function') {
-      try {
-        const savedPath = await window.egisDesktop.saveTextFile(safeName + PROJECT_EXTENSION, jsonString);
-        if (savedPath) {
-          this.isDirty = false;
-          eventBus.emit(Events.PROJECT_SAVED, { name: this.currentProjectName });
-          console.log('프로젝트 저장됨(데스크톱):', savedPath);
-          return true;
-        }
-        return false; // 사용자가 취소
-      } catch (err) {
-        console.error('데스크톱 저장 실패, 브라우저 다운로드로 폴백:', err);
-      }
+    // saveTextAs: 데스크톱(webview)=네이티브 대화상자 브릿지 / 브라우저=blob 다운로드
+    const ok = await saveTextAs(safeName + PROJECT_EXTENSION, jsonString);
+    if (ok) {
+      this.isDirty = false;
+      eventBus.emit(Events.PROJECT_SAVED, { name: this.currentProjectName });
+      console.log('프로젝트 저장됨:', safeName + PROJECT_EXTENSION);
     }
-
-    const blob = new Blob([jsonString], { type: 'application/json' });
-
-    // 다운로드 링크 생성
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = safeName + PROJECT_EXTENSION;
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-
-    this.isDirty = false;
-    eventBus.emit(Events.PROJECT_SAVED, { name: this.currentProjectName });
-
-    console.log('프로젝트 저장됨:', safeName + PROJECT_EXTENSION);
-    return true;
+    return ok;
   }
 
   /**

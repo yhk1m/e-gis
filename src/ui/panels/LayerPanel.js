@@ -8,6 +8,8 @@ import { layerManager } from '../../core/LayerManager.js';
 import { mapManager } from '../../core/MapManager.js';
 import { rasterAnalysisTool } from '../../tools/RasterAnalysisTool.js';
 import { cartogramTool } from '../../tools/CartogramTool.js';
+import { saveTextAs } from '../../utils/saveFile.js';
+import GeoJSON from 'ol/format/GeoJSON';
 
 export class LayerPanel {
   constructor(containerId = 'layer-list') {
@@ -370,13 +372,14 @@ export class LayerPanel {
         <div class="context-menu-item danger" data-action="remove-all">선택 레이어 삭제</div>
       `;
     } else {
-      // 단일 선택 메뉴 — 복사는 벡터 기반만(래스터·도형표현도는 피처가 없어 불가)
+      // 단일 선택 메뉴 — 복사/내보내기는 벡터 기반만(래스터·도형표현도는 피처가 없어 불가)
       const info = layerManager.getLayer(layerId);
-      const canDuplicate = !!(info && info.type !== 'raster' && info.type !== 'chartmap' && info.source);
+      const isVector = !!(info && info.type !== 'raster' && info.type !== 'chartmap' && info.source);
       menu.innerHTML = `
         <div class="context-menu-item" data-action="zoom">레이어로 이동</div>
         <div class="context-menu-item" data-action="rename">이름 변경</div>
-        ${canDuplicate ? '<div class="context-menu-item" data-action="duplicate">레이어 복사</div>' : ''}
+        ${isVector ? '<div class="context-menu-item" data-action="duplicate">레이어 복사</div>' : ''}
+        ${isVector ? '<div class="context-menu-item" data-action="export">내보내기 (GeoJSON)</div>' : ''}
         <div class="context-menu-item" data-action="table">속성 테이블</div>
         <div class="context-menu-item" data-action="color">색상 변경</div>
         <div class="context-menu-divider"></div>
@@ -463,6 +466,18 @@ export class LayerPanel {
           // 카토그램 분류색은 updateLayerStyle이 아니라 도구가 setStyle로 적용
           if (copy && copy._cartogramConfig) cartogramTool.applyCartogramStyle(newId);
         }
+        break;
+      }
+      case 'export': {
+        const info = layerManager.getLayer(layerId);
+        if (!info || !info.source) break;
+        // GeoJSON 표준 좌표계(EPSG:4326)로 내보내기 — QGIS 등 외부 도구와 호환
+        const geojson = new GeoJSON().writeFeaturesObject(info.source.getFeatures(), {
+          featureProjection: 'EPSG:3857',
+          dataProjection: 'EPSG:4326'
+        });
+        const safe = String(info.name || '레이어').replace(/[\\/:*?"<>|]/g, '_');
+        saveTextAs(`${safe}.geojson`, JSON.stringify(geojson, null, 2), 'application/geo+json');
         break;
       }
       case 'table':
