@@ -23,6 +23,7 @@
     <div id="app-tabs">
       <button id="tab-egis" class="app-tab" type="button">e-GIS</button>
       <button id="tab-estory" class="app-tab active" type="button">e-GIStory</button>
+      <button id="tab-split" class="app-tab" type="button" title="e-GIStory와 e-GIS를 나란히 놓고 작업/발표">⬓ 분할</button>
     </div>
     <div id="app" inert>
       <header id="toolbar">
@@ -113,6 +114,7 @@
     <div id="presentation"></div>
     <div id="report" hidden></div>
     <div id="egis-pane"><webview id="egis-webview" allowpopups></webview></div>
+    <div id="split-divider" title="드래그로 분할 비율 조절"></div>
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>

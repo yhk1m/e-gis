@@ -181,6 +181,8 @@ const presentation = createPresentationShell(document.getElementById('presentati
   legend,
   getDoc: () => doc,
   onExit: exitPresentation,
+  // 분할 모드에선 전체화면 대신 왼쪽 패널 안에서 발표(오른쪽 e-GIS 계속 조작 가능)
+  useFullscreen: () => !document.body.classList.contains('split-mode'),
 });
 
 // M10 보고서 셸: 페이지별 지도 캡처 → A4 섹션. PDF는 Electron printToPDF.
@@ -232,25 +234,80 @@ btnTheme.addEventListener('click', () => {
   applyTheme(next);
 });
 
-// 상단 앱 전환 탭: e-GIStory ↔ e-GIS(웹앱 임베드, 동등). e-GIS는 처음 전환 시에만 로드.
+// 상단 앱 전환 탭: e-GIStory ↔ e-GIS(웹앱 임베드, 동등) ↔ ⬓ 분할(둘 다 나란히).
+// e-GIS 웹앱은 처음 필요할 때 1회만 로드.
 const tabEstory = document.getElementById('tab-estory');
 const tabEgis = document.getElementById('tab-egis');
+const tabSplit = document.getElementById('tab-split');
 const egisPane = document.getElementById('egis-pane');
 const egisWebview = document.getElementById('egis-webview');
 let egisLoaded = false;
+function ensureEgisLoaded() {
+  if (egisLoaded) return;
+  egisWebview.src = 'https://e-gis.kr'; // 지연 로드
+  egisLoaded = true;
+}
+/** 분할 모드 on/off — 왼쪽 e-GIStory(편집/발표) | 오른쪽 e-GIS. 상태는 localStorage에 기억. */
+function setSplit(on) {
+  document.body.classList.toggle('split-mode', on);
+  tabSplit.classList.toggle('active', on);
+  if (on) {
+    ensureEgisLoaded();
+    tabEstory.classList.add('active');
+    tabEgis.classList.remove('active');
+    egisPane.classList.remove('active'); // 전체 덮기 해제 — 분할 CSS가 오른쪽 절반에 표시
+    document.title = doc ? `${doc.meta.title} — e-GIS` : 'e-GIS';
+  }
+  try { localStorage.setItem('egis-split', on ? '1' : '0'); } catch (e) { /* private 모드 등 무시 */ }
+  requestAnimationFrame(() => {
+    mapView.updateSize(); // 편집기 지도 폭 변화 반영
+    presentation.refreshSize(); // 발표 중이면 무대 크기·카메라 재정규화
+  });
+}
 function switchApp(toEgis) {
+  if (document.body.classList.contains('split-mode')) setSplit(false); // 탭 클릭 = 분할 해제
   tabEstory.classList.toggle('active', !toEgis);
   tabEgis.classList.toggle('active', toEgis);
   egisPane.classList.toggle('active', toEgis);
-  if (toEgis && !egisLoaded) {
-    egisWebview.src = 'https://e-gis.kr'; // 지연 로드
-    egisLoaded = true;
-  }
+  if (toEgis) ensureEgisLoaded();
   // e-GIS 탭에선 창 제목을 'e-GIS'로(스토리 제목 숨김), e-GIStory 탭에선 스토리 제목 복원
   document.title = toEgis ? 'e-GIS' : (doc ? `${doc.meta.title} — e-GIS` : 'e-GIS');
 }
 tabEstory.addEventListener('click', () => switchApp(false));
 tabEgis.addEventListener('click', () => switchApp(true));
+tabSplit.addEventListener('click', () => setSplit(!document.body.classList.contains('split-mode')));
+
+// 분할 구분선 드래그(25~75%) — 포인터 캡처로 webview 위에서도 이벤트 유지
+const splitDivider = document.getElementById('split-divider');
+splitDivider.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  splitDivider.setPointerCapture(e.pointerId);
+  splitDivider.classList.add('dragging');
+  let raf = 0;
+  const onMove = (ev) => {
+    const pct = Math.min(75, Math.max(25, (ev.clientX / window.innerWidth) * 100));
+    document.documentElement.style.setProperty('--split-left', pct.toFixed(1) + '%');
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; mapView.updateSize(); });
+  };
+  const onUp = () => {
+    splitDivider.removeEventListener('pointermove', onMove);
+    splitDivider.removeEventListener('pointerup', onUp);
+    splitDivider.classList.remove('dragging');
+    const left = document.documentElement.style.getPropertyValue('--split-left');
+    try { localStorage.setItem('egis-split-left', left); } catch (e2) { /* 무시 */ }
+    mapView.updateSize();
+    presentation.refreshSize(); // 발표 중이면 카메라 재정규화
+  };
+  splitDivider.addEventListener('pointermove', onMove);
+  splitDivider.addEventListener('pointerup', onUp);
+});
+
+// 분할 상태 복원(재시작 후에도 유지)
+try {
+  const savedLeft = localStorage.getItem('egis-split-left');
+  if (savedLeft) document.documentElement.style.setProperty('--split-left', savedLeft);
+  if (localStorage.getItem('egis-split') === '1') setSplit(true);
+} catch (e) { /* 무시 */ }
 
 // 콘텐츠 미리보기의 사진 클릭 → 라이트박스 확대(편집 중 확인용)
 document.getElementById('content-preview').addEventListener('click', (e) => {

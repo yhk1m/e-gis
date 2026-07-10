@@ -21,7 +21,7 @@ import { navReduce, indicatorDots, buildOverlay } from './presentationNav.js';
  * @param {() => object} deps.getDoc - 현재 StoryDoc 반환
  * @param {() => void} deps.onExit - 종료 시 편집기 원복(main의 refresh 등)
  */
-export function createPresentationShell(root, { mapEl, mapHome, mapView, animator, registry, legend, getDoc, onExit, standalone = false }) {
+export function createPresentationShell(root, { mapEl, mapHome, mapView, animator, registry, legend, getDoc, onExit, standalone = false, useFullscreen = () => true }) {
   root.innerHTML = '';
   root.style.display = 'none';
 
@@ -206,8 +206,8 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     window.addEventListener('pointerdown', wakeControls);
     wakeControls(); // 진입 직후 2초 카운트 시작
     // 전체화면 시도(실패해도 fixed 컨테이너라 발표는 창 안에서 동작).
-    // 웹뷰어는 제스처 없이 불가 + 페이지 자체가 무대라 생략.
-    if (!standalone && root.requestFullscreen) root.requestFullscreen().catch(() => {});
+    // 웹뷰어(standalone)와 분할 모드(useFullscreen이 false)는 생략 — 패널 안에서 발표.
+    if (!standalone && useFullscreen() && root.requestFullscreen) root.requestFullscreen().catch(() => {});
     // 레이아웃 반영 후 지도 크기 갱신(전체화면 미지원/거부 대비 즉시도 1회)
     requestAnimationFrame(() => mapView.updateSize());
     return true;
@@ -227,5 +227,12 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     onExit();
   }
 
-  return { enter, exit };
+  /** 무대 크기 변화(분할 구분선 드래그 등) 반영 — 지도 리사이즈 + 카메라 재정규화. */
+  function refreshSize() {
+    if (!active) return;
+    mapView.updateSize();
+    applyCurrentCamera();
+  }
+
+  return { enter, exit, refreshSize };
 }
