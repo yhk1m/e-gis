@@ -21,7 +21,7 @@ import { navReduce, indicatorDots, buildOverlay } from './presentationNav.js';
  * @param {() => object} deps.getDoc - 현재 StoryDoc 반환
  * @param {() => void} deps.onExit - 종료 시 편집기 원복(main의 refresh 등)
  */
-export function createPresentationShell(root, { mapEl, mapHome, mapView, animator, registry, legend, getDoc, onExit, standalone = false, useFullscreen = () => true }) {
+export function createPresentationShell(root, { mapEl, mapHome, mapView, animator, registry, legend, getDoc, onExit, standalone = false, fullscreenTarget = () => root }) {
   root.innerHTML = '';
   root.style.display = 'none';
 
@@ -205,9 +205,12 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     window.addEventListener('pointermove', wakeControls);
     window.addEventListener('pointerdown', wakeControls);
     wakeControls(); // 진입 직후 2초 카운트 시작
-    // 전체화면 시도(실패해도 fixed 컨테이너라 발표는 창 안에서 동작).
-    // 웹뷰어(standalone)와 분할 모드(useFullscreen이 false)는 생략 — 패널 안에서 발표.
-    if (!standalone && useFullscreen() && root.requestFullscreen) root.requestFullscreen().catch(() => {});
+    // 전체화면 시도(실패해도 fixed 컨테이너라 발표는 창 안에서 동작). 웹뷰어(standalone)는 생략.
+    // 분할 모드에선 호출부가 fullscreenTarget으로 문서 전체를 지정 → 분할 화면째 전체화면.
+    if (!standalone) {
+      const target = fullscreenTarget() || root;
+      if (target.requestFullscreen) target.requestFullscreen().catch(() => {});
+    }
     // 레이아웃 반영 후 지도 크기 갱신(전체화면 미지원/거부 대비 즉시도 1회)
     requestAnimationFrame(() => mapView.updateSize());
     return true;

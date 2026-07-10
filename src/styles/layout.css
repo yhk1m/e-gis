@@ -902,3 +902,21 @@
     bottom: 55%;
   }
 }
+
+/* ============================================
+ * 좁은 창 최적화 (데스크톱 분할 패널·좁은 브라우저, 769~1100px)
+ * 메뉴 라벨을 아이콘으로 줄여 메뉴바 한 줄 유지(줄바꿈 방지).
+ * 태블릿 확대 규칙(≤1024)보다 뒤에 선언해 같은 특이성에서 우선한다.
+ * ============================================ */
+@media (max-width: 1100px) and (min-width: 769px) {
+  .menu-btn-label { display: none; }        /* 아이콘만 — title 툴팁으로 이름 확인 */
+  .menu-btn-icon { display: inline; }
+  .menu-button { padding: 6px 9px !important; font-size: 15px !important; }
+  .logo-text { font-size: 18px; }
+  .header-privacy-link { display: none; }   /* 개인정보 페이지는 /privacy로 접근 가능 */
+  .auth-label-ko { display: none; }         /* 로그인/로그아웃 영문 축약 */
+  .auth-label-en { display: inline; }
+  .header-user-email { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #location-search-input { width: 130px; }
+  .toolbar-copyright { display: none; }
+}
