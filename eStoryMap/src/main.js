@@ -205,8 +205,6 @@ function exitReport() {
 
 function exitPresentation() {
   document.getElementById('app').inert = false;
-  document.body.classList.remove('presenting');
-  setSplitMax(null); // '발표만/지도만' 가득 채우기 해제(버튼 상태 포함)
   refresh(); // 편집기 현재 페이지 가시성·패널 복원
   const page = getPage(doc, currentPageId);
   if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 카메라 즉시 원복
@@ -214,10 +212,7 @@ function exitPresentation() {
 
 document.getElementById('btn-present').addEventListener('click', () => {
   // 진입에 성공한 경우에만 편집기 비활성(실패 시 inert 굳음 방지). 항상 페이지 1부터(사용자 확정).
-  if (presentation.enter(0)) {
-    document.getElementById('app').inert = true;
-    document.body.classList.add('presenting'); // 분할 '발표만/지도만' 버튼 표시 조건
-  }
+  if (presentation.enter(0)) document.getElementById('app').inert = true;
 });
 
 document.getElementById('btn-slidepdf').addEventListener('click', () => {
@@ -264,8 +259,6 @@ function setSplit(on) {
     tabEgis.classList.remove('active');
     egisPane.classList.remove('active'); // 전체 덮기 해제 — 분할 CSS가 오른쪽 절반에 표시
     document.title = doc ? `${doc.meta.title} — e-GIS` : 'e-GIS';
-  } else {
-    setSplitMax(null); // 분할 해제 시 '발표만/지도만' 상태도 초기화
   }
   try { localStorage.setItem('egis-split', on ? '1' : '0'); } catch (e) { /* private 모드 등 무시 */ }
   requestAnimationFrame(() => {
@@ -291,25 +284,11 @@ const tabSwap = document.getElementById('tab-swap');
 function setSwap(on) {
   document.body.classList.toggle('split-swap', on);
   tabSwap.classList.toggle('active', on);
-  try { localStorage.setItem('egis-split-swap', on ? '1' : '0'); } catch (e) { /* 무시 */ }
+  try { localStorage.setItem('egis-split-swap2', on ? '1' : '0'); } catch (e) { /* 무시 */ }
   requestAnimationFrame(() => { mapView.updateSize(); presentation.refreshSize(); });
 }
 tabSwap.addEventListener('click', () => setSwap(!document.body.classList.contains('split-swap')));
 
-// 분할 발표 중 '발표만/지도만' — 한쪽을 가득 채우기(토글, 서로 배타)
-const tabMaxPres = document.getElementById('tab-max-pres');
-const tabMaxEgis = document.getElementById('tab-max-egis');
-function setSplitMax(mode) { // 'pres' | 'egis' | null(분할로 복귀)
-  document.body.classList.toggle('split-max-pres', mode === 'pres');
-  document.body.classList.toggle('split-max-egis', mode === 'egis');
-  tabMaxPres.classList.toggle('active', mode === 'pres');
-  tabMaxEgis.classList.toggle('active', mode === 'egis');
-  requestAnimationFrame(() => { mapView.updateSize(); presentation.refreshSize(); });
-}
-tabMaxPres.addEventListener('click', () =>
-  setSplitMax(document.body.classList.contains('split-max-pres') ? null : 'pres'));
-tabMaxEgis.addEventListener('click', () =>
-  setSplitMax(document.body.classList.contains('split-max-egis') ? null : 'egis'));
 
 // 분할 구분선 드래그(25~75%) — 포인터 캡처로 webview 위에서도 이벤트 유지
 const splitDivider = document.getElementById('split-divider');
@@ -319,7 +298,9 @@ splitDivider.addEventListener('pointerdown', (e) => {
   splitDivider.classList.add('dragging');
   let raf = 0;
   const onMove = (ev) => {
-    const pct = Math.min(75, Math.max(25, (ev.clientX / window.innerWidth) * 100));
+    // 자유 범위 10~90%. 끝(10% 미만/90% 초과)까지 끌면 0/100%로 스냅 — 한쪽 접기(반대쪽 가득)
+    let pct = (ev.clientX / window.innerWidth) * 100;
+    pct = pct < 10 ? 0 : pct > 90 ? 100 : pct;
     document.documentElement.style.setProperty('--split-left', pct.toFixed(1) + '%');
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; mapView.updateSize(); });
   };
@@ -340,7 +321,7 @@ splitDivider.addEventListener('pointerdown', (e) => {
 try {
   const savedLeft = localStorage.getItem('egis-split-left');
   if (savedLeft) document.documentElement.style.setProperty('--split-left', savedLeft);
-  if (localStorage.getItem('egis-split-swap') === '1') setSwap(true);
+  if (localStorage.getItem('egis-split-swap2') === '1') setSwap(true);
   if (localStorage.getItem('egis-split') === '1') setSplit(true);
 } catch (e) { /* 무시 */ }
 

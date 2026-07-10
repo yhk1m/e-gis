@@ -20,10 +20,11 @@ body { display: flex; flex-direction: column; }
 #egis-pane { position: fixed; top: 36px; left: 0; right: 0; bottom: 0; z-index: 250; display: none; background: #fff; }
 #egis-pane.active { display: block; }
 #egis-webview { width: 100%; height: 100%; border: none; }
-/* 분할 모드: 왼쪽 e-GIStory(편집/발표) | 오른쪽 e-GIS 웹앱. --split-left = 왼쪽 폭(%) */
-body.split-mode #app { width: var(--split-left, 50%); }
+/* 분할 모드(기본): 왼쪽 e-GIS 웹앱 | 오른쪽 e-GIStory(편집/발표). --split-left = 구분선 위치(%).
+ * 구분선을 끝(0%/100%)까지 끌면 한쪽이 접혀 반대쪽이 가득 찬다(구분선은 가장자리에 남음). */
+body.split-mode #app { width: calc(100% - var(--split-left, 50%)); margin-left: var(--split-left, 50%); overflow: hidden; }
 body.split-mode #toolbar { flex-wrap: wrap; } /* 좁아진 폭에서 툴바 버튼이 잘리지 않게 */
-body.split-mode #egis-pane { display: block; left: var(--split-left, 50%); }
+body.split-mode #egis-pane { display: block; left: 0; right: auto; width: var(--split-left, 50%); }
 #split-divider { display: none; }
 body.split-mode #split-divider {
   display: block; position: fixed; top: 36px; bottom: 0; left: var(--split-left, 50%);
@@ -32,21 +33,14 @@ body.split-mode #split-divider {
 }
 body.split-mode #split-divider::after { content: ''; position: absolute; inset: 0 3px; background: #334155; }
 body.split-mode #split-divider:hover::after, body.split-mode #split-divider.dragging::after { background: #1d4ed8; }
-/* 분할 중 발표: 왼쪽 패널 안에서(오른쪽 e-GIS는 계속 조작 가능). 전체화면은 문서 전체가 올라감 */
-body.split-mode #presentation { inset: 36px auto 0 0; width: var(--split-left, 50%); }
-/* 좌우 전환(⇄): 왼쪽 e-GIS | 오른쪽 e-GIStory. --split-left는 항상 구분선 위치 */
+/* 분할 중 발표: e-GIStory 쪽 패널 안에서(반대쪽 e-GIS는 계속 조작 가능). 전체화면은 문서 전체가 올라감 */
+body.split-mode #presentation { inset: 36px 0 0 var(--split-left, 50%); width: auto; }
+/* 좌우 전환(⇄): 왼쪽 e-GIStory | 오른쪽 e-GIS. --split-left는 항상 구분선 위치 */
 #tab-swap { display: none; }
 body.split-mode #tab-swap { display: inline-block; }
-body.split-mode.split-swap #app { width: calc(100% - var(--split-left, 50%)); margin-left: var(--split-left, 50%); }
-body.split-mode.split-swap #egis-pane { left: 0; right: auto; width: var(--split-left, 50%); }
-body.split-mode.split-swap #presentation { inset: 36px 0 0 var(--split-left, 50%); width: auto; }
-/* 분할 발표 중 '발표만/지도만' — 한쪽을 가득 채우기(토글). 버튼은 발표 중에만 표시 */
-#tab-max-pres, #tab-max-egis { display: none; }
-body.split-mode.presenting #tab-max-pres, body.split-mode.presenting #tab-max-egis { display: inline-block; }
-body.split-mode.split-max-pres #presentation { inset: 36px 0 0 0 !important; width: auto !important; }
-body.split-mode.split-max-pres #egis-pane, body.split-mode.split-max-pres #split-divider { display: none !important; }
-body.split-mode.split-max-egis #egis-pane { left: 0 !important; right: 0 !important; width: auto !important; }
-body.split-mode.split-max-egis #presentation, body.split-mode.split-max-egis #split-divider { display: none !important; }
+body.split-mode.split-swap #app { width: var(--split-left, 50%); margin-left: 0; }
+body.split-mode.split-swap #egis-pane { left: var(--split-left, 50%); right: 0; width: auto; }
+body.split-mode.split-swap #presentation { inset: 36px auto 0 0; width: var(--split-left, 50%); }
 #toolbar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #0b0f14; color: #e5e7eb; }
 #toolbar .brand { margin-right: 8px; }
 .brand-e { color: #1d4ed8; } /* 'e-GIStory'의 e = '새로 만들기' 버튼 파란색 */
