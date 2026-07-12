@@ -1,1 +1,36 @@
-[]
+[
+  {
+    "id": "gongju-260713",
+    "name": "260713 공주여고 수업량유연화",
+    "description": "서울 자치구 고령화와 의료복지시설 분포 실습 — 경계·고령인구비율·복지시설",
+    "datasets": [
+      {
+        "id": "gongju-seoul-districts",
+        "name": "서울 자치구 경계",
+        "description": "서울특별시 25개 자치구 경계 (폴리곤)",
+        "type": "spatial",
+        "file": "practice/260713 공주여고 수업량유연화/서울_자치구.geojson",
+        "source": "KOSTAT"
+      },
+      {
+        "id": "gongju-elderly-ratio",
+        "name": "서울 고령인구비율",
+        "description": "자치구별 고령인구비율·총인구 (2026.06)",
+        "type": "attribute",
+        "file": "practice/260713 공주여고 수업량유연화/서울_고령인구비율.csv",
+        "keyColumn": "gu_nm",
+        "source": ""
+      },
+      {
+        "id": "gongju-welfare-facilities",
+        "name": "서울 의료복지시설 현황",
+        "description": "지오코딩된 의료·복지시설 235개 지점",
+        "type": "coordinate",
+        "file": "practice/260713 공주여고 수업량유연화/서울_인의료복지시설현황.xlsx",
+        "latColumn": "Latitude",
+        "lonColumn": "Longitude",
+        "source": ""
+      }
+    ]
+  }
+]

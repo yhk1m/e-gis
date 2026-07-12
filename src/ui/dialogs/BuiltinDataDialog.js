@@ -23,6 +23,7 @@ const TAB_FOOTER_TEXT = {
 const PRACTICE_TYPE_META = {
   spatial: { icon: '🗺️', label: '공간' },
   attribute: { icon: '📊', label: '속성' },
+  coordinate: { icon: '📍', label: '좌표' },
   raster: { icon: '🏔', label: '래스터' }
 };
 
@@ -345,14 +346,21 @@ class BuiltinDataDialog {
   // ============================
   //  스프레드시트 → 좌표 데이터 (포인트 레이어)
   // ============================
-  _showCoordinateImport({ headers, data }) {
+  _showCoordinateImport({ headers, data, fileName, latColumn, lonColumn, sourceLabel } = {}) {
     // tableLoader를 그대로 재사용 (좌표 자동감지·포인트 레이어 생성 로직 공유)
+    const displayName = fileName || '스프레드시트 좌표';
+    const source = sourceLabel || 'Google 스프레드시트';
     tableLoader.data = data;
     tableLoader.headers = headers;
-    tableLoader.fileName = '스프레드시트 좌표';
+    tableLoader.fileName = displayName;
 
     const numericCols = tableLoader.getNumericColumns();
-    const detected = tableLoader.detectCoordinateColumns();
+    const auto = tableLoader.detectCoordinateColumns();
+    // 카탈로그가 지정한 위경도 컬럼을 우선 사용, 없으면 자동 감지
+    const detected = {
+      latColumn: latColumn || auto.latColumn,
+      lonColumn: lonColumn || auto.lonColumn
+    };
     const previewRows = data.slice(0, 5);
 
     const colOptions = (selected) => {
@@ -366,7 +374,7 @@ class BuiltinDataDialog {
       }
       opts += '<optgroup label="모든 컬럼">';
       headers.forEach(c => {
-        if (!numericCols.includes(c)) opts += `<option value="${c}">${c}</option>`;
+        if (!numericCols.includes(c)) opts += `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`;
       });
       opts += '</optgroup>';
       return opts;
@@ -382,7 +390,7 @@ class BuiltinDataDialog {
       </div>
       <div class="modal-body" style="padding: 12px 16px; overflow-y: auto;">
         <div style="margin-bottom: 12px; font-size: 12px; color: var(--text-secondary);">
-          ${data.length}행 × ${headers.length}열 | 출처: Google 스프레드시트
+          ${data.length}행 × ${headers.length}열 | 출처: ${source}
         </div>
 
         <!-- 미리보기 테이블 -->
@@ -412,7 +420,7 @@ class BuiltinDataDialog {
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <label style="font-size: 12px; white-space: nowrap; min-width: 80px;">레이어 이름</label>
-              <input type="text" id="builtin-coord-name" value="스프레드시트 좌표" style="${selectStyle}">
+              <input type="text" id="builtin-coord-name" value="${displayName.replace(/"/g, '&quot;')}" style="${selectStyle}">
             </div>
             <div id="builtin-coord-preview" style="font-size: 11px; color: var(--text-muted); min-height: 18px;"></div>
           </div>
@@ -553,6 +561,16 @@ class BuiltinDataDialog {
         this._attrHeaders = result.headers;
         this._attrDataset = result.dataset;
         this._showAttributePreview(result);
+      } else if (result.type === 'coordinate') {
+        // 위경도 데이터 → 좌표 가져오기 화면(포인트 레이어 생성)으로 전환
+        this._showCoordinateImport({
+          headers: result.headers,
+          data: result.data,
+          fileName: result.fileName,
+          latColumn: result.dataset.latColumn,
+          lonColumn: result.dataset.lonColumn,
+          sourceLabel: result.dataset.source || result.fileName
+        });
       } else {
         loadingEl.innerHTML = '<span style="color: var(--success-color, #10b981);">✓ 레이어 추가 완료!</span>';
         setTimeout(() => this.close(), 600);

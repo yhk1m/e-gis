@@ -65,7 +65,8 @@ class BuiltinDataManager {
   /**
    * 실습 데이터 카탈로그 (실습 유형별 그룹)
    * 형식: [{ id, name, description, datasets: [{ id, name, description, type, file, ... }] }]
-   * type: 'spatial' | 'attribute' | 'raster'
+   * type: 'spatial' | 'attribute' | 'coordinate' | 'raster'
+   *   coordinate 데이터셋은 latColumn/lonColumn 힌트로 위경도 포인트 레이어를 만듭니다.
    */
   getPracticeCatalog() {
     return this.practiceCatalog;
@@ -82,7 +83,8 @@ class BuiltinDataManager {
 
   /**
    * 실습 데이터셋 로드 (데이터셋의 type에 따라 분기)
-   * spatial/raster → 레이어 추가, attribute → 파싱된 데이터 반환
+   * spatial/raster → 레이어 추가, attribute/coordinate → 파싱된 데이터 반환
+   * (coordinate: 위경도 컬럼으로 포인트 레이어를 만들도록 좌표 가져오기 화면으로 전달)
    */
   async loadPracticeDataset(typeId, datasetId) {
     const dataset = this.getPracticeDataset(typeId, datasetId);
@@ -97,12 +99,12 @@ class BuiltinDataManager {
       const layerId = await demLoader.loadFromUrl(url, dataset.name);
       return { type: 'raster', layerId };
     }
-    if (dataset.type === 'attribute') {
+    if (dataset.type === 'attribute' || dataset.type === 'coordinate') {
       const resp = await fetch(url);
       if (!resp.ok) throw new Error('파일을 찾을 수 없습니다: ' + dataset.file);
       const arrayBuffer = await resp.arrayBuffer();
       const { headers, data } = this._parseXlsxBuffer(arrayBuffer);
-      return { type: 'attribute', headers, data, fileName: dataset.name, dataset };
+      return { type: dataset.type, headers, data, fileName: dataset.name, dataset };
     }
     throw new Error('알 수 없는 데이터 유형: ' + dataset.type);
   }
