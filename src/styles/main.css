@@ -285,6 +285,15 @@ input:focus, select:focus, textarea:focus {
   display: none;
 }
 
+/* 지도 내보내기 캡처 중에는 조작용 컨트롤(+/- 줌·나침반·현재위치·배경지도) 숨김 */
+body.exporting .ol-zoom,
+body.exporting .egis-compass,
+body.exporting .egis-geolocate,
+body.exporting .egis-basemap,
+body.exporting .egis-basemap-panel {
+  display: none !important;
+}
+
 /* 우선순위를 높여 OpenLayers 기본 .ol-control button 스타일을 확실히 덮음 */
 .egis-basemap-panel .egis-basemap-option {
   display: block;

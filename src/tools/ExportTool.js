@@ -329,6 +329,15 @@ class ExportTool {
 
     ctx.save();
 
+    // 지도 방위(뷰 회전)와 연동 — 화면 나침반(transform: rotate(-rotation))과 동일하게
+    // 나침반 중심을 기준으로 -rotation 만큼 회전시켜 N이 실제 북쪽을 가리키게 한다.
+    const rotation = mapManager.getMap()?.getView().getRotation() || 0;
+    if (rotation) {
+      ctx.translate(cx, cy);
+      ctx.rotate(-rotation);
+      ctx.translate(-cx, -cy);
+    }
+
     if (style === 'arrow') {
       this._drawCompassArrow(ctx, cx, cy, s, scale);
     } else if (style === 'rose') {
