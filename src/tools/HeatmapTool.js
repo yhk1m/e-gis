@@ -127,6 +127,19 @@ class HeatmapTool {
       options: options
     });
 
+    // 프로젝트(.egis)·자동저장 왕복을 위해 레이어에 설정 저장 (주제도 3종과 동일 규약)
+    const registeredInfo = layerManager.getLayer(heatmapLayerId);
+    if (registeredInfo) {
+      registeredInfo._heatmapConfig = {
+        sourceLayerId: layerId,
+        blur,
+        radius,
+        weight: weight || null,
+        gradient: gradient || null,
+        hideSource: options.hideSource || false
+      };
+    }
+
     // 원래 레이어 숨기기 옵션
     if (options.hideSource) {
       layerInfo.olLayer.setVisible(false);
@@ -134,6 +147,87 @@ class HeatmapTool {
 
     // 범례 생성
     this.createLegend(heatmapLayerId, layerInfo.name, gradient || this.getGradients()[0].value);
+
+    return heatmapLayerId;
+  }
+
+  /**
+   * 프로젝트(.egis) 복원용 — 저장된 피처와 설정으로 히트맵 레이어를 재생성한다.
+   * (원본 포인트 레이어가 없어도 히트맵 자체 피처로 복원 가능)
+   * @param {import('ol/Feature').default[]} features - EPSG:3857 좌표의 포인트 피처들
+   * @param {Object} layerData - .egis 레이어 데이터 (id, name, visible, opacity, heatmapConfig)
+   * @returns {string} 히트맵 레이어 ID
+   */
+  restoreHeatmap(features, layerData) {
+    const cfg = layerData.heatmapConfig || {};
+
+    const heatmapSource = new VectorSource({ features });
+
+    const heatmapOptions = {
+      source: heatmapSource,
+      blur: cfg.blur != null ? cfg.blur : 15,
+      radius: cfg.radius != null ? cfg.radius : 10,
+      zIndex: 500
+    };
+
+    if (cfg.weight) {
+      heatmapOptions.weight = (feature) => {
+        const value = feature.get(cfg.weight);
+        if (typeof value === 'number') {
+          return Math.min(Math.max(value / 100, 0), 1);
+        }
+        return 1;
+      };
+    }
+
+    if (cfg.gradient) {
+      heatmapOptions.gradient = cfg.gradient;
+    }
+
+    const heatmapLayer = new Heatmap(heatmapOptions);
+
+    const heatmapLayerId = layerManager.addLayer({
+      id: layerData.id,
+      name: layerData.name,
+      type: 'heatmap',
+      olLayer: heatmapLayer,
+      geometryType: 'Point',
+      visible: layerData.visible !== false
+    });
+
+    this.heatmapLayers.set(heatmapLayerId, {
+      layer: heatmapLayer,
+      sourceLayerId: cfg.sourceLayerId || null,
+      options: {
+        blur: cfg.blur,
+        radius: cfg.radius,
+        weight: cfg.weight || null,
+        gradient: cfg.gradient || null,
+        hideSource: cfg.hideSource || false
+      }
+    });
+
+    const layerInfo = layerManager.getLayer(heatmapLayerId);
+    if (layerInfo) {
+      layerInfo._heatmapConfig = {
+        sourceLayerId: cfg.sourceLayerId || null,
+        blur: cfg.blur,
+        radius: cfg.radius,
+        weight: cfg.weight || null,
+        gradient: cfg.gradient || null,
+        hideSource: cfg.hideSource || false
+      };
+
+      // 불투명도 복원
+      if (typeof layerData.opacity === 'number' && typeof heatmapLayer.setOpacity === 'function') {
+        layerInfo.opacity = layerData.opacity;
+        heatmapLayer.setOpacity(layerData.opacity);
+      }
+    }
+
+    // 범례 생성 (레이어명에서 '_히트맵' 접미사 제거해 원본 이름으로 표시)
+    const baseName = (layerData.name || '').replace(/_히트맵$/, '');
+    this.createLegend(heatmapLayerId, baseName, cfg.gradient || this.getGradients()[0].value);
 
     return heatmapLayerId;
   }

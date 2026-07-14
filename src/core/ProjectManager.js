@@ -12,6 +12,7 @@ import { georeferenceTool } from '../tools/GeoreferenceTool.js';
 import { choroplethTool } from '../tools/ChoroplethTool.js';
 import { chartMapTool } from '../tools/ChartMapTool.js';
 import { cartogramTool } from '../tools/CartogramTool.js';
+import { heatmapTool } from '../tools/HeatmapTool.js';
 import { saveTextAs } from '../utils/saveFile.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
@@ -160,6 +161,14 @@ export class ProjectManager {
             colors: c.colors, breaks: c.breaks, showLabels: c.showLabels, cartogramType: c.cartogramType
           };
         }
+        // 히트맵 설정 — 저장하지 않으면 복원 시 OL Heatmap이 아니라 포인트로만 표시됨
+        if (layer._heatmapConfig) {
+          const h = layer._heatmapConfig;
+          base.heatmapConfig = {
+            sourceLayerId: h.sourceLayerId, blur: h.blur, radius: h.radius,
+            weight: h.weight, gradient: h.gradient, hideSource: h.hideSource
+          };
+        }
 
         // 벡터 레이어: GeoJSON으로 직렬화 (source가 없으면 빈 피처)
         const features = layer.source ? layer.source.getFeatures() : [];
@@ -255,6 +264,13 @@ export class ProjectManager {
           featureProjection: 'EPSG:3857',
           dataProjection: 'EPSG:4326'
         });
+
+        // 히트맵 복원 — 일반 벡터가 아니라 OL Heatmap 레이어로 재생성 (아니면 포인트만 보임)
+        if (layerData.type === 'heatmap' && layerData.heatmapConfig) {
+          heatmapTool.restoreHeatmap(features, layerData);
+          console.log(`히트맵 레이어 "${layerData.name}" 복원됨, 피처 수: ${features.length}`);
+          continue;
+        }
 
         // 레이어 추가 — id를 보존해야 chartMapConfig.sourceLayerId 참조가 살아난다
         // (기존 레이어는 위에서 전부 제거했으므로 충돌 없음)
