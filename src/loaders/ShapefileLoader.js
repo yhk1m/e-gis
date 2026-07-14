@@ -41,6 +41,49 @@ class ShapefileLoader {
   }
 
   /**
+   * 여러 File을 basename별로 묶어 완전한 세트로 한 번에 로드한다.
+   * (드롭/선택 순서·타이밍과 무관하게 shp+dbf+shx+prj+cpg를 짝지어 처리)
+   *
+   * 폴더 드래그·다중 선택·폴더 선택에서 들어온 파일 목록에 사용한다.
+   * 하나의 목록에 여러 shapefile(서로 다른 basename)이 섞여 있어도 각각 로드한다.
+   *
+   * @param {File[]} files - shapefile 구성 파일들이 포함된 목록
+   * @returns {Promise<Array>} 생성된 layerId 목록
+   */
+  async loadFromFiles(files) {
+    const EXTS = ['shp', 'dbf', 'shx', 'prj', 'cpg'];
+    const groups = new Map(); // key(소문자 basename) -> { baseName, shp, dbf, shx, prj, cpg }
+
+    for (const file of files) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!EXTS.includes(ext)) continue;
+      const baseName = file.name.replace(/\.(shp|dbf|shx|prj|cpg)$/i, '');
+      const key = baseName.toLowerCase();
+      if (!groups.has(key)) groups.set(key, { baseName });
+      groups.get(key)[ext] = file;
+    }
+
+    const layerIds = [];
+    for (const group of groups.values()) {
+      // .shp이 없으면 지오메트리를 만들 수 없으므로 건너뜀
+      if (!group.shp) continue;
+
+      const components = {};
+      components.shp = await this.readFileAsArrayBuffer(group.shp);
+      if (group.dbf) components.dbf = await this.readFileAsArrayBuffer(group.dbf);
+      if (group.shx) components.shx = await this.readFileAsArrayBuffer(group.shx);
+      if (group.cpg) components.cpg = await this.readFileAsArrayBuffer(group.cpg);
+      if (group.prj) components.prj = await this.readFileAsText(group.prj);
+
+      const res = await this.loadFromComponents(components, group.baseName);
+      if (Array.isArray(res)) layerIds.push(...res);
+      else if (res != null) layerIds.push(res);
+    }
+
+    return layerIds;
+  }
+
+  /**
    * Shapefile 구성 파일 처리
    */
   async handleShapefileComponent(file) {
@@ -198,6 +241,7 @@ class ShapefileLoader {
     if (components.dbf) zip.file(baseName + '.dbf', components.dbf);
     if (components.shx) zip.file(baseName + '.shx', components.shx);
     if (components.prj) zip.file(baseName + '.prj', components.prj);
+    if (components.cpg) zip.file(baseName + '.cpg', components.cpg);
 
     const zipBlob = await zip.generateAsync({ type: 'arraybuffer' });
     const geojson = await shp(zipBlob);

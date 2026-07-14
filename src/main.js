@@ -49,6 +49,7 @@ import { geojsonLoader } from './loaders/GeoJSONLoader.js';
 import { shapefileLoader } from './loaders/ShapefileLoader.js';
 import { geopackageLoader } from './loaders/GeoPackageLoader.js';
 import { demLoader } from './loaders/DEMLoader.js';
+import { isShapefileComponent } from './utils/fileCollector.js';
 import { visitorTracker } from './core/VisitorTracker.js';
 import { builtinDataDialog } from './ui/dialogs/BuiltinDataDialog.js';
 
@@ -208,7 +209,25 @@ function initApp() {
 
       fileInput.addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
-        for (const file of files) {
+
+        // shapefile 구성 파일은 basename별로 묶어 한 번에 로드 (속성까지 함께)
+        const shpComponents = files.filter((f) => isShapefileComponent(f.name));
+        const others = files.filter((f) => !isShapefileComponent(f.name));
+
+        if (shpComponents.length > 0) {
+          try {
+            showStatusMessage('Shapefile 로딩 중...');
+            const ids = await shapefileLoader.loadFromFiles(shpComponents);
+            showStatusMessage(`Shapefile ${ids.length}개 레이어 로드 완료`);
+            const shpFile = shpComponents.find((f) => /\.shp$/i.test(f.name));
+            if (shpFile) addRecentFile(shpFile.name, 'shp');
+          } catch (error) {
+            console.error('Shapefile 로드 실패:', error);
+            showStatusMessage('Shapefile 로드 실패: ' + error.message);
+          }
+        }
+
+        for (const file of others) {
           try {
             showStatusMessage('로딩 중: ' + file.name);
             await loadFileByExtension(file);

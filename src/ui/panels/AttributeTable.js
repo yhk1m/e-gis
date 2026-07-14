@@ -166,6 +166,8 @@ export class AttributeTable {
         <button class="btn btn-sm" id="attr-mobile-edit">✏️ 편집</button>
         <button class="btn btn-sm btn-danger" id="attr-mobile-delete" disabled>삭제</button>
         <button class="btn btn-sm" id="attr-mobile-csv" title="CSV로 저장">CSV</button>
+        <input type="text" id="attr-mobile-newcol" placeholder="새 열 이름" style="flex:0 1 90px;min-width:0;padding:6px 8px;border-radius:4px;border:1px solid var(--border-color,#ccc);font-size:13px;">
+        <button class="btn btn-sm" id="attr-mobile-addcol" title="새 열 추가">+ 열</button>
         <button class="btn btn-sm btn-primary" id="attr-mobile-zoom" disabled>선택 이동</button>
       </div>
       <div class="attr-mobile-hint">${HINT_DEFAULT}</div>
@@ -278,6 +280,30 @@ export class AttributeTable {
     overlay.querySelector('#attr-mobile-csv').addEventListener('click', () => {
       finishEditing(true);
       this.downloadCsv(layerId);
+    });
+
+    // 열 추가
+    overlay.querySelector('#attr-mobile-addcol').addEventListener('click', () => {
+      finishEditing(true);
+      const input = overlay.querySelector('#attr-mobile-newcol');
+      const name = (input ? input.value : '').trim();
+      if (!name) {
+        alert('추가할 열 이름을 입력하세요.');
+        return;
+      }
+      if (columns.includes(name) || name === 'geometry') {
+        alert('이미 존재하는 열 이름입니다.');
+        return;
+      }
+      if (featureMap.size === 0) {
+        alert('피처가 없어 열을 추가할 수 없습니다.');
+        return;
+      }
+      // 모든 피처에 빈 값 속성 추가 후 시트 재구성 (새 열 반영)
+      featureMap.forEach(f => {
+        if (f.get(name) === undefined) f.set(name, '');
+      });
+      this.openMobileSheet(layerId, layerInfo);
     });
 
     // 행 탭: 일반 모드 → 선택 토글 / 편집 모드 → 셀 수정
@@ -590,6 +616,21 @@ export class AttributeTable {
       cursor: not-allowed;
     }
 
+    .col-name-input {
+      padding: 6px 8px;
+      border: 1px solid ${isDark ? '#4a4a6c' : '#ccc'};
+      border-radius: 4px;
+      font-size: 12px;
+      width: 110px;
+      background: ${isDark ? '#1a1a2e' : '#ffffff'};
+      color: ${isDark ? '#e4e4e7' : '#333333'};
+      outline: none;
+    }
+
+    .col-name-input:focus {
+      border-color: #4a90d9;
+    }
+
     .table-container {
       flex: 1 1 auto;
       min-height: 0;
@@ -711,13 +752,15 @@ export class AttributeTable {
       <span class="selection-count" id="selection-count"></span>
     </div>
     <div class="header-actions">
+      <input type="text" id="new-column-name" class="col-name-input" placeholder="새 열 이름">
+      <button class="btn" id="btn-add-column" title="속성 테이블에 새 열 추가">+ 열 추가</button>
       <button class="btn" id="btn-zoom-selected" title="선택한 피처로 이동">선택으로 이동</button>
       <button class="btn btn-danger" id="btn-delete-selected" title="선택한 피처 삭제" disabled>선택 삭제</button>
       <button class="btn" id="btn-export-csv" title="속성 테이블을 CSV 파일로 저장">CSV 다운로드</button>
       <button class="btn" id="btn-refresh">새로고침</button>
     </div>
   </div>
-  <div class="help-text">Ctrl+클릭: 다중 선택 | Shift+클릭: 범위 선택 | 더블클릭: 셀 편집 | Delete: 선택 삭제</div>
+  <div class="help-text">열 추가: 이름 입력 후 [+ 열 추가] | Ctrl+클릭: 다중 선택 | Shift+클릭: 범위 선택 | 더블클릭: 셀 편집 | Delete: 선택 삭제</div>
   <div class="table-container">
     ${features.length > 0 ? `
     <table>
@@ -837,6 +880,82 @@ export class AttributeTable {
       if (btnRefresh) {
         btnRefresh.addEventListener('click', function() {
           self.refreshWindow(layerId);
+        });
+      }
+
+      // 열 추가 버튼
+      const btnAddColumn = doc.getElementById('btn-add-column');
+      const newColInput = doc.getElementById('new-column-name');
+
+      function addColumn() {
+        const name = (newColInput ? newColInput.value : '').trim();
+        if (!name) {
+          win.alert('추가할 열 이름을 입력하세요.');
+          if (newColInput) newColInput.focus();
+          return;
+        }
+        if (columns.includes(name) || name === 'geometry') {
+          win.alert('이미 존재하는 열 이름입니다.');
+          return;
+        }
+        if (featureMap.size === 0) {
+          win.alert('피처가 없어 열을 추가할 수 없습니다.');
+          return;
+        }
+
+        // 모든 피처에 빈 값 속성 추가 (CSV/프로젝트 저장에 반영됨)
+        featureMap.forEach(f => {
+          if (f.get(name) === undefined) f.set(name, '');
+        });
+        columns.push(name);
+
+        // 헤더에 정렬 가능한 열 추가
+        const headRow = doc.querySelector('thead tr');
+        if (headRow) {
+          const th = doc.createElement('th');
+          th.className = 'sortable';
+          th.dataset.column = name;
+          th.textContent = name;
+          const span = doc.createElement('span');
+          span.className = 'sort-icon';
+          th.appendChild(span);
+          th.addEventListener('click', function() {
+            const col = this.dataset.column;
+            if (sortColumn === col) {
+              sortAsc = !sortAsc;
+            } else {
+              sortColumn = col;
+              sortAsc = true;
+            }
+            sortTable(col, sortAsc);
+            updateSortUI(col, sortAsc);
+          });
+          headRow.appendChild(th);
+        }
+
+        // 각 행에 편집 가능한 빈 셀 추가 (더블클릭으로 텍스트 입력)
+        doc.querySelectorAll('tbody tr').forEach(tr => {
+          const td = doc.createElement('td');
+          td.className = 'editable';
+          td.title = '';
+          td.textContent = '';
+          td.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            startEditing(this);
+          });
+          tr.appendChild(td);
+        });
+
+        if (newColInput) newColInput.value = '';
+      }
+
+      if (btnAddColumn) {
+        btnAddColumn.addEventListener('click', addColumn);
+      }
+      if (newColInput) {
+        newColInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') addColumn();
+          e.stopPropagation();
         });
       }
 

@@ -337,9 +337,11 @@ export class AppLayout {
             <div class="panel-content">
               <div class="file-drop-zone" id="file-drop-zone">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px;opacity:0.6;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <p>파일을 드래그하거나<br>클릭하여 업로드</p>
-                <p class="file-types">GeoJSON, Shapefile(ZIP), GPKG, DEM(TIF/IMG)</p>
+                <p>파일·폴더를 드래그하거나<br>클릭하여 업로드</p>
+                <p class="file-types">GeoJSON, Shapefile(ZIP/폴더), GPKG, DEM(TIF/IMG)</p>
               </div>
+              <button type="button" class="btn btn-sm" id="btn-open-folder" style="width:100%;margin-top:8px;">📁 Shapefile 폴더 열기</button>
+              <p class="file-types" style="margin-top:6px;opacity:0.7;font-size:11px;">Shapefile은 폴더째 드래그하거나 ZIP으로 넣으면 속성(.dbf)까지 함께 불러옵니다.</p>
             </div>
           </div>
         </aside>
