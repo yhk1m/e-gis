@@ -1337,6 +1337,35 @@ body.exporting .map-image-delete {
   flex-direction: column;
 }
 
+/*
+ * 넓은 화면(데스크톱/Electron 설치버전)에서는 전체화면이 아니라 가운데 뜨는 패널로.
+ * 설치버전은 웹뷰 팝업(window.open)이 차단돼 이 오버레이로 폴백되므로,
+ * 마우스가 있는 넓은 화면에서는 모달형 패널로 보이게 한다. (터치 기기는 전체화면 유지)
+ */
+@media (min-width: 769px) and (pointer: fine) {
+  .attr-table-mobile {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(1040px, 92vw);
+    height: min(80vh, 640px);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 12px 44px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  /* 패널 뒤 배경 딤 처리 */
+  .attr-table-mobile::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: -1;
+  }
+}
+
 .attr-mobile-header {
   display: flex;
   align-items: center;
