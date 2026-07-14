@@ -1486,6 +1486,29 @@ body.exporting .map-image-delete {
   background: var(--bg-selected, rgba(74, 144, 217, 0.18));
 }
 
+/* 라벨 위치 편집 - 지도 위 플로팅 바 */
+.label-edit-bar {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  font-size: 13px;
+}
+
+.label-edit-bar-hint {
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
 /* 모바일 속성 테이블: 액션 툴바 + 편집 모드 */
 .attr-mobile-toolbar {
   display: flex;

@@ -139,14 +139,69 @@ class LabelPanel {
     }
 
     if (labelTool.isEditMode()) {
-      labelTool.stopEditMode();
-      this.modal.querySelector('#label-edit-position-btn').textContent = '위치 편집';
-      this.modal.querySelector('#label-edit-position-btn').classList.remove('active');
+      this.finishEditMode();
     } else {
-      labelTool.startEditMode(this.currentLayerId);
-      this.modal.querySelector('#label-edit-position-btn').textContent = '편집 완료';
-      this.modal.querySelector('#label-edit-position-btn').classList.add('active');
+      this.startEditModeUI();
     }
+  }
+
+  /**
+   * 편집 모드 진입 - 모달이 지도를 덮어 드래그를 막으므로 모달을 숨기고 플로팅 바를 띄운다
+   */
+  startEditModeUI() {
+    labelTool.startEditMode(this.currentLayerId);
+    if (this.modal) this.modal.classList.remove('active'); // 모달 숨김 → 지도 조작 가능
+    this.showEditBar();
+  }
+
+  /**
+   * 편집 모드 종료 - 오프셋을 라벨에 반영하고 모달을 다시 표시
+   */
+  finishEditMode() {
+    labelTool.stopEditMode();
+    this.removeEditBar();
+    if (this.modal) {
+      this.modal.classList.add('active');
+      const btn = this.modal.querySelector('#label-edit-position-btn');
+      if (btn) {
+        btn.textContent = '위치 편집';
+        btn.classList.remove('active');
+      }
+    }
+  }
+
+  /**
+   * 지도 위 플로팅 편집 바 (안내 + 위치 초기화 + 편집 완료)
+   */
+  showEditBar() {
+    this.removeEditBar();
+    const bar = document.createElement('div');
+    bar.id = 'label-edit-bar';
+    bar.className = 'label-edit-bar';
+    bar.innerHTML = `
+      <span class="label-edit-bar-hint">✋ 각 라벨을 드래그해 위치를 옮기세요</span>
+      <button type="button" class="btn btn-sm" id="label-edit-reset">위치 초기화</button>
+      <button type="button" class="btn btn-sm btn-primary" id="label-edit-done">편집 완료</button>
+    `;
+    document.body.appendChild(bar);
+    this.editBar = bar;
+
+    bar.querySelector('#label-edit-done').addEventListener('click', () => this.finishEditMode());
+    bar.querySelector('#label-edit-reset').addEventListener('click', () => {
+      // 오프셋 초기화 후 편집 포인트를 다시 만들어 반영
+      labelTool.stopEditMode();
+      labelTool.resetLabelOffsets(this.currentLayerId);
+      labelTool.startEditMode(this.currentLayerId);
+    });
+  }
+
+  removeEditBar() {
+    if (this.editBar) {
+      this.editBar.remove();
+      this.editBar = null;
+    }
+    const existing = document.getElementById('label-edit-bar');
+    if (existing) existing.remove();
   }
 
   /**
@@ -239,10 +294,15 @@ class LabelPanel {
    * 모달 닫기
    */
   close() {
+    // 편집 모드 중 닫으면 편집 상태·플로팅 바 정리
+    if (labelTool.isEditMode()) {
+      labelTool.stopEditMode();
+    }
+    this.removeEditBar();
     if (this.modal) {
       this.modal.classList.remove('active');
       setTimeout(() => {
-        this.modal.remove();
+        if (this.modal) this.modal.remove();
         this.modal = null;
       }, 200);
     }

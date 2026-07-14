@@ -673,14 +673,18 @@ class ExportPanel {
       };
     };
 
+    // 오버레이 위치 기준이 되는 지도 사각형(버퍼 픽셀). 없으면 캔버스 전체로 폴백.
+    const getMapRect = () => canvas._mapRect || { x: 0, y: 0, w: canvas.width, h: canvas.height };
+
     canvas.addEventListener('mousedown', (e) => {
       const { x, y } = toBufferCoords(e);
-      const hit = this.hitTestAt(x, y, canvas.width, canvas.height);
+      const mr = getMapRect();
+      const hit = this.hitTestAt(x, y, mr);
       if (hit) {
         this.dragging = hit;
         this.dragOffset = {
-          x: x - this.elements[hit].x * canvas.width,
-          y: y - this.elements[hit].y * canvas.height
+          x: x - (mr.x + this.elements[hit].x * mr.w),
+          y: y - (mr.y + this.elements[hit].y * mr.h)
         };
         canvas.style.cursor = 'grabbing';
       }
@@ -688,12 +692,13 @@ class ExportPanel {
 
     canvas.addEventListener('mousemove', (e) => {
       const { x, y } = toBufferCoords(e);
+      const mr = getMapRect();
       if (this.dragging) {
-        this.elements[this.dragging].x = Math.max(0.05, Math.min(0.95, (x - this.dragOffset.x) / canvas.width));
-        this.elements[this.dragging].y = Math.max(0.05, Math.min(0.95, (y - this.dragOffset.y) / canvas.height));
+        this.elements[this.dragging].x = Math.max(0.05, Math.min(0.95, (x - this.dragOffset.x - mr.x) / mr.w));
+        this.elements[this.dragging].y = Math.max(0.05, Math.min(0.95, (y - this.dragOffset.y - mr.y) / mr.h));
         redraw();
       } else {
-        const hit = this.hitTestAt(x, y, canvas.width, canvas.height);
+        const hit = this.hitTestAt(x, y, mr);
         canvas.style.cursor = hit ? 'grab' : 'default';
       }
     });
@@ -708,18 +713,19 @@ class ExportPanel {
 
   hitTest(x, y) {
     const canvas = document.getElementById('preview-canvas');
-    return this.hitTestAt(x, y, canvas.width, canvas.height);
+    const mr = canvas._mapRect || { x: 0, y: 0, w: canvas.width, h: canvas.height };
+    return this.hitTestAt(x, y, mr);
   }
 
-  hitTestAt(x, y, w, h) {
+  hitTestAt(x, y, mr) {
     const elements = ['title', 'compass', 'textBox'];
 
     for (const key of elements) {
       const el = this.elements[key];
       if (!el.enabled) continue;
 
-      const elX = el.x * w;
-      const elY = el.y * h;
+      const elX = mr.x + el.x * mr.w;
+      const elY = mr.y + el.y * mr.h;
       let hitBox = { x: 0, y: 0, w: 0, h: 0 };
 
       switch (key) {
@@ -727,7 +733,7 @@ class ExportPanel {
           hitBox = { x: elX - 100, y: elY - 20, w: 200, h: 40 };
           break;
         case 'compass':
-          const size = el.size * 0.4;
+          const size = el.size * (this._lastPreviewFontScale || 0.4);
           hitBox = { x: elX - size, y: elY - size, w: size * 2, h: size * 2 };
           break;
         case 'textBox':
@@ -796,7 +802,9 @@ class ExportPanel {
       ctx.scale(dpr, dpr);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      this._renderPreviewInto(ctx, baseW, baseH);
+      const mr = this._renderPreviewInto(ctx, baseW, baseH);
+      // 드래그 좌표 변환용 지도 사각형(버퍼 픽셀) 저장
+      canvas._mapRect = { x: mr.x * dpr, y: mr.y * dpr, w: mr.w * dpr, h: mr.h * dpr };
       canvas.style.width = (baseW * zoom) + 'px';
       canvas.style.height = 'auto';
       if (valueLabel) valueLabel.textContent = Math.round(zoom * 100) + '%';
@@ -835,6 +843,7 @@ class ExportPanel {
     ctx.fillStyle = '#e8e8e8';
     ctx.fillRect(0, 0, w, h);
     const mapX = 8, mapY = 8, mapW = w - 16, mapH = h - 16;
+    let mapRect = { x: mapX, y: mapY, w: mapW, h: mapH };
 
     const hasCachedMap = this.mapPreviewCanvas && this.mapPreviewBasemap === this.includeBasemap;
     if (!this.includeBasemap) {
@@ -862,8 +871,10 @@ class ExportPanel {
         dy = mapY; dx = mapX + (mapW - dw) / 2;
       }
       ctx.drawImage(src, dx, dy, dw, dh);
+      mapRect = { x: dx, y: dy, w: dw, h: dh };
     }
-    this.drawPreviewElements(ctx, w, h);
+    this.drawPreviewElements(ctx, mapRect, this._previewFontScale(mapRect.w));
+    return mapRect;
   }
 
   updatePreview() {
@@ -921,6 +932,8 @@ class ExportPanel {
       ctx.fillRect(mapX, mapY, mapW, mapH);
     }
 
+    // 지도가 실제로 표시된 사각형 (오버레이 위치·크기 기준)
+    let mapRect = { x: mapX, y: mapY, w: mapW, h: mapH };
     if (hasCachedMap) {
       // 캡처된 지도 그리기 (aspect-fit)
       const src = this.mapPreviewCanvas;
@@ -935,6 +948,7 @@ class ExportPanel {
         dy = mapY; dx = mapX + (mapW - dw) / 2;
       }
       ctx.drawImage(src, dx, dy, dw, dh);
+      mapRect = { x: dx, y: dy, w: dw, h: dh };
     } else if (this.capturingPreview) {
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.font = '12px "Malgun Gothic", sans-serif';
@@ -943,27 +957,49 @@ class ExportPanel {
       ctx.fillText('지도 캡처 중...', mapX + mapW / 2, mapY + mapH / 2);
     }
 
-    // 요소 그리기
-    this.drawPreviewElements(ctx, previewWidth, previewHeight);
+    // 요소 그리기 (내보내기와 동일한 지도 기준 위치·배율로)
+    this.drawPreviewElements(ctx, mapRect, this._previewFontScale(mapRect.w));
+
+    // 드래그 좌표 변환용 지도 사각형(버퍼 픽셀) 저장
+    canvas._mapRect = { x: mapRect.x * dpr, y: mapRect.y * dpr, w: mapRect.w * dpr, h: mapRect.h * dpr };
   }
 
-  drawPreviewElements(ctx, width, height) {
+  drawPreviewElements(ctx, mapRect, fontScale = 0.5) {
+    // 오버레이를 "표시된 지도 사각형" 기준으로 그린다 → 내보내기(지도=캔버스 전체)와 위치·크기 일치
+    ctx.save();
+    ctx.translate(mapRect.x, mapRect.y);
+    const w = mapRect.w;
+    const h = mapRect.h;
     if (this.elements.title.enabled) {
-      this.drawPreviewTitle(ctx, width, height);
+      this.drawPreviewTitle(ctx, w, h, fontScale);
     }
     if (this.elements.compass.enabled) {
-      this.drawPreviewCompass(ctx, width, height);
+      this.drawPreviewCompass(ctx, w, h, fontScale);
     }
     if (this.elements.textBox.enabled && this.elements.textBox.text) {
-      this.drawPreviewTextBox(ctx, width, height);
+      this.drawPreviewTextBox(ctx, w, h, fontScale);
     }
+    ctx.restore();
   }
 
-  drawPreviewTitle(ctx, width, height) {
+  /**
+   * 미리보기 오버레이 폰트/크기 배율.
+   * 표시된 지도 폭(displayedMapW) ÷ 실제 지도 폭(#map clientWidth)으로 계산해,
+   * 내보내기(fontSize × exportScale, 지도폭 = clientWidth × exportScale)와
+   * "지도 대비 상대 크기"를 동일하게 맞춘다 → 미리보기가 곧 결과물(WYSIWYG).
+   */
+  _previewFontScale(displayedMapW) {
+    const mapEl = document.getElementById('map');
+    const clientW = (mapEl && mapEl.clientWidth) || displayedMapW || 1;
+    this._lastPreviewFontScale = displayedMapW / clientW;
+    return this._lastPreviewFontScale;
+  }
+
+  drawPreviewTitle(ctx, width, height, fontScale = 0.5) {
     const el = this.elements.title;
     const x = el.x * width;
     const y = el.y * height;
-    const fontSize = Math.max(8, el.fontSize * 0.5);
+    const fontSize = Math.max(6, el.fontSize * fontScale);
 
     ctx.save();
 
@@ -988,7 +1024,7 @@ class ExportPanel {
 
     if (el.stroke) {
       ctx.strokeStyle = el.strokeColor;
-      ctx.lineWidth = el.strokeWidth * 0.5;
+      ctx.lineWidth = el.strokeWidth * fontScale;
       ctx.strokeText(el.text || '지도 제목', x, y);
     }
 
@@ -1028,9 +1064,9 @@ class ExportPanel {
     ctx.restore();
   }
 
-  drawPreviewCompass(ctx, width, height) {
-    // ExportTool과 동일한 스타일을 작은 스케일로 렌더
-    exportTool.drawCompass(ctx, this.elements.compass, width, height, 0.4);
+  drawPreviewCompass(ctx, width, height, fontScale = 0.4) {
+    // ExportTool과 동일한 그리기 로직을 지도 대비 동일 배율(fontScale)로 렌더
+    exportTool.drawCompass(ctx, this.elements.compass, width, height, fontScale);
   }
 
   /**
@@ -1133,11 +1169,11 @@ class ExportPanel {
     ctx.restore();
   }
 
-  drawPreviewTextBox(ctx, width, height) {
+  drawPreviewTextBox(ctx, width, height, fontScale = 0.5) {
     const el = this.elements.textBox;
     const x = el.x * width;
     const y = el.y * height;
-    const fontSize = Math.max(6, el.fontSize * 0.5);
+    const fontSize = Math.max(6, el.fontSize * fontScale);
     const lines = el.text.split('\n').slice(0, 3).map(l => l.substring(0, 20));
 
     ctx.save();
