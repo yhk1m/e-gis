@@ -322,7 +322,7 @@ class ExportTool {
    * 방위표 그리기
    */
   drawCompass(ctx, options, width, height, scale) {
-    const { size = 50, x = 0.92, y = 0.12, style = 'basic' } = options;
+    const { size = 50, x = 0.92, y = 0.12, style = 'basic', image = null } = options;
     const s = size * scale;
     const cx = x * width;
     const cy = y * height;
@@ -338,7 +338,19 @@ class ExportTool {
       ctx.translate(-cx, -cy);
     }
 
-    if (style === 'arrow') {
+    if (style === 'custom') {
+      // 커스텀 이미지 방위표 — 지름(2s)에 맞춰 비율 유지하며 중앙 배치.
+      // 이미지가 아직 없으면 아무것도 그리지 않음.
+      if (image && image.complete && image.naturalWidth > 0) {
+        const maxDim = s * 2;
+        const iw = image.naturalWidth;
+        const ih = image.naturalHeight;
+        const ratio = Math.min(maxDim / iw, maxDim / ih);
+        const dw = iw * ratio;
+        const dh = ih * ratio;
+        ctx.drawImage(image, cx - dw / 2, cy - dh / 2, dw, dh);
+      }
+    } else if (style === 'arrow') {
       this._drawCompassArrow(ctx, cx, cy, s, scale);
     } else if (style === 'rose') {
       this._drawCompassRose(ctx, cx, cy, s, scale);

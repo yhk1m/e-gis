@@ -51,7 +51,10 @@ class ExportPanel {
         x: 0.92,
         y: 0.12,
         size: 50,
-        style: 'basic'
+        style: 'basic',
+        imageSrc: null,   // 커스텀 이미지 data URL
+        image: null,      // 로드된 Image 객체 (런타임)
+        imageName: ''
       },
       textBox: {
         enabled: false,
@@ -212,7 +215,15 @@ class ExportPanel {
                       <option value="arrow">간단 화살표</option>
                       <option value="rose">8방위 별</option>
                       <option value="classic">고전 나침반</option>
+                      <option value="custom">커스텀 이미지</option>
                     </select>
+                  </div>
+                  <div class="style-row" id="compass-image-row" style="display:none;">
+                    <label>이미지</label>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;">
+                      <button type="button" class="btn btn-sm" id="compass-image-btn">이미지 선택</button>
+                      <span id="compass-image-name" class="help-text" style="overflow:hidden;text-overflow:ellipsis;max-width:140px;white-space:nowrap;"></span>
+                    </div>
                   </div>
                   <div class="style-row">
                     <label>크기</label>
@@ -554,6 +565,14 @@ class ExportPanel {
     // 방위표 크기·스타일
     this.bindInput('compass-size', 'compass', 'size', true);
     this.bindInput('compass-style', 'compass', 'style');
+
+    // 커스텀 이미지 방위표: 스타일이 '커스텀'일 때 이미지 업로드 행 표시
+    const compassStyleSel = document.getElementById('compass-style');
+    if (compassStyleSel) {
+      compassStyleSel.addEventListener('change', () => this.updateCompassImageRow());
+    }
+    this.setupCompassImageUpload();
+    this.updateCompassImageRow();
 
     // 텍스트 박스 스타일
     this.bindInput('textbox-content', 'textBox', 'text');
@@ -1012,6 +1031,73 @@ class ExportPanel {
   drawPreviewCompass(ctx, width, height) {
     // ExportTool과 동일한 스타일을 작은 스케일로 렌더
     exportTool.drawCompass(ctx, this.elements.compass, width, height, 0.4);
+  }
+
+  /**
+   * 커스텀 이미지 방위표 - 업로드 행 표시/숨김 및 파일명 갱신
+   */
+  updateCompassImageRow() {
+    const row = document.getElementById('compass-image-row');
+    if (row) {
+      row.style.display = this.elements.compass.style === 'custom' ? '' : 'none';
+    }
+    const nameEl = document.getElementById('compass-image-name');
+    if (nameEl) {
+      nameEl.textContent = this.elements.compass.imageName ||
+        (this.elements.compass.imageSrc ? '이미지 설정됨' : '이미지를 선택하세요');
+    }
+  }
+
+  /**
+   * 커스텀 이미지 업로드 버튼/입력 설정
+   */
+  setupCompassImageUpload() {
+    if (!this.compassImageInput) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+      input.addEventListener('change', (e) => this.onCompassImageSelected(e));
+      this.compassImageInput = input;
+    }
+    const btn = document.getElementById('compass-image-btn');
+    if (btn) {
+      btn.addEventListener('click', () => this.compassImageInput.click());
+    }
+  }
+
+  /**
+   * 이미지 선택 처리 - data URL로 읽어 Image 객체로 로드 후 미리보기 갱신
+   */
+  onCompassImageSelected(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 사용할 수 있습니다.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const img = new Image();
+      img.onload = () => {
+        this.elements.compass.imageSrc = dataUrl;
+        this.elements.compass.image = img;
+        this.elements.compass.imageName = file.name;
+        // 커스텀 이미지를 올리면 스타일도 자동으로 '커스텀'으로
+        this.elements.compass.style = 'custom';
+        this.setValue('compass-style', 'custom');
+        this.updateCompassImageRow();
+        this.updatePreview();
+      };
+      img.onerror = () => alert('이미지를 불러오지 못했습니다.');
+      img.src = dataUrl;
+    };
+    reader.onerror = () => alert('파일을 읽지 못했습니다.');
+    reader.readAsDataURL(file);
   }
 
   drawPreviewLegend_unused(ctx, width, height) {
