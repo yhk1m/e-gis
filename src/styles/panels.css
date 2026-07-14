@@ -1461,14 +1461,28 @@ body.exporting .map-image-delete {
 .attr-mobile-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 8px 12px;
+  flex-wrap: wrap;
   padding: 8px 12px;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
-.attr-mobile-toolbar #attr-mobile-zoom {
-  margin-left: auto;
+/* 기능별 컨트롤 묶음 */
+.attr-mobile-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(128, 128, 128, 0.12);
+  border: 1px solid var(--border-color);
+}
+
+.attr-mobile-group-label {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+  white-space: nowrap;
 }
 
 .attr-mobile-toolbar .btn-danger {

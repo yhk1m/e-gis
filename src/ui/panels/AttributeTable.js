@@ -163,12 +163,24 @@ export class AttributeTable {
         <button class="attr-mobile-close" id="attr-mobile-close" aria-label="닫기">&times;</button>
       </div>
       <div class="attr-mobile-toolbar">
-        <button class="btn btn-sm" id="attr-mobile-edit">✏️ 편집</button>
-        <button class="btn btn-sm btn-danger" id="attr-mobile-delete" disabled>삭제</button>
-        <button class="btn btn-sm" id="attr-mobile-csv" title="CSV로 저장">CSV</button>
-        <input type="text" id="attr-mobile-newcol" placeholder="새 열 이름" style="flex:0 1 90px;min-width:0;padding:6px 8px;border-radius:4px;border:1px solid var(--border-color,#ccc);font-size:13px;">
-        <button class="btn btn-sm" id="attr-mobile-addcol" title="새 열 추가">+ 열</button>
-        <button class="btn btn-sm btn-primary" id="attr-mobile-zoom" disabled>선택 이동</button>
+        <div class="attr-mobile-group">
+          <button class="btn btn-sm" id="attr-mobile-edit">✏️ 편집</button>
+          <button class="btn btn-sm btn-danger" id="attr-mobile-delete" disabled>선택 삭제</button>
+          <button class="btn btn-sm btn-primary" id="attr-mobile-zoom" disabled>선택 이동</button>
+        </div>
+        <div class="attr-mobile-group">
+          <span class="attr-mobile-group-label">열 추가</span>
+          <input type="text" id="attr-mobile-newcol" placeholder="이름" style="flex:0 1 78px;min-width:0;padding:6px 8px;border-radius:4px;border:1px solid var(--border-color,#ccc);font-size:13px;">
+          <button class="btn btn-sm" id="attr-mobile-addcol" title="새 열 추가">추가</button>
+        </div>
+        <div class="attr-mobile-group">
+          <span class="attr-mobile-group-label">열 삭제</span>
+          <select id="attr-mobile-delcol" title="삭제할 열 선택" style="flex:0 1 78px;min-width:0;padding:6px 8px;border-radius:4px;border:1px solid var(--border-color,#ccc);font-size:13px;"></select>
+          <button class="btn btn-sm btn-danger" id="attr-mobile-delcol-btn" title="선택한 열 삭제">삭제</button>
+        </div>
+        <div class="attr-mobile-group">
+          <button class="btn btn-sm" id="attr-mobile-csv" title="CSV로 저장">CSV</button>
+        </div>
       </div>
       <div class="attr-mobile-hint">${HINT_DEFAULT}</div>
       <div class="attr-mobile-table-wrap">
@@ -303,6 +315,38 @@ export class AttributeTable {
       featureMap.forEach(f => {
         if (f.get(name) === undefined) f.set(name, '');
       });
+      this.openMobileSheet(layerId, layerInfo);
+    });
+
+    // 열 삭제 - 선택 목록 채우기
+    const delColSel = overlay.querySelector('#attr-mobile-delcol');
+    if (delColSel) {
+      if (columns.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '삭제할 열 없음';
+        delColSel.appendChild(opt);
+      } else {
+        columns.forEach(col => {
+          const opt = document.createElement('option');
+          opt.value = col;
+          opt.textContent = col;
+          delColSel.appendChild(opt);
+        });
+      }
+    }
+
+    // 열 삭제
+    overlay.querySelector('#attr-mobile-delcol-btn').addEventListener('click', () => {
+      finishEditing(true);
+      const name = delColSel ? delColSel.value : '';
+      if (!name) {
+        alert('삭제할 열을 선택하세요.');
+        return;
+      }
+      if (!confirm(`'${name}' 열을 삭제하시겠습니까? 이 열의 모든 값이 사라집니다.`)) return;
+      // 모든 피처에서 속성 제거 후 시트 재구성
+      featureMap.forEach(f => f.unset(name));
       this.openMobileSheet(layerId, layerInfo);
     });
 
@@ -551,6 +595,8 @@ export class AttributeTable {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
       padding: 10px 16px;
       background: ${isDark ? '#252540' : '#f5f5f5'};
       border-bottom: 1px solid ${isDark ? '#3a3a5c' : '#e0e0e0'};
@@ -575,7 +621,28 @@ export class AttributeTable {
 
     .header-actions {
       display: flex;
-      gap: 8px;
+      gap: 8px 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    /* 기능별 컨트롤 묶음 (열 관리 / 열 삭제 / 선택 / 기타) */
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.035)'};
+      border: 1px solid ${isDark ? '#3a3a5c' : '#e0e0e0'};
+    }
+
+    .action-group-label {
+      font-size: 11px;
+      color: ${isDark ? '#9a9ab0' : '#888'};
+      margin-right: 2px;
+      white-space: nowrap;
     }
 
     .btn {
@@ -752,15 +819,27 @@ export class AttributeTable {
       <span class="selection-count" id="selection-count"></span>
     </div>
     <div class="header-actions">
-      <input type="text" id="new-column-name" class="col-name-input" placeholder="새 열 이름">
-      <button class="btn" id="btn-add-column" title="속성 테이블에 새 열 추가">+ 열 추가</button>
-      <button class="btn" id="btn-zoom-selected" title="선택한 피처로 이동">선택으로 이동</button>
-      <button class="btn btn-danger" id="btn-delete-selected" title="선택한 피처 삭제" disabled>선택 삭제</button>
-      <button class="btn" id="btn-export-csv" title="속성 테이블을 CSV 파일로 저장">CSV 다운로드</button>
-      <button class="btn" id="btn-refresh">새로고침</button>
+      <div class="action-group">
+        <span class="action-group-label">열 추가</span>
+        <input type="text" id="new-column-name" class="col-name-input" placeholder="새 열 이름">
+        <button class="btn" id="btn-add-column" title="속성 테이블에 새 열 추가">추가</button>
+      </div>
+      <div class="action-group">
+        <span class="action-group-label">열 삭제</span>
+        <select id="del-column-select" class="col-name-input" title="삭제할 열 선택"></select>
+        <button class="btn btn-danger" id="btn-del-column" title="선택한 열 삭제">삭제</button>
+      </div>
+      <div class="action-group">
+        <span class="action-group-label">선택 피처</span>
+        <button class="btn" id="btn-zoom-selected" title="선택한 피처로 이동">이동</button>
+        <button class="btn btn-danger" id="btn-delete-selected" title="선택한 피처 삭제" disabled>삭제</button>
+      </div>
+      <div class="action-group">
+        <button class="btn" id="btn-export-csv" title="속성 테이블을 CSV 파일로 저장">CSV 다운로드</button>
+      </div>
     </div>
   </div>
-  <div class="help-text">열 추가: 이름 입력 후 [+ 열 추가] | Ctrl+클릭: 다중 선택 | Shift+클릭: 범위 선택 | 더블클릭: 셀 편집 | Delete: 선택 삭제</div>
+  <div class="help-text">Ctrl+클릭: 다중 선택 | Shift+클릭: 범위 선택 | 더블클릭: 셀 편집 | Delete: 선택 삭제</div>
   <div class="table-container">
     ${features.length > 0 ? `
     <table>
@@ -875,14 +954,6 @@ export class AttributeTable {
         });
       }
 
-      // 새로고침 버튼
-      const btnRefresh = doc.getElementById('btn-refresh');
-      if (btnRefresh) {
-        btnRefresh.addEventListener('click', function() {
-          self.refreshWindow(layerId);
-        });
-      }
-
       // 열 추가 버튼
       const btnAddColumn = doc.getElementById('btn-add-column');
       const newColInput = doc.getElementById('new-column-name');
@@ -947,6 +1018,7 @@ export class AttributeTable {
         });
 
         if (newColInput) newColInput.value = '';
+        refreshDelColumnOptions();
       }
 
       if (btnAddColumn) {
@@ -958,6 +1030,71 @@ export class AttributeTable {
           e.stopPropagation();
         });
       }
+
+      // 열 삭제 버튼
+      const btnDelColumn = doc.getElementById('btn-del-column');
+
+      function refreshDelColumnOptions() {
+        const sel = doc.getElementById('del-column-select');
+        if (!sel) return;
+        sel.innerHTML = '';
+        if (columns.length === 0) {
+          const opt = doc.createElement('option');
+          opt.value = '';
+          opt.textContent = '삭제할 열 없음';
+          sel.appendChild(opt);
+          return;
+        }
+        columns.forEach(col => {
+          const opt = doc.createElement('option');
+          opt.value = col;
+          opt.textContent = col;
+          sel.appendChild(opt);
+        });
+      }
+
+      function removeColumn(name) {
+        if (!name) {
+          win.alert('삭제할 열을 선택하세요.');
+          return;
+        }
+        const colIndex = columns.indexOf(name);
+        if (colIndex === -1) return;
+        if (!win.confirm(`'${name}' 열을 삭제하시겠습니까? 이 열의 모든 값이 사라집니다.`)) return;
+
+        // 편집 중이면 취소
+        if (editingCell) cancelEditing();
+
+        // 모든 피처에서 속성 제거 (CSV/프로젝트 저장에 반영됨)
+        featureMap.forEach(f => f.unset(name));
+
+        // 헤더에서 해당 열(th) 제거
+        doc.querySelectorAll('thead th[data-column]').forEach(th => {
+          if (th.dataset.column === name) th.remove();
+        });
+
+        // 각 행에서 해당 셀 제거 (row-num 다음이 columns[0])
+        doc.querySelectorAll('tbody tr').forEach(tr => {
+          const cell = tr.querySelectorAll('td')[colIndex + 1];
+          if (cell) cell.remove();
+        });
+
+        // columns 배열에서 제거 (DOM 셀과 순서 동기화 유지)
+        columns.splice(colIndex, 1);
+        if (sortColumn === name) sortColumn = null;
+
+        refreshDelColumnOptions();
+      }
+
+      if (btnDelColumn) {
+        btnDelColumn.addEventListener('click', function() {
+          const sel = doc.getElementById('del-column-select');
+          removeColumn(sel ? sel.value : '');
+        });
+      }
+
+      // 삭제 목록 초기화
+      refreshDelColumnOptions();
 
       // Delete 키 단축키
       doc.addEventListener('keydown', function(e) {
@@ -1276,8 +1413,35 @@ export class AttributeTable {
 
   /**
    * 창 새로고침
+   * 이미 열린 창은 닫지 않고 내용만 다시 그린다 (창 크기/위치 유지 → 전체화면 튀는 문제 방지).
+   * 창이 없을 때만 새로 연다.
    */
   refreshWindow(layerId) {
+    const win = this.openWindows.get(layerId);
+
+    if (win && !win.closed) {
+      const layerInfo = layerManager.getLayer(layerId);
+      if (!layerInfo) {
+        this.closeWindow(layerId);
+        return;
+      }
+
+      const features = layerInfo.source.getFeatures();
+      const columns = this.extractColumns(features);
+      const html = this.generateHTML(layerInfo, features, columns, layerId);
+
+      // 기존 창 문서를 그대로 다시 그림 (새 window.open 없음)
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+
+      // 하이라이트 재설정 + 창 내부 이벤트 재바인딩
+      this.setupHighlight(layerId, layerInfo);
+      this.bindWindowEvents(win, layerId, features, columns);
+      return;
+    }
+
+    // 열린 창이 없으면 새로 연다
     this.closeWindow(layerId);
     this.open(layerId);
   }
