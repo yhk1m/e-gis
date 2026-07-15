@@ -19,7 +19,9 @@ const BBOX_MIN_PADDING = 1000;
 /**
  * 겹친 시드를 제거한다.
  *
- * turf.voronoi가 중복 좌표에서 TypeError로 죽기 때문에 반드시 선행되어야 한다.
+ * d3-voronoi는 겹친 좌표에 셀을 만들지 않고 sparse array에 구멍을 남긴다(예외는 아니다).
+ * 걸러내지 않으면 그 점들이 조용히 셀 없이 사라져 사용자가 포인트보다 셀이 적은
+ * 이유를 알 수 없다. 제거한 개수를 세어 보고하려고 선행한다.
  *
  * @param {Array<{coord: number[], properties: Object}>} seeds
  * @returns {{seeds: Array<{coord: number[], properties: Object}>, duplicates: number}} duplicates는 제거된 개수

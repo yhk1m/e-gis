@@ -50,7 +50,7 @@ class VoronoiTool {
    * @param {Object} options
    * @param {string} options.color - 결과 레이어 색상
    * @returns {{layerId: string, layerName: string, cellCount: number,
-   *            skipped: {duplicates: number, outsideBoundary: number}}}
+   *            skipped: {duplicates: number, nonPoint: number, outsideBoundary: number}}}
    */
   createVoronoi(layerId, options = {}) {
     const layerInfo = layerManager.getLayer(layerId);
@@ -59,7 +59,8 @@ class VoronoiTool {
     }
 
     // 1~2. 시드 추출 + 중복 제거
-    const { seeds, duplicates } = dedupeSeeds(this.extractSeeds(layerInfo));
+    const { seeds: rawSeeds, nonPoint } = this.extractSeeds(layerInfo);
+    const { seeds, duplicates } = dedupeSeeds(rawSeeds);
 
     // 3. 최소 개수
     if (seeds.length < 2) {
@@ -89,21 +90,30 @@ class VoronoiTool {
       layerId: newLayerId,
       layerName,
       cellCount: olFeatures.length,
-      skipped: { duplicates, outsideBoundary: 0 }
+      skipped: { duplicates, nonPoint, outsideBoundary: 0 }
     };
   }
 
   /**
    * OL 피처에서 시드를 뽑는다. 좌표는 EPSG:3857 원좌표 그대로.
    * MultiPoint는 각 점을 개별 시드로 펼치되 부모 속성을 공유한다.
+   *
+   * 레이어의 geometryType은 첫 피처만 보고 정해지므로(LayerManager.js:106-115)
+   * 포인트 레이어에도 다른 타입이 섞여 있을 수 있다. 조용히 버리지 않고 센다.
+   *
+   * @returns {{seeds: Array<{coord: number[], properties: Object}>, nonPoint: number}}
    */
   extractSeeds(layerInfo) {
     const features = layerInfo.olLayer.getSource().getFeatures();
     const seeds = [];
+    let nonPoint = 0;
 
     for (const feature of features) {
       const geom = feature.getGeometry();
-      if (!geom) continue;
+      if (!geom) {
+        nonPoint++;
+        continue;
+      }
 
       const properties = { ...feature.getProperties() };
       delete properties.geometry;
@@ -115,10 +125,12 @@ class VoronoiTool {
         for (const coord of geom.getCoordinates()) {
           seeds.push({ coord, properties: { ...properties } });
         }
+      } else {
+        nonPoint++;
       }
     }
 
-    return seeds;
+    return { seeds, nonPoint };
   }
 
   /**
@@ -144,7 +156,10 @@ class VoronoiTool {
     );
 
     try {
-      // filter(Boolean)은 방어용 두 번째 겹. 중복 제거가 1차 방어다.
+      // d3-voronoi는 겹친 좌표에 구멍(hole)이 있는 sparse array를 돌려준다.
+      // map이 구멍을 건너뛰므로 예외는 나지 않지만 배열이 sparse로 남는다.
+      // dedupeSeeds가 앞단에서 중복을 걸러 개수를 보고하므로 여기 구멍은 없어야 하고,
+      // filter(Boolean)은 sparse가 새어 나올 경우를 막는 방어용이다.
       return turf.voronoi(points, { bbox }).features.filter(Boolean);
     } catch (error) {
       throw new Error('보로노이 생성에 실패했습니다: ' + error.message);
