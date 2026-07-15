@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "npm run catalog && vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist",
+    "test": "vitest run"
   },
   "keywords": [
     "gis",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "gh-pages": "^6.3.0",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "vitest": "^4.1.10"
   }
 }
