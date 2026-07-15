@@ -20,6 +20,9 @@ import { dedupeSeeds, computeBBox, resolveFieldName } from './voronoiHelpers.js'
 const AREA_FIELD = 'area_km2';
 const DEFAULT_COLOR = '#3388ff';
 
+/** 이보다 작은 셀은 버린다(m²). 클립 과정에서 생기는 미세 조각 제거용. */
+const MIN_CELL_AREA_M2 = 1;
+
 class VoronoiTool {
   constructor() {
     this.geoJSONFormat = new GeoJSON();
@@ -51,7 +54,8 @@ class VoronoiTool {
    * @param {string} options.color - 결과 레이어 색상
    * @param {string|null} options.boundaryLayerId - 경계 레이어 ID, null이면 사각형 모드
    * @returns {{layerId: string, layerName: string, cellCount: number,
-   *            skipped: {duplicates: number, nonPoint: number, outsideBoundary: number}}}
+   *            skipped: {duplicates: number, nonPoint: number, outsideBoundary: number,
+   *                      clipFailed: number, slivers: number}}}
    */
   createVoronoi(layerId, options = {}) {
     const layerInfo = layerManager.getLayer(layerId);
@@ -85,10 +89,12 @@ class VoronoiTool {
 
     // 6. 경계 클립
     let outsideBoundary = 0;
+    let clipFailed = 0;
     if (boundaryFeature) {
       const clipResult = this.clipCells(cells, boundaryFeature);
       cells = clipResult.cells;
       outsideBoundary = clipResult.outsideBoundary;
+      clipFailed = clipResult.clipFailed;
     }
 
     if (cells.length === 0) {
@@ -98,7 +104,11 @@ class VoronoiTool {
     }
 
     // 7. 면적 필드 + OL 피처 (면적은 반드시 클립 후에 계산)
-    const olFeatures = this.toOLFeaturesWithArea(cells);
+    const { features: olFeatures, slivers } = this.toOLFeaturesWithArea(cells);
+
+    if (olFeatures.length === 0) {
+      throw new Error('남은 셀이 없습니다. 포인트가 서로 너무 가깝거나 경계와 거의 겹치지 않습니다.');
+    }
 
     // 8. 레이어 생성
     const layerName = `${layerInfo.name}_보로노이`;
@@ -112,7 +122,7 @@ class VoronoiTool {
       layerId: newLayerId,
       layerName,
       cellCount: olFeatures.length,
-      skipped: { duplicates, nonPoint, outsideBoundary }
+      skipped: { duplicates, nonPoint, outsideBoundary, clipFailed, slivers }
     };
   }
 
@@ -209,29 +219,38 @@ class VoronoiTool {
 
   /**
    * 셀들을 경계로 자른다. 경계 밖 셀은 버리고 개수를 센다.
+   *
+   * 지오메트리 연산 실패는 "경계 밖"과 따로 센다. 뭉뚱그리면 데이터 품질 문제를
+   * 지리적 사실로 오해하게 된다.
    */
   clipCells(cells, boundaryFeature) {
     const kept = [];
     let outsideBoundary = 0;
+    let clipFailed = 0;
 
     for (const cell of cells) {
       let piece = null;
+      let failed = false;
+
       try {
         piece = turf.intersect(turf.featureCollection([cell, boundaryFeature]));
       } catch (error) {
         console.warn('셀 클립 실패:', error);
+        failed = true;
       }
 
       if (piece) {
         // turf.intersect는 속성을 넘겨주지 않으므로 원본 셀 속성을 다시 붙인다.
         piece.properties = { ...cell.properties };
         kept.push(piece);
+      } else if (failed) {
+        clipFailed++;
       } else {
         outsideBoundary++;
       }
     }
 
-    return { cells: kept, outsideBoundary };
+    return { cells: kept, outsideBoundary, clipFailed };
   }
 
   /**
@@ -254,8 +273,10 @@ class VoronoiTool {
   }
 
   /**
-   * GeoJSON 셀 → OL 피처. 면적 필드를 붙인다.
+   * GeoJSON 셀 → OL 피처. 면적 필드를 붙이고 미세 조각을 버린다.
    * readFeatures를 옵션 없이 호출하므로 좌표 변환이 없다(3857 유지).
+   *
+   * @returns {{features: Array, slivers: number}}
    */
   toOLFeaturesWithArea(cells) {
     const olFeatures = this.geoJSONFormat.readFeatures(turf.featureCollection(cells));
@@ -269,12 +290,24 @@ class VoronoiTool {
     )];
     const areaField = resolveFieldName(AREA_FIELD, existingKeys);
 
+    const kept = [];
+    let slivers = 0;
+
     for (const feature of olFeatures) {
       const areaM2 = getArea(feature.getGeometry(), { projection: 'EPSG:3857' });
+
+      // polyclip-ts는 정점 많은 해안선에서 폭이 1e-7 수준인 조각을 만들어낸다.
+      // 그대로 두면 area_km2가 0.000인 유령 행이 속성 테이블과 단계구분도에 낀다.
+      if (areaM2 < MIN_CELL_AREA_M2) {
+        slivers++;
+        continue;
+      }
+
       feature.set(areaField, Number((areaM2 / 1e6).toFixed(3)));
+      kept.push(feature);
     }
 
-    return olFeatures;
+    return { features: kept, slivers };
   }
 }
 
