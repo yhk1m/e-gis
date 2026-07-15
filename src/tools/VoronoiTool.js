@@ -49,6 +49,7 @@ class VoronoiTool {
    * @param {string} layerId - 포인트 레이어 ID
    * @param {Object} options
    * @param {string} options.color - 결과 레이어 색상
+   * @param {string|null} options.boundaryLayerId - 경계 레이어 ID, null이면 사각형 모드
    * @returns {{layerId: string, layerName: string, cellCount: number,
    *            skipped: {duplicates: number, nonPoint: number, outsideBoundary: number}}}
    */
@@ -69,16 +70,37 @@ class VoronoiTool {
       );
     }
 
-    // 4. bbox (사각형 모드이므로 경계 extent 없음)
-    const bbox = computeBBox(this.extentOf(seeds), null);
+    // 4. 경계 준비 + bbox
+    //    경계 밖 시드도 경계 안쪽으로 셀을 밀어넣으므로 extent는 합집합이어야 한다.
+    const boundaryFeature = options.boundaryLayerId
+      ? this.buildBoundary(options.boundaryLayerId)
+      : null;
+    const bbox = computeBBox(
+      this.extentOf(seeds),
+      boundaryFeature ? turf.bbox(boundaryFeature) : null
+    );
 
     // 5. 보로노이 생성. 3857 좌표를 그대로 먹인다.
-    const cells = this.buildCells(seeds, bbox);
+    let cells = this.buildCells(seeds, bbox);
 
-    // 6. 면적 필드 + OL 피처
+    // 6. 경계 클립
+    let outsideBoundary = 0;
+    if (boundaryFeature) {
+      const clipResult = this.clipCells(cells, boundaryFeature);
+      cells = clipResult.cells;
+      outsideBoundary = clipResult.outsideBoundary;
+    }
+
+    if (cells.length === 0) {
+      throw new Error(
+        '경계 레이어와 겹치는 셀이 없습니다. 포인트와 경계가 같은 지역인지 확인해 주세요.'
+      );
+    }
+
+    // 7. 면적 필드 + OL 피처 (면적은 반드시 클립 후에 계산)
     const olFeatures = this.toOLFeaturesWithArea(cells);
 
-    // 7. 레이어 생성
+    // 8. 레이어 생성
     const layerName = `${layerInfo.name}_보로노이`;
     const newLayerId = layerManager.addLayer({
       name: layerName,
@@ -90,7 +112,7 @@ class VoronoiTool {
       layerId: newLayerId,
       layerName,
       cellCount: olFeatures.length,
-      skipped: { duplicates, nonPoint, outsideBoundary: 0 }
+      skipped: { duplicates, nonPoint, outsideBoundary }
     };
   }
 
@@ -145,6 +167,71 @@ class VoronoiTool {
       if (coord[1] > maxY) maxY = coord[1];
     }
     return [minX, minY, maxX, maxY];
+  }
+
+  /**
+   * 경계 레이어의 폴리곤들을 하나로 합친다.
+   *
+   * union이 실패하면 조용히 폴백하지 않고 에러를 던진다. 사용자가 경계를 지정했는데
+   * 사각형 결과가 나오면 그걸 맞다고 믿게 되기 때문이다.
+   */
+  buildBoundary(boundaryLayerId) {
+    const layerInfo = layerManager.getLayer(boundaryLayerId);
+    if (!layerInfo) {
+      throw new Error('경계 레이어를 찾을 수 없습니다.');
+    }
+
+    // 옵션 없이 write → 3857 원좌표 유지
+    const geoFeatures = layerInfo.olLayer.getSource().getFeatures()
+      .map(f => this.geoJSONFormat.writeFeatureObject(f))
+      .filter(f => f.geometry &&
+        (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon'));
+
+    if (geoFeatures.length === 0) {
+      throw new Error('경계 레이어에 폴리곤 피처가 없습니다.');
+    }
+    if (geoFeatures.length === 1) {
+      return geoFeatures[0];
+    }
+
+    try {
+      const merged = turf.union(turf.featureCollection(geoFeatures));
+      if (!merged) throw new Error('union 결과가 비어 있습니다.');
+      return merged;
+    } catch (error) {
+      console.warn('경계 union 실패:', error);
+      throw new Error(
+        '경계 레이어의 도형을 합치는 데 실패했습니다. ' +
+        '다른 경계 레이어를 쓰거나 사각형 모드로 시도해 주세요.'
+      );
+    }
+  }
+
+  /**
+   * 셀들을 경계로 자른다. 경계 밖 셀은 버리고 개수를 센다.
+   */
+  clipCells(cells, boundaryFeature) {
+    const kept = [];
+    let outsideBoundary = 0;
+
+    for (const cell of cells) {
+      let piece = null;
+      try {
+        piece = turf.intersect(turf.featureCollection([cell, boundaryFeature]));
+      } catch (error) {
+        console.warn('셀 클립 실패:', error);
+      }
+
+      if (piece) {
+        // turf.intersect는 속성을 넘겨주지 않으므로 원본 셀 속성을 다시 붙인다.
+        piece.properties = { ...cell.properties };
+        kept.push(piece);
+      } else {
+        outsideBoundary++;
+      }
+    }
+
+    return { cells: kept, outsideBoundary };
   }
 
   /**
