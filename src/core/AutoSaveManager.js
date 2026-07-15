@@ -3,7 +3,7 @@
  */
 
 import { stateManager } from './StateManager.js';
-import { layerManager } from './LayerManager.js';
+import { layerManager, STYLE_FIELDS } from './LayerManager.js';
 import { mapManager } from './MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import GeoJSON from 'ol/format/GeoJSON';
@@ -268,11 +268,10 @@ class AutoSaveManager {
     // 있을 때만 스타일을 재계산한다. 손대지 않은 레이어에 updateLayerStyle을 부르면
     // createStyle과 모양이 달라진다 (포인트: 불투명 fill·흰 테두리 →
     // rgba(색, 0.3)·같은 색 테두리). ProjectManager.js:287-320과 같은 규약.
-    const styleFields = ['strokeColor', 'fillColor', 'fillOpacity', 'strokeOpacity', 'strokeWidth', 'strokeDash', 'pointRadius'];
     const restoredLayer = layerManager.getLayer(layerId);
     if (restoredLayer) {
-      const customized = styleFields.some(k => layerData[k] !== undefined && layerData[k] !== restoredLayer[k]);
-      styleFields.forEach(k => { if (layerData[k] !== undefined) restoredLayer[k] = layerData[k]; });
+      const customized = STYLE_FIELDS.some(k => layerData[k] !== undefined && layerData[k] !== restoredLayer[k]);
+      STYLE_FIELDS.forEach(k => { if (layerData[k] !== undefined) restoredLayer[k] = layerData[k]; });
 
       if (layerData.type === 'choropleth' && layerData.choroplethConfig) {
         // 단계구분도 — 분류 설정 + 범례 + 분류색 스타일 함수

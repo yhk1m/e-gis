@@ -2,7 +2,7 @@
  * ProjectManager - 프로젝트 저장/불러오기 관리
  */
 
-import { layerManager } from './LayerManager.js';
+import { layerManager, STYLE_FIELDS } from './LayerManager.js';
 import { mapManager } from './MapManager.js';
 import { coordinateSystem } from './CoordinateSystem.js';
 import { eventBus, Events } from '../utils/EventBus.js';
@@ -287,11 +287,10 @@ export class ProjectManager {
         // 세부 스타일 복원 — 저장된 필드를 layerInfo에 반영하고, addLayer 기본값과
         // 다른 것이 있을 때만 스타일 재계산(손대지 않은 레이어는 초기 스타일 유지 —
         // 점의 흰 테두리 등 createStyle 모양이 재열기로 바뀌지 않게).
-        const styleFields = ['strokeColor', 'fillColor', 'fillOpacity', 'strokeOpacity', 'strokeWidth', 'strokeDash', 'pointRadius'];
         const layerInfo = layerManager.getLayer(layerId);
         if (layerInfo) {
-          const customized = styleFields.some(k => layerData[k] !== undefined && layerData[k] !== layerInfo[k]);
-          styleFields.forEach(k => { if (layerData[k] !== undefined) layerInfo[k] = layerData[k]; });
+          const customized = STYLE_FIELDS.some(k => layerData[k] !== undefined && layerData[k] !== layerInfo[k]);
+          STYLE_FIELDS.forEach(k => { if (layerData[k] !== undefined) layerInfo[k] = layerData[k]; });
 
           // 단계구분도 복원 — 분류 설정 + 스타일 함수 + 범례 (AutoSaveManager.restoreLayer 규약)
           if (layerData.type === 'choropleth' && layerData.choroplethConfig) {

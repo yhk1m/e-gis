@@ -8,6 +8,19 @@ import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { mapManager } from './MapManager.js';
 
+/**
+ * 레이어별 스타일 메타데이터 필드.
+ *
+ * 복제·복원 경로가 공유한다. 여기 빠뜨린 필드는 프로젝트를 다시 열면 조용히
+ * 기본값으로 돌아간다. 새 스타일 필드를 추가하면 반드시 여기에도 넣을 것.
+ * (직렬화 쪽은 배열이 아니라 개별 속성 나열이므로 StateManager.saveLayer와
+ *  ProjectManager의 저장 코드도 함께 고쳐야 한다.)
+ */
+export const STYLE_FIELDS = [
+  'strokeColor', 'fillColor', 'fillOpacity', 'strokeOpacity',
+  'strokeWidth', 'strokeDash', 'pointRadius'
+];
+
 const COLOR_PALETTE = [
   '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
   '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
@@ -454,9 +467,8 @@ class LayerManager {
 
     const copy = this.layers.get(newId);
     if (copy) {
-      const styleFields = ['strokeColor', 'fillColor', 'fillOpacity', 'strokeOpacity', 'strokeWidth', 'strokeDash', 'pointRadius'];
-      const customized = styleFields.some((k) => info[k] !== undefined && info[k] !== copy[k]);
-      styleFields.forEach((k) => { if (info[k] !== undefined) copy[k] = info[k]; });
+      const customized = STYLE_FIELDS.some((k) => info[k] !== undefined && info[k] !== copy[k]);
+      STYLE_FIELDS.forEach((k) => { if (info[k] !== undefined) copy[k] = info[k]; });
       // 주제도 설정 유지(분류색 스타일·.egis 저장용). 범례는 원본 것을 공유하므로 중복 생성 안 함.
       if (info._choroplethConfig) copy._choroplethConfig = { ...info._choroplethConfig };
       if (info._cartogramConfig) copy._cartogramConfig = { ...info._cartogramConfig };
