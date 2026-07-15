@@ -12,6 +12,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import Feature from 'ol/Feature.js';
 import Polygon from 'ol/geom/Polygon.js';
 import { layerManager } from './LayerManager.js';
+import { choroplethTool } from '../tools/ChoroplethTool.js';
 
 function square(pop) {
   return new Feature({
@@ -72,5 +73,73 @@ describe('isClassified / 스타일 가드', () => {
     layerManager.setLayerStrokeColor(id, '#ff0000');
 
     expect(layerManager.getLayer(id).strokeColor).toBe('#ff0000');
+  });
+});
+
+/** 단계구분도 설정을 붙인 레이어를 만든다 */
+function makeChoropleth() {
+  const id = layerManager.addLayer({
+    name: '단계구분도',
+    type: 'choropleth',
+    features: [square(10)],
+    color: '#3388ff'
+  });
+  const info = layerManager.getLayer(id);
+  info._choroplethConfig = {
+    attribute: 'pop',
+    breaks: [0, 50, 100],
+    colors: ['#ffffcc', '#800026'],
+    tool: choroplethTool
+  };
+  return { id, info };
+}
+
+/** 스타일 함수를 실행해 stroke 정보를 뽑는다 */
+function strokeOf(info) {
+  const styleFn = info.olLayer.getStyle();
+  const style = styleFn(info.source.getFeatures()[0]);
+  return {
+    color: style.getStroke().getColor(),
+    width: style.getStroke().getWidth(),
+    lineDash: style.getStroke().getLineDash()
+  };
+}
+
+describe('단계구분도 테두리', () => {
+  beforeEach(() => {
+    layerManager.getAllLayers().slice().forEach(l => layerManager.removeLayer(l.id));
+  });
+
+  it('기본(동기화 ON)은 분류색을 어둡게 한 색이다', () => {
+    const { id, info } = makeChoropleth();
+    layerManager.updateLayerStyle(id);
+
+    // pop=10 → breaks [0,50,100]의 첫 구간 → colors[0] = '#ffffcc'
+    expect(strokeOf(info).color).toBe(choroplethTool.darkenColor('#ffffcc'));
+  });
+
+  it('strokeSyncToFill이 undefined여도 동기화 ON으로 동작한다', () => {
+    const { id, info } = makeChoropleth();
+    delete info.strokeSyncToFill;
+    layerManager.updateLayerStyle(id);
+
+    expect(strokeOf(info).color).toBe(choroplethTool.darkenColor('#ffffcc'));
+  });
+
+  it('동기화를 끄면 지정한 단일 색을 쓴다', () => {
+    const { id, info } = makeChoropleth();
+    info.strokeSyncToFill = false;
+    info.strokeColor = '#ff0000';
+    layerManager.updateLayerStyle(id);
+
+    expect(strokeOf(info).color).toBe('#ff0000');
+  });
+
+  it('선 스타일(dash)이 반영된다', () => {
+    const { id, info } = makeChoropleth();
+    info.strokeDash = 'dashed';
+    layerManager.updateLayerStyle(id);
+
+    expect(strokeOf(info).lineDash).not.toBeNull();
   });
 });

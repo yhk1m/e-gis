@@ -605,24 +605,36 @@ class LayerManager {
     // — 색/두께 재계산으로 덮어쓰면 차트가 사라진다
     if (layerInfo.type === 'chartmap') return;
 
-    // 단계구분도: 분류별 색상 유지, 투명도/테두리 굵기만 반영
+    // 단계구분도: 분류별 색상 유지, 투명도/테두리만 반영
     if (layerInfo.type === 'choropleth' && layerInfo._choroplethConfig) {
       const cfg = layerInfo._choroplethConfig;
       const fillOpacity = layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 0.7;
       const strokeWidth = layerInfo.strokeWidth || 1;
+      const lineDash = this.getLineDash(layerInfo.strokeDash || "solid");
+      // undefined(기존 레이어·기존 저장본)를 기본 ON으로 흡수한다
+      const syncStroke = layerInfo.strokeSyncToFill !== false;
+      const strokeColor = layerInfo.strokeColor || '#666';
       const styleFn = function(feature) {
         const val = parseFloat(feature.get(cfg.attribute));
         if (isNaN(val)) {
           return new Style({
             fill: new Fill({ color: 'rgba(128,128,128,' + fillOpacity + ')' }),
-            stroke: new Stroke({ color: '#666', width: strokeWidth })
+            stroke: new Stroke({
+              color: syncStroke ? '#666' : strokeColor,
+              width: strokeWidth,
+              lineDash: lineDash
+            })
           });
         }
         const colorIdx = cfg.tool.getColorIndex(val, cfg.breaks);
         const color = cfg.colors[colorIdx] || cfg.colors[0];
         return new Style({
           fill: new Fill({ color: cfg.tool.hexToRgba(color, fillOpacity) }),
-          stroke: new Stroke({ color: cfg.tool.darkenColor(color), width: strokeWidth })
+          stroke: new Stroke({
+            color: syncStroke ? cfg.tool.darkenColor(color) : strokeColor,
+            width: strokeWidth,
+            lineDash: lineDash
+          })
         });
       };
       const olLayer = layerInfo.olLayer;
