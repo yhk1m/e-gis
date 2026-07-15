@@ -1990,23 +1990,27 @@ body.exporting .egis-basemap-panel {
 }
 
 /* ===== 히트맵 모달 스타일 ===== */
-.heatmap-modal .modal-content {
+.heatmap-modal .modal-content,
+.voronoi-modal .modal-content {
   max-width: 400px;
   background: var(--bg-panel);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
 }
 
-.heatmap-modal .modal-body {
+.heatmap-modal .modal-body,
+.voronoi-modal .modal-body {
   padding: var(--spacing-lg);
 }
 
-.heatmap-modal .form-group {
+.heatmap-modal .form-group,
+.voronoi-modal .form-group {
   display: block;
   margin-bottom: var(--spacing-md);
 }
 
-.heatmap-modal .form-group label {
+.heatmap-modal .form-group label,
+.voronoi-modal .form-group label {
   display: block;
   margin-bottom: var(--spacing-xs);
   font-size: var(--font-size-sm);
@@ -2015,11 +2019,13 @@ body.exporting .egis-basemap-panel {
 }
 
 .heatmap-modal .form-group select,
-.heatmap-modal .form-group input[type="range"] {
+.heatmap-modal .form-group input[type="range"],
+.voronoi-modal .form-group select {
   width: 100%;
 }
 
-.heatmap-modal .form-group select {
+.heatmap-modal .form-group select,
+.voronoi-modal .form-group select {
   padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
