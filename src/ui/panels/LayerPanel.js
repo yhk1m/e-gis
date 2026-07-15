@@ -625,24 +625,40 @@ export class LayerPanel {
       }
     }
     else if (isPolygon) {
-      // 면 색상
-      const fillColorItems = colors.map(function(color) {
-        return "<div class=\"color-item" + (color === currentFillColor ? " active" : "") + "\" data-fill-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
-      }).join("");
+      // 면 색상 — 분류 레이어(단계구분도·카토그램)는 분류 설정이 색을 소유하므로 감춘다.
+      // 단계구분도에서는 원래 눌러도 아무 일이 없었고, 카토그램에서는 분류를 파괴했다.
+      const isClassified = layerManager.isClassified(layer);
+      if (isClassified) {
+        html += "<div class=\"style-section\" style=\"font-size:12px;color:var(--text-secondary,#888)\">면 색상은 분류 설정이 결정합니다.</div>";
+      } else {
+        const fillColorItems = colors.map(function(color) {
+          return "<div class=\"color-item" + (color === currentFillColor ? " active" : "") + "\" data-fill-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
+        }).join("");
 
-      html += "<div class=\"style-section\"><label>면 색상:</label><div class=\"color-picker-grid\">" + fillColorItems + "</div>";
-      html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentFillColor + "\" class=\"fill-color-input\"></div></div>";
+        html += "<div class=\"style-section\"><label>면 색상:</label><div class=\"color-picker-grid\">" + fillColorItems + "</div>";
+        html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentFillColor + "\" class=\"fill-color-input\"></div></div>";
+      }
 
       // 면 불투명도
       html += "<div class=\"style-section\"><label>면 불투명도: <span class=\"fill-opacity-value\">" + Math.round(currentFillOpacity * 100) + "%</span></label>";
       html += "<input type=\"range\" class=\"opacity-slider fill-opacity-slider\" min=\"0\" max=\"100\" value=\"" + Math.round(currentFillOpacity * 100) + "\"></div>";
 
-      // 선 색상
+      // 테두리 동기화 — 분류 레이어에만 의미가 있다
+      const syncOn = layer.strokeSyncToFill !== false;
+      if (isClassified) {
+        html += "<div class=\"style-section\"><label class=\"stroke-sync-label\">";
+        html += "<input type=\"checkbox\" class=\"stroke-sync-checkbox\"" + (syncOn ? " checked" : "") + "> 테두리를 분류색에 동기화";
+        html += "</label></div>";
+      }
+
+      // 선 색상 — 분류 레이어에서 동기화가 켜져 있으면 분류색을 따르므로 비활성
+      const strokeDisabled = isClassified && syncOn;
       const strokeColorItems = colors.map(function(color) {
         return "<div class=\"color-item" + (color === currentStrokeColor ? " active" : "") + "\" data-stroke-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
       }).join("");
 
-      html += "<div class=\"style-section\"><label>선 색상:</label><div class=\"color-picker-grid\">" + strokeColorItems + "</div>";
+      html += "<div class=\"style-section stroke-color-section\"" + (strokeDisabled ? " style=\"opacity:0.4;pointer-events:none\"" : "") + ">";
+      html += "<label>선 색상:</label><div class=\"color-picker-grid\">" + strokeColorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentStrokeColor + "\" class=\"stroke-color-input\"></div></div>";
 
       // 선 두께
@@ -804,6 +820,22 @@ export class LayerPanel {
         layerManager.setLayerFillColor(layerId, e.target.value);
         var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
         if (indicator) indicator.style.backgroundColor = e.target.value;
+      });
+    }
+
+    var syncCheckbox = picker.querySelector(".stroke-sync-checkbox");
+    if (syncCheckbox) {
+      syncCheckbox.addEventListener("change", function(e) {
+        var info = layerManager.getLayer(layerId);
+        if (!info) return;
+        info.strokeSyncToFill = e.target.checked;
+        layerManager.updateLayerStyle(layerId);
+        // 선 색상 섹션 활성/비활성 갱신
+        var section = picker.querySelector(".stroke-color-section");
+        if (section) {
+          section.style.opacity = e.target.checked ? "0.4" : "";
+          section.style.pointerEvents = e.target.checked ? "none" : "";
+        }
       });
     }
 
