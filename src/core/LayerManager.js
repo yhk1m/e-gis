@@ -498,7 +498,9 @@ class LayerManager {
       // 주제도 설정 유지(분류색 스타일·.egis 저장용). 범례는 원본 것을 공유하므로 중복 생성 안 함.
       if (info._choroplethConfig) copy._choroplethConfig = { ...info._choroplethConfig };
       if (info._cartogramConfig) copy._cartogramConfig = { ...info._cartogramConfig };
-      if (copy._choroplethConfig || customized) this.updateLayerStyle(newId);
+      // 주제도 복제본은 분류색 스타일을 다시 걸어야 한다. customized에 기대면 안 된다 —
+      // 기본값이 우연히 일치하는 순간 조용히 단색으로 떨어진다.
+      if (copy._choroplethConfig || copy._cartogramConfig || customized) this.updateLayerStyle(newId);
     }
     return newId;
   }

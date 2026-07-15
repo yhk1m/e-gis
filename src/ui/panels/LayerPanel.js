@@ -463,7 +463,8 @@ export class LayerPanel {
         const newId = layerManager.duplicateLayer(layerId);
         if (newId) {
           const copy = layerManager.getLayer(newId);
-          // 카토그램 분류색은 updateLayerStyle이 아니라 도구가 setStyle로 적용
+          // 복제본에 도구 참조(_cartogramConfig.tool)를 다시 심고 분류색 스타일을 건다.
+          // applyCartogramStyle은 updateLayerStyle에 위임한다 — 지우지 말 것.
           if (copy && copy._cartogramConfig) cartogramTool.applyCartogramStyle(newId);
         }
         break;
