@@ -40,7 +40,7 @@ HTMLCanvasElement.prototype.getContext = function () {
   };
 };
 
-const { layerManager } = await import('./LayerManager.js');
+const { layerManager, STYLE_FIELDS, pickStyleFields } = await import('./LayerManager.js');
 const { autoSaveManager } = await import('./AutoSaveManager.js');
 
 const COLOR = '#ff0000';
@@ -73,14 +73,7 @@ function serializeLike(layerInfo) {
     type: layerInfo.type,
     geometryType: layerInfo.geometryType,
     color: layerInfo.color,
-    strokeColor: layerInfo.strokeColor,
-    fillColor: layerInfo.fillColor,
-    strokeDash: layerInfo.strokeDash,
-    fillOpacity: layerInfo.fillOpacity,
-    strokeOpacity: layerInfo.strokeOpacity,
-    strokeWidth: layerInfo.strokeWidth,
-    pointRadius: layerInfo.pointRadius,
-    strokeSyncToFill: layerInfo.strokeSyncToFill,
+    ...pickStyleFields(layerInfo),
     visible: layerInfo.visible,
     features: geoJSON.writeFeaturesObject(layerInfo.source.getFeatures())
   };
@@ -176,5 +169,17 @@ describe('AutoSaveManager.restoreLayer — 스타일 보존', () => {
 
     const restoredId = await autoSaveManager.restoreLayer(serializeLike(original));
     expect(layerManager.getLayer(restoredId).strokeSyncToFill).toBe(false);
+  });
+});
+
+describe('pickStyleFields', () => {
+  it('STYLE_FIELDS의 모든 필드를 빠짐없이 담는다', () => {
+    const id = layerManager.addLayer({
+      name: '필드 확인용',
+      features: [new Feature({ geometry: new Point([0, 0]) })],
+      color: COLOR
+    });
+    const picked = pickStyleFields(layerManager.getLayer(id));
+    expect(Object.keys(picked).sort()).toEqual([...STYLE_FIELDS].sort());
   });
 });

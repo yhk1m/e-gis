@@ -5,6 +5,7 @@
 
 import { eventBus, Events } from '../utils/EventBus.js';
 import GeoJSON from 'ol/format/GeoJSON';
+import { pickStyleFields } from './LayerManager.js';
 
 const DB_NAME = 'eGIS_DB';
 const DB_VERSION = 1;
@@ -218,14 +219,7 @@ class StateManager {
           type: layerInfo.type,
           geometryType: layerInfo.geometryType,
           color: layerInfo.color,
-          strokeColor: layerInfo.strokeColor,
-          fillColor: layerInfo.fillColor,
-          strokeDash: layerInfo.strokeDash,
-          fillOpacity: layerInfo.fillOpacity,
-          strokeOpacity: layerInfo.strokeOpacity,
-          strokeWidth: layerInfo.strokeWidth,
-          pointRadius: layerInfo.pointRadius,
-          strokeSyncToFill: layerInfo.strokeSyncToFill,
+          ...pickStyleFields(layerInfo),
           visible: layerInfo.visible,
           choroplethConfig,
           chartMapConfig,

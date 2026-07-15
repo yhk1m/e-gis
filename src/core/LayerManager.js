@@ -21,6 +21,19 @@ export const STYLE_FIELDS = [
   'strokeWidth', 'strokeDash', 'pointRadius', 'strokeSyncToFill'
 ];
 
+/**
+ * layerInfo에서 스타일 필드만 뽑아 직렬화용 객체로 만든다.
+ *
+ * 저장 경로(StateManager.saveLayer, ProjectManager)가 공유한다. 복원 경로는
+ * STYLE_FIELDS를 직접 순회하므로, 이 헬퍼까지 쓰면 필드 추가가 배열 한 줄로 끝난다.
+ * 값이 undefined면 JSON.stringify가 알아서 생략한다 — 기존 동작과 같다.
+ */
+export function pickStyleFields(layerInfo) {
+  const out = {};
+  for (const key of STYLE_FIELDS) out[key] = layerInfo[key];
+  return out;
+}
+
 const COLOR_PALETTE = [
   '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
   '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'

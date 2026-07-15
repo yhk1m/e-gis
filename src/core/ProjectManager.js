@@ -2,7 +2,7 @@
  * ProjectManager - 프로젝트 저장/불러오기 관리
  */
 
-import { layerManager, STYLE_FIELDS } from './LayerManager.js';
+import { layerManager, STYLE_FIELDS, pickStyleFields } from './LayerManager.js';
 import { mapManager } from './MapManager.js';
 import { coordinateSystem } from './CoordinateSystem.js';
 import { eventBus, Events } from '../utils/EventBus.js';
@@ -112,14 +112,7 @@ export class ProjectManager {
           // 세부 스타일 — 화면 렌더링(updateLayerStyle)이 쓰는 필드들.
           // 저장하지 않으면 채우기/테두리 색 등 사용자가 지정한 스타일이 .egis에서 사라진다
           // (e-GIStory 불러오기·프로젝트 재열기 모두). undefined면 JSON에서 자동 생략.
-          strokeColor: layer.strokeColor,
-          fillColor: layer.fillColor,
-          fillOpacity: layer.fillOpacity,
-          strokeOpacity: layer.strokeOpacity,
-          strokeWidth: layer.strokeWidth,
-          strokeDash: layer.strokeDash,
-          pointRadius: layer.pointRadius,
-          strokeSyncToFill: layer.strokeSyncToFill
+          ...pickStyleFields(layer)
         };
 
         // 래스터 레이어: 벡터 source가 없으므로 demData/analysisData를 직렬화
