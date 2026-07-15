@@ -654,14 +654,21 @@ class LayerManager {
     // tool 참조는 CartogramTool.applyCartogramStyle이 심는다 — 순환 import 회피.
     if (layerInfo._cartogramConfig && layerInfo._cartogramConfig.tool) {
       const cfg = layerInfo._cartogramConfig;
-      if (layerInfo.olLayer) {
-        layerInfo.olLayer.setStyle(cfg.tool.cartogramStyle(cfg, {
-          fillOpacity: layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 0.85,
-          strokeWidth: layerInfo.strokeWidth || 1,
-          strokeColor: layerInfo.strokeColor || '#333',
-          syncStroke: layerInfo.strokeSyncToFill !== false,
-          lineDash: this.getLineDash(layerInfo.strokeDash || "solid")
-        }));
+      const styleFn = cfg.tool.cartogramStyle(cfg, {
+        fillOpacity: layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 0.85,
+        strokeWidth: layerInfo.strokeWidth || 1,
+        strokeColor: layerInfo.strokeColor || '#333',
+        syncStroke: layerInfo.strokeSyncToFill !== false,
+        lineDash: this.getLineDash(layerInfo.strokeDash || "solid")
+      });
+      // 라벨이 걸린 레이어는 setStyle이 라벨 래퍼를 날린다. 단계구분도 분기와 같은 규약으로
+      // _originalStyle을 갱신하고 라벨을 다시 그리게 한다 (LabelTool.js:201, 267).
+      const olLayer = layerInfo.olLayer;
+      if (olLayer && olLayer._hasLabel && olLayer._originalStyle) {
+        olLayer._originalStyle = styleFn;
+        eventBus.emit('label:refresh', { layerId });
+      } else if (olLayer) {
+        olLayer.setStyle(styleFn);
       }
       eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
       return;

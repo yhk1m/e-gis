@@ -219,4 +219,21 @@ describe('카토그램 스타일', () => {
     const style = info.olLayer.getStyle()(info.source.getFeatures()[0]);
     expect(style.getFill().getColor()).toContain('0.4');
   });
+
+  it('라벨이 걸린 카토그램은 setStyle로 라벨 래퍼를 덮지 않는다', () => {
+    const { id, info } = makeCartogram();
+
+    // LabelTool이 라벨을 붙였을 때의 상태를 흉내낸다 (LabelTool.js:201, 267)
+    const labelWrapper = info.olLayer.getStyle();
+    info.olLayer._originalStyle = labelWrapper;
+    info.olLayer._hasLabel = true;
+    const setStyleBefore = info.olLayer.getStyle();
+
+    layerManager.setLayerFillOpacity(id, 0.4);
+
+    // 래퍼는 그대로 두고 _originalStyle만 갱신되어야 한다
+    expect(info.olLayer.getStyle()).toBe(setStyleBefore);
+    expect(info.olLayer._originalStyle).not.toBe(labelWrapper);
+    expect(typeof info.olLayer._originalStyle).toBe('function');
+  });
 });
