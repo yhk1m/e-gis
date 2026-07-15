@@ -61,6 +61,18 @@ class LayerManager {
     return color;
   }
 
+  /**
+   * 분류 레이어인가 (단계구분도·카토그램).
+   *
+   * 이런 레이어는 채우기 색을 분류 설정이 소유한다. 사용자는 투명도와 테두리만 바꾼다.
+   * 카토그램은 type이 'cartogram'이 아니라 'vector'라(CartogramTool.js:205)
+   * type만 봐서는 못 잡는다. 설정 객체의 존재로 식별한다.
+   */
+  isClassified(layerInfo) {
+    if (!layerInfo) return false;
+    return layerInfo.type === 'choropleth' || !!layerInfo._cartogramConfig;
+  }
+
   getLineDash(strokeDash) {
     return STROKE_DASH_OPTIONS[strokeDash] || null;
   }
@@ -516,8 +528,9 @@ class LayerManager {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
 
-    // 단계구분도는 색상 변경 무시 (색상은 분류별로 고정)
-    if (layerInfo.type === 'choropleth') return;
+    // 분류 레이어는 채우기 색을 분류 설정이 소유한다 (단계구분도·카토그램).
+    // 카토그램에서 이걸 막지 않으면 분류색 스타일 함수가 단색으로 덮여 파괴된다.
+    if (this.isClassified(layerInfo)) return;
 
     layerInfo.color = newColor;
     layerInfo.strokeColor = newColor;
@@ -529,8 +542,6 @@ class LayerManager {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
 
-    if (layerInfo.type === 'choropleth') return;
-
     layerInfo.strokeColor = strokeColor;
     this.updateLayerStyle(layerId);
   }
@@ -539,7 +550,8 @@ class LayerManager {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
 
-    if (layerInfo.type === 'choropleth') return;
+    // 분류 레이어는 채우기 색을 분류 설정이 소유한다 (단계구분도·카토그램).
+    if (this.isClassified(layerInfo)) return;
 
     layerInfo.fillColor = fillColor;
     this.updateLayerStyle(layerId);
