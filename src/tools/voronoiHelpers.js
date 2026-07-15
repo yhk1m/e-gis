@@ -10,6 +10,12 @@
 /** 중복 판정 격자 크기(m). 1mm. */
 const DEDUPE_PRECISION = 0.001;
 
+/** bbox 여유 비율 (기준 extent 폭·높이 대비) */
+const BBOX_PADDING_RATIO = 0.1;
+
+/** extent 폭 또는 높이가 0일 때 쓸 절대 여유(m) */
+const BBOX_MIN_PADDING = 1000;
+
 /**
  * 겹친 시드를 제거한다.
  *
@@ -37,4 +43,34 @@ export function dedupeSeeds(seeds) {
   }
 
   return { seeds: kept, duplicates };
+}
+
+/**
+ * 보로노이 클립 사각형을 만든다.
+ *
+ * 경계 레이어가 있으면 시드 extent와 합집합을 취한다. 경계 밖 시드도 경계 안쪽으로
+ * 셀을 밀어넣기 때문에 시드 extent만 쓰면 안 된다.
+ *
+ * @param {number[]} seedExtent - [minX, minY, maxX, maxY] (EPSG:3857)
+ * @param {number[]|null} boundaryExtent - 경계 레이어 extent, 없으면 null
+ * @returns {number[]} [minX, minY, maxX, maxY]
+ */
+export function computeBBox(seedExtent, boundaryExtent = null) {
+  let [minX, minY, maxX, maxY] = seedExtent;
+
+  if (boundaryExtent) {
+    minX = Math.min(minX, boundaryExtent[0]);
+    minY = Math.min(minY, boundaryExtent[1]);
+    maxX = Math.max(maxX, boundaryExtent[2]);
+    maxY = Math.max(maxY, boundaryExtent[3]);
+  }
+
+  const width = maxX - minX;
+  const height = maxY - minY;
+
+  // 시드가 한 점이거나 일직선이면 비율 여유가 0이 되어 bbox가 축퇴한다.
+  const padX = width > 0 ? width * BBOX_PADDING_RATIO : BBOX_MIN_PADDING;
+  const padY = height > 0 ? height * BBOX_PADDING_RATIO : BBOX_MIN_PADDING;
+
+  return [minX - padX, minY - padY, maxX + padX, maxY + padY];
 }

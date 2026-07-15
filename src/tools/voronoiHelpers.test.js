@@ -1,6 +1,6 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
-import { dedupeSeeds } from './voronoiHelpers.js';
+import { dedupeSeeds, computeBBox } from './voronoiHelpers.js';
 
 const seed = (x, y, props = {}) => ({ coord: [x, y], properties: props });
 
@@ -53,5 +53,31 @@ describe('dedupeSeeds', () => {
     const result = dedupeSeeds([]);
     expect(result.seeds).toEqual([]);
     expect(result.duplicates).toBe(0);
+  });
+});
+
+describe('computeBBox', () => {
+  it('경계 없이 폭·높이의 10%를 각 변에 더한다', () => {
+    // extent [0,0,100,100] → 폭 100, 높이 100 → 여유 10씩
+    expect(computeBBox([0, 0, 100, 100], null)).toEqual([-10, -10, 110, 110]);
+  });
+
+  it('경계 extent와 합집합을 취한 뒤 여유를 준다', () => {
+    // seed [0,0,100,100] ∪ boundary [-50,-50,50,50] = [-50,-50,100,100]
+    // 폭 150, 높이 150 → 여유 15씩
+    expect(computeBBox([0, 0, 100, 100], [-50, -50, 50, 50]))
+      .toEqual([-65, -65, 115, 115]);
+  });
+
+  it('폭이 0이면(수직 일직선) 절대 여유 1000m를 쓴다', () => {
+    expect(computeBBox([10, 0, 10, 100], null)).toEqual([-990, -10, 1010, 110]);
+  });
+
+  it('높이가 0이면(수평 일직선) 절대 여유 1000m를 쓴다', () => {
+    expect(computeBBox([0, 50, 100, 50], null)).toEqual([-10, -950, 110, 1050]);
+  });
+
+  it('한 점이면 양축 모두 절대 여유를 쓴다', () => {
+    expect(computeBBox([5, 5, 5, 5], null)).toEqual([-995, -995, 1005, 1005]);
   });
 });
