@@ -97,7 +97,7 @@ export class AppLayout {
               <button class="menu-button" title="벡터 분석"><span class="menu-btn-icon">📊</span><span class="menu-btn-label">벡터 분석</span></button>
               <div class="dropdown-menu" id="menu-vector-analysis">
                 <div class="dropdown-item" data-action="analysis-buffer">버퍼 분석</div>
-                <div class="dropdown-item" data-action="analysis-voronoi">보로노이 다이어그램 (티센 폴리곤)</div>
+                <div class="dropdown-item" data-action="analysis-voronoi">보로노이 다이어그램 (티센&nbsp;폴리곤)</div>
                 <div class="dropdown-item" data-action="analysis-spatial-ops">공간 연산</div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" data-action="analysis-isochrone">등시선 분석</div>
