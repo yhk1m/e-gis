@@ -125,8 +125,12 @@ voronoiTool.createVoronoi(layerId, {
   color
 })
 // → { layerId, layerName, cellCount,
-//     skipped: { duplicates, nonPoint, outsideBoundary } }
+//     skipped: { duplicates, nonPoint, outsideBoundary, clipFailed, slivers } }
 ```
+
+`skipped`가 다섯 갈래인 건 과하지 않다. 각각 원인이 다르고, 사용자가 해야 할 일도 다르다.
+`clipFailed`를 `outsideBoundary`에 섞으면 **데이터 품질 문제를 지리적 사실로 오해**하게 된다.
+"경계 밖 5개"는 정상이지만 "도형 오류 5개"는 원본 파일을 고쳐야 한다는 신호다.
 
 `writeFeatureObject(feature)`를 옵션 없이 호출하면 3857 원좌표가 그대로 나온다.
 `readFeatures(geojson)`도 옵션 없이 호출해 3857로 되돌린다. 좌표 변환은 전 과정에 없다.
