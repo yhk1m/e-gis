@@ -76,17 +76,31 @@ class CartogramTool {
 
   /**
    * 카토그램 레이어 스타일 함수 (속성값 기반 — 저장/복원 시에도 색 유지)
+   *
    * @param {Object} config - { attribute, colors, breaks, showLabels }
+   * @param {Object} [styleOpts] - layerInfo에서 온 사용자 스타일.
+   *   { fillOpacity, strokeWidth, strokeColor, syncStroke, lineDash }
+   *   생략하면 카토그램 고유 기본값(0.85 / 1 / '#333' / 동기화 ON)을 쓴다.
    */
-  cartogramStyle(config) {
+  cartogramStyle(config, styleOpts = {}) {
     const self = this;
     const { attribute, colors, breaks, showLabels } = config;
+    const fillOpacity = styleOpts.fillOpacity !== undefined ? styleOpts.fillOpacity : 0.85;
+    const strokeWidth = styleOpts.strokeWidth || 1;
+    const strokeColor = styleOpts.strokeColor || '#333';
+    const syncStroke = styleOpts.syncStroke !== false;
+    const lineDash = styleOpts.lineDash !== undefined ? styleOpts.lineDash : null;
+
     return function (feature) {
       const val = parseFloat(feature.get(attribute));
       const color = colors[self.cartoColorIndex(val, breaks, colors.length)] || colors[0];
       return new Style({
-        fill: new Fill({ color: self.hexToRgba(color, 0.85) }),
-        stroke: new Stroke({ color: '#333', width: 1 }),
+        fill: new Fill({ color: self.hexToRgba(color, fillOpacity) }),
+        stroke: new Stroke({
+          color: syncStroke ? choroplethTool.darkenColor(color) : strokeColor,
+          width: strokeWidth,
+          lineDash: lineDash
+        }),
         text: showLabels ? new Text({
           text: String(feature.get('name') || feature.get('NAME') || ''),
           font: 'bold 11px sans-serif',
@@ -100,11 +114,17 @@ class CartogramTool {
 
   /**
    * 저장된 카토그램 스타일 재적용 (복원용)
+   *
+   * 실제 스타일 계산은 LayerManager.updateLayerStyle의 카토그램 분기가 한다.
+   * 여기서는 도구 참조만 심어 준다 — LayerManager는 도구를 import할 수 없으므로
+   * (CartogramTool이 layerManager를 import해서 순환이 된다) 설정 객체에
+   * 참조를 담아 전달하는 기존 관례를 따른다(_choroplethConfig.tool과 동일).
    */
   applyCartogramStyle(layerId) {
     const layerInfo = layerManager.getLayer(layerId);
     if (!layerInfo || !layerInfo._cartogramConfig || !layerInfo.olLayer) return;
-    layerInfo.olLayer.setStyle(this.cartogramStyle(layerInfo._cartogramConfig));
+    layerInfo._cartogramConfig.tool = this;
+    layerManager.updateLayerStyle(layerId);
   }
 
   /**

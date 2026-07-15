@@ -13,6 +13,7 @@ import Feature from 'ol/Feature.js';
 import Polygon from 'ol/geom/Polygon.js';
 import { layerManager } from './LayerManager.js';
 import { choroplethTool } from '../tools/ChoroplethTool.js';
+import { cartogramTool } from '../tools/CartogramTool.js';
 
 function square(pop) {
   return new Feature({
@@ -141,5 +142,81 @@ describe('단계구분도 테두리', () => {
     layerManager.updateLayerStyle(id);
 
     expect(strokeOf(info).lineDash).not.toBeNull();
+  });
+});
+
+/** 카토그램 설정을 붙인 레이어를 만든다 (CartogramTool이 하는 것과 같은 형태) */
+function makeCartogram() {
+  const id = layerManager.addLayer({
+    name: '카토그램',
+    type: 'vector',
+    features: [square(10)],
+    color: '#3388ff'
+  });
+  const info = layerManager.getLayer(id);
+  info._cartogramConfig = {
+    attribute: 'pop',
+    colors: ['#ffffcc', '#800026'],
+    breaks: [0, 50, 100],
+    showLabels: false
+  };
+  info.fillOpacity = 0.85;
+  info.strokeColor = '#333';
+  info.strokeWidth = 1;
+  cartogramTool.applyCartogramStyle(id);
+  return { id, info };
+}
+
+describe('카토그램 스타일', () => {
+  beforeEach(() => {
+    layerManager.getAllLayers().slice().forEach(l => layerManager.removeLayer(l.id));
+  });
+
+  it('setLayerColor를 해도 분류색 스타일 함수가 유지된다', () => {
+    const { id, info } = makeCartogram();
+    expect(typeof info.olLayer.getStyle()).toBe('function');
+
+    layerManager.setLayerColor(id, '#ff0000');
+
+    // 단색 Style 객체로 덮이면 분류가 파괴된 것이다
+    expect(typeof info.olLayer.getStyle()).toBe('function');
+  });
+
+  it('투명도 슬라이더를 움직여도 분류색 스타일 함수가 유지된다', () => {
+    const { id, info } = makeCartogram();
+
+    layerManager.setLayerFillOpacity(id, 0.4);
+
+    expect(typeof info.olLayer.getStyle()).toBe('function');
+  });
+
+  it('선 두께를 바꿔도 분류색 스타일 함수가 유지된다', () => {
+    const { id, info } = makeCartogram();
+
+    layerManager.setLayerStrokeWidth(id, 5);
+
+    expect(typeof info.olLayer.getStyle()).toBe('function');
+  });
+
+  it('기본(동기화 ON)은 분류색을 어둡게 한 색이다', () => {
+    const { info } = makeCartogram();
+    expect(strokeOf(info).color).toBe(choroplethTool.darkenColor('#ffffcc'));
+  });
+
+  it('동기화를 끄면 지정한 단일 색을 쓴다', () => {
+    const { id, info } = makeCartogram();
+    info.strokeSyncToFill = false;
+    info.strokeColor = '#00ff00';
+    layerManager.updateLayerStyle(id);
+
+    expect(strokeOf(info).color).toBe('#00ff00');
+  });
+
+  it('fillOpacity 변경이 반영된다', () => {
+    const { id, info } = makeCartogram();
+    layerManager.setLayerFillOpacity(id, 0.4);
+
+    const style = info.olLayer.getStyle()(info.source.getFeatures()[0]);
+    expect(style.getFill().getColor()).toContain('0.4');
   });
 });

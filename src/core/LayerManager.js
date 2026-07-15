@@ -648,6 +648,25 @@ class LayerManager {
       return;
     }
 
+    // 카토그램: 분류색은 설정이 소유. 사용자는 투명도·테두리만 바꾼다.
+    // type이 'cartogram'이 아니라 'vector'라(CartogramTool.js:205) 위 분기에 안 걸린다.
+    // 설정 존재로 식별한다(_contourConfig와 같은 방식).
+    // tool 참조는 CartogramTool.applyCartogramStyle이 심는다 — 순환 import 회피.
+    if (layerInfo._cartogramConfig && layerInfo._cartogramConfig.tool) {
+      const cfg = layerInfo._cartogramConfig;
+      if (layerInfo.olLayer) {
+        layerInfo.olLayer.setStyle(cfg.tool.cartogramStyle(cfg, {
+          fillOpacity: layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 0.85,
+          strokeWidth: layerInfo.strokeWidth || 1,
+          strokeColor: layerInfo.strokeColor || '#333',
+          syncStroke: layerInfo.strokeSyncToFill !== false,
+          lineDash: this.getLineDash(layerInfo.strokeDash || "solid")
+        }));
+      }
+      eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
+      return;
+    }
+
     // 등고선: 주곡선/계곡선 두께 비율 유지 (색상은 공통, 두께만 차등)
     if (layerInfo._contourConfig) {
       const cfg = layerInfo._contourConfig;
