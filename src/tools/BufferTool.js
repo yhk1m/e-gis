@@ -91,13 +91,6 @@ class BufferTool {
       color: options.color || '#3388ff'
     });
 
-    // addLayer는 opacity를 받지 않는다. 레이어 등록 후 LayerPanel의 투명도 편집과
-    // 같은 경로로 적용해야(LayerPanel.js:826) layerInfo.fillOpacity와 실제 스타일이
-    // 어긋나지 않는다. 커스텀 style을 넘기면 둘이 따로 놀게 된다.
-    if (options.opacity !== undefined) {
-      layerManager.setLayerFillOpacity(newLayerId, options.opacity);
-    }
-
     return {
       layerId: newLayerId,
       featureCount: olFeatures.length,

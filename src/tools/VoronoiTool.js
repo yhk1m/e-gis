@@ -52,7 +52,6 @@ class VoronoiTool {
    * @param {string} layerId - 포인트 레이어 ID
    * @param {Object} options
    * @param {string} options.color - 결과 레이어 색상
-   * @param {number} [options.opacity] - 채우기 투명도(0~1). 없으면 addLayer 기본값(0.3)
    * @param {string|null} options.boundaryLayerId - 경계 레이어 ID, null이면 사각형 모드
    * @returns {{layerId: string, layerName: string, cellCount: number,
    *            skipped: {duplicates: number, nonPoint: number, outsideBoundary: number,
@@ -118,13 +117,6 @@ class VoronoiTool {
       features: olFeatures,
       color: options.color || DEFAULT_COLOR
     });
-
-    // addLayer는 opacity를 받지 않는다. 레이어 등록 후 LayerPanel의 투명도 편집과
-    // 같은 경로로 적용해야(LayerPanel.js:826) layerInfo.fillOpacity와 실제 스타일이
-    // 어긋나지 않는다.
-    if (options.opacity !== undefined) {
-      layerManager.setLayerFillOpacity(newLayerId, options.opacity);
-    }
 
     return {
       layerId: newLayerId,

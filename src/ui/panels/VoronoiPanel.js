@@ -2,9 +2,9 @@
 /**
  * VoronoiPanel - 보로노이 다이어그램(티센 폴리곤) 설정 패널
  *
- * 투명도는 addLayer가 아니라 layerManager.setLayerFillOpacity로 적용된다
- * (LayerPanel의 투명도 편집과 같은 경로 — LayerPanel.js:826).
- * 커스텀 style을 넘기면 layerInfo.fillOpacity와 실제 스타일이 어긋난다.
+ * 투명도 컨트롤은 의도적으로 없다. 레이어 패널의 스타일 편집이 이미 담당하는
+ * 영역이라 여기서 중복 제공하지 않는다(버퍼 패널도 같은 이유로 뺐다).
+ * 기술적으로 불가능해서가 아니다 — layerManager.setLayerFillOpacity가 정식 경로다.
  */
 
 import { voronoiTool } from '../../tools/VoronoiTool.js';
@@ -70,10 +70,6 @@ class VoronoiPanel {
           '<label for="voronoi-color">색상</label>' +
           '<input type="color" id="voronoi-color" value="#3388ff">' +
         '</div>' +
-        '<div class="form-group">' +
-          '<label for="voronoi-opacity">채우기 투명도: <span id="voronoi-opacity-value">0.3</span></label>' +
-          '<input type="range" id="voronoi-opacity" min="0.1" max="1" step="0.1" value="0.3">' +
-        '</div>' +
       '</div>' +
       '<div class="modal-footer">' +
         '<button class="btn btn-secondary" id="voronoi-cancel">취소</button>' +
@@ -89,21 +85,15 @@ class VoronoiPanel {
       .addEventListener('click', () => this.close());
     document.getElementById('voronoi-apply')
       .addEventListener('click', () => this.apply());
-
-    const opacityInput = document.getElementById('voronoi-opacity');
-    opacityInput.addEventListener('input', (e) => {
-      document.getElementById('voronoi-opacity-value').textContent = e.target.value;
-    });
   }
 
   apply() {
     const layerId = document.getElementById('voronoi-layer').value;
     const boundaryLayerId = document.getElementById('voronoi-boundary').value || null;
     const color = document.getElementById('voronoi-color').value;
-    const opacity = parseFloat(document.getElementById('voronoi-opacity').value);
 
     try {
-      const result = voronoiTool.createVoronoi(layerId, { boundaryLayerId, color, opacity });
+      const result = voronoiTool.createVoronoi(layerId, { boundaryLayerId, color });
 
       // 걸러낸 건 반드시 알린다. 조용히 사라지면 데이터가 틀렸다고 오해한다.
       const s = result.skipped;

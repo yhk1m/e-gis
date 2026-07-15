@@ -77,11 +77,6 @@ class BufferPanel {
           '<input type="color" id="buffer-color" value="#3388ff">' +
         '</div>' +
         '<div class="buffer-form-group">' +
-          '<label for="buffer-opacity">투명도</label>' +
-          '<input type="range" id="buffer-opacity" min="0.1" max="1" step="0.1" value="0.3">' +
-          '<span id="buffer-opacity-value">0.3</span>' +
-        '</div>' +
-        '<div class="buffer-form-group">' +
           '<label for="buffer-dissolve">' +
             '<input type="checkbox" id="buffer-dissolve"> 버퍼 병합 (Dissolve)' +
           '</label>' +
@@ -101,16 +96,9 @@ class BufferPanel {
     const closeBtn = document.getElementById('buffer-close');
     const cancelBtn = document.getElementById('buffer-cancel');
     const applyBtn = document.getElementById('buffer-apply');
-    const opacityInput = document.getElementById('buffer-opacity');
-    const opacityValue = document.getElementById('buffer-opacity-value');
 
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
-
-    opacityInput.addEventListener('input', (e) => {
-      opacityValue.textContent = e.target.value;
-    });
-
     applyBtn.addEventListener('click', () => this.apply());
   }
 
@@ -121,7 +109,6 @@ class BufferPanel {
     const distance = parseFloat(document.getElementById('buffer-distance').value);
     const unit = document.getElementById('buffer-unit').value;
     const color = document.getElementById('buffer-color').value;
-    const opacity = parseFloat(document.getElementById('buffer-opacity').value);
     const dissolve = document.getElementById('buffer-dissolve').checked;
 
     if (isNaN(distance) || distance <= 0) {
@@ -130,9 +117,9 @@ class BufferPanel {
     }
 
     try {
+      // 투명도는 레이어 패널의 스타일 편집이 담당한다. 여기서 중복 제공하지 않는다.
       const result = bufferTool.createBuffer(this.currentLayerId, distance, unit, {
         color,
-        opacity,
         dissolve
       });
 
