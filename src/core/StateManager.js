@@ -197,6 +197,21 @@ class StateManager {
           };
         }
 
+        // 히트맵 설정 직렬화 — 저장하지 않으면 복원 시 OL Heatmap이 아니라
+        // 포인트로만 표시된다 (ProjectManager.js:165-170과 같은 규약)
+        let heatmapConfig = null;
+        if (layerInfo._heatmapConfig) {
+          const h = layerInfo._heatmapConfig;
+          heatmapConfig = {
+            sourceLayerId: h.sourceLayerId,
+            blur: h.blur,
+            radius: h.radius,
+            weight: h.weight,
+            gradient: h.gradient,
+            hideSource: h.hideSource
+          };
+        }
+
         const layerData = {
           id: layerInfo.id,
           name: layerInfo.name,
@@ -214,6 +229,7 @@ class StateManager {
           choroplethConfig,
           chartMapConfig,
           cartogramConfig,
+          heatmapConfig,
           features: geoJSONFormat.writeFeaturesObject(features),
           timestamp: Date.now()
         };

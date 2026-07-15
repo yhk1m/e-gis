@@ -11,6 +11,7 @@ import VectorSource from 'ol/source/Vector';
 import { choroplethTool } from '../tools/ChoroplethTool.js';
 import { chartMapTool } from '../tools/ChartMapTool.js';
 import { cartogramTool } from '../tools/CartogramTool.js';
+import { heatmapTool } from '../tools/HeatmapTool.js';
 
 class AutoSaveManager {
   constructor() {
@@ -244,6 +245,11 @@ class AutoSaveManager {
     // GeoJSON에서 피처 파싱
     const features = this.geoJSON.readFeatures(layerData.features);
 
+    // 히트맵 복원 — 일반 벡터로 되돌리면 OL Heatmap이 아니라 포인트로만 보인다
+    if (layerData.type === 'heatmap' && layerData.heatmapConfig) {
+      return heatmapTool.restoreHeatmap(features, layerData);
+    }
+
     // VectorSource 생성
     const source = new VectorSource({ features });
 
@@ -258,26 +264,24 @@ class AutoSaveManager {
       geometryType: layerData.geometryType
     });
 
-    // 스타일 복원
+    // 세부 스타일 복원 — 저장된 필드를 layerInfo에 반영하고, addLayer 기본값과 다른 것이
+    // 있을 때만 스타일을 재계산한다. 손대지 않은 레이어에 updateLayerStyle을 부르면
+    // createStyle과 모양이 달라진다 (포인트: 불투명 fill·흰 테두리 →
+    // rgba(색, 0.3)·같은 색 테두리). ProjectManager.js:287-320과 같은 규약.
+    const styleFields = ['strokeColor', 'fillColor', 'fillOpacity', 'strokeOpacity', 'strokeWidth', 'strokeDash', 'pointRadius'];
     const restoredLayer = layerManager.getLayer(layerId);
     if (restoredLayer) {
-      restoredLayer.strokeColor = layerData.strokeColor;
-      restoredLayer.fillColor = layerData.fillColor;
-      restoredLayer.strokeDash = layerData.strokeDash;
-      restoredLayer.fillOpacity = layerData.fillOpacity;
-      restoredLayer.strokeOpacity = layerData.strokeOpacity;
-      restoredLayer.strokeWidth = layerData.strokeWidth;
-      restoredLayer.pointRadius = layerData.pointRadius;
+      const customized = styleFields.some(k => layerData[k] !== undefined && layerData[k] !== restoredLayer[k]);
+      styleFields.forEach(k => { if (layerData[k] !== undefined) restoredLayer[k] = layerData[k]; });
 
-      // 단계구분도 설정 복원
-      if (layerData.choroplethConfig && layerData.type === 'choropleth') {
+      if (layerData.type === 'choropleth' && layerData.choroplethConfig) {
+        // 단계구분도 — 분류 설정 + 범례 + 분류색 스타일 함수
         restoredLayer._choroplethConfig = {
           ...layerData.choroplethConfig,
           tool: choroplethTool
         };
         // ChoroplethTool 내부 맵에도 등록 (범례 갱신 등 대응)
         choroplethTool.sourceByDerived.set(layerId, null);
-        // 범례 재생성
         choroplethTool.createLegend(
           layerId,
           layerData.name.replace(/_단계구분_.*$/, ''),
@@ -285,23 +289,19 @@ class AutoSaveManager {
           layerData.choroplethConfig.breaks,
           layerData.choroplethConfig.colors
         );
-      }
-
-      // 도형표현도(chartmap) 복원 — 구운 차트 아이콘 스타일을 먼저 걸고(원본 없어도 표시),
-      // 원본이 있으면 재계산(범례 포함)으로 갱신
-      if (layerData.type === 'chartmap' && layerData.chartMapConfig) {
+        layerManager.updateLayerStyle(layerId);
+      } else if (layerData.type === 'chartmap' && layerData.chartMapConfig) {
+        // 도형표현도 — 구운 차트 아이콘 스타일을 먼저 걸고(원본 없어도 표시),
+        // 원본이 있으면 재계산(범례 포함)으로 갱신
         restoredLayer.olLayer.setStyle(chartMapTool.chartIconStyle);
         const cfg = layerData.chartMapConfig;
         chartMapTool.restoreChartMap(layerId, cfg.sourceLayerId, cfg);
-      }
-
-      // 스타일 적용
-      layerManager.updateLayerStyle(layerId);
-
-      // 카토그램 색상 스타일 복원 (updateLayerStyle 이후에 덮어써야 함)
-      if (layerData.cartogramConfig) {
+      } else if (layerData.cartogramConfig) {
+        // 카토그램 — 분류 색상 스타일
         restoredLayer._cartogramConfig = { ...layerData.cartogramConfig };
         cartogramTool.applyCartogramStyle(layerId);
+      } else if (customized) {
+        layerManager.updateLayerStyle(layerId);
       }
     }
 
