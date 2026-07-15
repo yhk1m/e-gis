@@ -237,3 +237,54 @@ describe('카토그램 스타일', () => {
     expect(typeof info.olLayer._originalStyle).toBe('function');
   });
 });
+
+describe('CartogramTool.attachCartogram', () => {
+  beforeEach(() => {
+    layerManager.getAllLayers().slice().forEach(l => layerManager.removeLayer(l.id));
+  });
+
+  it('생성된 카토그램의 스타일 메타데이터가 실제 렌더링과 일치한다', () => {
+    const id = layerManager.addLayer({
+      name: '카토그램',
+      type: 'vector',
+      features: [square(10)],
+      color: '#3388ff'
+    });
+
+    cartogramTool.attachCartogram(id, {
+      attribute: 'pop',
+      colors: ['#ffffcc', '#800026'],
+      breaks: [0, 50, 100],
+      showLabels: false
+    });
+
+    const info = layerManager.getLayer(id);
+    // addLayer의 일반 기본값(0.3)이 아니라 카토그램의 실제 렌더링 값이어야 한다
+    expect(info.fillOpacity).toBe(0.85);
+    expect(info.strokeColor).toBe('#333');
+    expect(info.strokeWidth).toBe(1);
+    expect(info._cartogramConfig.attribute).toBe('pop');
+    // 스타일이 실제로 걸렸는지 (분류색 함수)
+    expect(typeof info.olLayer.getStyle()).toBe('function');
+  });
+
+  it('메타데이터의 fillOpacity가 실제 렌더링과 같다', () => {
+    const id = layerManager.addLayer({
+      name: '카토그램',
+      type: 'vector',
+      features: [square(10)],
+      color: '#3388ff'
+    });
+    cartogramTool.attachCartogram(id, {
+      attribute: 'pop',
+      colors: ['#ffffcc', '#800026'],
+      breaks: [0, 50, 100],
+      showLabels: false
+    });
+
+    const info = layerManager.getLayer(id);
+    const style = info.olLayer.getStyle()(info.source.getFeatures()[0]);
+    // 패널이 표시하는 값(fillOpacity)과 그려지는 값이 같아야 한다
+    expect(style.getFill().getColor()).toContain(String(info.fillOpacity));
+  });
+});

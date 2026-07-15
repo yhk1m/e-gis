@@ -113,6 +113,24 @@ class CartogramTool {
   }
 
   /**
+   * 생성된 카토그램 레이어에 설정과 스타일 메타데이터를 심고 스타일을 적용한다.
+   *
+   * Dorling·NonContiguous·Contiguous 세 생성 경로가 공유한다.
+   * addLayer는 일반 기본값(fillOpacity 0.3, 팔레트 색)을 심는데 카토그램의 실제
+   * 렌더링은 0.85/#333/1이었다 — 패널 표시값과 화면이 어긋나 있었다.
+   * updateLayerStyle의 카토그램 분기가 이제 layerInfo를 읽으므로 여기서 맞춰 준다.
+   */
+  attachCartogram(layerId, config) {
+    const layerInfo = layerManager.getLayer(layerId);
+    if (!layerInfo) return;
+    layerInfo._cartogramConfig = config;
+    layerInfo.fillOpacity = 0.85;
+    layerInfo.strokeColor = '#333';   // 동기화를 끄면 쓰일 기본값
+    layerInfo.strokeWidth = 1;
+    this.applyCartogramStyle(layerId);
+  }
+
+  /**
    * 저장된 카토그램 스타일 재적용 (복원용)
    *
    * 실제 스타일 계산은 LayerManager.updateLayerStyle의 카토그램 분기가 한다.
@@ -228,8 +246,7 @@ class CartogramTool {
       source: vectorSource
     });
 
-    const newLayerInfo = layerManager.getLayer(newLayerId);
-    if (newLayerInfo) newLayerInfo._cartogramConfig = config;
+    this.attachCartogram(newLayerId, config);
 
     // 범례 (색상 등급 + 원 크기)
     this.addLegend(newLayerId, `Dorling: ${attribute}`, cls.minVal, cls.maxVal, cls.colors, {
@@ -368,8 +385,7 @@ class CartogramTool {
       source: vectorSource
     });
 
-    const newLayerInfo = layerManager.getLayer(newLayerId);
-    if (newLayerInfo) newLayerInfo._cartogramConfig = config;
+    this.attachCartogram(newLayerId, config);
 
     this.addLegend(newLayerId, `Non-Contiguous: ${attribute}`, cls.minVal, cls.maxVal, cls.colors);
 
@@ -505,8 +521,7 @@ class CartogramTool {
       source: vectorSource
     });
 
-    const newLayerInfo = layerManager.getLayer(newLayerId);
-    if (newLayerInfo) newLayerInfo._cartogramConfig = config;
+    this.attachCartogram(newLayerId, config);
 
     this.addLegend(newLayerId, `Contiguous: ${attribute}`, cls.minVal, cls.maxVal, cls.colors);
 
