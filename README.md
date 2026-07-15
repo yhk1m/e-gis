@@ -89,7 +89,17 @@ npm run dev
 
 # 프로덕션 빌드 (내장 데이터 카탈로그 생성 포함)
 npm run build
+
+# 테스트
+npm test
 ```
+
+> **Windows 한글 경로 참고**
+> rollup의 Windows 네이티브 애드온이 경로에 비 ASCII 문자(한글 등)가 있으면
+> 번들링 도중 크래시한다(`0xC0000409`, rollup 4.54~4.62 모두 재현).
+> `npm run build`는 `scripts/build.cjs`를 거치며, 이 경우 폴더를 빈 드라이브 문자에
+> 임시로 `subst` 매핑해 ASCII 경로에서 빌드한 뒤 매핑을 해제한다.
+> ASCII 경로나 Linux/macOS(Vercel 포함)에서는 `vite build`를 그대로 실행한다.
 
 ### 내장 데이터 추가
 

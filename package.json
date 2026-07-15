@@ -6,7 +6,7 @@
   "scripts": {
     "catalog": "node scripts/generate-catalog.cjs",
     "dev": "vite",
-    "build": "npm run catalog && vite build",
+    "build": "npm run catalog && node scripts/build.cjs",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist",
     "test": "vitest run"
