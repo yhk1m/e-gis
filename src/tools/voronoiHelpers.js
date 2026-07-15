@@ -74,3 +74,21 @@ export function computeBBox(seedExtent, boundaryExtent = null) {
 
   return [minX - padX, minY - padY, maxX + padX, maxY + padY];
 }
+
+/**
+ * 기존 속성과 충돌하지 않는 필드명을 만든다.
+ *
+ * 원본 포인트에 이미 area_km2가 있을 수 있으므로 조용히 덮어쓰지 않는다.
+ *
+ * @param {string} baseName
+ * @param {string[]} existingKeys
+ * @returns {string}
+ */
+export function resolveFieldName(baseName, existingKeys) {
+  const taken = new Set(existingKeys);
+  if (!taken.has(baseName)) return baseName;
+
+  let i = 1;
+  while (taken.has(`${baseName}_${i}`)) i++;
+  return `${baseName}_${i}`;
+}

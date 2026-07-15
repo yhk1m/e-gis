@@ -1,6 +1,6 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
-import { dedupeSeeds, computeBBox } from './voronoiHelpers.js';
+import { dedupeSeeds, computeBBox, resolveFieldName } from './voronoiHelpers.js';
 
 const seed = (x, y, props = {}) => ({ coord: [x, y], properties: props });
 
@@ -79,5 +79,24 @@ describe('computeBBox', () => {
 
   it('한 점이면 양축 모두 절대 여유를 쓴다', () => {
     expect(computeBBox([5, 5, 5, 5], null)).toEqual([-995, -995, 1005, 1005]);
+  });
+});
+
+describe('resolveFieldName', () => {
+  it('충돌이 없으면 그대로 쓴다', () => {
+    expect(resolveFieldName('area_km2', ['name', 'pop'])).toBe('area_km2');
+  });
+
+  it('충돌하면 _1을 붙인다', () => {
+    expect(resolveFieldName('area_km2', ['name', 'area_km2'])).toBe('area_km2_1');
+  });
+
+  it('연속 충돌하면 빈 번호를 찾는다', () => {
+    expect(resolveFieldName('area_km2', ['area_km2', 'area_km2_1', 'area_km2_2']))
+      .toBe('area_km2_3');
+  });
+
+  it('기존 키가 없으면 그대로 쓴다', () => {
+    expect(resolveFieldName('area_km2', [])).toBe('area_km2');
   });
 });
