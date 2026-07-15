@@ -16,7 +16,7 @@ const DEDUPE_PRECISION = 0.001;
  * turf.voronoi가 중복 좌표에서 TypeError로 죽기 때문에 반드시 선행되어야 한다.
  *
  * @param {Array<{coord: number[], properties: Object}>} seeds
- * @returns {{seeds: Array, duplicates: number}} duplicates는 제거된 개수
+ * @returns {{seeds: Array<{coord: number[], properties: Object}>, duplicates: number}} duplicates는 제거된 개수
  */
 export function dedupeSeeds(seeds) {
   const seen = new Set();

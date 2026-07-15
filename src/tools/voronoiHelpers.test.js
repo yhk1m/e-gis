@@ -33,7 +33,9 @@ describe('dedupeSeeds', () => {
     expect(result.duplicates).toBe(2);
   });
 
-  it('1mm 미만 차이는 같은 점으로 본다', () => {
+  it('같은 격자에 떨어지는 근접 좌표는 같은 점으로 본다', () => {
+    // 격자 반올림이라 거리 허용오차가 아니다. 경계를 걸치면 더 가까워도 갈라진다.
+    // 우리가 필요한 보장은 "정확히 겹친 좌표는 반드시 합쳐진다" 하나뿐이다.
     const input = [seed(0, 0), seed(0.0002, 0.0002)];
     const result = dedupeSeeds(input);
     expect(result.seeds).toHaveLength(1);
