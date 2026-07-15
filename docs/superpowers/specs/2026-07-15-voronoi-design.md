@@ -39,9 +39,29 @@
 - **속성을 이미 복사한다** (`cloneProperties`). 속성 상속에 추가 작업이 필요 없다.
 - **순수 평면 계산이다.** 내부적으로 `d3-voronoi`에 좌표를 그대로 넘기며
   경위도 범위를 검증하지 않는다. 따라서 EPSG:3857 미터 좌표를 그대로 먹여도 안전하다.
-- **중복 좌표에서 크래시한다.** `d3-voronoi`가 겹친 점에 `null` 셀을 돌려주는데
-  turf가 그걸 그대로 `coords.slice()` 해서 `TypeError`가 난다. 중복 제거는 필수다.
+- **중복 좌표에서 셀을 조용히 빠뜨린다.** (아래 정정 참조)
 - `bbox`는 `d3-voronoi`의 `extent()`로 전달되어 클립 사각형 역할을 한다.
+
+### 정정: 중복 좌표에서 크래시하지 않는다 (2026-07-15, 실측)
+
+이 문서 초안은 "`d3-voronoi`가 `null` 셀을 돌려주고 turf가 `coords.slice()` 해서
+`TypeError`가 난다"고 적었다. **틀렸다.** 설치된 `@turf/voronoi@7.3.1`로 실측한 결과:
+
+```
+[중복 1쌍: [0,0] 두 번]  입력 4개 → features.length 4, forEach 순회 3회,
+                          hasOwnProperty: false,true,true,true → filter(Boolean) 후 3개
+[전부 동일: [0,0] 3개]    입력 3개 → forEach 순회 1회, filter(Boolean) 후 1개
+```
+
+예외는 나지 않는다(exit 0). `d3-voronoi`의 `polygons()`가 겹친 인덱스에 **구멍(hole)이
+있는 sparse array**를 돌려주고, `Array.prototype.map`이 구멍을 건너뛰므로
+`coordsToPolygon(null)`은 애초에 호출되지 않는다. turf 소스만 읽고 sparse array의
+map 동작을 놓친 데서 나온 오독이다.
+
+**`dedupeSeeds`의 근거는 바뀌지만 결론은 그대로다.** 크래시 방지가 아니라 **정직한 보고**다.
+걸러내지 않으면 중복된 점들이 조용히 셀 없이 사라지고, 사용자는 포인트보다 셀이 적은
+이유를 알 수 없다. 걸러내야 "중복 좌표 N개 제외"라고 말해 줄 수 있다.
+`filter(Boolean)`은 sparse가 새어 나올 경우를 막는 방어용으로 남긴다.
 
 ## 좌표계 결정 (기존 관례에서 의도적으로 벗어남)
 
@@ -104,7 +124,8 @@ voronoiTool.createVoronoi(layerId, {
   boundaryLayerId,  // null이면 사각형 모드
   color
 })
-// → { layerId, layerName, cellCount, skipped: { duplicates, outsideBoundary } }
+// → { layerId, layerName, cellCount,
+//     skipped: { duplicates, nonPoint, outsideBoundary } }
 ```
 
 `writeFeatureObject(feature)`를 옵션 없이 호출하면 3857 원좌표가 그대로 나온다.
@@ -114,8 +135,15 @@ voronoiTool.createVoronoi(layerId, {
 
 1. **시드 추출** — `geometryType`이 `Point`/`MultiPoint`인 레이어만 대상.
    MultiPoint는 각 점을 개별 시드로 펼치되 부모 피처의 속성을 공유한다.
+   **포인트가 아닌 피처는 세어서 보고한다** (`skipped.nonPoint`).
+   `LayerManager.detectGeometryType`은 `features[0]`만 보고 레이어 타입을 정하고
+   (`LayerManager.js:106-115`), `GeoJSONLoader`는 FeatureCollection을 피처별 타입 검사
+   없이 통째로 싣는다. 따라서 포인트에 라인이 섞인 파일도 포인트 레이어로 잡히며,
+   조용히 버리면 셀 개수가 포인트 수보다 적은 이유를 사용자가 알 수 없다.
 2. **중복 제거** — 3857 좌표를 1mm(0.001m) 단위로 반올림한 키로 중복을 걸러 첫 점만 남긴다.
-   `turf.voronoi` 크래시를 막는 필수 단계이며, 걸러낸 개수를 보고한다.
+   크래시 방지가 아니라 **보고**를 위한 단계다(위 정정 참조). 걸러낸 개수를 사용자에게 알린다.
+   1mm 격자는 거리 허용오차가 아니라 격자 반올림이다. 경계를 걸친 좌표는 더 가까워도
+   갈라진다. 보장하는 건 "정확히 겹친 좌표는 반드시 합쳐진다" 하나뿐이며, 그거면 충분하다.
 3. **최소 개수 검증** — 서로 다른 시드가 2개 미만이면 에러.
    2개는 허용한다 (수직이등분선 하나만 나오는 게 원리 설명에 유용).
 4. **bbox 산정** (3857 미터)
@@ -175,8 +203,9 @@ voronoiTool.createVoronoi(layerId, {
 "보로노이 다이어그램을 만들려면 포인트 레이어가 필요합니다."로 알린다.
 
 **결과 보고** — 레이어명과 셀 개수를 알리고, 걸러낸 게 있을 때만 덧붙인다
-(예: `중복 좌표 2개 제외`, `경계 밖 셀 5개 제외`).
+(예: `중복 좌표 2개 제외`, `포인트가 아닌 피처 1개 제외`, `경계 밖 셀 5개 제외`).
 조용히 사라지면 데이터가 틀렸다고 오해하기 쉬운 대목이라 반드시 노출한다.
+`skipped`의 세 항목 모두 0이 아닐 때 노출한다.
 
 ## 에러 처리
 
