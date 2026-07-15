@@ -80,6 +80,7 @@ function serializeLike(layerInfo) {
     strokeOpacity: layerInfo.strokeOpacity,
     strokeWidth: layerInfo.strokeWidth,
     pointRadius: layerInfo.pointRadius,
+    strokeSyncToFill: layerInfo.strokeSyncToFill,
     visible: layerInfo.visible,
     features: geoJSON.writeFeaturesObject(layerInfo.source.getFeatures())
   };
@@ -157,5 +158,23 @@ describe('AutoSaveManager.restoreLayer — 스타일 보존', () => {
     const actual = pointLook(restored.olLayer.getStyle());
     expect(actual).toEqual(expected);
     expect(actual.radius).toBe(12);
+  });
+
+  it('strokeSyncToFill이 복원 후에도 유지된다', async () => {
+    const originalId = layerManager.addLayer({
+      name: '동기화 해제 레이어',
+      features: [new Feature({ geometry: new Point([0, 0]) })],
+      color: COLOR
+    });
+    const original = layerManager.getLayer(originalId);
+
+    // 기본값은 true여야 한다
+    expect(original.strokeSyncToFill).toBe(true);
+
+    // 사용자가 동기화를 끈다
+    original.strokeSyncToFill = false;
+
+    const restoredId = await autoSaveManager.restoreLayer(serializeLike(original));
+    expect(layerManager.getLayer(restoredId).strokeSyncToFill).toBe(false);
   });
 });

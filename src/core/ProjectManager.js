@@ -118,7 +118,8 @@ export class ProjectManager {
           strokeOpacity: layer.strokeOpacity,
           strokeWidth: layer.strokeWidth,
           strokeDash: layer.strokeDash,
-          pointRadius: layer.pointRadius
+          pointRadius: layer.pointRadius,
+          strokeSyncToFill: layer.strokeSyncToFill
         };
 
         // 래스터 레이어: 벡터 source가 없으므로 demData/analysisData를 직렬화

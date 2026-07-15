@@ -225,6 +225,7 @@ class StateManager {
           strokeOpacity: layerInfo.strokeOpacity,
           strokeWidth: layerInfo.strokeWidth,
           pointRadius: layerInfo.pointRadius,
+          strokeSyncToFill: layerInfo.strokeSyncToFill,
           visible: layerInfo.visible,
           choroplethConfig,
           chartMapConfig,

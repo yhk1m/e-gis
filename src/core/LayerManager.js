@@ -18,7 +18,7 @@ import { mapManager } from './MapManager.js';
  */
 export const STYLE_FIELDS = [
   'strokeColor', 'fillColor', 'fillOpacity', 'strokeOpacity',
-  'strokeWidth', 'strokeDash', 'pointRadius'
+  'strokeWidth', 'strokeDash', 'pointRadius', 'strokeSyncToFill'
 ];
 
 const COLOR_PALETTE = [
@@ -184,6 +184,7 @@ class LayerManager {
       geometryType: geometryType,
       featureCount: featureCount,
       strokeDash: "solid",
+      strokeSyncToFill: true,
       fillOpacity: 0.3,
       strokeOpacity: 1.0,
       strokeWidth: 2,
