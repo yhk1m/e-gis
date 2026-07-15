@@ -80,9 +80,11 @@ export function computeBBox(seedExtent, boundaryExtent = null) {
  *
  * 원본 포인트에 이미 area_km2가 있을 수 있으므로 조용히 덮어쓰지 않는다.
  *
- * @param {string} baseName
- * @param {string[]} existingKeys
- * @returns {string}
+ * @param {string} baseName - 붙이려는 기본 필드명
+ * @param {string[]} existingKeys - 검사 대상 전체 레코드에 등장하는 모든 키의 합집합.
+ *   레코드 하나만 보고 넘기면 안 된다. 한 레이어 안에서도 피처마다 키가 다를 수 있다
+ *   (TableJoinTool은 조인 키가 맞은 피처에만 필드를 붙인다 — TableJoinTool.js:237).
+ * @returns {string} 충돌하지 않는 필드명
  */
 export function resolveFieldName(baseName, existingKeys) {
   const taken = new Set(existingKeys);
