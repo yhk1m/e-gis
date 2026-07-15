@@ -197,11 +197,19 @@ voronoiTool.createVoronoi(layerId, {
 경계 처리를 라디오 + 별도 셀렉트로 나누지 않고 **셀렉트 하나로 합친다.**
 "사각형"이 사실상 목록의 0번 선택지이며, 폴리곤 레이어가 없으면 자연스럽게 사각형만 남는다.
 
-**투명도 슬라이더는 넣지 않는다.** `addLayer`는 `opacity`를 받지 않으므로
-(`LayerManager.js:86-94`) 넣어도 `BufferPanel`처럼 아무 일도 하지 않는 죽은 컨트롤이 된다.
-`style` 옵션으로 우회하면 `layerInfo.fillOpacity`가 `0.3`으로 하드코딩돼 있어
-(`LayerManager.js:174`) LayerPanel 스타일 편집기가 읽는 값과 실제 스타일이 어긋난다.
-투명도는 LayerPanel의 스타일 편집이 이미 담당하는 영역이다.
+**투명도 슬라이더 — 초안의 판단을 뒤집었다 (2026-07-15)**
+
+초안은 "`addLayer`가 `opacity`를 받지 않으므로(`LayerManager.js:86-94`) 넣어도
+`BufferPanel`처럼 죽은 컨트롤이 된다"며 슬라이더를 뺐다. **오판이었다.**
+
+`addLayer`가 안 받는 건 맞지만, `layerManager.setLayerFillOpacity(layerId, opacity)`
+(`LayerManager.js:538`)가 정식 경로이며 LayerPanel의 투명도 편집이 이미 이걸 쓴다
+(`LayerPanel.js:826`). `layerInfo.fillOpacity`를 설정하고 `updateLayerStyle`을 부르므로
+값과 스타일이 어긋나지 않는다. 초안이 경계한 건 **커스텀 `style` 옵션을 넘기는 방식**이고,
+그 경계 자체는 여전히 유효하다.
+
+따라서 레이어 등록 후 `setLayerFillOpacity`로 적용한다.
+`BufferPanel`의 죽어 있던 슬라이더도 같은 방식으로 살렸다.
 
 **빈 상태** — 포인트 레이어가 없으면 패널을 열지 않고
 "보로노이 다이어그램을 만들려면 포인트 레이어가 필요합니다."로 알린다.

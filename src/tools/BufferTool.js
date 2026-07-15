@@ -5,9 +5,7 @@
 
 import * as turf from '@turf/turf';
 import { layerManager } from '../core/LayerManager.js';
-import { eventBus, Events } from '../utils/EventBus.js';
 import GeoJSON from 'ol/format/GeoJSON';
-import { Style, Fill, Stroke } from 'ol/style';
 
 class BufferTool {
   constructor() {
@@ -93,36 +91,18 @@ class BufferTool {
       color: options.color || '#3388ff'
     });
 
+    // addLayer는 opacity를 받지 않는다. 레이어 등록 후 LayerPanel의 투명도 편집과
+    // 같은 경로로 적용해야(LayerPanel.js:826) layerInfo.fillOpacity와 실제 스타일이
+    // 어긋나지 않는다. 커스텀 style을 넘기면 둘이 따로 놀게 된다.
+    if (options.opacity !== undefined) {
+      layerManager.setLayerFillOpacity(newLayerId, options.opacity);
+    }
+
     return {
       layerId: newLayerId,
       featureCount: olFeatures.length,
       layerName: bufferLayerName
     };
-  }
-
-  /**
-   * 버퍼 스타일 생성
-   */
-  getBufferStyle(color, opacity) {
-    return new Style({
-      fill: new Fill({
-        color: this.hexToRgba(color, opacity)
-      }),
-      stroke: new Stroke({
-        color: color,
-        width: 2
-      })
-    });
-  }
-
-  /**
-   * HEX 색상을 RGBA로 변환
-   */
-  hexToRgba(hex, alpha) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
   /**

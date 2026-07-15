@@ -2020,7 +2020,8 @@ body.exporting .egis-basemap-panel {
 
 .heatmap-modal .form-group select,
 .heatmap-modal .form-group input[type="range"],
-.voronoi-modal .form-group select {
+.voronoi-modal .form-group select,
+.voronoi-modal .form-group input[type="range"] {
   width: 100%;
 }
 
