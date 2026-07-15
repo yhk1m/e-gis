@@ -24,6 +24,7 @@ import { choroplethPanel } from './ui/panels/ChoroplethPanel.js';
 import { tableJoinPanel } from './ui/panels/TableJoinPanel.js';
 import { labelPanel } from './ui/panels/LabelPanel.js';
 import { bufferPanel } from './ui/panels/BufferPanel.js';
+import { voronoiPanel } from './ui/panels/VoronoiPanel.js';
 import { exportPanel } from './ui/panels/ExportPanel.js';
 import { fieldCalculatorPanel } from './ui/panels/FieldCalculatorPanel.js';
 import { spatialOperationsPanel } from './ui/panels/SpatialOperationsPanel.js';
@@ -745,6 +746,9 @@ function handleMenuAction(action) {
       }
       break;
     }
+    case 'analysis-voronoi':
+      voronoiPanel.show();
+      break;
     case 'analysis-spatial-ops':
       spatialOperationsPanel.show();
       break;
