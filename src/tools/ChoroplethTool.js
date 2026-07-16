@@ -9,6 +9,7 @@ import VectorSource from "ol/source/Vector";
 import { layerManager } from "../core/LayerManager.js";
 import { eventBus, Events } from "../utils/EventBus.js";
 import { makeDraggable } from "../utils/DraggableElement.js";
+import { formatNumber } from "./legendModel.js";
 
 // 색상 팔레트 정의
 const COLOR_RAMPS = {
@@ -345,8 +346,8 @@ class ChoroplethTool {
     if (!itemsEl) return;
     let html = '';
     for (let i = 0; i < breaks.length - 1; i++) {
-      const minVal = this.formatNumber(breaks[i], format, rounding);
-      const maxVal = this.formatNumber(breaks[i + 1], format, rounding);
+      const minVal = formatNumber(breaks[i], format, rounding);
+      const maxVal = formatNumber(breaks[i + 1], format, rounding);
       const range = `${minVal} - ${maxVal}`;
       html += `
         <div class="choropleth-legend-item">
@@ -435,30 +436,6 @@ class ChoroplethTool {
         persist();
       });
     }
-  }
-
-  /**
-   * 숫자 포맷
-   * - 'comma'   : 1,234,567 (정수면 콤마, 소수면 콤마+소수점)
-   * - 'short'   : 1.2K / 1.5M
-   * - 'decimal2': 1,234.56 (항상 소수점 2자리)
-   */
-  formatNumber(num, format = 'comma', rounding = 0) {
-    let n = Number(num);
-    if (rounding && rounding > 0) {
-      n = Math.round(n / rounding) * rounding;
-    }
-    if (format === 'short') {
-      if (Math.abs(n) >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-      if (Math.abs(n) >= 1000) return (n / 1000).toFixed(1) + 'K';
-      if (Number.isInteger(n)) return n.toString();
-      return n.toFixed(2);
-    }
-    if (format === 'decimal2') {
-      return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    // 'comma' — 항상 정수로 반올림
-    return Math.round(n).toLocaleString();
   }
 
   /**

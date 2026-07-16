@@ -115,6 +115,11 @@ class ExportTool {
       this.drawCompass(ctx, overlays.compass, width, height, s);
     }
 
+    // 범례
+    if (overlays.legend) {
+      this.drawLegend(ctx, overlays.legend, width, height, s);
+    }
+
     // 텍스트 박스
     if (overlays.textBox) {
       this.drawTextBox(ctx, overlays.textBox, width, height, s);
@@ -537,69 +542,173 @@ class ExportTool {
 
   /**
    * 범례 그리기
+   *
+   * 박스 왼쪽 위 모서리가 (x, y) 기준 — 제목·방위표와 같은 비율 좌표라 드래그 코드를
+   * 그대로 쓴다. 폭·높이는 내용에 맞춰 재므로, 히트 테스트가 쓸 수 있도록 실제로 그린
+   * 사각형을 돌려준다.
+   *
+   * @param {Object} options - { models, headerText, showHeader, 스타일…, x, y }
+   *   models: legendModel.buildLegendModel의 결과 배열
+   * @returns {{x, y, w, h}|null} 그려진 박스 (캔버스 픽셀). 그릴 게 없으면 null.
    */
   drawLegend(ctx, options, width, height, scale) {
     const {
-      layers,
+      models,
+      headerText = '범례',
+      showHeader = true,
       fontSize = 12,
       fontFamily = 'Malgun Gothic',
       color = '#333333',
       background = true,
       backgroundColor = '#ffffff',
       backgroundOpacity = 0.9,
-      x = 0.85,
-      y = 0.35
+      x = 0.78,
+      y = 0.5
     } = options;
 
-    if (!layers || layers.length === 0) return;
+    if (!models || models.length === 0) return null;
 
-    const padding = 10 * scale;
-    const scaledFontSize = fontSize * scale;
-    const itemHeight = 20 * scale;
-    const legendWidth = 120 * scale;
-    const legendHeight = (layers.length * itemHeight) + padding * 3;
+    const pad = 10 * scale;
+    const fs = fontSize * scale;
+    const rowH = fs * 1.6;          // 항목 한 줄 높이
+    const symbolW = 16 * scale;     // 기호 칸 폭
+    const gap = 6 * scale;          // 기호와 라벨 사이
+    const indent = 8 * scale;       // 묶음 레이어의 구간 들여쓰기
 
-    const posX = x * width;
-    const posY = y * height;
+    const headerFont = `bold ${fs}px "${fontFamily}", sans-serif`;
+    const titleFont = `bold ${fs * 0.95}px "${fontFamily}", sans-serif`;
+    const labelFont = `${fs * 0.9}px "${fontFamily}", sans-serif`;
+
+    // 1) 레이아웃 계산 — 그리기 전에 박스 크기를 확정한다.
+    const rows = [];
+    let maxTextW = 0;
+
+    if (showHeader && headerText) {
+      ctx.font = headerFont;
+      maxTextW = Math.max(maxTextW, ctx.measureText(headerText).width);
+      rows.push({ kind: 'header', text: headerText });
+    }
+
+    models.forEach(model => {
+      if (model.grouped) {
+        ctx.font = titleFont;
+        maxTextW = Math.max(maxTextW, ctx.measureText(model.title).width);
+        rows.push({ kind: 'title', text: model.title });
+
+        ctx.font = labelFont;
+        model.items.forEach(item => {
+          maxTextW = Math.max(maxTextW, indent + symbolW + gap + ctx.measureText(item.label).width);
+          rows.push({ kind: 'item', text: item.label, symbol: item.symbol, indent: true });
+        });
+      } else {
+        ctx.font = labelFont;
+        model.items.forEach(item => {
+          maxTextW = Math.max(maxTextW, symbolW + gap + ctx.measureText(item.label).width);
+          rows.push({ kind: 'item', text: item.label, symbol: item.symbol, indent: false });
+        });
+      }
+    });
+
+    const boxW = maxTextW + pad * 2;
+    const boxH = rows.length * rowH + pad * 2;
+    const boxX = x * width;
+    const boxY = y * height;
 
     ctx.save();
 
-    // 배경
+    // 2) 배경
     if (background) {
       ctx.fillStyle = this.hexToRgba(backgroundColor, backgroundOpacity);
-      ctx.fillRect(posX, posY, legendWidth, legendHeight);
+      ctx.fillRect(boxX, boxY, boxW, boxH);
       ctx.strokeStyle = '#999';
       ctx.lineWidth = scale;
-      ctx.strokeRect(posX, posY, legendWidth, legendHeight);
+      ctx.strokeRect(boxX, boxY, boxW, boxH);
     }
 
-    // 제목
-    ctx.fillStyle = color;
-    ctx.font = `bold ${scaledFontSize}px "${fontFamily}", sans-serif`;
+    // 3) 줄 그리기
     ctx.textAlign = 'left';
-    ctx.fillText('범례', posX + padding, posY + padding + 10 * scale);
+    ctx.textBaseline = 'middle';
 
-    // 레이어 항목
-    layers.forEach((layer, index) => {
-      const itemY = posY + padding * 2 + 10 * scale + (index * itemHeight);
+    rows.forEach((row, i) => {
+      const cy = boxY + pad + i * rowH + rowH / 2;
 
-      // 색상 박스
-      ctx.fillStyle = layer.color;
-      ctx.fillRect(posX + padding, itemY, 14 * scale, 14 * scale);
-      ctx.strokeStyle = '#666';
-      ctx.strokeRect(posX + padding, itemY, 14 * scale, 14 * scale);
+      if (row.kind === 'header' || row.kind === 'title') {
+        ctx.fillStyle = color;
+        ctx.font = row.kind === 'header' ? headerFont : titleFont;
+        ctx.fillText(row.text, boxX + pad, cy);
+        return;
+      }
 
-      // 레이어 이름
+      const symX = boxX + pad + (row.indent ? indent : 0);
+      this.drawLegendSymbol(ctx, row.symbol, symX, cy, symbolW, rowH, scale);
+
       ctx.fillStyle = color;
-      ctx.font = `${(fontSize - 1) * scale}px "${fontFamily}", sans-serif`;
-      ctx.fillText(
-        layer.name.length > 10 ? layer.name.substring(0, 10) + '...' : layer.name,
-        posX + padding + 18 * scale,
-        itemY + 11 * scale
-      );
+      ctx.font = labelFont;
+      ctx.fillText(row.text, symX + symbolW + gap, cy);
     });
 
     ctx.restore();
+
+    return { x: boxX, y: boxY, w: boxW, h: boxH };
+  }
+
+  /**
+   * 범례 항목의 기호 하나 — 도형 종류에 맞춰 그린다.
+   * 지도와 같아 보이도록 레이어 스타일(색·투명도·테두리 굵기·점선)을 그대로 쓴다.
+   */
+  drawLegendSymbol(ctx, symbol, x, cy, boxW, rowH, scale) {
+    const {
+      kind,
+      fillColor = '#3b82f6',
+      fillOpacity = 0.3,
+      strokeColor = '#3b82f6',
+      strokeOpacity = 1,
+      strokeWidth = 2,
+      strokeDash = 'solid',
+      pointRadius = 6
+    } = symbol || {};
+
+    ctx.save();
+    ctx.fillStyle = this.hexToRgba(fillColor, fillOpacity);
+    ctx.strokeStyle = this.hexToRgba(strokeColor, strokeOpacity);
+    // 기호가 칸을 넘지 않게 테두리 굵기를 제한한다.
+    ctx.lineWidth = Math.max(0.5, Math.min(strokeWidth, 3)) * scale;
+    ctx.setLineDash(this.dashPattern(strokeDash, scale));
+
+    if (kind === 'point') {
+      // 실제 반지름을 쓰되 칸 안에 들어오게 줄인다.
+      const r = Math.min(pointRadius * scale * 0.7, boxW / 2);
+      ctx.beginPath();
+      ctx.arc(x + boxW / 2, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else if (kind === 'line') {
+      ctx.beginPath();
+      ctx.moveTo(x, cy);
+      ctx.lineTo(x + boxW, cy);
+      ctx.stroke();
+    } else {
+      const h = Math.min(boxW * 0.75, rowH * 0.7);
+      const top = cy - h / 2;
+      ctx.fillRect(x, top, boxW, h);
+      ctx.strokeRect(x, top, boxW, h);
+    }
+
+    ctx.restore();
+  }
+
+  /**
+   * strokeDash 이름 → 캔버스 점선 패턴.
+   * LayerManager의 STROKE_DASH_OPTIONS와 같은 값을 캔버스 배율에 맞춘다.
+   */
+  dashPattern(strokeDash, scale) {
+    const patterns = {
+      dashed: [10, 10],
+      dotted: [2, 6],
+      'dash-dot': [10, 5, 2, 5]
+    };
+    const p = patterns[strokeDash];
+    return p ? p.map(v => v * scale) : [];
   }
 
   /**
