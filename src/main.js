@@ -1398,4 +1398,4 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // 진단용 훅 — 헤드리스 재현 테스트(버그 리포트 검증)에서 내부 상태 접근용.
 // 클라이언트 앱이라 보안 경계 아님(모든 코드·키가 이미 번들에 공개).
-window.__egisDebug = { projectManager, layerManager };
+window.__egisDebug = { projectManager, layerManager, exportPanel };

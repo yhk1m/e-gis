@@ -7,6 +7,7 @@
 import { exportTool } from '../../tools/ExportTool.js';
 import { mapManager } from '../../core/MapManager.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { buildLegendModel } from '../../tools/legendModel.js';
 
 class ExportPanel {
   constructor() {
@@ -55,6 +56,22 @@ class ExportPanel {
         imageSrc: null,   // 커스텀 이미지 data URL
         image: null,      // 로드된 Image 객체 (런타임)
         imageName: ''
+      },
+      legend: {
+        enabled: false,
+        // 방위표(0.92, 0.12)와 겹치지 않는 오른쪽 중간. 박스 왼쪽 위 모서리 기준.
+        x: 0.78,
+        y: 0.5,
+        headerText: '범례',
+        showHeader: true,
+        // 범례에 넣을 레이어 id. null이면 "아직 고른 적 없음" → 보이는 레이어를 기본값으로.
+        selectedLayerIds: null,
+        fontSize: 12,
+        fontFamily: 'Malgun Gothic',
+        color: '#333333',
+        background: true,
+        backgroundColor: '#ffffff',
+        backgroundOpacity: 0.9
       },
       textBox: {
         enabled: false,
@@ -107,6 +124,36 @@ class ExportPanel {
     scaleBars.forEach(el => {
       el.style.display = this.mapElements.showScaleBar ? '' : 'none';
     });
+  }
+
+  /**
+   * 범례에 넣을 수 있는 레이어 — 레이어 창과 같은 순서.
+   * 범례 기호로 요약할 수 없는 레이어(래스터·히트맵·도형표현도)는 buildLegendModel이
+   * null을 내므로 여기서 빠진다.
+   */
+  legendCandidates() {
+    return layerManager.getAllLayers()
+      .map(layerInfo => ({ layerInfo, model: buildLegendModel(layerInfo) }))
+      .filter(c => c.model);
+  }
+
+  /**
+   * 범례에 넣기로 한 레이어 id 집합.
+   * 아직 고른 적이 없으면(null) 지도에 보이는 레이어를 기본값으로 삼는다.
+   */
+  legendSelection(candidates) {
+    const picked = this.elements.legend.selectedLayerIds;
+    if (picked) return new Set(picked);
+    return new Set(candidates.filter(c => c.layerInfo.visible).map(c => c.layerInfo.id));
+  }
+
+  /**
+   * 현재 선택으로 범례 모델 배열을 만든다. 그리기(내보내기·미리보기)가 공유한다.
+   */
+  legendModels() {
+    const candidates = this.legendCandidates();
+    const selected = this.legendSelection(candidates);
+    return candidates.filter(c => selected.has(c.layerInfo.id)).map(c => c.model);
   }
 
   async refreshMapCapture() {
@@ -229,6 +276,26 @@ class ExportPanel {
                     <label>크기</label>
                     <input type="number" id="compass-size" min="30" max="100">
                   </div>
+                </div>
+              </div>
+
+              <!-- 범례 -->
+              <div class="export-element-group">
+                <label class="export-toggle">
+                  <input type="checkbox" id="opt-legend">
+                  <span>범례</span>
+                </label>
+                <div class="element-options" id="legend-options" style="display:none;">
+                  <div class="style-row">
+                    <label class="checkbox-inline">
+                      <input type="checkbox" id="legend-show-header">
+                      <span>제목</span>
+                    </label>
+                    <input type="text" id="legend-header-text" placeholder="범례" style="flex:1; margin:0;">
+                  </div>
+                  <p class="help-text" id="legend-layers-hint" style="margin:6px 0 4px;">범례에 넣을 레이어</p>
+                  <div class="legend-layers" id="legend-layers"></div>
+                  ${this.getBasicStyleHTML('legend')}
                 </div>
               </div>
 
@@ -410,6 +477,22 @@ class ExportPanel {
     this.setValue('compass-size', compassEl.size);
     this.setValue('compass-style', compassEl.style || 'basic');
 
+    // 범례
+    const legendEl = this.elements.legend;
+    this.setChecked('opt-legend', legendEl.enabled);
+    this.setChecked('legend-show-header', legendEl.showHeader);
+    this.setValue('legend-header-text', legendEl.headerText);
+    this.setValue('legend-font', legendEl.fontFamily);
+    this.setValue('legend-size', legendEl.fontSize);
+    this.setValue('legend-color', legendEl.color);
+    this.setChecked('legend-background', legendEl.background);
+    this.setValue('legend-background-color', legendEl.backgroundColor);
+    this.setValue('legend-background-opacity', legendEl.backgroundOpacity);
+    this.updateOpacityLabel('legend', legendEl.backgroundOpacity);
+    this.toggleBgControls('legend', legendEl.background);
+    document.getElementById('legend-options').style.display = legendEl.enabled ? 'block' : 'none';
+    this.renderLegendLayers();
+
     // 지도 위 요소
     this.setChecked('opt-map-legend', this.mapElements.showLegend);
     this.setChecked('opt-map-scalebar', this.mapElements.showScaleBar);
@@ -433,6 +516,69 @@ class ExportPanel {
     this.setValue('textbox-stroke-color', textBoxEl.strokeColor);
     this.setValue('textbox-stroke-width', textBoxEl.strokeWidth);
     document.getElementById('textbox-options').style.display = textBoxEl.enabled ? 'block' : 'none';
+  }
+
+  /**
+   * 범례 레이어 체크박스 목록을 그린다.
+   * 넣을 수 있는 레이어가 없거나 일부가 빠졌으면 그 사실을 안내한다.
+   */
+  renderLegendLayers() {
+    const listEl = document.getElementById('legend-layers');
+    const hintEl = document.getElementById('legend-layers-hint');
+    if (!listEl) return;
+
+    const candidates = this.legendCandidates();
+    const excluded = layerManager.getAllLayers().length - candidates.length;
+
+    if (candidates.length === 0) {
+      listEl.innerHTML = '<p class="no-layers">범례에 넣을 레이어가 없습니다.</p>';
+      if (hintEl) hintEl.textContent = '범례에 넣을 레이어';
+      return;
+    }
+
+    const selected = this.legendSelection(candidates);
+    listEl.innerHTML = candidates.map(({ layerInfo, model }) => {
+      const checked = selected.has(layerInfo.id) ? 'checked' : '';
+      const swatch = model.grouped
+        ? (model.items[0].symbol.fillColor || layerInfo.color)
+        : (layerInfo.fillColor || layerInfo.color);
+      const suffix = model.grouped ? ` <span class="help-text">(${model.items.length}구간)</span>` : '';
+      return `
+        <label class="legend-layer-item">
+          <input type="checkbox" data-legend-layer="${layerInfo.id}" ${checked}>
+          <span class="layer-color" style="background:${swatch}"></span>
+          <span>${this.escapeHtml(layerInfo.name)}</span>${suffix}
+        </label>`;
+    }).join('');
+
+    if (hintEl) {
+      hintEl.textContent = excluded > 0
+        ? `범례에 넣을 레이어 (래스터·히트맵·도형표현도 ${excluded}개는 지도 위 자체 범례를 씁니다)`
+        : '범례에 넣을 레이어';
+    }
+
+    listEl.querySelectorAll('[data-legend-layer]').forEach(cb => {
+      cb.addEventListener('change', () => this.onLegendLayerToggled());
+    });
+  }
+
+  /**
+   * 체크박스 상태를 selectedLayerIds에 굳힌다.
+   * 한 번이라도 건드리면 "보이는 레이어 자동" 기본값에서 벗어나 사용자 선택이 유지된다.
+   */
+  onLegendLayerToggled() {
+    const listEl = document.getElementById('legend-layers');
+    if (!listEl) return;
+    this.elements.legend.selectedLayerIds = Array.from(
+      listEl.querySelectorAll('[data-legend-layer]:checked')
+    ).map(cb => cb.dataset.legendLayer);
+    this.updatePreview();
+  }
+
+  escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   setValue(id, value) {
@@ -515,6 +661,23 @@ class ExportPanel {
       this.elements.compass.enabled = e.target.checked;
       this.updatePreview();
     });
+
+    // 범례 토글
+    document.getElementById('opt-legend').addEventListener('change', (e) => {
+      this.elements.legend.enabled = e.target.checked;
+      document.getElementById('legend-options').style.display = e.target.checked ? 'block' : 'none';
+      // 열 때마다 목록을 다시 그린다 — 패널을 띄운 뒤 레이어가 바뀌었을 수 있다.
+      if (e.target.checked) this.renderLegendLayers();
+      this.updatePreview();
+    });
+
+    // 범례 제목·스타일
+    this.bindCheckbox('legend-show-header', 'legend', 'showHeader');
+    this.bindInput('legend-header-text', 'legend', 'headerText');
+    this.bindInput('legend-font', 'legend', 'fontFamily');
+    this.bindInput('legend-size', 'legend', 'fontSize', true);
+    this.bindInput('legend-color', 'legend', 'color');
+    this.bindBackground('legend');
 
     // 지도 위 범례·축척바
     const mapLegendCb = document.getElementById('opt-map-legend');
@@ -718,7 +881,8 @@ class ExportPanel {
   }
 
   hitTestAt(x, y, mr) {
-    const elements = ['title', 'compass', 'textBox'];
+    // 뒤에 그려진 요소가 위에 오므로, 겹칠 때 위 요소가 먼저 잡히도록 역순으로 본다.
+    const elements = ['textBox', 'legend', 'compass', 'title'];
 
     for (const key of elements) {
       const el = this.elements[key];
@@ -736,6 +900,19 @@ class ExportPanel {
           const size = el.size * (this._lastPreviewFontScale || 0.4);
           hitBox = { x: elX - size, y: elY - size, w: size * 2, h: size * 2 };
           break;
+        case 'legend': {
+          // 크기·위치 모두 그릴 때 정해진다(내용에 따라 커지고, 지도 밖이면 당겨 붙는다).
+          // 설정값이 아니라 마지막으로 그린 박스를 그대로 쓴다.
+          if (!this._legendBox) continue;
+          const b = this._legendBox;
+          hitBox = {
+            x: mr.x + b.xFrac * mr.w,
+            y: mr.y + b.yFrac * mr.h,
+            w: b.wFrac * mr.w,
+            h: b.hFrac * mr.h
+          };
+          break;
+        }
         case 'textBox':
           hitBox = { x: elX - 50, y: elY - 25, w: 100, h: 50 };
           break;
@@ -755,6 +932,8 @@ class ExportPanel {
     this.elements.title.y = 0.08;
     this.elements.compass.x = 0.92;
     this.elements.compass.y = 0.12;
+    this.elements.legend.x = 0.78;
+    this.elements.legend.y = 0.5;
     this.elements.textBox.x = 0.5;
     this.elements.textBox.y = 0.85;
     this.updatePreview();
@@ -976,10 +1155,40 @@ class ExportPanel {
     if (this.elements.compass.enabled) {
       this.drawPreviewCompass(ctx, w, h, fontScale);
     }
+    if (this.elements.legend.enabled) {
+      this.drawPreviewLegend(ctx, w, h, fontScale);
+    }
     if (this.elements.textBox.enabled && this.elements.textBox.text) {
       this.drawPreviewTextBox(ctx, w, h, fontScale);
     }
     ctx.restore();
+  }
+
+  /**
+   * 범례 미리보기 — 내보내기와 같은 함수로 그려 결과물과 어긋나지 않게 한다.
+   *
+   * 박스 크기는 지도 사각형 대비 "비율"로 캐시한다. 히트 테스트는 캔버스 버퍼
+   * 픽셀로 들어오는데 여기 width/height는 논리 픽셀이라, 픽셀 값을 그대로 두면
+   * DPR이나 줌 배율만큼 어긋난다. 비율은 어느 좌표계에서도 곱하기만 하면 된다.
+   */
+  drawPreviewLegend(ctx, width, height, fontScale) {
+    const box = exportTool.drawLegend(
+      ctx,
+      { ...this.elements.legend, models: this.legendModels() },
+      width, height, fontScale
+    );
+    // 위치까지 담는다 — drawLegend가 지도 밖으로 나가는 박스를 당겨 붙이므로,
+    // 설정값(x, y)이 아니라 "실제로 그린 자리"를 잡아야 드래그가 어긋나지 않는다.
+    this._legendBox = box
+      ? { xFrac: box.x / width, yFrac: box.y / height, wFrac: box.w / width, hFrac: box.h / height }
+      : null;
+
+    // 당겨 붙은 위치를 설정값에 되쓴다. 안 그러면 가장자리에서 설정값만 계속 밀려
+    // 드래그로 되돌릴 때 그만큼 헛돈다.
+    if (this._legendBox) {
+      this.elements.legend.x = this._legendBox.xFrac;
+      this.elements.legend.y = this._legendBox.yFrac;
+    }
   }
 
   /**
@@ -1136,39 +1345,6 @@ class ExportPanel {
     reader.readAsDataURL(file);
   }
 
-  drawPreviewLegend_unused(ctx, width, height) {
-    const el = this.elements.legend;
-    const x = el.x * width;
-    const y = el.y * height;
-    const fontSize = Math.max(6, el.fontSize * 0.5);
-
-    ctx.save();
-
-    if (el.background) {
-      ctx.fillStyle = this.hexToRgba(el.backgroundColor, el.backgroundOpacity);
-      ctx.fillRect(x, y, 70, 55);
-      ctx.strokeStyle = '#999';
-      ctx.lineWidth = 0.5;
-      ctx.strokeRect(x, y, 70, 55);
-    }
-
-    ctx.fillStyle = el.color;
-    ctx.font = `bold ${fontSize}px "${el.fontFamily}", sans-serif`;
-    ctx.textAlign = 'left';
-    ctx.fillText('범례', x + 5, y + 12);
-
-    const colors = ['#4292c6', '#41ab5d', '#fd8d3c'];
-    colors.forEach((color, i) => {
-      ctx.fillStyle = color;
-      ctx.fillRect(x + 5, y + 18 + i * 12, 10, 10);
-      ctx.fillStyle = el.color;
-      ctx.font = `${fontSize - 1}px sans-serif`;
-      ctx.fillText('레이어', x + 18, y + 26 + i * 12);
-    });
-
-    ctx.restore();
-  }
-
   drawPreviewTextBox(ctx, width, height, fontScale = 0.5) {
     const el = this.elements.textBox;
     const x = el.x * width;
@@ -1225,9 +1401,13 @@ class ExportPanel {
     const quality = parseFloat(document.getElementById('export-quality').value);
     const scale = parseInt(document.getElementById('export-scale').value);
 
+    const legendModels = this.elements.legend.enabled ? this.legendModels() : [];
     const overlayOptions = {
       title: this.elements.title.enabled ? { ...this.elements.title } : null,
       compass: this.elements.compass.enabled ? { ...this.elements.compass } : null,
+      legend: legendModels.length > 0
+        ? { ...this.elements.legend, models: legendModels }
+        : null,
       textBox: (this.elements.textBox.enabled && this.elements.textBox.text)
         ? { ...this.elements.textBox }
         : null

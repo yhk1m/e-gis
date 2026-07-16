@@ -115,11 +115,34 @@ describe('buildLegendModel — 단계구분도', () => {
     expect(buildLegendModel(choropleth()).title).toBe('서울 자치구 (고령인구비율)');
   });
 
-  it('구간마다 분류 색을 쓰되 테두리는 레이어 스타일을 따른다', () => {
+  it('구간마다 분류 색을 채우기로 쓴다', () => {
     const model = buildLegendModel(choropleth());
 
     expect(model.items[1].symbol.fillColor).toBe('#bdd7e7');
-    expect(model.items[1].symbol.strokeColor).toBe('#3b82f6');
+  });
+
+  // 지도에서 분류 레이어의 테두리는 strokeSyncToFill이 켜져 있으면 구간 색을 어둡게 한
+  // 색이다(LayerManager.updateLayerStyle). 범례가 레이어 기본색을 쓰면 지도와 어긋난다.
+  it('테두리 동기화가 켜져 있으면 구간 색을 어둡게 한 색을 테두리로 쓴다', () => {
+    const model = buildLegendModel(choropleth());
+
+    // #bdd7e7 → 각 채널 -40
+    expect(model.items[1].symbol.strokeColor).toBe('#95afbf');
+  });
+
+  it('테두리 동기화가 꺼져 있으면 레이어의 테두리 색을 쓴다', () => {
+    const layer = choropleth();
+    layer.strokeSyncToFill = false;
+    layer.strokeColor = '#111111';
+
+    expect(buildLegendModel(layer).items[1].symbol.strokeColor).toBe('#111111');
+  });
+
+  it('테두리 동기화 값이 없으면 켜진 것으로 본다 (구버전 저장본)', () => {
+    const layer = choropleth();
+    delete layer.strokeSyncToFill;
+
+    expect(buildLegendModel(layer).items[1].symbol.strokeColor).toBe('#95afbf');
   });
 
   it('unit이 비면 라벨에 공백을 남기지 않는다', () => {

@@ -38,6 +38,20 @@ export function formatNumber(num, format = 'comma', rounding = 0) {
 const UNSUMMARIZABLE_TYPES = ['raster', 'heatmap', 'chartmap'];
 
 /**
+ * 색을 어둡게 (각 채널 -40).
+ *
+ * 분류 레이어의 테두리 색 규칙이라 지도(LayerManager.updateLayerStyle)와 같아야 한다.
+ * ChoroplethTool.darkenColor와 같은 계산 — 그쪽은 OpenLayers를 끌고 오므로
+ * 순수 모듈에서 import하지 않고 여기 둔다.
+ */
+function darkenColor(hex) {
+  if (!hex || hex[0] !== '#' || hex.length < 7) return hex;
+  const ch = (i) => Math.max(0, parseInt(hex.slice(i, i + 2), 16) - 40)
+    .toString(16).padStart(2, '0');
+  return '#' + ch(1) + ch(3) + ch(5);
+}
+
+/**
  * 도형 종류 → 기호 모양. Multi- 접두는 단일과 같게 본다.
  */
 function symbolKind(geometryType) {
@@ -48,15 +62,24 @@ function symbolKind(geometryType) {
 }
 
 /**
- * 레이어 스타일을 기호로 옮긴다. fillColor만 분류 색으로 덮어쓸 수 있게 열어 둔다
- * — 주제도의 구간 색은 분류 설정이 소유하고, 테두리는 레이어 스타일을 따른다.
+ * 레이어 스타일을 기호로 옮긴다.
+ *
+ * 분류 색(classColor)을 주면 주제도의 구간 기호가 된다. 이때 테두리는 지도와 같은 규칙을
+ * 따른다 — 테두리 동기화가 켜져 있으면(기본) 구간 색을 어둡게 한 색, 꺼져 있으면 레이어의
+ * 테두리 색. 지도(LayerManager.updateLayerStyle)가 그렇게 그리므로 범례도 같아야 한다.
  */
-function makeSymbol(layerInfo, fillColorOverride) {
+function makeSymbol(layerInfo, classColor) {
+  const fillColor = classColor || layerInfo.fillColor || layerInfo.color;
+  // undefined(기존 레이어·기존 저장본)를 기본 ON으로 흡수한다 — 지도와 같은 판정
+  const syncStroke = layerInfo.strokeSyncToFill !== false;
+
   return {
     kind: symbolKind(layerInfo.geometryType),
-    fillColor: fillColorOverride || layerInfo.fillColor || layerInfo.color,
+    fillColor,
     fillOpacity: layerInfo.fillOpacity,
-    strokeColor: layerInfo.strokeColor || layerInfo.color,
+    strokeColor: classColor && syncStroke
+      ? darkenColor(classColor)
+      : (layerInfo.strokeColor || layerInfo.color),
     strokeOpacity: layerInfo.strokeOpacity,
     strokeWidth: layerInfo.strokeWidth,
     strokeDash: layerInfo.strokeDash,

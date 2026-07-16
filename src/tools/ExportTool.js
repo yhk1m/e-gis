@@ -570,10 +570,12 @@ class ExportTool {
 
     const pad = 10 * scale;
     const fs = fontSize * scale;
+    // 글자 크기에 맞춰 함께 커지게 한다 — 기호 칸만 고정하면 글자를 키웠을 때
+    // 기호가 빈 줄에 파묻힌다.
     const rowH = fs * 1.6;          // 항목 한 줄 높이
-    const symbolW = 16 * scale;     // 기호 칸 폭
-    const gap = 6 * scale;          // 기호와 라벨 사이
-    const indent = 8 * scale;       // 묶음 레이어의 구간 들여쓰기
+    const symbolW = fs * 1.3;       // 기호 칸 폭
+    const gap = fs * 0.5;           // 기호와 라벨 사이
+    const indent = fs * 0.7;        // 묶음 레이어의 구간 들여쓰기
 
     const headerFont = `bold ${fs}px "${fontFamily}", sans-serif`;
     const titleFont = `bold ${fs * 0.95}px "${fontFamily}", sans-serif`;
@@ -611,8 +613,10 @@ class ExportTool {
 
     const boxW = maxTextW + pad * 2;
     const boxH = rows.length * rowH + pad * 2;
-    const boxX = x * width;
-    const boxY = y * height;
+    // 지도 밖으로 나가면 내보낸 그림에서 잘린다. 박스가 다 들어오게 당겨 붙인다.
+    // (레이어가 많거나 글자를 키우면 기본 위치로도 아래가 잘린다.)
+    const boxX = Math.max(0, Math.min(x * width, width - boxW));
+    const boxY = Math.max(0, Math.min(y * height, height - boxH));
 
     ctx.save();
 
@@ -673,7 +677,7 @@ class ExportTool {
     ctx.strokeStyle = this.hexToRgba(strokeColor, strokeOpacity);
     // 기호가 칸을 넘지 않게 테두리 굵기를 제한한다.
     ctx.lineWidth = Math.max(0.5, Math.min(strokeWidth, 3)) * scale;
-    ctx.setLineDash(this.dashPattern(strokeDash, scale));
+    ctx.setLineDash(this.dashPattern(strokeDash, boxW));
 
     if (kind === 'point') {
       // 실제 반지름을 쓰되 칸 안에 들어오게 줄인다.
@@ -698,17 +702,21 @@ class ExportTool {
   }
 
   /**
-   * strokeDash 이름 → 캔버스 점선 패턴.
-   * LayerManager의 STROKE_DASH_OPTIONS와 같은 값을 캔버스 배율에 맞춘다.
+   * strokeDash 이름 → 범례 기호용 점선 패턴.
+   *
+   * 지도의 실제 패턴(LayerManager.STROKE_DASH_OPTIONS: dashed = [10, 10])을 그대로 쓰면
+   * 기호 칸(~16px)에 대시 하나도 다 안 들어가 실선처럼 보인다. 범례가 전할 건 정확한
+   * 대시 길이가 아니라 "이 선은 점선이다"이므로, 기호 폭 대비 비율로 잡아 어느 배율에서도
+   * 대시가 몇 번은 반복되게 한다.
    */
-  dashPattern(strokeDash, scale) {
-    const patterns = {
-      dashed: [10, 10],
-      dotted: [2, 6],
-      'dash-dot': [10, 5, 2, 5]
+  dashPattern(strokeDash, symbolW) {
+    const ratios = {
+      dashed: [0.28, 0.18],
+      dotted: [0.06, 0.12],
+      'dash-dot': [0.28, 0.1, 0.05, 0.1]
     };
-    const p = patterns[strokeDash];
-    return p ? p.map(v => v * scale) : [];
+    const r = ratios[strokeDash];
+    return r ? r.map(v => v * symbolW) : [];
   }
 
   /**
