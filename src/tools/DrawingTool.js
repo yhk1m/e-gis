@@ -9,8 +9,6 @@ import Snap from 'ol/interaction/Snap';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
-import { MultiPoint, MultiLineString, MultiPolygon } from 'ol/geom';
-import Feature from 'ol/Feature';
 import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
 import { eventBus } from '../utils/EventBus.js';
@@ -26,6 +24,7 @@ class DrawingTool {
     this.isMultiMode = false;
     this.multiFeatures = []; // 멀티 지오메트리용 피처 저장
     this.targetLayerId = null;
+    this.lastAddedCount = 0; // 마지막 완료 시 추가된 피처 수
   }
 
   /**
@@ -116,24 +115,33 @@ class DrawingTool {
 
   /**
    * 그리기 완료 및 레이어에 추가
+   * 멀티 모드에서는 각 파트를 개별 피처(싱글파트)로 분리해 저장한다.
+   * (예: 멀티폴리곤으로 3개를 그리면 3개의 폴리곤 객체가 각각 저장됨)
    */
   finishDrawing() {
     if (!this.tempSource) return null;
 
-    const features = this.tempSource.getFeatures();
-    if (features.length === 0) {
+    const drawn = this.tempSource.getFeatures();
+    if (drawn.length === 0) {
       this.stopDrawing();
       return null;
     }
 
-    let resultFeature;
+    let resultFeatures;
+    let outGeometryType;
 
-    if (this.isMultiMode && this.multiFeatures.length > 0) {
-      // 멀티 지오메트리 생성
-      resultFeature = this.createMultiFeature(this.multiFeatures, this.currentType);
-    } else if (features.length === 1) {
-      resultFeature = features[0].clone();
+    if (this.isMultiMode) {
+      // 멀티 모드: 그린 각 파트를 개별 피처로 분리 (멀티파트 → 싱글파트)
+      const parts = this.multiFeatures.length > 0 ? this.multiFeatures : drawn;
+      resultFeatures = parts.map(f => f.clone());
+      outGeometryType = this.currentType.replace('Multi', ''); // 기본 지오메트리 타입
     } else {
+      // 단일 모드: 그린 도형 하나
+      resultFeatures = [drawn[0].clone()];
+      outGeometryType = this.currentType;
+    }
+
+    if (resultFeatures.length === 0) {
       this.stopDrawing();
       return null;
     }
@@ -143,55 +151,30 @@ class DrawingTool {
     if (this.targetLayerId) {
       const targetLayer = layerManager.getLayer(this.targetLayerId);
       if (targetLayer) {
-        targetLayer.source.addFeature(resultFeature);
+        resultFeatures.forEach(f => targetLayer.source.addFeature(f));
         targetLayer.featureCount = targetLayer.source.getFeatures().length;
         layerId = this.targetLayerId;
       }
     } else {
       // 새 레이어 생성
       layerId = layerManager.addLayer({
-        name: this.getLayerName(this.currentType),
-        features: [resultFeature],
-        geometryType: this.currentType
+        name: this.getLayerName(outGeometryType),
+        features: resultFeatures,
+        geometryType: outGeometryType
       });
     }
+
+    this.lastAddedCount = resultFeatures.length;
 
     this.stopDrawing();
 
     eventBus.emit('draw:finished', {
       layerId,
-      featureCount: 1,
-      type: this.currentType
+      featureCount: resultFeatures.length,
+      type: outGeometryType
     });
 
     return layerId;
-  }
-
-  /**
-   * 멀티 피처 생성
-   */
-  createMultiFeature(features, type) {
-    const geometries = features.map(f => f.getGeometry());
-    let multiGeometry;
-
-    switch (type) {
-      case 'MultiPoint':
-        const points = geometries.map(g => g.getCoordinates());
-        multiGeometry = new MultiPoint(points);
-        break;
-      case 'MultiLineString':
-        const lines = geometries.map(g => g.getCoordinates());
-        multiGeometry = new MultiLineString(lines);
-        break;
-      case 'MultiPolygon':
-        const polygons = geometries.map(g => g.getCoordinates());
-        multiGeometry = new MultiPolygon(polygons);
-        break;
-      default:
-        return features[0].clone();
-    }
-
-    return new Feature({ geometry: multiGeometry });
   }
 
   /**

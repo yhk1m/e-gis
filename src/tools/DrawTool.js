@@ -8,8 +8,6 @@ import { click } from 'ol/events/condition';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
-import { MultiPoint, MultiLineString, MultiPolygon } from 'ol/geom';
-import Feature from 'ol/Feature';
 import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
@@ -147,59 +145,48 @@ class DrawTool {
 
   /**
    * 멀티 도형 저장
+   * 그린 각 파트를 개별 피처(싱글파트)로 분리해 저장한다.
+   * (예: 멀티폴리곤으로 3개를 그리면 3개의 폴리곤 객체가 각각 저장되어
+   *  속성 테이블에 3개의 행으로 표시됨)
    */
   saveMultiFeature() {
     if (!this.isMultiMode || this.multiFeatures.length === 0) {
       return null;
     }
 
-    const geometries = this.multiFeatures.map(f => f.getGeometry());
-    let multiGeometry;
+    // 멀티파트 → 개별 피처로 분리 (기본 지오메트리 타입으로 저장)
+    const baseType = this.currentType.replace('Multi', '');
+    const features = this.multiFeatures.map(f => f.clone());
 
-    switch (this.currentType) {
-      case 'MultiPoint':
-        const points = geometries.map(g => g.getCoordinates());
-        multiGeometry = new MultiPoint(points);
-        break;
-      case 'MultiLineString':
-        const lines = geometries.map(g => g.getCoordinates());
-        multiGeometry = new MultiLineString(lines);
-        break;
-      case 'MultiPolygon':
-        const polygons = geometries.map(g => g.getCoordinates());
-        multiGeometry = new MultiPolygon(polygons);
-        break;
-      default:
-        return null;
-    }
-
-    const multiFeature = new Feature({ geometry: multiGeometry });
     const timestamp = new Date().toLocaleTimeString('ko-KR', {
       hour: '2-digit',
       minute: '2-digit'
     });
-    const layerName = this.getTypeName(this.currentType) + ' ' + timestamp;
+    const layerName = this.getTypeName(baseType) + ' ' + timestamp;
 
     const layerId = layerManager.addLayer({
       name: layerName,
       type: 'vector',
-      features: [multiFeature],
-      geometryType: this.currentType
+      features: features,
+      geometryType: baseType
     });
 
-    const count = this.multiFeatures.length;
+    const count = features.length;
     this.tempSource.clear();
     this.multiFeatures = [];
 
-    eventBus.emit(Events.FEATURE_CREATED, {
-      layerId,
-      feature: multiFeature,
-      geometryType: this.currentType
+    // 히스토리(개별 undo)·속성 테이블 갱신을 위해 피처마다 생성 이벤트 발생
+    features.forEach(feature => {
+      eventBus.emit(Events.FEATURE_CREATED, {
+        layerId,
+        feature,
+        geometryType: baseType
+      });
     });
 
     const statusEl = document.getElementById('status-message');
     if (statusEl) {
-      statusEl.textContent = `${layerName} 생성됨 (${count}개 도형)`;
+      statusEl.textContent = `${layerName} 생성됨 (${count}개 개별 도형)`;
     }
 
     return layerId;

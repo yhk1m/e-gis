@@ -20,6 +20,10 @@ class MyPagePanel {
     this.schoolStatsPage = 1;
     this._schoolStats = null;
     this._mySchool = null;
+    // 관리자 - 회원 목록
+    this._members = null;
+    this._membersPage = 1;
+    this._memberSearch = '';
   }
 
   /**
@@ -199,6 +203,16 @@ class MyPagePanel {
           <!-- 관리자 설정 탭 -->
           <div class="mypage-tab-content" id="admin-tab" style="display:none;">
             <div class="admin-section">
+              <div class="admin-members-header">
+                <h4>가입 회원 목록 <span id="admin-members-count" class="admin-members-count"></span></h4>
+                <button class="btn btn-secondary btn-sm" id="refresh-members-btn">새로고침</button>
+              </div>
+              <input type="text" id="admin-members-search" class="admin-members-search" placeholder="이름·이메일·닉네임·지역·학교 검색">
+              <div id="admin-members" class="admin-members">
+                <div class="loading">회원 목록 로딩 중...</div>
+              </div>
+            </div>
+            <div class="admin-section">
               <h4>Supabase 설정</h4>
               <p class="admin-warning">주의: 설정을 초기화하면 다시 URL과 Key를 입력해야 합니다.</p>
               <button class="btn btn-danger" id="reset-supabase-btn">Supabase 설정 초기화</button>
@@ -245,6 +259,22 @@ class MyPagePanel {
       resetSupabaseBtn.addEventListener('click', () => this.resetSupabase());
     }
 
+    // 회원 목록 새로고침 (관리자 전용)
+    const refreshMembersBtn = document.getElementById('refresh-members-btn');
+    if (refreshMembersBtn) {
+      refreshMembersBtn.addEventListener('click', () => this.loadMembers());
+    }
+
+    // 회원 목록 검색 (관리자 전용)
+    const membersSearch = document.getElementById('admin-members-search');
+    if (membersSearch) {
+      membersSearch.addEventListener('input', (e) => {
+        this._memberSearch = e.target.value;
+        this._membersPage = 1;
+        this.renderMembers();
+      });
+    }
+
     // 개인정보 관리 탭 이벤트
     const viewPrivacyBtn = document.getElementById('view-privacy-policy');
     if (viewPrivacyBtn) {
@@ -286,6 +316,10 @@ class MyPagePanel {
     this.modal.querySelectorAll('.mypage-tab').forEach(t => t.classList.remove('active'));
     this.modal.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 
+    // 관리자(회원 목록) 탭에서만 모달을 넓혀 가로 스크롤 방지
+    const content = this.modal.querySelector('.mypage-content');
+    if (content) content.classList.toggle('wide', tabName === 'admin');
+
     this.modal.querySelectorAll('.mypage-tab-content').forEach(c => {
       c.style.display = 'none';
       c.classList.remove('active');
@@ -305,6 +339,11 @@ class MyPagePanel {
     // 개인정보 관리 탭 선택 시 동의 정보 로드
     if (tabName === 'privacy') {
       this.loadConsentHistory();
+    }
+
+    // 관리자 설정 탭 선택 시 회원 목록 로드
+    if (tabName === 'admin') {
+      this.loadMembers();
     }
   }
 
@@ -458,6 +497,122 @@ class MyPagePanel {
         this.renderSchoolRanking();
       });
     });
+  }
+
+  /**
+   * 가입 회원 목록 로드 (관리자 전용)
+   */
+  async loadMembers() {
+    const container = document.getElementById('admin-members');
+    if (!container) return;
+
+    container.innerHTML = '<div class="loading">회원 목록 로딩 중...</div>';
+
+    try {
+      const members = await supabaseManager.listMembers();
+      this._members = members;
+      this._membersPage = 1;
+      this.renderMembers();
+    } catch (error) {
+      console.error('회원 목록 로드 실패:', error);
+      const raw = error?.message || '';
+      // 서버 함수 미생성 시 안내
+      const notCreated = /admin_list_members|does not exist|PGRST202|schema cache/i.test(raw);
+      const msg = notCreated
+        ? '회원 목록 함수(admin_list_members)가 아직 생성되지 않았습니다. supabase-admin-members.sql 을 Supabase SQL Editor에서 실행하세요.'
+        : ('회원 목록을 불러올 수 없습니다: ' + raw);
+      container.innerHTML = `<div class="error">${this.escapeHtml(msg)}</div>`;
+    }
+  }
+
+  /**
+   * 회원 목록 렌더링 (검색 + 20명 단위 페이지네이션)
+   */
+  renderMembers() {
+    const container = document.getElementById('admin-members');
+    const countEl = document.getElementById('admin-members-count');
+    if (!container) return;
+
+    const all = this._members || [];
+    if (countEl) countEl.textContent = `총 ${all.length}명`;
+
+    const q = (this._memberSearch || '').trim().toLowerCase();
+    const filtered = q
+      ? all.filter(m => [m.name, m.email, m.nickname, m.region, m.school]
+          .some(v => (v || '').toLowerCase().includes(q)))
+      : all;
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<div class="empty-list">${all.length === 0 ? '가입한 회원이 없습니다.' : '검색 결과가 없습니다.'}</div>`;
+      return;
+    }
+
+    const pageSize = 20;
+    const totalPages = Math.ceil(filtered.length / pageSize);
+    const page = Math.min(Math.max(1, this._membersPage || 1), totalPages);
+    this._membersPage = page;
+
+    const start = (page - 1) * pageSize;
+    const pageItems = filtered.slice(start, start + pageSize);
+
+    const cell = (v) => (v && String(v).trim())
+      ? this.escapeHtml(v)
+      : '<span class="cell-empty">-</span>';
+
+    container.innerHTML = `
+      <div class="members-table-wrap">
+        <table class="members-table">
+          <thead>
+            <tr>
+              <th class="col-idx">#</th>
+              <th>이름</th>
+              <th>이메일</th>
+              <th>닉네임</th>
+              <th>지역</th>
+              <th>학교</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pageItems.map((m, i) => `
+              <tr>
+                <td class="col-idx">${start + i + 1}</td>
+                <td>${cell(m.name)}</td>
+                <td class="col-email">${cell(m.email)}</td>
+                <td>${cell(m.nickname)}</td>
+                <td>${cell(m.region)}</td>
+                <td>${cell(m.school)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      ${totalPages > 1 ? `
+        <div class="ranking-pagination">
+          <button class="ranking-page-btn" data-mpage="prev" ${page === 1 ? 'disabled' : ''}>이전</button>
+          <span class="ranking-page-info">${page} / ${totalPages}</span>
+          <button class="ranking-page-btn" data-mpage="next" ${page === totalPages ? 'disabled' : ''}>다음</button>
+        </div>
+      ` : ''}
+    `;
+
+    container.querySelectorAll('.ranking-page-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dir = btn.dataset.mpage;
+        if (dir === 'prev' && this._membersPage > 1) this._membersPage--;
+        else if (dir === 'next' && this._membersPage < totalPages) this._membersPage++;
+        else return;
+        this.renderMembers();
+      });
+    });
+  }
+
+  /**
+   * HTML 이스케이프 (사용자 입력 값 안전 출력)
+   */
+  escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
   }
 
   /**

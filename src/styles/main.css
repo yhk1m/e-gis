@@ -3527,6 +3527,12 @@ body.exporting .egis-basemap-panel {
   background: var(--bg-panel);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
+  transition: width var(--transition-fast);
+}
+
+/* 관리자 탭(회원 목록)일 때만 넓게 — 표가 가로 스크롤 없이 들어가도록 */
+.mypage-modal .mypage-content.wide {
+  width: 900px;
 }
 
 .mypage-tabs {
@@ -3801,6 +3807,99 @@ body.exporting .egis-basemap-panel {
 
 .btn-danger:hover {
   background: #c0392b;
+}
+
+/* 관리자 - 가입 회원 목록 */
+#admin-tab .admin-section + .admin-section {
+  margin-top: var(--spacing-md);
+}
+
+.admin-members-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.admin-members-header h4 {
+  margin-bottom: 0;
+}
+
+.admin-members-count {
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.admin-members-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  margin-bottom: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.members-table-wrap {
+  max-height: 340px;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+}
+
+.members-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-app);
+  color: var(--text-secondary, var(--text-muted));
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.members-table tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.members-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.members-table tbody tr:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+.members-table .col-idx {
+  width: 36px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.members-table .col-email {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  white-space: nowrap;
+}
+
+.members-table .cell-empty {
+  color: var(--text-muted);
 }
 
 /* ==================== 위치 검색 ==================== */

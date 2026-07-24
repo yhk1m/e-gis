@@ -359,6 +359,27 @@ class SupabaseManager {
     };
   }
 
+  // ==================== 관리자: 회원 관리 ====================
+
+  /**
+   * 가입 회원 목록 조회 (관리자 전용)
+   * 이메일은 auth.users 에 있어 서버 함수(admin_list_members)로 조인해 반환한다.
+   * 프로필 미작성 회원도 함께 반환됨(name/nickname/region/school 은 null 가능).
+   * @returns {Promise<Array<{name, email, nickname, region, school, created_at}>>}
+   */
+  async listMembers() {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    if (!this.isAdmin()) {
+      throw new Error('관리자만 접근할 수 있습니다.');
+    }
+
+    const { data, error } = await this.supabase.rpc('admin_list_members');
+    if (error) throw error;
+    return data || [];
+  }
+
   // ==================== 프로젝트 저장/불러오기 ====================
 
   /**
