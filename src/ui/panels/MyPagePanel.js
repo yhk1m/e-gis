@@ -570,6 +570,8 @@ class MyPagePanel {
               <th>닉네임</th>
               <th>지역</th>
               <th>학교</th>
+              <th class="col-date">가입일</th>
+              <th class="col-actions">관리</th>
             </tr>
           </thead>
           <tbody>
@@ -581,6 +583,11 @@ class MyPagePanel {
                 <td>${cell(m.nickname)}</td>
                 <td>${cell(m.region)}</td>
                 <td>${cell(m.school)}</td>
+                <td class="col-date">${this.formatMemberDate(m.created_at)}</td>
+                <td class="col-actions">
+                  <button class="member-action-btn edit" data-uid="${this.escapeHtml(m.user_id || '')}">수정</button>
+                  <button class="member-action-btn danger" data-uid="${this.escapeHtml(m.user_id || '')}">탈퇴</button>
+                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -604,6 +611,183 @@ class MyPagePanel {
         this.renderMembers();
       });
     });
+
+    // 회원 관리 버튼 (수정/탈퇴)
+    const findMember = (uid) => (this._members || []).find(x => x.user_id === uid);
+    container.querySelectorAll('.member-action-btn.edit').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const m = findMember(btn.dataset.uid);
+        if (m) this.openEditMember(m);
+      });
+    });
+    container.querySelectorAll('.member-action-btn.danger').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const m = findMember(btn.dataset.uid);
+        if (m) this.confirmDeleteMember(m);
+      });
+    });
+  }
+
+  /**
+   * 회원 정보 수정 모달 (관리자 전용)
+   */
+  openEditMember(member) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay member-edit-modal active';
+    overlay.innerHTML = `
+      <div class="modal-content member-edit-content">
+        <div class="modal-header">
+          <h3>회원 정보 수정</h3>
+          <button class="modal-close" data-close>&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="member-edit-email">${this.escapeHtml(member.email || '-')}</div>
+          <div class="form-group">
+            <label for="edit-member-name">이름</label>
+            <input type="text" id="edit-member-name" value="${this.escapeHtml(member.name || '')}">
+          </div>
+          <div class="form-group">
+            <label for="edit-member-nickname">닉네임</label>
+            <input type="text" id="edit-member-nickname" value="${this.escapeHtml(member.nickname || '')}">
+          </div>
+          <div class="form-group">
+            <label for="edit-member-region">지역 (시/도)</label>
+            <select id="edit-member-region">
+              <option value="">선택 안 함</option>
+              ${REGIONS.map(r => `<option value="${r}" ${member.region === r ? 'selected' : ''}>${r}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-member-school">학교</label>
+            <input type="text" id="edit-member-school" value="${this.escapeHtml(member.school || '')}">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-close>취소</button>
+          <button class="btn btn-primary" id="edit-member-save">저장</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+    const saveBtn = overlay.querySelector('#edit-member-save');
+    saveBtn.addEventListener('click', async () => {
+      const name = overlay.querySelector('#edit-member-name').value.trim();
+      const nickname = overlay.querySelector('#edit-member-nickname').value.trim();
+      const region = overlay.querySelector('#edit-member-region').value;
+      const school = overlay.querySelector('#edit-member-school').value.trim();
+
+      if (school && !region) {
+        alert('학교를 입력하려면 지역을 선택해주세요.');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = '저장 중...';
+      try {
+        await supabaseManager.updateMemberProfile(member.user_id, { name, nickname, region, school });
+        close();
+        await this.loadMembers();
+      } catch (err) {
+        alert('수정 실패: ' + (err.message || ''));
+        saveBtn.disabled = false;
+        saveBtn.textContent = '저장';
+      }
+    });
+  }
+
+  /**
+   * 회원 강제 탈퇴 확인 모달 (관리자 비밀번호 입력 필요)
+   */
+  confirmDeleteMember(member) {
+    const label = member.name
+      ? `${member.name} (${member.email || ''})`
+      : (member.email || member.user_id);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay member-delete-modal active';
+    overlay.innerHTML = `
+      <div class="modal-content member-delete-content">
+        <div class="modal-header">
+          <h3>회원 강제 탈퇴</h3>
+          <button class="modal-close" data-close>&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="member-delete-warning">
+            <strong>${this.escapeHtml(label)}</strong> 회원의 계정과 모든 개인정보·프로젝트가
+            <strong>영구 삭제</strong>됩니다. 이 작업은 <strong>되돌릴 수 없습니다.</strong>
+          </p>
+          <div class="form-group">
+            <label for="delete-member-pw">확인을 위해 관리자 비밀번호를 입력하세요</label>
+            <input type="password" id="delete-member-pw" placeholder="관리자 계정 비밀번호" autocomplete="current-password">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-close>취소</button>
+          <button class="btn btn-danger" id="delete-member-confirm">영구 삭제</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+    const pwInput = overlay.querySelector('#delete-member-pw');
+    const confirmBtn = overlay.querySelector('#delete-member-confirm');
+    setTimeout(() => pwInput.focus(), 0);
+
+    const doDelete = async () => {
+      const pw = pwInput.value;
+      if (!pw) {
+        alert('관리자 비밀번호를 입력하세요.');
+        return;
+      }
+
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '확인 중...';
+      try {
+        const ok = await supabaseManager.verifyPassword(pw);
+        if (!ok) {
+          alert('관리자 비밀번호가 일치하지 않습니다.');
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = '영구 삭제';
+          pwInput.value = '';
+          pwInput.focus();
+          return;
+        }
+
+        confirmBtn.textContent = '삭제 중...';
+        await supabaseManager.deleteMember(member.user_id);
+        close();
+        await this.loadMembers();
+        alert('회원이 완전히 삭제되었습니다.');
+      } catch (err) {
+        alert('삭제 실패: ' + (err.message || ''));
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '영구 삭제';
+      }
+    };
+
+    confirmBtn.addEventListener('click', doDelete);
+    pwInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doDelete(); }
+    });
+  }
+
+  /**
+   * 가입일 포맷 (yyyy. m. d.)
+   */
+  formatMemberDate(value) {
+    if (!value) return '<span class="cell-empty">-</span>';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '<span class="cell-empty">-</span>';
+    return d.toLocaleDateString('ko-KR');
   }
 
   /**

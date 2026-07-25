@@ -6,6 +6,7 @@
 import * as math from 'mathjs';
 import { layerManager } from '../core/LayerManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
+import { isVectorLayer } from '../utils/layerSelect.js';
 import { getArea, getLength } from 'ol/sphere';
 
 class FieldCalculatorTool {
@@ -140,6 +141,15 @@ class FieldCalculatorTool {
     } catch (error) {
       throw new Error(`계산 오류: ${error.message}`);
     }
+  }
+
+  /**
+   * 필드를 계산할 수 있는 레이어 목록 (피처가 있는 벡터 레이어)
+   */
+  getCompatibleLayers() {
+    return layerManager.getAllLayers().filter(
+      layer => isVectorLayer(layer) && layer.source.getFeatures().length > 0
+    );
   }
 
   /**

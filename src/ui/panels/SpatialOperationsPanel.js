@@ -4,6 +4,7 @@
 
 import { spatialOperationsTool } from '../../tools/SpatialOperationsTool.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { resolveInitialLayerId } from '../../utils/layerSelect.js';
 
 class SpatialOperationsPanel {
   constructor() {
@@ -43,6 +44,13 @@ class SpatialOperationsPanel {
     this.modal.className = 'modal-overlay spatial-ops-modal active';
     this.modal.innerHTML = this.getModalHTML(polygonLayers, operations);
     document.body.appendChild(this.modal);
+
+    // 선택 중인 레이어를 쓸 수 있으면 입력 레이어 1로 미리 골라 준다.
+    // (updateDescription → populateLayerSelects가 이 값을 유지하고 레이어 2를 다른 것으로 맞춘다)
+    const preferredId = resolveInitialLayerId(polygonLayers, layerManager.getSelectedLayerId());
+    if (preferredId) {
+      document.getElementById('spatial-ops-layer1').value = preferredId;
+    }
 
     this.bindEvents();
     this.updateDescription();

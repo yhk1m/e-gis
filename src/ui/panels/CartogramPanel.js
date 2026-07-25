@@ -5,6 +5,7 @@
 import { layerManager } from '../../core/LayerManager.js';
 import { cartogramTool } from '../../tools/CartogramTool.js';
 import { eventBus, Events } from '../../utils/EventBus.js';
+import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 
 class CartogramPanel {
   constructor() {
@@ -35,9 +36,11 @@ class CartogramPanel {
   createModal(layers) {
     this.hide();
 
-    const layerOptions = layers.map(l =>
-      `<option value="${l.id}">${l.name}</option>`
-    ).join('');
+    // 선택 중인 레이어가 카토그램을 지원하면 미리 골라 준다.
+    this.selectedLayerId = resolveInitialLayerId(layers, layerManager.getSelectedLayerId()) || null;
+    this.selectedAttribute = null;
+
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.selectedLayerId });
 
     const modalHtml = `
       <div class="modal-overlay active" id="cartogram-modal">
@@ -49,10 +52,7 @@ class CartogramPanel {
           <div class="modal-body" style="padding: var(--spacing-lg);">
             <div class="form-group">
               <label class="form-label">레이어 선택</label>
-              <select class="form-select" id="cartogram-layer">
-                <option value="">-- 레이어 선택 --</option>
-                ${layerOptions}
-              </select>
+              <select class="form-select" id="cartogram-layer">${layerOptions}</select>
             </div>
 
             <div class="form-group">
@@ -159,6 +159,7 @@ class CartogramPanel {
 
     this.bindEvents();
     this.addStyles();
+    this.updateAttributeList();
   }
 
   /**
@@ -180,7 +181,7 @@ class CartogramPanel {
 
     // 레이어 선택 시 속성 목록 업데이트
     layerSelect.addEventListener('change', (e) => {
-      this.selectedLayerId = e.target.value;
+      this.selectedLayerId = e.target.value || null;
       this.updateAttributeList();
     });
 

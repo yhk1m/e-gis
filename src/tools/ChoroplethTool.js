@@ -9,6 +9,7 @@ import VectorSource from "ol/source/Vector";
 import { layerManager } from "../core/LayerManager.js";
 import { eventBus, Events } from "../utils/EventBus.js";
 import { makeDraggable } from "../utils/DraggableElement.js";
+import { isVectorLayer } from "../utils/layerSelect.js";
 import { formatNumber } from "./legendModel.js";
 
 // 색상 팔레트 정의
@@ -91,9 +92,18 @@ class ChoroplethTool {
     }
   }
 
+  /**
+   * 단계구분도를 적용할 수 있는 레이어 목록 (숫자형 속성이 있는 벡터 레이어)
+   */
+  getCompatibleLayers() {
+    return layerManager.getAllLayers().filter(
+      layer => isVectorLayer(layer) && this.getNumericAttributes(layer.id).length > 0
+    );
+  }
+
   getNumericAttributes(layerId) {
     const layerInfo = layerManager.getLayer(layerId);
-    if (!layerInfo) return [];
+    if (!layerInfo || !layerInfo.source) return [];
     const features = layerInfo.source.getFeatures();
     if (features.length === 0) return [];
     const firstFeature = features[0];

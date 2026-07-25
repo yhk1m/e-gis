@@ -5,6 +5,7 @@
 import { labelTool } from '../../tools/LabelTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { eventBus, Events } from '../../utils/EventBus.js';
+import { resolveInitialLayerId } from '../../utils/layerSelect.js';
 
 class LabelPanel {
   constructor() {
@@ -16,14 +17,14 @@ class LabelPanel {
    * 라벨 설정 패널 열기
    */
   open(layerId = null) {
-    // 레이어 ID가 없으면 현재 선택된 레이어 사용
+    // 레이어 ID가 없으면 선택 중인 레이어, 그것도 없으면 첫 레이어
     if (!layerId) {
       const layers = layerManager.getAllLayers();
       if (layers.length === 0) {
         alert('레이어가 없습니다. 먼저 레이어를 추가해주세요.');
         return;
       }
-      layerId = layers[0].id;
+      layerId = resolveInitialLayerId(layers, layerManager.getSelectedLayerId()) || layers[0].id;
     }
 
     this.currentLayerId = layerId;

@@ -4,6 +4,7 @@
 
 import { fieldCalculatorTool } from '../../tools/FieldCalculatorTool.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 
 class FieldCalculatorPanel {
   constructor() {
@@ -15,46 +16,40 @@ class FieldCalculatorPanel {
    * 필드 계산기 패널 열기
    */
   show(layerId = null) {
-    if (!layerId) {
-      layerId = layerManager.getSelectedLayerId();
-    }
-    if (!layerId) {
-      alert('먼저 레이어를 선택해주세요.');
+    const layers = fieldCalculatorTool.getCompatibleLayers();
+    if (layers.length === 0) {
+      alert('필드를 계산할 수 있는 레이어가 없습니다.\n(피처가 있는 벡터 레이어가 필요합니다)');
       return;
     }
 
-    const layerInfo = layerManager.getLayer(layerId);
-    if (!layerInfo) return;
-
-    this.currentLayerId = layerId;
-    this.render(layerInfo);
+    // 선택 중인 레이어가 필드 계산을 지원하면 미리 골라 준다.
+    this.currentLayerId = resolveInitialLayerId(layers, layerId || layerManager.getSelectedLayerId()) || null;
+    this.render(layers);
   }
 
   /**
    * 모달 렌더링
    */
-  render(layerInfo) {
+  render(layers) {
     this.close();
 
-    const fields = fieldCalculatorTool.getLayerFields(this.currentLayerId);
     const functions = fieldCalculatorTool.getFunctions();
     const geoFunctions = fieldCalculatorTool.getGeoFunctions();
 
     this.modal = document.createElement('div');
     this.modal.className = 'field-calc-modal';
-    this.modal.innerHTML = this.getModalHTML(layerInfo.name, fields, functions, geoFunctions);
+    this.modal.innerHTML = this.getModalHTML(layers, functions, geoFunctions);
     document.body.appendChild(this.modal);
 
     this.bindEvents();
+    this.updateFieldWidgets();
   }
 
   /**
    * 모달 HTML 생성
    */
-  getModalHTML(layerName, fields, functions, geoFunctions) {
-    const fieldButtons = fields.map(f =>
-      '<button class="field-btn" data-field="' + f + '">[' + f + ']</button>'
-    ).join('');
+  getModalHTML(layers, functions, geoFunctions) {
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId });
 
     const funcButtons = functions.map(f =>
       '<button class="func-btn" data-func="' + f.name + '" title="' + f.desc + '">' + f.name.split('(')[0] + '</button>'
@@ -70,8 +65,11 @@ class FieldCalculatorPanel {
         '<button class="field-calc-close" id="field-calc-close">&times;</button>' +
       '</div>' +
       '<div class="field-calc-body">' +
-        '<div class="field-calc-info">' +
-          '<span>레이어: <strong>' + layerName + '</strong></span>' +
+        '<div class="field-calc-row">' +
+          '<div class="field-calc-col">' +
+            '<label for="field-calc-layer">레이어</label>' +
+            '<select id="field-calc-layer">' + layerOptions + '</select>' +
+          '</div>' +
         '</div>' +
         '<div class="field-calc-row">' +
           '<div class="field-calc-col">' +
@@ -82,10 +80,7 @@ class FieldCalculatorPanel {
             '<label>' +
               '<input type="checkbox" id="field-calc-update"> 기존 필드 업데이트' +
             '</label>' +
-            '<select id="field-calc-existing" disabled>' +
-              '<option value="">필드 선택...</option>' +
-              fields.map(f => '<option value="' + f + '">' + f + '</option>').join('') +
-            '</select>' +
+            '<select id="field-calc-existing" disabled></select>' +
           '</div>' +
         '</div>' +
         '<div class="field-calc-section">' +
@@ -95,7 +90,7 @@ class FieldCalculatorPanel {
         '<div class="field-calc-helpers">' +
           '<div class="helper-section">' +
             '<label>필드</label>' +
-            '<div class="helper-buttons">' + (fieldButtons || '<span class="no-fields">필드 없음</span>') + '</div>' +
+            '<div class="helper-buttons" id="field-calc-field-buttons"></div>' +
           '</div>' +
           '<div class="helper-section">' +
             '<label>지오메트리</label>' +
@@ -129,6 +124,7 @@ class FieldCalculatorPanel {
    * 이벤트 바인딩
    */
   bindEvents() {
+    const layerSelect = document.getElementById('field-calc-layer');
     const closeBtn = document.getElementById('field-calc-close');
     const cancelBtn = document.getElementById('field-calc-cancel');
     const applyBtn = document.getElementById('field-calc-apply');
@@ -139,6 +135,11 @@ class FieldCalculatorPanel {
 
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
+
+    layerSelect.addEventListener('change', () => {
+      this.currentLayerId = layerSelect.value || null;
+      this.updateFieldWidgets();
+    });
 
     // 기존 필드 업데이트 체크박스
     updateCheckbox.addEventListener('change', (e) => {
@@ -153,13 +154,6 @@ class FieldCalculatorPanel {
       if (updateCheckbox.checked) {
         nameInput.value = e.target.value;
       }
-    });
-
-    // 필드 버튼 클릭
-    this.modal.querySelectorAll('.field-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.insertAtCursor(exprTextarea, '[' + btn.dataset.field + ']');
-      });
     });
 
     // 지오메트리 함수 버튼 클릭
@@ -188,6 +182,37 @@ class FieldCalculatorPanel {
   }
 
   /**
+   * 선택된 레이어의 필드로 필드 버튼과 '기존 필드' 목록을 다시 채운다.
+   * 레이어가 안 골라졌으면 안내 문구만 둔다.
+   */
+  updateFieldWidgets() {
+    const buttonsEl = document.getElementById('field-calc-field-buttons');
+    const existingSelect = document.getElementById('field-calc-existing');
+    if (!buttonsEl || !existingSelect) return;
+
+    const fields = this.currentLayerId ? fieldCalculatorTool.getLayerFields(this.currentLayerId) : [];
+
+    if (!this.currentLayerId) {
+      buttonsEl.innerHTML = '<span class="no-fields">먼저 레이어를 선택하세요</span>';
+    } else {
+      buttonsEl.innerHTML = fields.map(f =>
+        '<button class="field-btn" data-field="' + f + '">[' + f + ']</button>'
+      ).join('') || '<span class="no-fields">필드 없음</span>';
+    }
+
+    // 필드 버튼은 레이어가 바뀔 때마다 새로 만들어지므로 여기서 다시 묶는다.
+    const exprTextarea = document.getElementById('field-calc-expr');
+    buttonsEl.querySelectorAll('.field-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.insertAtCursor(exprTextarea, '[' + btn.dataset.field + ']');
+      });
+    });
+
+    existingSelect.innerHTML = '<option value="">필드 선택...</option>' +
+      fields.map(f => '<option value="' + f + '">' + f + '</option>').join('');
+  }
+
+  /**
    * 커서 위치에 텍스트 삽입
    */
   insertAtCursor(textarea, text) {
@@ -204,6 +229,11 @@ class FieldCalculatorPanel {
    * 계산 실행
    */
   calculate() {
+    if (!this.currentLayerId) {
+      alert('먼저 레이어를 선택해주세요.');
+      return;
+    }
+
     const fieldName = document.getElementById('field-calc-name').value.trim();
     const expression = document.getElementById('field-calc-expr').value.trim();
     const updateExisting = document.getElementById('field-calc-update').checked;

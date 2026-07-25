@@ -4,6 +4,7 @@
 
 import { isochroneTool } from '../../tools/IsochroneTool.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 import { transform } from 'ol/proj';
 
 class IsochronePanel {
@@ -41,6 +42,9 @@ class IsochronePanel {
     const apiKey = isochroneTool.getApiKey();
     const pointLayers = this.getPointLayers();
 
+    // 선택 중인 레이어가 포인트면 미리 골라 준다.
+    this.selectedLayerId = resolveInitialLayerId(pointLayers, layerManager.getSelectedLayerId()) || null;
+
     this.modal = document.createElement('div');
     this.modal.className = 'modal-overlay isochrone-modal active';
     this.modal.innerHTML = this.getModalHTML(profiles, apiKey, pointLayers);
@@ -60,7 +64,7 @@ class IsochronePanel {
       .join('');
 
     const layerOptions = pointLayers.length > 0
-      ? pointLayers.map(l => `<option value="${l.id}">${l.name} (${l.featureCount}개)</option>`).join('')
+      ? buildLayerOptions(pointLayers, { selectedId: this.selectedLayerId, showCount: true })
       : '<option value="">포인트 레이어 없음</option>';
 
     return `<div class="modal-content isochrone-content">

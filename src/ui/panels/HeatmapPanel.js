@@ -4,6 +4,7 @@
 
 import { heatmapTool } from '../../tools/HeatmapTool.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 
 class HeatmapPanel {
   constructor() {
@@ -32,12 +33,14 @@ class HeatmapPanel {
       return;
     }
 
+    // 선택 중인 레이어가 포인트 레이어면 미리 골라 준다.
+    this.selectedLayerId = resolveInitialLayerId(pointLayers, layerManager.getSelectedLayerId()) || null;
+
     this.modal = document.createElement('div');
     this.modal.className = 'modal-overlay heatmap-modal active';
     this.modal.innerHTML = this.getModalHTML(pointLayers, gradients);
     document.body.appendChild(this.modal);
 
-    this.selectedLayerId = pointLayers[0].id;
     this.bindEvents();
     this.updateWeightFields();
   }
@@ -46,9 +49,7 @@ class HeatmapPanel {
    * 모달 HTML 생성
    */
   getModalHTML(layers, gradients) {
-    const layerOptions = layers.map(l =>
-      '<option value="' + l.id + '">' + l.name + ' (' + l.featureCount + ')</option>'
-    ).join('');
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.selectedLayerId, showCount: true });
 
     const gradientOptions = gradients.map((g, i) =>
       '<option value="' + i + '">' + g.name + '</option>'
@@ -125,7 +126,7 @@ class HeatmapPanel {
 
     // 레이어 변경 시 가중치 필드 업데이트
     layerSelect.addEventListener('change', () => {
-      this.selectedLayerId = layerSelect.value;
+      this.selectedLayerId = layerSelect.value || null;
       this.updateWeightFields();
     });
 
@@ -156,7 +157,7 @@ class HeatmapPanel {
    */
   updateWeightFields() {
     const weightSelect = document.getElementById('heatmap-weight');
-    const fields = heatmapTool.getNumericFields(this.selectedLayerId);
+    const fields = this.selectedLayerId ? heatmapTool.getNumericFields(this.selectedLayerId) : [];
 
     let options = '<option value="">없음</option>';
     fields.forEach(field => {
@@ -191,6 +192,11 @@ class HeatmapPanel {
    */
   createHeatmap() {
     const layerId = document.getElementById('heatmap-layer').value;
+    if (!layerId) {
+      alert('먼저 포인트 레이어를 선택해주세요.');
+      return;
+    }
+
     const radius = parseInt(document.getElementById('heatmap-radius').value);
     const blur = parseInt(document.getElementById('heatmap-blur').value);
     const gradientIndex = parseInt(document.getElementById('heatmap-gradient').value);

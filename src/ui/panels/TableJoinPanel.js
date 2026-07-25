@@ -4,6 +4,7 @@
 
 import { tableJoinTool } from "../../tools/TableJoinTool.js";
 import { layerManager } from "../../core/LayerManager.js";
+import { buildLayerOptions, resolveInitialLayerId } from "../../utils/layerSelect.js";
 
 class TableJoinPanel {
   constructor() {
@@ -13,44 +14,34 @@ class TableJoinPanel {
     this.csvHeaders = null;
   }
 
-  show(layerId) {
-    if (!layerId) {
-      layerId = layerManager.getSelectedLayerId();
-    }
-    if (!layerId) {
-      alert("먼저 레이어를 선택해주세요.");
+  show(layerId = null) {
+    const layers = tableJoinTool.getCompatibleLayers();
+    if (layers.length === 0) {
+      alert("테이블을 결합할 수 있는 레이어가 없습니다.\n(속성 필드가 있는 벡터 레이어가 필요합니다)");
       return;
     }
 
-    const layerInfo = layerManager.getLayer(layerId);
-    if (!layerInfo) return;
-
-    this.currentLayerId = layerId;
+    // 선택 중인 레이어가 테이블 결합을 지원하면 미리 골라 준다.
+    this.currentLayerId = resolveInitialLayerId(layers, layerId || layerManager.getSelectedLayerId()) || null;
     this.csvData = null;
     this.csvHeaders = null;
-    this.render(layerInfo);
+    this.render(layers);
   }
 
-  render(layerInfo) {
+  render(layers) {
     this.close();
-
-    const layerFields = tableJoinTool.getLayerFields(this.currentLayerId);
-
-    if (layerFields.length === 0) {
-      alert("이 레이어에는 속성 필드가 없습니다.");
-      return;
-    }
 
     this.modal = document.createElement("div");
     this.modal.className = "choropleth-modal"; // 동일한 모달 스타일 사용
-    this.modal.innerHTML = this.getModalHTML(layerInfo.name, layerFields);
+    this.modal.innerHTML = this.getModalHTML(layers);
     document.body.appendChild(this.modal);
 
     this.bindEvents();
+    this.updateLayerKeyFields();
   }
 
-  getModalHTML(layerName, layerFields) {
-    const fieldOptions = layerFields.map(f => '<option value="' + f + '">' + f + '</option>').join("");
+  getModalHTML(layers) {
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId });
 
     return '<div class="choropleth-content" style="width: 420px;">' +
       '<div class="choropleth-header">' +
@@ -59,8 +50,8 @@ class TableJoinPanel {
       '</div>' +
       '<div class="choropleth-body">' +
         '<div class="choropleth-form-group">' +
-          '<label>대상 레이어</label>' +
-          '<div class="choropleth-layer-name">' + layerName + '</div>' +
+          '<label for="join-layer">대상 레이어</label>' +
+          '<select id="join-layer">' + layerOptions + '</select>' +
         '</div>' +
 
         '<div class="choropleth-form-group">' +
@@ -81,7 +72,7 @@ class TableJoinPanel {
 
         '<div class="choropleth-form-group">' +
           '<label for="layer-key-field">레이어 키 필드</label>' +
-          '<select id="layer-key-field">' + fieldOptions + '</select>' +
+          '<select id="layer-key-field"></select>' +
         '</div>' +
 
         '<div class="choropleth-form-group">' +
@@ -115,6 +106,7 @@ class TableJoinPanel {
   }
 
   bindEvents() {
+    const layerSelect = document.getElementById("join-layer");
     const closeBtn = document.getElementById("join-close");
     const cancelBtn = document.getElementById("join-cancel");
     const applyBtn = document.getElementById("join-apply");
@@ -125,6 +117,13 @@ class TableJoinPanel {
 
     closeBtn.addEventListener("click", () => this.close());
     cancelBtn.addEventListener("click", () => this.close());
+
+    layerSelect.addEventListener("change", () => {
+      this.currentLayerId = layerSelect.value || null;
+      this.updateLayerKeyFields();
+      // 업로드한 표는 그대로 두고 매칭 결과만 새 레이어 기준으로 다시 계산한다.
+      if (this.csvData) this.updatePreview();
+    });
 
     applyBtn.addEventListener("click", () => this.executeJoin());
 
@@ -159,6 +158,25 @@ class TableJoinPanel {
     // 키 필드 변경 시 미리보기 업데이트
     layerKeyField.addEventListener("change", () => this.updatePreview());
     csvKeyField.addEventListener("change", () => this.updatePreview());
+  }
+
+  /**
+   * 선택된 레이어의 속성 필드로 키 필드 목록을 채운다.
+   * 레이어가 안 골라졌으면 안내 문구만 두고 비활성화한다.
+   */
+  updateLayerKeyFields() {
+    const layerKeyField = document.getElementById("layer-key-field");
+    if (!layerKeyField) return;
+
+    if (!this.currentLayerId) {
+      layerKeyField.innerHTML = '<option value="">-- 먼저 레이어를 선택하세요 --</option>';
+      layerKeyField.disabled = true;
+      return;
+    }
+
+    const fields = tableJoinTool.getLayerFields(this.currentLayerId);
+    layerKeyField.disabled = false;
+    layerKeyField.innerHTML = fields.map(f => '<option value="' + f + '">' + f + '</option>').join("");
   }
 
   handleFile(file) {
@@ -245,6 +263,12 @@ class TableJoinPanel {
   updatePreview() {
     if (!this.csvData) return;
 
+    if (!this.currentLayerId) {
+      document.getElementById("join-preview").style.display = "none";
+      document.getElementById("join-apply").disabled = true;
+      return;
+    }
+
     const layerKeyField = document.getElementById("layer-key-field").value;
     const csvKeyField = document.getElementById("csv-key-field").value;
 
@@ -277,6 +301,11 @@ class TableJoinPanel {
   }
 
   executeJoin() {
+    if (!this.currentLayerId) {
+      alert("먼저 대상 레이어를 선택해주세요.");
+      return;
+    }
+
     const layerKeyField = document.getElementById("layer-key-field").value;
     const csvKeyField = document.getElementById("csv-key-field").value;
     const selectedFields = this.getSelectedFields();

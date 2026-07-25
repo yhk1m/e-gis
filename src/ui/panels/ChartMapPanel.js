@@ -3,6 +3,8 @@
  */
 
 import { chartMapTool } from '../../tools/ChartMapTool.js';
+import { layerManager } from '../../core/LayerManager.js';
+import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 
 class ChartMapPanel {
   constructor() {
@@ -32,13 +34,15 @@ class ChartMapPanel {
       return;
     }
 
+    // 선택 중인 레이어가 도형표현도를 지원하면 미리 골라 준다.
+    this.selectedLayerId = resolveInitialLayerId(layers, layerManager.getSelectedLayerId()) || null;
+    this.selectedFields = [];
+
     this.modal = document.createElement('div');
     this.modal.className = 'modal-overlay chart-map-modal active';
     this.modal.innerHTML = this.getModalHTML(layers);
     document.body.appendChild(this.modal);
 
-    this.selectedLayerId = layers[0].id;
-    this.selectedFields = [];
     this.bindEvents();
     this.updateFieldList();
   }
@@ -47,9 +51,7 @@ class ChartMapPanel {
    * 모달 HTML 생성
    */
   getModalHTML(layers) {
-    const layerOptions = layers.map(l =>
-      `<option value="${l.id}">${l.name} (${l.featureCount})</option>`
-    ).join('');
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.selectedLayerId, showCount: true });
 
     return `<div class="modal-content chart-map-content">
       <div class="modal-header">
@@ -123,7 +125,7 @@ class ChartMapPanel {
     cancelBtn.addEventListener('click', () => this.close());
 
     layerSelect.addEventListener('change', () => {
-      this.selectedLayerId = layerSelect.value;
+      this.selectedLayerId = layerSelect.value || null;
       this.selectedFields = [];
       this.updateFieldList();
     });
@@ -164,7 +166,7 @@ class ChartMapPanel {
   updateFieldList() {
     const fieldListEl = document.getElementById('chart-field-list');
     const sizeFieldSelect = document.getElementById('chart-size-field');
-    const fields = chartMapTool.getNumericFields(this.selectedLayerId);
+    const fields = this.selectedLayerId ? chartMapTool.getNumericFields(this.selectedLayerId) : [];
     const colors = chartMapTool.getColors();
 
     // 필드 체크박스 목록 — 색은 피커로 직접 지정 가능(기본 팔레트로 초기화)
@@ -180,7 +182,10 @@ class ChartMapPanel {
           ${field}
         </label>`;
     });
-    fieldListEl.innerHTML = fieldHTML || '<div class="no-fields">숫자 필드가 없습니다</div>';
+    fieldListEl.innerHTML = fieldHTML ||
+      (this.selectedLayerId
+        ? '<div class="no-fields">숫자 필드가 없습니다</div>'
+        : '<div class="no-fields">먼저 레이어를 선택하세요</div>');
 
     // 색 피커 이벤트 — 클릭이 체크박스 토글로 번지지 않게 차단
     fieldListEl.querySelectorAll('input.field-color').forEach(picker => {
@@ -291,6 +296,11 @@ class ChartMapPanel {
    * 차트 제거
    */
   clearCharts() {
+    if (!this.selectedLayerId) {
+      alert('먼저 레이어를 선택해주세요.');
+      return;
+    }
+
     chartMapTool.removeChartMap(this.selectedLayerId);
     alert('차트가 제거되었습니다.');
   }

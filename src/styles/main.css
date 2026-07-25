@@ -3898,8 +3898,73 @@ body.exporting .egis-basemap-panel {
   white-space: nowrap;
 }
 
+.members-table .col-date {
+  white-space: nowrap;
+  color: var(--text-secondary, var(--text-muted));
+}
+
+.members-table .col-actions {
+  white-space: nowrap;
+}
+
+.member-action-btn {
+  padding: 3px 8px;
+  font-size: var(--font-size-xs);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.member-action-btn + .member-action-btn {
+  margin-left: 4px;
+}
+
+.member-action-btn:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+}
+
+.member-action-btn.danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.member-action-btn.danger:hover {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
 .members-table .cell-empty {
   color: var(--text-muted);
+}
+
+/* 회원 수정/삭제 모달 */
+.member-edit-modal .member-edit-content,
+.member-delete-modal .member-delete-content {
+  width: 400px;
+  max-width: 92vw;
+  background: var(--bg-panel);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.member-edit-email {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-md);
+}
+
+.member-delete-warning {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-md);
+}
+
+.member-delete-warning strong {
+  color: var(--color-danger);
 }
 
 /* ==================== 위치 검색 ==================== */

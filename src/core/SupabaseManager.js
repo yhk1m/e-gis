@@ -380,6 +380,64 @@ class SupabaseManager {
     return data || [];
   }
 
+  /**
+   * 회원 프로필 수정 (관리자 전용) — 이름/닉네임/지역/학교
+   */
+  async updateMemberProfile(userId, { name, nickname, region, school }) {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    if (!this.isAdmin()) {
+      throw new Error('관리자만 접근할 수 있습니다.');
+    }
+
+    const { error } = await this.supabase.rpc('admin_update_member_profile', {
+      target_user_id: userId,
+      p_name: name || null,
+      p_nickname: nickname || null,
+      p_region: region || null,
+      p_school: school || null
+    });
+    if (error) throw error;
+    return true;
+  }
+
+  /**
+   * 회원 강제 탈퇴 (관리자 전용) — 개인정보 + 계정 완전 삭제, 되돌릴 수 없음
+   */
+  async deleteMember(userId) {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    if (!this.isAdmin()) {
+      throw new Error('관리자만 접근할 수 있습니다.');
+    }
+
+    const { error } = await this.supabase.rpc('admin_delete_member', {
+      target_user_id: userId
+    });
+    if (error) throw error;
+    return true;
+  }
+
+  /**
+   * 현재 로그인 계정의 비밀번호 확인 (재인증)
+   * 위험한 작업(강제 탈퇴) 전 본인 확인용. 실패해도 현재 세션은 유지된다.
+   * @returns {Promise<boolean>} 비밀번호 일치 여부
+   */
+  async verifyPassword(password) {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    if (!password) return false;
+
+    const { error } = await this.supabase.auth.signInWithPassword({
+      email: this.user.email,
+      password
+    });
+    return !error;
+  }
+
   // ==================== 프로젝트 저장/불러오기 ====================
 
   /**

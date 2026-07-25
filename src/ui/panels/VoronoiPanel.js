@@ -9,10 +9,12 @@
 
 import { voronoiTool } from '../../tools/VoronoiTool.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 
 class VoronoiPanel {
   constructor() {
     this.modal = null;
+    this.selectedLayerId = '';
   }
 
   show() {
@@ -27,24 +29,22 @@ class VoronoiPanel {
   render(pointLayers, polygonLayers) {
     this.close();
 
+    // 현재 선택된 레이어가 포인트면 기본값으로 고른다.
+    this.selectedLayerId = resolveInitialLayerId(pointLayers, layerManager.getSelectedLayerId());
+
     this.modal = document.createElement('div');
     this.modal.className = 'modal-overlay voronoi-modal active';
     this.modal.innerHTML = this.getModalHTML(pointLayers, polygonLayers);
     document.body.appendChild(this.modal);
 
-    // 현재 선택된 레이어가 포인트면 기본값으로 고른다.
-    const selectedId = layerManager.getSelectedLayerId();
-    if (selectedId && pointLayers.some(l => l.id === selectedId)) {
-      document.getElementById('voronoi-layer').value = selectedId;
-    }
-
     this.bindEvents();
   }
 
   getModalHTML(pointLayers, polygonLayers) {
-    const layerOptions = pointLayers.map(l =>
-      '<option value="' + l.id + '">' + l.name + ' (' + l.featureCount + ')</option>'
-    ).join('');
+    const layerOptions = buildLayerOptions(pointLayers, {
+      selectedId: this.selectedLayerId,
+      showCount: true
+    });
 
     const boundaryOptions =
       '<option value="">사각형 (경계 없음)</option>' +
@@ -89,6 +89,11 @@ class VoronoiPanel {
 
   apply() {
     const layerId = document.getElementById('voronoi-layer').value;
+    if (!layerId) {
+      alert('먼저 포인트 레이어를 선택해주세요.');
+      return;
+    }
+
     const boundaryLayerId = document.getElementById('voronoi-boundary').value || null;
     const color = document.getElementById('voronoi-color').value;
 

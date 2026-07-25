@@ -5,6 +5,7 @@
 
 import * as turf from '@turf/turf';
 import { layerManager } from '../core/LayerManager.js';
+import { isVectorLayer } from '../utils/layerSelect.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 class BufferTool {
@@ -96,6 +97,15 @@ class BufferTool {
       featureCount: olFeatures.length,
       layerName: bufferLayerName
     };
+  }
+
+  /**
+   * 버퍼를 만들 수 있는 레이어 목록 (피처가 있는 벡터 레이어)
+   */
+  getCompatibleLayers() {
+    return layerManager.getAllLayers().filter(
+      layer => isVectorLayer(layer) && layer.source.getFeatures().length > 0
+    );
   }
 
   /**

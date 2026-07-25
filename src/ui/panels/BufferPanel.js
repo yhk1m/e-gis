@@ -4,6 +4,7 @@
 
 import { bufferTool } from '../../tools/BufferTool.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 
 class BufferPanel {
   constructor() {
@@ -15,32 +16,28 @@ class BufferPanel {
    * 버퍼 패널 열기
    */
   show(layerId = null) {
-    if (!layerId) {
-      layerId = layerManager.getSelectedLayerId();
-    }
-    if (!layerId) {
-      alert('먼저 레이어를 선택해주세요.');
+    const layers = bufferTool.getCompatibleLayers();
+    if (layers.length === 0) {
+      alert('버퍼를 만들 수 있는 레이어가 없습니다.\n(피처가 있는 벡터 레이어가 필요합니다)');
       return;
     }
 
-    const layerInfo = layerManager.getLayer(layerId);
-    if (!layerInfo) return;
-
-    this.currentLayerId = layerId;
-    this.render(layerInfo);
+    // 선택 중인 레이어가 버퍼를 지원하면 미리 골라 준다.
+    this.currentLayerId = resolveInitialLayerId(layers, layerId || layerManager.getSelectedLayerId()) || null;
+    this.render(layers);
   }
 
   /**
    * 모달 렌더링
    */
-  render(layerInfo) {
+  render(layers) {
     this.close();
 
     const units = bufferTool.getUnits();
 
     this.modal = document.createElement('div');
     this.modal.className = 'buffer-modal';
-    this.modal.innerHTML = this.getModalHTML(layerInfo.name, units);
+    this.modal.innerHTML = this.getModalHTML(layers, units);
     document.body.appendChild(this.modal);
 
     this.bindEvents();
@@ -49,7 +46,8 @@ class BufferPanel {
   /**
    * 모달 HTML 생성
    */
-  getModalHTML(layerName, units) {
+  getModalHTML(layers, units) {
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId });
     const unitOptions = units.map(u =>
       '<option value="' + u.value + '">' + u.label + '</option>'
     ).join('');
@@ -61,8 +59,8 @@ class BufferPanel {
       '</div>' +
       '<div class="buffer-body">' +
         '<div class="buffer-form-group">' +
-          '<label>소스 레이어</label>' +
-          '<div class="buffer-layer-name">' + layerName + '</div>' +
+          '<label for="buffer-layer">소스 레이어</label>' +
+          '<select id="buffer-layer">' + layerOptions + '</select>' +
         '</div>' +
         '<div class="buffer-form-group">' +
           '<label for="buffer-distance">버퍼 거리</label>' +
@@ -93,9 +91,14 @@ class BufferPanel {
    * 이벤트 바인딩
    */
   bindEvents() {
+    const layerSelect = document.getElementById('buffer-layer');
     const closeBtn = document.getElementById('buffer-close');
     const cancelBtn = document.getElementById('buffer-cancel');
     const applyBtn = document.getElementById('buffer-apply');
+
+    layerSelect.addEventListener('change', () => {
+      this.currentLayerId = layerSelect.value || null;
+    });
 
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
@@ -106,6 +109,11 @@ class BufferPanel {
    * 버퍼 적용
    */
   apply() {
+    if (!this.currentLayerId) {
+      alert('먼저 소스 레이어를 선택해주세요.');
+      return;
+    }
+
     const distance = parseFloat(document.getElementById('buffer-distance').value);
     const unit = document.getElementById('buffer-unit').value;
     const color = document.getElementById('buffer-color').value;

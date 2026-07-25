@@ -4,6 +4,8 @@
  */
 
 import { rasterAnalysisTool } from '../../tools/RasterAnalysisTool.js';
+import { layerManager } from '../../core/LayerManager.js';
+import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 
 class RasterAnalysisPanel {
   constructor() {
@@ -76,9 +78,9 @@ class RasterAnalysisPanel {
    * 모달 HTML 생성
    */
   getModalHTML(demLayers) {
-    const layerOptions = demLayers.map(l =>
-      `<option value="${l.id}">${l.name}</option>`
-    ).join('');
+    // 선택 중인 레이어가 DEM이면 미리 골라 준다.
+    const selectedId = resolveInitialLayerId(demLayers, layerManager.getSelectedLayerId());
+    const layerOptions = buildLayerOptions(demLayers, { selectedId, placeholder: '-- DEM 레이어 선택 --' });
 
     let title, bodyHTML;
 
@@ -346,6 +348,11 @@ class RasterAnalysisPanel {
     const layerSelect = document.getElementById('raster-layer');
     const layerId = layerSelect.value;
     const applyBtn = document.getElementById('raster-apply');
+
+    if (!layerId) {
+      alert('먼저 DEM 레이어를 선택해주세요.');
+      return;
+    }
 
     applyBtn.disabled = true;
     applyBtn.textContent = '분석 중...';

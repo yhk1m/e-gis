@@ -5,6 +5,7 @@
 import { choroplethTool } from "../../tools/ChoroplethTool.js";
 import { layerManager } from "../../core/LayerManager.js";
 import { eventBus, Events } from "../../utils/EventBus.js";
+import { buildLayerOptions, resolveInitialLayerId } from "../../utils/layerSelect.js";
 
 class ChoroplethPanel {
   constructor() {
@@ -13,45 +14,36 @@ class ChoroplethPanel {
     this.legendData = null;
   }
 
-  show(layerId) {
-    if (!layerId) {
-      layerId = layerManager.getSelectedLayerId();
-    }
-    if (!layerId) {
-      alert("먼저 레이어를 선택해주세요.");
+  show(layerId = null) {
+    const layers = choroplethTool.getCompatibleLayers();
+    if (layers.length === 0) {
+      alert("단계구분도를 적용할 수 있는 레이어가 없습니다.\n(숫자형 속성이 있는 벡터 레이어가 필요합니다)");
       return;
     }
 
-    const layerInfo = layerManager.getLayer(layerId);
-    if (!layerInfo) return;
-
-    this.currentLayerId = layerId;
-    this.render(layerInfo);
+    // 선택 중인 레이어가 단계구분도를 지원하면 미리 골라 준다.
+    this.currentLayerId = resolveInitialLayerId(layers, layerId || layerManager.getSelectedLayerId()) || null;
+    this.render(layers);
   }
 
-  render(layerInfo) {
+  render(layers) {
     this.close();
 
-    const attributes = choroplethTool.getNumericAttributes(this.currentLayerId);
     const colorRamps = choroplethTool.getColorRamps();
     const methods = choroplethTool.getClassificationMethods();
 
-    if (attributes.length === 0) {
-      alert("이 레이어에는 숫자형 속성이 없습니다.");
-      return;
-    }
-
     this.modal = document.createElement("div");
     this.modal.className = "choropleth-modal";
-    this.modal.innerHTML = this.getModalHTML(layerInfo.name, attributes, colorRamps, methods);
+    this.modal.innerHTML = this.getModalHTML(layers, colorRamps, methods);
     document.body.appendChild(this.modal);
 
     this.bindEvents();
+    this.updateAttributeOptions();
     this.updateColorRampPreview();
   }
 
-  getModalHTML(layerName, attributes, colorRamps, methods) {
-    const attrOptions = attributes.map(a => '<option value="' + a + '">' + a + '</option>').join("");
+  getModalHTML(layers, colorRamps, methods) {
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId });
     const rampOptions = colorRamps.map(r => '<option value="' + r + '">' + r + '</option>').join("");
     const methodOptions = Object.entries(methods).map(([k, v]) => '<option value="' + k + '">' + v + '</option>').join("");
 
@@ -62,12 +54,12 @@ class ChoroplethPanel {
       '</div>' +
       '<div class="choropleth-body">' +
         '<div class="choropleth-form-group">' +
-          '<label>레이어</label>' +
-          '<div class="choropleth-layer-name">' + layerName + '</div>' +
+          '<label for="choropleth-layer">레이어</label>' +
+          '<select id="choropleth-layer">' + layerOptions + '</select>' +
         '</div>' +
         '<div class="choropleth-form-group">' +
           '<label for="choropleth-attr">속성 필드</label>' +
-          '<select id="choropleth-attr">' + attrOptions + '</select>' +
+          '<select id="choropleth-attr"></select>' +
         '</div>' +
         '<div class="choropleth-form-group">' +
           '<label for="choropleth-ramp">색상 팔레트</label>' +
@@ -118,6 +110,7 @@ class ChoroplethPanel {
   }
 
   bindEvents() {
+    const layerSelect = document.getElementById("choropleth-layer");
     const closeBtn = document.getElementById("choropleth-close");
     const applyBtn = document.getElementById("choropleth-apply");
     const okBtn = document.getElementById("choropleth-ok");
@@ -130,6 +123,13 @@ class ChoroplethPanel {
     const removeColorBtn = document.getElementById("remove-color-btn");
 
     closeBtn.addEventListener("click", () => this.close());
+
+    layerSelect.addEventListener("change", () => {
+      this.currentLayerId = layerSelect.value || null;
+      this.legendData = null;
+      document.getElementById("choropleth-legend").innerHTML = "";
+      this.updateAttributeOptions();
+    });
 
     applyBtn.addEventListener("click", () => this.apply());
     okBtn.addEventListener("click", () => {
@@ -156,6 +156,31 @@ class ChoroplethPanel {
     document.querySelectorAll("#custom-color-inputs .custom-color-input").forEach(input => {
       input.addEventListener("input", () => this.updateColorRampPreview());
     });
+  }
+
+  /**
+   * 선택된 레이어의 숫자형 속성으로 필드 목록을 채운다.
+   * 레이어가 안 골라졌으면 안내 문구만 두고 비활성화한다.
+   */
+  updateAttributeOptions() {
+    const attrSelect = document.getElementById("choropleth-attr");
+    if (!attrSelect) return;
+
+    if (!this.currentLayerId) {
+      attrSelect.innerHTML = '<option value="">-- 먼저 레이어를 선택하세요 --</option>';
+      attrSelect.disabled = true;
+      return;
+    }
+
+    const attributes = choroplethTool.getNumericAttributes(this.currentLayerId);
+    if (attributes.length === 0) {
+      attrSelect.innerHTML = '<option value="">숫자형 속성이 없습니다</option>';
+      attrSelect.disabled = true;
+      return;
+    }
+
+    attrSelect.disabled = false;
+    attrSelect.innerHTML = attributes.map(a => '<option value="' + a + '">' + a + '</option>').join("");
   }
 
   toggleCustomColors() {
@@ -211,7 +236,17 @@ class ChoroplethPanel {
   }
 
   apply() {
+    if (!this.currentLayerId) {
+      alert("먼저 레이어를 선택해주세요.");
+      return;
+    }
+
     const attribute = document.getElementById("choropleth-attr").value;
+    if (!attribute) {
+      alert("속성 필드를 선택해주세요.");
+      return;
+    }
+
     const colorRamp = document.getElementById("choropleth-ramp").value;
     const method = document.getElementById("choropleth-method").value;
     const numClasses = parseInt(document.getElementById("choropleth-classes").value);
@@ -257,6 +292,8 @@ class ChoroplethPanel {
   }
 
   reset() {
+    if (!this.currentLayerId) return;
+
     choroplethTool.reset(this.currentLayerId);
     document.getElementById("choropleth-legend").innerHTML = "";
     this.legendData = null;

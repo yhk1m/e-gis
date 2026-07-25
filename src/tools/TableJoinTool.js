@@ -5,6 +5,7 @@
 
 import { layerManager } from "../core/LayerManager.js";
 import { eventBus, Events } from "../utils/EventBus.js";
+import { isVectorLayer } from "../utils/layerSelect.js";
 import * as XLSX from 'xlsx';
 
 class TableJoinTool {
@@ -125,11 +126,20 @@ class TableJoinTool {
   }
 
   /**
+   * 테이블을 결합할 수 있는 레이어 목록 (속성 필드가 있는 벡터 레이어)
+   */
+  getCompatibleLayers() {
+    return layerManager.getAllLayers().filter(
+      layer => isVectorLayer(layer) && this.getLayerFields(layer.id).length > 0
+    );
+  }
+
+  /**
    * 레이어의 속성 필드 목록 가져오기
    */
   getLayerFields(layerId) {
     const layerInfo = layerManager.getLayer(layerId);
-    if (!layerInfo) return [];
+    if (!layerInfo || !layerInfo.source) return [];
 
     const features = layerInfo.source.getFeatures();
     if (features.length === 0) return [];

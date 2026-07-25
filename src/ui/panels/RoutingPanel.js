@@ -4,6 +4,7 @@
 
 import { routingTool } from '../../tools/RoutingTool.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 import { transform } from 'ol/proj';
 
 class RoutingPanel {
@@ -57,8 +58,10 @@ class RoutingPanel {
       .map(([value, label]) => `<option value="${value}">${label}</option>`)
       .join('');
 
+    // 선택 중인 레이어가 포인트면 출발/도착 레이어로 미리 골라 준다.
+    const selectedId = resolveInitialLayerId(pointLayers, layerManager.getSelectedLayerId());
     const layerOptions = pointLayers.length > 0
-      ? pointLayers.map(l => `<option value="${l.id}">${l.name} (${l.featureCount}개)</option>`).join('')
+      ? buildLayerOptions(pointLayers, { selectedId, showCount: true })
       : '<option value="">포인트 레이어 없음</option>';
 
     return `<div class="modal-content routing-content">
