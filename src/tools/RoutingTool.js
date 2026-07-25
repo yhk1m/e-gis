@@ -13,6 +13,7 @@ import LineString from 'ol/geom/LineString';
 import { transform } from 'ol/proj';
 import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
+import { buildRouteGeoJSON, toLocalProfile } from '../core/localRouting.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 
 // 이동 수단
@@ -252,11 +253,7 @@ class RoutingTool {
    * 경로 분석 실행
    */
   async analyze(options = {}) {
-    const { profile = 'driving-car' } = options;
-
-    if (!this.apiKey) {
-      throw new Error('OpenRouteService API 키가 설정되지 않았습니다.');
-    }
+    const { profile = 'driving-car', engine = 'ors' } = options;
 
     if (!this.startPoint || !this.endPoint) {
       throw new Error('출발지와 도착지를 모두 선택해주세요.');
@@ -268,6 +265,24 @@ class RoutingTool {
       ...this.waypoints.map(wp => wp.lonLat),
       this.endPoint.lonLat
     ];
+
+    // ── 내장 도로망 ──────────────────────────────────────────
+    if (engine === 'local') {
+      const data = await buildRouteGeoJSON(coordinates, {
+        profile: toLocalProfile(profile),
+        speedKmh: options.speedKmh,
+        excludeHighway: options.excludeHighway,
+        onProgress: options.onProgress,
+        onGeometryProgress: options.onGeometryProgress
+      });
+      // 이동 수단과 시속을 레이어 이름에 그대로 보여 준다 (예: "도보 4km/h")
+      return this.displayRoute(data,
+        options.localLabel || (options.speedKmh > 0 ? `${options.speedKmh}km/h` : profile));
+    }
+
+    if (!this.apiKey) {
+      throw new Error('OpenRouteService API 키가 설정되지 않았습니다.');
+    }
 
     const requestBody = {
       coordinates: coordinates

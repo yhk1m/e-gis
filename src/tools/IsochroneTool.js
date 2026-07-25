@@ -13,6 +13,7 @@ import Point from 'ol/geom/Point';
 import { transform } from 'ol/proj';
 import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
+import { buildIsochroneGeoJSON, toLocalProfile } from '../core/localRouting.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 
 // 등시선 색상 (시간대별)
@@ -215,8 +216,29 @@ class IsochroneTool {
     const {
       profile = 'driving-car',
       intervals = [5, 10, 15], // 분 단위
-      rangeType = 'time' // 'time' or 'distance'
+      rangeType = 'time', // 'time' or 'distance'
+      engine = 'ors'      // 'local' = 내장 도로망(표준노드링크)
     } = options;
+
+    // ── 내장 도로망 ──────────────────────────────────────────
+    if (engine === 'local') {
+      if (rangeType !== 'time') {
+        throw new Error('내장 도로망은 시간 기준만 지원합니다. 거리 기준은 OpenRouteService를 선택해주세요.');
+      }
+      const geojson = await buildIsochroneGeoJSON(lonLat, {
+        intervals,
+        profile: toLocalProfile(profile),
+        speedKmh: options.speedKmh,
+        excludeHighway: options.excludeHighway,
+        onProgress: options.onProgress
+      });
+      // 실제로 폴리곤이 만들어진 구간만 남았을 수 있어 값에서 되읽는다
+      const used = geojson.features.map(f => f.properties.value / 60);
+      // 레이어 이름에 쓸 표시 — 이동 수단과 시속을 그대로 보여 준다 (예: "도보 4km/h")
+      const label = options.localLabel
+        || (options.speedKmh > 0 ? `${options.speedKmh}km/h` : profile);
+      return this.displayIsochrones(geojson, used, 'time', label);
+    }
 
     if (!this.apiKey) {
       throw new Error('OpenRouteService API 키가 설정되지 않았습니다.');

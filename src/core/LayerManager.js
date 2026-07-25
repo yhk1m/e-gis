@@ -34,9 +34,22 @@ export function pickStyleFields(layerInfo) {
   return out;
 }
 
-const COLOR_PALETTE = [
+/** 새 레이어에 자동으로 돌아가며 주는 색 (서로 잘 구분되는 색만) */
+const AUTO_COLOR_SEQUENCE = [
   '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
   '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
+];
+
+/** 스타일 편집에서 고르는 기본 8색 */
+const SWATCH_PALETTE = [
+  { color: '#ffffff', name: '흰색' },
+  { color: '#808080', name: '회색' },
+  { color: '#000000', name: '검은색' },
+  { color: '#e53935', name: '빨강' },
+  { color: '#fb8c00', name: '주황' },
+  { color: '#fdd835', name: '노랑' },
+  { color: '#43a047', name: '초록' },
+  { color: '#1e88e5', name: '파랑' }
 ];
 
 const STROKE_DASH_OPTIONS = {
@@ -56,7 +69,7 @@ class LayerManager {
   }
 
   getNextColor() {
-    const color = COLOR_PALETTE[this.colorIndex % COLOR_PALETTE.length];
+    const color = AUTO_COLOR_SEQUENCE[this.colorIndex % AUTO_COLOR_SEQUENCE.length];
     this.colorIndex++;
     return color;
   }
@@ -560,7 +573,12 @@ class LayerManager {
   }
 
   getColorPalette() {
-    return COLOR_PALETTE;
+    return SWATCH_PALETTE.map(s => s.color);
+  }
+
+  /** 색 이름까지 필요한 곳(툴팁)에서 쓴다 */
+  getColorSwatches() {
+    return SWATCH_PALETTE;
   }
 
   getStrokeDashOptions() {

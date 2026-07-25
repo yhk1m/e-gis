@@ -582,7 +582,13 @@ export class LayerPanel {
     const existingPicker = document.querySelector(".color-picker-popup");
     if (existingPicker) existingPicker.remove();
 
-    const colors = layerManager.getColorPalette();
+    const swatches = layerManager.getColorSwatches();
+    /** 색 견본 한 줄 — data 속성 이름만 바꿔 가며 재사용한다 */
+    const swatchItems = (dataAttr, current) => swatches.map(function(s) {
+      return "<div class=\"color-item" + (s.color === current ? " active" : "") + "\"" +
+        " " + dataAttr + "=\"" + s.color + "\" title=\"" + s.name + "\"" +
+        " style=\"background-color: " + s.color + "\"></div>";
+    }).join("");
     const picker = document.createElement("div");
     picker.className = "color-picker-popup";
 
@@ -632,9 +638,7 @@ export class LayerPanel {
       if (isClassified) {
         html += "<div class=\"style-section\" style=\"font-size:12px;color:var(--text-secondary,#888)\">면 색상은 분류 설정이 결정합니다.</div>";
       } else {
-        const fillColorItems = colors.map(function(color) {
-          return "<div class=\"color-item" + (color === currentFillColor ? " active" : "") + "\" data-fill-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
-        }).join("");
+        const fillColorItems = swatchItems("data-fill-color", currentFillColor);
 
         html += "<div class=\"style-section\"><label>면 색상:</label><div class=\"color-picker-grid\">" + fillColorItems + "</div>";
         html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentFillColor + "\" class=\"fill-color-input\"></div></div>";
@@ -654,9 +658,7 @@ export class LayerPanel {
 
       // 선 색상 — 분류 레이어에서 동기화가 켜져 있으면 분류색을 따르므로 비활성
       const strokeDisabled = isClassified && syncOn;
-      const strokeColorItems = colors.map(function(color) {
-        return "<div class=\"color-item" + (color === currentStrokeColor ? " active" : "") + "\" data-stroke-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
-      }).join("");
+      const strokeColorItems = swatchItems("data-stroke-color", currentStrokeColor);
 
       html += "<div class=\"style-section stroke-color-section\"" + (strokeDisabled ? " style=\"opacity:0.4;pointer-events:none\"" : "") + ">";
       html += "<label>선 색상:</label><div class=\"color-picker-grid\">" + strokeColorItems + "</div>";
@@ -675,9 +677,7 @@ export class LayerPanel {
       html += "</div></div>";
     }
  else if (isLine) {
-      const colorItems = colors.map(function(color) {
-        return "<div class=\"color-item" + (color === layer.color ? " active" : "") + "\" data-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
-      }).join("");
+      const colorItems = swatchItems("data-color", layer.color);
 
       html += "<div class=\"style-section\"><label>선 색상:</label><div class=\"color-picker-grid\">" + colorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + layer.color + "\" class=\"color-input\"></div></div>";
@@ -699,9 +699,7 @@ export class LayerPanel {
       html += "</div></div>";
     } else {
       // 포인트: 면 색상 / 테두리 색상 따로 설정
-      const fillColorItems = colors.map(function(color) {
-        return "<div class=\"color-item" + (color === currentFillColor ? " active" : "") + "\" data-fill-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
-      }).join("");
+      const fillColorItems = swatchItems("data-fill-color", currentFillColor);
 
       html += "<div class=\"style-section\"><label>면 색상:</label><div class=\"color-picker-grid\">" + fillColorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentFillColor + "\" class=\"fill-color-input\"></div></div>";
@@ -711,9 +709,7 @@ export class LayerPanel {
       html += "<input type=\"range\" class=\"opacity-slider fill-opacity-slider\" min=\"0\" max=\"100\" value=\"" + Math.round(currentFillOpacity * 100) + "\"></div>";
 
       // 테두리 색상
-      const strokeColorItems = colors.map(function(color) {
-        return "<div class=\"color-item" + (color === currentStrokeColor ? " active" : "") + "\" data-stroke-color=\"" + color + "\" style=\"background-color: " + color + "\"></div>";
-      }).join("");
+      const strokeColorItems = swatchItems("data-stroke-color", currentStrokeColor);
 
       html += "<div class=\"style-section\"><label>테두리 색상:</label><div class=\"color-picker-grid\">" + strokeColorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentStrokeColor + "\" class=\"stroke-color-input\"></div></div>";

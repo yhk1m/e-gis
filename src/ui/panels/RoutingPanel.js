@@ -5,6 +5,7 @@
 import { routingTool } from '../../tools/RoutingTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { LOCAL_MODES } from '../../core/localRouting.js';
 import { transform } from 'ol/proj';
 
 class RoutingPanel {
@@ -71,6 +72,14 @@ class RoutingPanel {
       </div>
       <div class="modal-body">
         <div class="form-group">
+          <label for="routing-engine">도로망</label>
+          <select id="routing-engine">
+            <option value="local" selected>내장 도로망 (표준노드링크 · 권장)</option>
+            <option value="ors">OpenRouteService (API 키 필요)</option>
+          </select>
+          <small class="form-hint">내장 도로망은 API 키가 필요 없고 호출 제한도 없습니다. 전국 주요도로(고속·국도·지방도·시도) 기준입니다.</small>
+        </div>
+        <div class="form-group" id="routing-apikey-group" style="display:none">
           <label for="routing-api-key">OpenRouteService API 키</label>
           <div class="api-key-input-group">
             <input type="password" id="routing-api-key" value="${apiKey}" placeholder="API 키 입력">
@@ -119,9 +128,21 @@ class RoutingPanel {
           </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="routing-profile-group" style="display:none">
           <label for="routing-profile">이동 수단</label>
           <select id="routing-profile">${profileOptions}</select>
+        </div>
+
+        <div class="form-group" id="routing-speed-group">
+          <label for="routing-mode">이동 수단</label>
+          <select id="routing-mode">
+            <option value="foot">도보 — 자동차전용도로 제외</option>
+            <option value="bike">자전거 — 자동차전용도로 제외</option>
+            <option value="car" selected>자동차 — 모든 도로</option>
+          </select>
+          <label for="routing-speed" style="margin-top:8px; display:block">이동 속도 (km/h)</label>
+          <input type="number" id="routing-speed" value="40" min="1" max="200" step="1">
+          <small class="form-hint">이동 수단은 지날 수 있는 도로를, 속도는 걸리는 시간을 정합니다.</small>
         </div>
 
         <div class="route-result" id="route-result" style="display:none;">
@@ -176,6 +197,27 @@ class RoutingPanel {
 
     swapBtn.addEventListener('click', () => this.swapPoints());
     addWaypointBtn.addEventListener('click', () => this.addWaypoint());
+
+    // 도로망 선택 — 내장 도로망을 쓰면 API 키 입력을 감춘다
+    const engineSelect = document.getElementById('routing-engine');
+    const apiKeyGroup = document.getElementById('routing-apikey-group');
+    const profileGroup = document.getElementById('routing-profile-group');
+    const speedGroup = document.getElementById('routing-speed-group');
+    engineSelect.addEventListener('change', () => {
+      const isOrs = engineSelect.value === 'ors';
+      apiKeyGroup.style.display = isOrs ? '' : 'none';
+      // 내장 도로망은 시속을 직접 정한다 — 이동 수단 목록은 API 방식에서만 쓴다
+      profileGroup.style.display = isOrs ? '' : 'none';
+      speedGroup.style.display = isOrs ? 'none' : '';
+      this.updateUI();
+    });
+
+    // 이동 수단을 바꾸면 그 수단의 기본 속도를 채워 준다
+    const modeSelect = document.getElementById('routing-mode');
+    const speedInput = document.getElementById('routing-speed');
+    modeSelect.addEventListener('change', () => {
+      speedInput.value = LOCAL_MODES[modeSelect.value].defaultSpeed;
+    });
 
     apiKeyInput.addEventListener('input', () => {
       routingTool.setApiKey(apiKeyInput.value);
@@ -484,8 +526,10 @@ class RoutingPanel {
 
     const apiKey = document.getElementById('routing-api-key').value;
     const state = routingTool.getState();
+    const engineEl = document.getElementById('routing-engine');
+    const needsKey = !engineEl || engineEl.value === 'ors';
 
-    const canAnalyze = apiKey && state.startPoint && state.endPoint;
+    const canAnalyze = (!needsKey || apiKey) && state.startPoint && state.endPoint;
     analyzeBtn.disabled = !canAnalyze;
 
     // 경로 결과 표시
@@ -503,8 +547,9 @@ class RoutingPanel {
    * 경로 분석 실행
    */
   async analyze() {
+    const engine = document.getElementById('routing-engine').value;
     const apiKey = document.getElementById('routing-api-key').value;
-    if (!apiKey) {
+    if (engine === 'ors' && !apiKey) {
       alert('API 키를 입력해주세요.');
       return;
     }
@@ -521,8 +566,24 @@ class RoutingPanel {
     analyzeBtn.disabled = true;
     analyzeBtn.textContent = '검색 중...';
 
+    // 도로망을 처음 받을 때만 잠깐 걸린다 — 진행률을 버튼에 보여 준다
+    const onProgress = (loaded, total) => {
+      const pct = total ? Math.round(loaded / total * 100) : 0;
+      analyzeBtn.textContent = total ? `도로망 받는 중 ${pct}%` : '도로망 받는 중…';
+    };
+
     try {
-      const result = await routingTool.analyze({ profile });
+      const mode = LOCAL_MODES[document.getElementById('routing-mode').value] || LOCAL_MODES.car;
+      const speedKmh = parseFloat(document.getElementById('routing-speed').value);
+
+      const result = await routingTool.analyze({
+        profile, engine,
+        speedKmh: engine === 'local' ? speedKmh : 0,
+        excludeHighway: mode.excludeHighway,
+        localLabel: `${mode.label} ${speedKmh}km/h`,
+        onProgress,
+        onGeometryProgress: onProgress
+      });
 
       // 결과 표시
       document.getElementById('route-result').style.display = 'block';

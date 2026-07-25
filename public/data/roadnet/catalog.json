@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "chunks": [
+    {
+      "name": "korea-major",
+      "mainSccNodes": 418082,
+      "label": "전국 주요도로 (고속·국도·지방도·시도)",
+      "graph": "korea-major.graph.bin",
+      "geom": "korea-major.geom.bin",
+      "nodes": 512212,
+      "edges": 608861,
+      "ranks": [
+        "101",
+        "102",
+        "103",
+        "104",
+        "105",
+        "106"
+      ],
+      "bbox": [
+        14018207,
+        3925547,
+        14573606,
+        4662289
+      ],
+      "graphBytes": 15182872,
+      "geomBytes": 14253768
+    }
+  ]
+}
