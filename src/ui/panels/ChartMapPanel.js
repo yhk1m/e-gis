@@ -44,6 +44,7 @@ class ChartMapPanel {
     document.body.appendChild(this.modal);
 
     this.bindEvents();
+    this.updateFieldLabel();
     this.updateFieldList();
   }
 
@@ -72,13 +73,13 @@ class ChartMapPanel {
           </select>
         </div>
         <div class="form-group">
-          <label id="field-select-label">표시할 필드 (2개 이상 선택)</label>
+          <label id="field-select-label">표시할 필드 (1개 이상 선택)</label>
           <div class="field-list" id="chart-field-list"></div>
         </div>
         <div class="form-group">
           <label class="field-checkbox">
             <input type="checkbox" id="chart-show-values">
-            수치 라벨 표시 (파이·100% 막대는 %, 막대는 값)
+            수치 라벨 표시 (구성비는 %, 막대·비례원은 값)
           </label>
         </div>
         <div class="form-group">
@@ -153,10 +154,13 @@ class ChartMapPanel {
   updateFieldLabel() {
     const chartType = document.getElementById('chart-type').value;
     const labelEl = document.getElementById('field-select-label');
-    if (chartType === 'bar') {
-      labelEl.textContent = '표시할 필드 (1개 이상 선택)';
+    // 지표 1개도 그릴 수 있다 — 파이는 원 크기로, 100% 막대는 최댓값 대비 채움으로.
+    if (chartType === 'pie') {
+      labelEl.textContent = '표시할 필드 (1개 이상 — 1개면 원 크기로 표현)';
+    } else if (chartType === '100bar') {
+      labelEl.textContent = '표시할 필드 (1개 이상 — 1개면 최댓값 대비 채움)';
     } else {
-      labelEl.textContent = '표시할 필드 (2개 이상 선택)';
+      labelEl.textContent = '표시할 필드 (1개 이상 선택)';
     }
   }
 
@@ -218,11 +222,8 @@ class ChartMapPanel {
     const checkboxes = document.querySelectorAll('#chart-field-list input:checked');
     this.selectedFields = Array.from(checkboxes).map(cb => cb.value);
 
-    const chartType = document.getElementById('chart-type').value;
-    const minFields = chartType === 'bar' ? 1 : 2;
-
     const applyBtn = document.getElementById('chart-map-apply');
-    applyBtn.disabled = this.selectedFields.length < minFields;
+    applyBtn.disabled = this.selectedFields.length < 1;
 
     this.updateLegend();
   }
@@ -260,9 +261,8 @@ class ChartMapPanel {
     const minSize = parseInt(document.getElementById('chart-min-size').value);
     const maxSize = parseInt(document.getElementById('chart-max-size').value);
 
-    const minFields = chartType === 'bar' ? 1 : 2;
-    if (this.selectedFields.length < minFields) {
-      alert(chartType === 'bar' ? '최소 1개 이상의 필드를 선택해주세요.' : '최소 2개 이상의 필드를 선택해주세요.');
+    if (this.selectedFields.length < 1) {
+      alert('최소 1개 이상의 필드를 선택해주세요.');
       return;
     }
 
@@ -301,8 +301,10 @@ class ChartMapPanel {
       return;
     }
 
-    chartMapTool.removeChartMap(this.selectedLayerId);
-    alert('차트가 제거되었습니다.');
+    const removed = chartMapTool.removeChartMap(this.selectedLayerId);
+    alert(removed > 0
+      ? `이 레이어로 만든 도형표현도 ${removed}개를 제거했습니다.`
+      : '이 레이어로 만든 도형표현도가 없습니다.');
   }
 
   /**

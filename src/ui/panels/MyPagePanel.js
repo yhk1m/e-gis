@@ -559,7 +559,18 @@ class MyPagePanel {
       ? this.escapeHtml(v)
       : '<span class="cell-empty">-</span>';
 
+    // 수정/탈퇴는 user_id가 있어야 대상을 지정할 수 있다.
+    // 예전 버전 admin_list_members 는 user_id를 반환하지 않아 버튼이 조용히 안 먹었다 → 이유를 밝힌다.
+    const hasUserId = all.some(m => m.user_id);
+    const notice = hasUserId ? '' : `
+      <div class="members-notice">
+        회원 수정·탈퇴를 쓰려면 서버 함수를 갱신해야 합니다.
+        Supabase SQL Editor에서 <code>supabase-admin-members.sql</code>을 실행한 뒤 새로고침하세요.
+        (현재 목록에 회원 식별자(user_id)가 없어 대상 지정이 불가능합니다)
+      </div>`;
+
     container.innerHTML = `
+      ${notice}
       <div class="members-table-wrap">
         <table class="members-table">
           <thead>
@@ -585,8 +596,10 @@ class MyPagePanel {
                 <td>${cell(m.school)}</td>
                 <td class="col-date">${this.formatMemberDate(m.created_at)}</td>
                 <td class="col-actions">
-                  <button class="member-action-btn edit" data-uid="${this.escapeHtml(m.user_id || '')}">수정</button>
-                  <button class="member-action-btn danger" data-uid="${this.escapeHtml(m.user_id || '')}">탈퇴</button>
+                  <button class="member-action-btn edit" data-uid="${this.escapeHtml(m.user_id || '')}"
+                    ${m.user_id ? '' : 'disabled title="서버 함수 갱신이 필요합니다"'}>수정</button>
+                  <button class="member-action-btn danger" data-uid="${this.escapeHtml(m.user_id || '')}"
+                    ${m.user_id ? '' : 'disabled title="서버 함수 갱신이 필요합니다"'}>탈퇴</button>
                 </td>
               </tr>
             `).join('')}

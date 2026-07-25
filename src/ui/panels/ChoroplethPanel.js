@@ -147,6 +147,7 @@ class ChoroplethPanel {
 
     classesSlider.addEventListener("input", () => {
       classesValue.textContent = classesSlider.value;
+      this.updateColorRampPreview();
     });
 
     addColorBtn.addEventListener("click", () => this.addCustomColor());
@@ -221,12 +222,15 @@ class ChoroplethPanel {
     const ramp = document.getElementById("choropleth-ramp").value;
     const reverse = document.getElementById("choropleth-reverse").checked;
     const preview = document.getElementById("color-ramp-preview");
+    const numClasses = parseInt(document.getElementById("choropleth-classes").value, 10) || 5;
 
+    // 미리보기는 실제 지도에 쓰일 색과 같아야 한다 — 분류 수만큼 뽑아서 보여준다.
     let colors;
     if (ramp === "custom") {
-      colors = this.getCustomColors();
+      const custom = this.getCustomColors();
+      colors = custom.length >= 2 ? choroplethTool.interpolateColors(custom, numClasses) : custom;
     } else {
-      colors = choroplethTool.getColorRampColors(ramp);
+      colors = choroplethTool.sampleColorRamp(choroplethTool.getColorRampColors(ramp), numClasses);
     }
 
     // 반전 적용

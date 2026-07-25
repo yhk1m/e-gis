@@ -209,12 +209,7 @@ class ChoroplethTool {
       colors = this.interpolateColors(customColors, numClasses);
     } else {
       const rampColors = COLOR_RAMPS[colorRamp] || COLOR_RAMPS.blues;
-      const colorStep = Math.floor(rampColors.length / numClasses);
-      colors = [];
-      for (let i = 0; i < numClasses; i++) {
-        const colorIdx = Math.min(i * colorStep + colorStep - 1, rampColors.length - 1);
-        colors.push(rampColors[colorIdx]);
-      }
+      colors = this.sampleColorRamp(rampColors, numClasses);
     }
 
     // 색상 반전
@@ -492,6 +487,37 @@ class ChoroplethTool {
     const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 40);
     const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 40);
     return "#" + r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0");
+  }
+
+  /**
+   * 팔레트에서 분류 수만큼 색을 고르게 뽑는다.
+   *
+   * 팔레트의 양 끝(가장 옅은 색 = 낮음, 가장 진한 색 = 높음)을 반드시 포함하고
+   * 그 사이를 균등 보간한다. 예전에는 앞에서부터 한 칸씩 잘라 써서 분류 수가
+   * 적으면 진한 쪽 색이 아예 안 나왔다(5분류 → 8색 중 앞 5색 언저리만 사용).
+   *
+   * @param {string[]} rampColors - 팔레트 색상 (낮음 → 높음 순)
+   * @param {number} numClasses - 분류 수
+   * @returns {string[]} 분류 수만큼의 색상
+   */
+  sampleColorRamp(rampColors, numClasses) {
+    if (!rampColors || rampColors.length === 0) return [];
+    if (numClasses <= 0) return [];
+    if (rampColors.length === 1) return Array(numClasses).fill(rampColors[0]);
+    // 1분류면 팔레트의 대표색(가장 진한 쪽)
+    if (numClasses === 1) return [rampColors[rampColors.length - 1]];
+
+    const result = [];
+    for (let i = 0; i < numClasses; i++) {
+      const pos = (i / (numClasses - 1)) * (rampColors.length - 1);
+      const idx = Math.floor(pos);
+      if (idx >= rampColors.length - 1) {
+        result.push(rampColors[rampColors.length - 1]);
+      } else {
+        result.push(this.lerpColor(rampColors[idx], rampColors[idx + 1], pos - idx));
+      }
+    }
+    return result;
   }
 
   /**

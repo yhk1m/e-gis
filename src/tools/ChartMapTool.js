@@ -23,7 +23,8 @@ class ChartMapTool {
     // → 레이어 가시성/순서/저장(.egis)/이미지 내보내기/스토리맵이 일반 벡터와 동일하게 동작.
     this.iconStyleCache = new Map();    // svg dataURL -> ol Style (프레임마다 재생성 방지)
     this.legends = new Map();           // derivedLayerId -> legend element
-    this.derivedBySource = new Map();   // sourceLayerId -> derivedLayerId
+    // 한 레이어로 도형표현도를 여러 번 만들 수 있다 — 적용할 때마다 레이어가 하나씩 늘어난다.
+    this.derivedBySource = new Map();   // sourceLayerId -> Set<derivedLayerId>
     this.sourceByDerived = new Map();   // derivedLayerId -> sourceLayerId
     this.geoJSONFormat = new GeoJSON(); // 무게중심 계산용 (OL ↔ turf)
     this.colors = [
@@ -47,19 +48,17 @@ class ChartMapTool {
       const { layerId } = data;
 
       if (this.sourceByDerived.has(layerId)) {
-        // 파생 레이어가 삭제됨 → 오버레이 정리
-        const sourceId = this.sourceByDerived.get(layerId);
-        this.sourceByDerived.delete(layerId);
-        if (this.derivedBySource.get(sourceId) === layerId) {
-          this.derivedBySource.delete(sourceId);
-        }
+        // 파생 레이어가 삭제됨 → 연결만 끊고 오버레이 정리 (같은 원본의 다른 도형표현도는 유지)
+        this.unlinkDerived(layerId);
         this.cleanupOverlays(layerId);
       } else if (this.derivedBySource.has(layerId)) {
-        // 원본이 삭제됨 → 파생 레이어도 제거
-        const derivedId = this.derivedBySource.get(layerId);
+        // 원본이 삭제됨 → 원본에서 만든 도형표현도 레이어를 모두 제거
+        const derivedIds = Array.from(this.derivedBySource.get(layerId));
         this.derivedBySource.delete(layerId);
-        this.sourceByDerived.delete(derivedId);
-        layerManager.removeLayer(derivedId);
+        derivedIds.forEach(derivedId => {
+          this.sourceByDerived.delete(derivedId);
+          layerManager.removeLayer(derivedId);
+        });
       }
     });
 
@@ -88,6 +87,41 @@ class ChartMapTool {
     if (titleEl && titleEl.textContent !== name) titleEl.textContent = name;
     const layerInfo = layerManager.getLayer(layerId);
     if (layerInfo && layerInfo._chartMapConfig) layerInfo._chartMapConfig.title = name;
+  }
+
+  /** 원본 ↔ 파생 레이어 연결 등록 (한 원본에 여러 개) */
+  linkDerived(sourceLayerId, derivedLayerId) {
+    if (!this.derivedBySource.has(sourceLayerId)) {
+      this.derivedBySource.set(sourceLayerId, new Set());
+    }
+    this.derivedBySource.get(sourceLayerId).add(derivedLayerId);
+    this.sourceByDerived.set(derivedLayerId, sourceLayerId);
+  }
+
+  /** 파생 레이어 연결 해제 */
+  unlinkDerived(derivedLayerId) {
+    const sourceId = this.sourceByDerived.get(derivedLayerId);
+    this.sourceByDerived.delete(derivedLayerId);
+    if (!sourceId) return;
+    const set = this.derivedBySource.get(sourceId);
+    if (!set) return;
+    set.delete(derivedLayerId);
+    if (set.size === 0) this.derivedBySource.delete(sourceId);
+  }
+
+  /** 이 원본에서 만든 도형표현도 레이어 id 목록 */
+  getDerivedIds(sourceLayerId) {
+    const set = this.derivedBySource.get(sourceLayerId);
+    return set ? Array.from(set) : [];
+  }
+
+  /** 같은 이름이 이미 있으면 뒤에 번호를 붙인다 (도형표현도를 여러 번 만들 수 있으므로) */
+  uniqueLayerName(base) {
+    const taken = new Set(layerManager.getAllLayers().map(l => l.name));
+    if (!taken.has(base)) return base;
+    let n = 2;
+    while (taken.has(`${base} ${n}`)) n++;
+    return `${base} ${n}`;
   }
 
   cleanupOverlays(derivedLayerId) {
@@ -144,15 +178,13 @@ class ChartMapTool {
       throw new Error('레이어에 피처가 없습니다.');
     }
 
-    // 같은 원본에서 만든 기존 파생 레이어 제거 (재적용 시 교체)
-    this.removeChartMap(layerId);
-
-    // 파생 레이어 등록 (가시성/삭제 제어용 placeholder)
+    // 적용할 때마다 새 레이어를 만든다 — 기존 도형표현도는 그대로 두고 나란히 쌓인다.
+    // (필요 없으면 레이어 패널에서 지우면 된다)
     const placeholderSource = new VectorSource();
     const placeholderLayer = new VectorLayer({ source: placeholderSource });
 
     const derivedLayerId = layerManager.addLayer({
-      name: `${layerInfo.name}_도형표현_${this.getChartTypeLabel(config.chartType)}`,
+      name: this.buildDerivedName(layerInfo.name, config),
       type: 'chartmap',
       geometryType: 'Point',
       olLayer: placeholderLayer,
@@ -166,8 +198,7 @@ class ChartMapTool {
       derivedLayer._chartMapConfig = { sourceLayerId: layerId, ...config };
     }
 
-    this.derivedBySource.set(layerId, derivedLayerId);
-    this.sourceByDerived.set(derivedLayerId, layerId);
+    this.linkDerived(layerId, derivedLayerId);
 
     // 오버레이/범례 렌더링
     const chartCount = this.renderChartMap(derivedLayerId, layerId, config);
@@ -195,8 +226,7 @@ class ChartMapTool {
       derivedLayer._chartMapConfig = { sourceLayerId, ...config };
     }
 
-    this.derivedBySource.set(sourceLayerId, derivedLayerId);
-    this.sourceByDerived.set(derivedLayerId, sourceLayerId);
+    this.linkDerived(sourceLayerId, derivedLayerId);
 
     return this.renderChartMap(derivedLayerId, sourceLayerId, config);
   }
@@ -221,11 +251,18 @@ class ChartMapTool {
     // 기존 범례 정리 (재렌더 대비 — 차트 피처는 아래에서 source.clear로 교체)
     this.cleanupOverlays(derivedLayerId);
 
+    // 지표가 1개면 구성비를 그릴 수 없다. 대신
+    //  - 파이: 원의 크기로 값을 표현 (비례원)
+    //  - 100% 막대: 전체 피처의 최댓값을 막대 전체 높이로 두고 그만큼만 채움
+    const singleField = fields.length === 1;
+    const sizeByValueField = (chartType === 'pie' && singleField && !sizeField) ? fields[0] : null;
+    const effectiveSizeField = sizeField || sizeByValueField;
+
     // 크기 범위 계산
     let minValue = Infinity, maxValue = -Infinity;
-    if (sizeField) {
+    if (effectiveSizeField) {
       features.forEach(f => {
-        const val = parseFloat(f.get(sizeField));
+        const val = parseFloat(f.get(effectiveSizeField));
         if (!isNaN(val)) {
           minValue = Math.min(minValue, val);
           maxValue = Math.max(maxValue, val);
@@ -233,9 +270,9 @@ class ChartMapTool {
       });
     }
 
-    // 막대 차트용 전체 최대값 계산 (각 필드별)
+    // 전체 최대값 계산 (각 필드별) — 막대 차트, 그리고 지표 1개짜리 100% 막대에서 쓴다
     const globalMaxValues = {};
-    if (chartType === 'bar') {
+    if (chartType === 'bar' || (chartType === '100bar' && singleField)) {
       fields.forEach(field => {
         let fieldMax = 0;
         features.forEach(f => {
@@ -245,6 +282,9 @@ class ChartMapTool {
         globalMaxValues[field] = fieldMax;
       });
     }
+
+    // 막대 너비·라벨 글자 크기의 기준 — 피처마다 달라지지 않게 설정값으로 한 번만 정한다
+    const refSize = (minSize + maxSize) / 2;
 
     const chartFeatures = [];
 
@@ -260,22 +300,26 @@ class ChartMapTool {
 
       // 크기 계산
       let size = (minSize + maxSize) / 2;
-      if (sizeField && maxValue > minValue) {
-        const sizeVal = parseFloat(feature.get(sizeField)) || 0;
+      if (effectiveSizeField && maxValue > minValue) {
+        const sizeVal = parseFloat(feature.get(effectiveSizeField)) || 0;
         const ratio = (sizeVal - minValue) / (maxValue - minValue);
         size = minSize + ratio * (maxSize - minSize);
       }
 
       // 차트 SVG 생성
+      // 막대류는 refSize로 너비·글자 크기를 고정한다 — 값에 따라 변하는 건 길이(높이)뿐.
       let svg;
       if (chartType === 'pie') {
         svg = this.createPieChart(values, fields, size, colors, showValues);
       } else if (chartType === '100bar') {
-        // 100% 누적 막대: 피처별 합계를 100%로 정규화
-        svg = this.createStackedBar100Chart(values, fields, size, colors, showValues);
+        svg = singleField
+          // 지표 1개: 최댓값을 막대 전체로 두고 그 값만큼 채운다
+          ? this.createSingleBarChart(values[0], globalMaxValues[fields[0]], size, colors[0], showValues, refSize)
+          // 100% 누적 막대: 피처별 합계를 100%로 정규화
+          : this.createStackedBar100Chart(values, fields, size, colors, showValues, refSize);
       } else {
         // 막대 차트는 전체 최대값 기준으로 높이 계산
-        svg = this.createBarChart(values, fields, size, fields.map(f => globalMaxValues[f]), colors, showValues);
+        svg = this.createBarChart(values, fields, size, fields.map(f => globalMaxValues[f]), colors, showValues, refSize);
       }
       if (!svg) return;
 
@@ -293,7 +337,9 @@ class ChartMapTool {
     derivedInfo.geometryType = 'Point';
 
     // 범례 생성 (파생 레이어 기준)
-    this.createLegend(derivedLayerId, sourceInfo.name, chartType, fields, globalMaxValues, colors);
+    this.createLegend(derivedLayerId, sourceInfo.name, chartType, fields, globalMaxValues, colors, {
+      sizeRange: sizeByValueField && maxValue > minValue ? { min: minValue, max: maxValue } : null
+    });
 
     // 파생 레이어가 숨김 상태면 범례도 숨김 (차트는 레이어 가시성이 처리)
     if (derivedInfo.visible === false) {
@@ -382,7 +428,7 @@ class ChartMapTool {
   /**
    * 범례 생성
    */
-  createLegend(layerId, layerName, chartType, fields, globalMaxValues, colors = this.colors) {
+  createLegend(layerId, layerName, chartType, fields, globalMaxValues, colors = this.colors, extra = {}) {
     // 기존 범례 제거
     this.removeLegend(layerId);
 
@@ -401,10 +447,15 @@ class ChartMapTool {
       const color = colors[i % colors.length];
       let label = field;
 
-      // 막대 차트인 경우 최대값 표시
-      if (chartType === 'bar' && globalMaxValues && globalMaxValues[field]) {
+      // 막대 차트(그리고 지표 1개짜리 100% 막대)는 채움 기준인 최대값을 함께 표시
+      const singleField = fields.length === 1;
+      if ((chartType === 'bar' || (chartType === '100bar' && singleField)) &&
+          globalMaxValues && globalMaxValues[field]) {
         const maxVal = globalMaxValues[field];
         label += ` (최대: ${this.formatNumber(maxVal)})`;
+      } else if (chartType === 'pie' && singleField && extra.sizeRange) {
+        // 지표 1개 파이 = 비례원. 원 크기가 무엇을 뜻하는지 밝힌다.
+        label += ` (원 크기: ${this.formatNumber(extra.sizeRange.min)} ~ ${this.formatNumber(extra.sizeRange.max)})`;
       }
 
       legendHTML += `
@@ -467,6 +518,19 @@ class ChartMapTool {
   /**
    * 파이 차트 SVG 생성
    */
+  /**
+   * 수치 라벨 글자 크기 — 설정된 크기 기준(refSize)으로 정한다.
+   * 피처 크기에 비례시키면 작은 피처의 숫자가 읽을 수 없이 작아진다.
+   */
+  valueFontSize(refSize) {
+    return Math.max(12, Math.round(refSize * 0.28));
+  }
+
+  /** 라벨이 차지할 대략적인 가로 폭 — SVG 폭을 정해 글자가 잘리지 않게 한다. */
+  estimateLabelWidth(text, fontSize) {
+    return String(text).length * fontSize * 0.62 + fontSize * 0.5;
+  }
+
   /** 수치 라벨용 SVG <text> — 흰 글자 + 검은 외곽선(paint-order)로 어떤 색 위에서도 읽힘. */
   valueLabelSvg(x, y, text, fontSize) {
     return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle"
@@ -482,6 +546,19 @@ class ChartMapTool {
     const cy = size / 2;
     const r = size / 2 - 2;
     const fs = Math.max(7, Math.round(size * 0.16));
+
+    // 값이 하나뿐이면 조각이 아니라 원 하나로 그린다.
+    // 지표 1개일 때는 원의 크기(반지름)가 값을 나타낸다(비례원).
+    // SVG 호(A)는 시작점과 끝점이 같으면 아무것도 그려지지 않아 원으로 그려야 한다.
+    const onlyIndex = values.findIndex(v => v > 0);
+    if (values.filter(v => v > 0).length === 1) {
+      const circle = `<circle cx="${cx}" cy="${cy}" r="${r}"
+                fill="${colors[onlyIndex % colors.length]}" stroke="white" stroke-width="1"/>`;
+      const label = showValues
+        ? this.valueLabelSvg(cx, cy, values.length === 1 ? this.formatNumber(values[onlyIndex]) : '100%', fs)
+        : '';
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${circle}${label}</svg>`;
+    }
 
     let paths = '';
     let labels = '';
@@ -524,22 +601,30 @@ class ChartMapTool {
    * @param {number} size - 차트 크기
    * @param {number[]} globalMaxValues - 각 필드의 전체 최대값 (선택)
    */
-  createBarChart(values, fields, size, globalMaxValues = null, colors = this.colors, showValues = false) {
+  createBarChart(values, fields, size, globalMaxValues = null, colors = this.colors, showValues = false, refSize = size) {
     // 전체 최대값이 제공되면 그것을 사용, 아니면 현재 값 중 최대값 사용
     const maxVals = globalMaxValues || values.map(() => Math.max(...values));
     const overallMax = Math.max(...maxVals);
     if (overallMax === 0) return '';
 
-    const fs = Math.max(7, Math.round(size * 0.14));
+    // 너비·글자 크기는 고정(refSize 기준) — 값에 따라 변하는 것은 막대 길이(높이)뿐
+    const fs = this.valueFontSize(refSize);
     const labelSpace = showValues ? fs + 3 : 0; // 라벨은 막대 위 — 그만큼 막대 높이를 줄여 자리 확보
 
-    // 막대 너비를 절반으로 줄이고 중앙 정렬
-    const totalBarWidth = size / 2;
-    const barWidth = totalBarWidth / values.length;
-    const offsetX = (size - totalBarWidth) / 2;
-    const maxHeight = size - 4 - labelSpace;
+    const barWidth = Math.max(6, Math.round((refSize / 2) / values.length));
+    const totalBarWidth = barWidth * values.length;
 
-    const baselineY = size - 2;
+    // 바깥쪽 막대의 라벨이 잘리지 않게 캔버스를 넓힌다
+    const maxLabelWidth = showValues
+      ? Math.max(...values.map(v => this.estimateLabelWidth(this.formatNumber(v), fs)))
+      : 0;
+    const svgW = Math.max(totalBarWidth + 4, totalBarWidth + maxLabelWidth);
+    const svgH = Math.max(size, fs + 10);
+
+    const offsetX = (svgW - totalBarWidth) / 2;
+    const maxHeight = svgH - 4 - labelSpace;
+
+    const baselineY = svgH - 2;
 
     let bars = '';
     let labels = '';
@@ -564,7 +649,7 @@ class ChartMapTool {
     const axis = `<line x1="${offsetX - 1}" y1="${baselineY}" x2="${offsetX + totalBarWidth + 1}" y2="${baselineY}"
                stroke="#333" stroke-width="1.5"/>`;
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">
       ${axis}
       ${bars}
       ${labels}
@@ -578,14 +663,17 @@ class ChartMapTool {
    * @param {string[]} fields - 필드 이름 목록
    * @param {number} size - 차트 크기
    */
-  createStackedBar100Chart(values, fields, size, colors = this.colors, showValues = false) {
+  createStackedBar100Chart(values, fields, size, colors = this.colors, showValues = false, refSize = size) {
     const total = values.reduce((a, b) => a + b, 0);
     if (total === 0) return '';
 
-    const barWidth = size / 3; // 기존 0.5*size 대비 약 2/3로 축소
-    const offsetX = (size - barWidth) / 2;
-    const maxHeight = size - 4;
-    const fs = Math.max(7, Math.round(size * 0.14));
+    // 너비·글자 크기는 고정(refSize 기준) — 값에 따라 변하는 것은 막대 길이(높이)뿐
+    const barWidth = Math.max(8, Math.round(refSize / 3));
+    const fs = this.valueFontSize(refSize);
+    const svgW = barWidth + 4;
+    const svgH = Math.max(size, fs + 8);
+    const offsetX = (svgW - barWidth) / 2;
+    const maxHeight = svgH - 4;
 
     const baselineY = 2 + maxHeight; // 막대 하단
 
@@ -609,11 +697,85 @@ class ChartMapTool {
     const axis = `<line x1="${offsetX - 2}" y1="${baselineY}" x2="${offsetX + barWidth + 2}" y2="${baselineY}"
                stroke="#333" stroke-width="1.5"/>`;
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">
       ${axis}
       ${segments}
       ${labels}
     </svg>`;
+  }
+
+  /**
+   * 단일 지표 막대 SVG 생성 (100% 막대에서 지표가 1개일 때)
+   * 막대 전체 높이 = 전체 피처의 최댓값. 그 값만큼만 아래에서부터 채운다.
+   * @param {number} value - 이 피처의 값
+   * @param {number} globalMax - 전체 피처 중 최대값 (막대 전체 높이 기준)
+   * @param {number} size - 차트 크기
+   * @param {string} color - 채움 색
+   */
+  createSingleBarChart(value, globalMax, size, color, showValues = false, refSize = size) {
+    if (!globalMax || globalMax <= 0) return '';
+
+    const ratio = Math.max(0, Math.min(1, value / globalMax));
+
+    // 너비와 글자 크기는 고정 — 값에 따라 달라지는 것은 막대 길이(높이)뿐이다
+    const barWidth = Math.max(8, Math.round(refSize / 3));
+    const fs = this.valueFontSize(refSize);
+    const pct = `${Math.round(ratio * 100)}%`;
+    const labelWidth = showValues ? this.estimateLabelWidth(pct, fs) : 0;
+
+    // 수치 라벨은 막대를 가리지 않게 막대 위에 둔다 — 그만큼 위쪽을 비워 놓는다
+    const labelSpace = showValues ? fs + 4 : 0;
+    const svgW = Math.max(barWidth + 4, labelWidth + 4);
+    const svgH = Math.max(size, labelSpace + fs + 8);
+    const offsetX = (svgW - barWidth) / 2;
+    const topY = 2 + labelSpace;
+    const maxHeight = svgH - 4 - labelSpace;
+    const baselineY = topY + maxHeight;
+
+    const h = ratio * maxHeight;
+    const y = baselineY - h;
+
+    // 값 막대
+    const bar = h > 0
+      ? `<rect x="${offsetX}" y="${y}" width="${barWidth}" height="${h}"
+               fill="${color}" stroke="#333" stroke-width="1"/>`
+      : '';
+
+    // 최댓값까지 남은 만큼을 흰 막대(검은 테두리)로 값 막대 위에 얹는다 — 차이가 눈에 보인다.
+    // 최댓값인 피처는 남은 칸이 없으므로 막대만 그려진다.
+    const remain = maxHeight - h;
+    const gapBar = remain > 0.5
+      ? `<rect x="${offsetX}" y="${topY}" width="${barWidth}" height="${remain}"
+               fill="#fff" stroke="#333" stroke-width="1"/>`
+      : '';
+
+    // 수치 라벨(최댓값 대비 %): 막대 위 (막대를 가리지 않게)
+    const label = showValues
+      ? this.valueLabelSvg(offsetX + barWidth / 2, 2 + labelSpace / 2, pct, fs)
+      : '';
+
+    const axis = `<line x1="${offsetX - 2}" y1="${baselineY}" x2="${offsetX + barWidth + 2}" y2="${baselineY}"
+               stroke="#333" stroke-width="1.5"/>`;
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">
+      ${axis}
+      ${bar}
+      ${gapBar}
+      ${label}
+    </svg>`;
+  }
+
+  /**
+   * 파생 레이어 이름 — 유형과 필드를 넣어 여러 개를 구분할 수 있게 한다
+   */
+  buildDerivedName(sourceName, config) {
+    const fields = config.fields || [];
+    const fieldPart = fields.length
+      ? `(${fields.slice(0, 2).join(', ')}${fields.length > 2 ? ' 외' : ''})`
+      : '';
+    return this.uniqueLayerName(
+      `${sourceName}_도형표현_${this.getChartTypeLabel(config.chartType)}${fieldPart}`
+    );
   }
 
   /**
@@ -626,17 +788,18 @@ class ChartMapTool {
   }
 
   /**
-   * 도형표현도 제거 — 원본 또는 파생 layerId 모두 허용
+   * 도형표현도 제거 — 원본 또는 파생 layerId 모두 허용.
+   * 원본 id를 주면 그 원본으로 만든 도형표현도를 모두 제거한다.
+   * @returns {number} 제거한 레이어 수
    */
   removeChartMap(layerId) {
-    let derivedId = this.derivedBySource.get(layerId);
-    if (!derivedId && this.sourceByDerived.has(layerId)) {
-      derivedId = layerId;
-    }
-    if (!derivedId) return;
+    const targets = this.sourceByDerived.has(layerId)
+      ? [layerId]                      // 파생 레이어를 직접 지목
+      : this.getDerivedIds(layerId);   // 원본에서 만든 것 전부
 
     // LayerManager에서 제거하면 이벤트 리스너가 오버레이/범례 정리
-    layerManager.removeLayer(derivedId);
+    targets.forEach(id => layerManager.removeLayer(id));
+    return targets.length;
   }
 
   /**

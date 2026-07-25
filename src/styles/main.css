@@ -3935,6 +3935,35 @@ body.exporting .egis-basemap-panel {
   color: #ffffff;
 }
 
+.member-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.member-action-btn:disabled:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+/* 서버 함수(admin_list_members)가 예전 버전이라 수정·탈퇴를 쓸 수 없을 때의 안내 */
+.members-notice {
+  margin-bottom: var(--spacing-sm);
+  padding: 8px 10px;
+  border: 1px solid var(--color-warning, #d97706);
+  border-radius: var(--radius-sm);
+  background: rgba(217, 119, 6, 0.08);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
+.members-notice code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--bg-input);
+  font-family: monospace;
+}
+
 .members-table .cell-empty {
   color: var(--text-muted);
 }
