@@ -18,7 +18,9 @@ const P = {
   '강릉시청': [128.8761, 37.7519]
 };
 
-const base = path.join(process.cwd(), 'public', 'data', 'roadnet', 'korea-major');
+const chunkName = process.argv[2] || 'korea-major';
+console.log(`도로망: ${chunkName}`);
+const base = path.join(process.cwd(), 'public', 'data', 'roadnet', chunkName);
 const buf = fs.readFileSync(base + '.graph.bin');
 const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 

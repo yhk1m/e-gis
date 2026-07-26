@@ -242,11 +242,16 @@ class RoadNetwork {
   edgeGeometry(edgeIndex, fromNode) {
     const c = this.chunk;
     if (!c) return [];
-    if (!this.geometry) {
+
+    // 곧은 링크는 형상을 저장하지 않는다 — 노드 두 점을 이어 그린다
+    const s = this.geometry ? c.geomOffsets[edgeIndex] : 0;
+    const e = this.geometry ? c.geomOffsets[edgeIndex + 1] : 0;
+    if (e - s < 2) {
+      if (fromNode === undefined) return [];
       const t = c.targets[edgeIndex];
-      return fromNode === undefined ? [] : [[c.nodeX[fromNode], c.nodeY[fromNode]], [c.nodeX[t], c.nodeY[t]]];
+      return [[c.nodeX[fromNode], c.nodeY[fromNode]], [c.nodeX[t], c.nodeY[t]]];
     }
-    const s = c.geomOffsets[edgeIndex], e = c.geomOffsets[edgeIndex + 1];
+
     const out = [];
     for (let i = s; i < e; i++) out.push([this.geometry[i * 2], this.geometry[i * 2 + 1]]);
     return out;

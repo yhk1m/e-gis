@@ -272,6 +272,7 @@ class RoutingTool {
         profile: toLocalProfile(profile),
         speedKmh: options.speedKmh,
         excludeHighway: options.excludeHighway,
+        chunk: options.chunk,
         onProgress: options.onProgress,
         onGeometryProgress: options.onGeometryProgress
       });

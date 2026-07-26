@@ -319,7 +319,7 @@ for (let i = 0; i < E; i++) recToEdge[orderLink[i]] = i;
 
 const geomOffsets = new Uint32Array(E + 1);
 const geomChunks = new Array(E);
-let totalVerts = 0, rawVerts = 0;
+let totalVerts = 0, rawVerts = 0, straightEdges = 0;
 
 eachPolyline(path.join(srcDir, 'MOCT_LINK.shp'), (rec, buf, pOff, numPoints) => {
   const edge = recToEdge[rec];
@@ -334,6 +334,14 @@ eachPolyline(path.join(srcDir, 'MOCT_LINK.shp'), (rec, buf, pOff, numPoints) => 
   }
   rawVerts += numPoints;
   const idxs = simplify(xs, ys, SIMPLIFY_TOL);
+
+  // 단순화 결과가 양 끝점뿐이면 저장하지 않는다 — 그 좌표는 노드에 이미 있고,
+  // 런타임이 노드 두 점을 이어 그린다. 링크 대부분이 직선이라 이것만으로 크게 준다.
+  if (idxs.length <= 2) {
+    straightEdges++;
+    return;
+  }
+
   const arr = new Int32Array(idxs.length * 2);
   idxs.forEach((k, j) => { arr[j * 2] = Math.round(xs[k]); arr[j * 2 + 1] = Math.round(ys[k]); });
   geomChunks[edge] = arr;
@@ -347,6 +355,7 @@ for (let i = 0; i < E; i++) {
 }
 geomOffsets[E] = acc;
 console.log(`      정점 ${rawVerts.toLocaleString()} → ${totalVerts.toLocaleString()} (${(100 - totalVerts / rawVerts * 100).toFixed(0)}% 감소, 허용오차 ${SIMPLIFY_TOL}m)`);
+console.log(`      직선이라 형상을 저장하지 않은 링크: ${straightEdges.toLocaleString()} (${(straightEdges / E * 100).toFixed(0)}%)`);
 
 // 형상 방향 검증 — 첫 정점이 F_NODE 쪽이어야 한다
 let flipped = 0;
@@ -438,10 +447,15 @@ if (fs.existsSync(catalogPath)) {
 }
 catalog.chunks = (catalog.chunks || []).filter(c => c.name !== NAME);
 const mainSccCount = mainScc.reduce((a, b) => a + b, 0);
+// 시군도(107)가 들어 있으면 골목까지 있는 전체 도로망이다
+const chunkLabel = RANKS.has('107')
+  ? '전국 전체 도로 (시군도·골목 포함)'
+  : '전국 주요도로 (고속·국도·지방도·시도)';
+
 catalog.chunks.push({
   name: NAME,
   mainSccNodes: mainSccCount,
-  label: NAME === 'korea-major' ? '전국 주요도로 (고속·국도·지방도·시도)' : NAME,
+  label: chunkLabel,
   graph: `${NAME}.graph.bin`,
   geom: `${NAME}.geom.bin`,
   nodes: N,

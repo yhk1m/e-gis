@@ -2,6 +2,32 @@
   "version": 1,
   "chunks": [
     {
+      "name": "korea-full",
+      "mainSccNodes": 1037198,
+      "label": "전국 전체 도로 (시군도·골목 포함)",
+      "graph": "korea-full.graph.bin",
+      "geom": "korea-full.geom.bin",
+      "nodes": 1179510,
+      "edges": 1556560,
+      "ranks": [
+        "101",
+        "102",
+        "103",
+        "104",
+        "105",
+        "106",
+        "107"
+      ],
+      "bbox": [
+        14018207,
+        3921702,
+        14573606,
+        4662289
+      ],
+      "graphBytes": 37125528,
+      "geomBytes": 14628032
+    },
+    {
       "name": "korea-major",
       "mainSccNodes": 418082,
       "label": "전국 주요도로 (고속·국도·지방도·시도)",
@@ -24,7 +50,7 @@
         4662289
       ],
       "graphBytes": 15182872,
-      "geomBytes": 14253768
+      "geomBytes": 7831544
     }
   ]
 }

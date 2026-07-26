@@ -6,6 +6,7 @@ import { routingTool } from '../../tools/RoutingTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
 import { LOCAL_MODES } from '../../core/localRouting.js';
+import { initialNetworkOptions, parseNetworkValue, populateNetworkSelect } from '../roadNetworkSelect.js';
 import { transform } from 'ol/proj';
 
 class RoutingPanel {
@@ -73,11 +74,8 @@ class RoutingPanel {
       <div class="modal-body">
         <div class="form-group">
           <label for="routing-engine">도로망</label>
-          <select id="routing-engine">
-            <option value="local" selected>내장 도로망 (표준노드링크 · 권장)</option>
-            <option value="ors">OpenRouteService (API 키 필요)</option>
-          </select>
-          <small class="form-hint">내장 도로망은 API 키가 필요 없고 호출 제한도 없습니다. 전국 주요도로(고속·국도·지방도·시도) 기준입니다.</small>
+          <select id="routing-engine">${initialNetworkOptions()}</select>
+          <small class="form-hint">내장 도로망은 API 키가 필요 없고 호출 제한도 없습니다. 주요도로만 쓰면 가볍고, 전체 도로는 골목까지 반영하는 대신 파일이 큽니다.</small>
         </div>
         <div class="form-group" id="routing-apikey-group" style="display:none">
           <label for="routing-api-key">OpenRouteService API 키</label>
@@ -203,8 +201,10 @@ class RoutingPanel {
     const apiKeyGroup = document.getElementById('routing-apikey-group');
     const profileGroup = document.getElementById('routing-profile-group');
     const speedGroup = document.getElementById('routing-speed-group');
+    // 쓸 수 있는 내장 도로망 목록을 catalog.json에서 채운다
+    populateNetworkSelect('routing-engine');
     engineSelect.addEventListener('change', () => {
-      const isOrs = engineSelect.value === 'ors';
+      const isOrs = parseNetworkValue(engineSelect.value).engine === 'ors';
       apiKeyGroup.style.display = isOrs ? '' : 'none';
       // 내장 도로망은 시속을 직접 정한다 — 이동 수단 목록은 API 방식에서만 쓴다
       profileGroup.style.display = isOrs ? '' : 'none';
@@ -527,7 +527,7 @@ class RoutingPanel {
     const apiKey = document.getElementById('routing-api-key').value;
     const state = routingTool.getState();
     const engineEl = document.getElementById('routing-engine');
-    const needsKey = !engineEl || engineEl.value === 'ors';
+    const needsKey = !engineEl || parseNetworkValue(engineEl.value).engine === 'ors';
 
     const canAnalyze = (!needsKey || apiKey) && state.startPoint && state.endPoint;
     analyzeBtn.disabled = !canAnalyze;
@@ -547,7 +547,8 @@ class RoutingPanel {
    * 경로 분석 실행
    */
   async analyze() {
-    const engine = document.getElementById('routing-engine').value;
+    const network = parseNetworkValue(document.getElementById('routing-engine').value);
+    const engine = network.engine;
     const apiKey = document.getElementById('routing-api-key').value;
     if (engine === 'ors' && !apiKey) {
       alert('API 키를 입력해주세요.');
@@ -578,6 +579,7 @@ class RoutingPanel {
 
       const result = await routingTool.analyze({
         profile, engine,
+        chunk: network.chunk,
         speedKmh: engine === 'local' ? speedKmh : 0,
         excludeHighway: mode.excludeHighway,
         localLabel: `${mode.label} ${speedKmh}km/h`,

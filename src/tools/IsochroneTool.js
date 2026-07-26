@@ -230,6 +230,7 @@ class IsochroneTool {
         profile: toLocalProfile(profile),
         speedKmh: options.speedKmh,
         excludeHighway: options.excludeHighway,
+        chunk: options.chunk,
         onProgress: options.onProgress
       });
       // 실제로 폴리곤이 만들어진 구간만 남았을 수 있어 값에서 되읽는다

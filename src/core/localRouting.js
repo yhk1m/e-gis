@@ -37,8 +37,8 @@ let engineChunk = null;
  * 도로망을 로드하고 엔진을 준비한다 (이미 준비돼 있으면 재사용)
  * @param {(loaded:number,total:number)=>void} [onProgress]
  */
-export async function ensureNetwork(onProgress, chunkName = DEFAULT_CHUNK) {
-  const chunk = await roadNetwork.load(chunkName, onProgress);
+export async function ensureNetwork(onProgress, chunkName) {
+  const chunk = await roadNetwork.load(chunkName || DEFAULT_CHUNK, onProgress);
   if (!engine || engineChunk !== chunk) {
     engine = new RouterEngine(chunk);
     engineChunk = chunk;
@@ -47,8 +47,14 @@ export async function ensureNetwork(onProgress, chunkName = DEFAULT_CHUNK) {
 }
 
 /** 도로망이 이미 준비됐는지 */
-export function isNetworkReady() {
-  return !!engine && roadNetwork.loadedName === DEFAULT_CHUNK;
+export function isNetworkReady(chunkName) {
+  return !!engine && roadNetwork.loadedName === (chunkName || DEFAULT_CHUNK);
+}
+
+/** 고를 수 있는 도로망 목록 (UI용) */
+export async function listNetworks() {
+  const catalog = await roadNetwork.getCatalog();
+  return (catalog.chunks || []).slice().sort((a, b) => a.edges - b.edges);
 }
 
 /** 지도 좌표(3857)를 도로망 노드에 붙인다 */
@@ -84,7 +90,7 @@ function accessSpeedOf(engine) {
 export async function buildIsochroneGeoJSON(lonLat, options = {}) {
   const intervals = (options.intervals || [5, 10, 15]).slice().sort((a, b) => a - b);
 
-  const { chunk } = await ensureNetwork(options.onProgress);
+  const { chunk } = await ensureNetwork(options.onProgress, options.chunk);
   engine.setProfile(resolveProfile(options));
 
   const start = snapOrThrow(lonLat, '출발 지점');
@@ -141,7 +147,7 @@ export async function buildRouteGeoJSON(coordinates, options = {}) {
   if (!coordinates || coordinates.length < 2) {
     throw new Error('출발지와 도착지가 필요합니다.');
   }
-  await ensureNetwork(options.onProgress);
+  await ensureNetwork(options.onProgress, options.chunk);
   await roadNetwork.ensureGeometry(options.onGeometryProgress);
   engine.setProfile(resolveProfile(options));
 

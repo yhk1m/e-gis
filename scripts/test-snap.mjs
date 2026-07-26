@@ -6,7 +6,9 @@ import proj4 from 'proj4';
 import { RoadNetwork } from '../src/core/RoadNetwork.js';
 
 const to3857 = proj4('EPSG:4326', 'EPSG:3857');
-const base = path.join(process.cwd(), 'public', 'data', 'roadnet', 'korea-major');
+const chunkName = process.argv[2] || 'korea-major';
+const base = path.join(process.cwd(), 'public', 'data', 'roadnet', chunkName);
+console.log(`도로망: ${chunkName}\n`);
 const buf = fs.readFileSync(base + '.graph.bin');
 const net = new RoadNetwork();
 const chunk = net._parseGraph(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
