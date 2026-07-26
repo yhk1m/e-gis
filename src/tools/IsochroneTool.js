@@ -47,7 +47,8 @@ class IsochroneTool {
     this.apiKey = localStorage.getItem('ors_api_key') || '';
     this.baseUrl = 'https://api.openrouteservice.org/v2/isochrones';
     this.isochroneLayers = []; // 개별 등시선 레이어들
-    this.isochroneLayerIds = []; // LayerManager에 등록된 레이어 ID들
+    this.isochroneLayerIds = []; // 지금까지 만든 등시선 레이어 전부 ('결과 지우기'용)
+    this.lastRunLayerIds = [];   // 마지막 분석의 레이어 (범례가 이걸 따라간다)
     this.markerLayer = null;
     this.legend = null;
     this.isSelecting = false;
@@ -69,18 +70,19 @@ class IsochroneTool {
    */
   onLayerRemoved(layerId) {
     const index = this.isochroneLayerIds.indexOf(layerId);
-    if (index !== -1) {
-      this.isochroneLayerIds.splice(index, 1);
-      this.isochroneLayers.splice(index, 1);
+    if (index === -1) return;
 
-      // 모든 등시선 레이어가 삭제되면 범례와 마커도 제거
-      if (this.isochroneLayerIds.length === 0) {
-        this.removeLegend();
-        this.removeMarker();
-      } else {
-        // 남은 레이어로 범례 업데이트
-        this.updateLegend();
-      }
+    this.isochroneLayerIds.splice(index, 1);
+    this.isochroneLayers.splice(index, 1);
+    this.lastRunLayerIds = this.lastRunLayerIds.filter(id => id !== layerId);
+
+    // 모든 등시선 레이어가 삭제되면 범례와 마커도 제거
+    if (this.isochroneLayerIds.length === 0) {
+      this.removeLegend();
+      this.removeMarker();
+    } else {
+      // 남은 레이어로 범례 업데이트
+      this.updateLegend();
     }
   }
 
@@ -225,19 +227,27 @@ class IsochroneTool {
       if (rangeType !== 'time') {
         throw new Error('내장 도로망은 시간 기준만 지원합니다. 거리 기준은 OpenRouteService를 선택해주세요.');
       }
-      const geojson = await buildIsochroneGeoJSON(lonLat, {
+      // points가 오면 여러 출발점을 한 번에 계산해 합친다
+      const origins = (options.points && options.points.length) ? options.points : lonLat;
+      const geojson = await buildIsochroneGeoJSON(origins, {
         intervals,
         profile: toLocalProfile(profile),
         speedKmh: options.speedKmh,
         excludeHighway: options.excludeHighway,
         chunk: options.chunk,
-        onProgress: options.onProgress
+        merge: options.merge,
+        onProgress: options.onProgress,
+        onOriginProgress: options.onOriginProgress
       });
       // 실제로 폴리곤이 만들어진 구간만 남았을 수 있어 값에서 되읽는다
       const used = geojson.features.map(f => f.properties.value / 60);
       // 레이어 이름에 쓸 표시 — 이동 수단과 시속을 그대로 보여 준다 (예: "도보 4km/h")
-      const label = options.localLabel
-        || (options.speedKmh > 0 ? `${options.speedKmh}km/h` : profile);
+      const originCount = Array.isArray(options.points) ? options.points.length : 1;
+      const multiLabel = originCount > 1
+        ? ` ${originCount}지점${options.merge === false ? ' 개별' : ''}`
+        : '';
+      const label = (options.localLabel
+        || (options.speedKmh > 0 ? `${options.speedKmh}km/h` : profile)) + multiLabel;
       return this.displayIsochrones(geojson, used, 'time', label);
     }
 
@@ -287,8 +297,9 @@ class IsochroneTool {
     const map = mapManager.getMap();
     if (!map) return null;
 
-    // 기존 등시선 레이어 제거
-    this.removeIsochrones();
+    // 이전 결과는 지우지 않는다 — 여러 지역을 나란히 놓고 비교할 수 있어야 한다.
+    // 필요 없으면 레이어 패널에서 지우거나 '결과 지우기'를 쓰면 된다.
+    const runLayerIds = [];
 
     const format = new GeoJSON();
     const features = format.readFeatures(geojsonData, {
@@ -316,6 +327,10 @@ class IsochroneTool {
       const clonedFeature = feature.clone();
       clonedFeature.setStyle(null);
 
+      // 떨어져 있는 영역은 각각 별개의 객체로 만든다 —
+      // 속성 테이블에서 한 줄씩 보이고 면적도 따로 계산할 수 있어야 한다
+      const layerFeatures = this.splitMultiPolygon(clonedFeature);
+
       // 개별 레이어 생성
       const source = new VectorSource({ features: [feature] });
       const layer = new VectorLayer({
@@ -328,16 +343,17 @@ class IsochroneTool {
       // LayerManager에 등록 (스타일은 LayerManager가 관리)
       // 색상 정보를 hex로 변환하여 전달
       const fillColorHex = ['#008000', '#90EE90', '#FFFF00', '#FFA500', '#FF4500', '#FF0000'][colorIndex];
-      const layerName = `등시선 ${profileName} ${interval}${unit}`;
+      const layerName = this.uniqueLayerName(`등시선 ${profileName} ${interval}${unit}`);
       const layerId = layerManager.addLayer({
         name: layerName,
         type: 'vector',
         geometryType: 'Polygon',
-        features: [clonedFeature],
+        features: layerFeatures,
         color: fillColorHex
       });
 
       this.isochroneLayerIds.push(layerId);
+      runLayerIds.push(layerId);
 
       // extent 병합
       const layerExtent = source.getExtent();
@@ -351,7 +367,8 @@ class IsochroneTool {
       }
     });
 
-    // 범례 생성
+    // 범례는 방금 만든 결과 기준으로 갱신한다
+    this.lastRunLayerIds = runLayerIds;
     this.createLegend(intervals, rangeType, profile);
 
     // 등시선 영역으로 지도 이동
@@ -362,8 +379,42 @@ class IsochroneTool {
     return {
       featureCount: features.length,
       intervals: intervals,
-      layerIds: this.isochroneLayerIds
+      layerIds: runLayerIds
     };
+  }
+
+  /**
+   * 멀티폴리곤을 폴리곤 하나씩 별개 피처로 나눈다.
+   * 구멍(내부 링)은 각 폴리곤에 그대로 남는다.
+   * @returns {Feature[]}
+   */
+  splitMultiPolygon(feature) {
+    const geom = feature.getGeometry();
+    if (!geom || geom.getType() !== 'MultiPolygon') return [feature];
+
+    const polygons = geom.getPolygons();
+    if (polygons.length <= 1) {
+      if (polygons.length === 1) feature.setGeometry(polygons[0]);
+      return [feature];
+    }
+
+    const props = { ...feature.getProperties() };
+    delete props.geometry;
+
+    return polygons.map((polygon, i) => {
+      const part = new Feature({ geometry: polygon });
+      part.setProperties({ ...props, part: i + 1, parts: polygons.length });
+      return part;
+    });
+  }
+
+  /** 같은 이름이 이미 있으면 뒤에 번호를 붙인다 (여러 지역을 나란히 분석할 수 있으므로) */
+  uniqueLayerName(base) {
+    const taken = new Set(layerManager.getAllLayers().map(l => l.name));
+    if (!taken.has(base)) return base;
+    let n = 2;
+    while (taken.has(`${base} ${n}`)) n++;
+    return `${base} ${n}`;
   }
 
   /**
@@ -408,16 +459,16 @@ class IsochroneTool {
    * 범례 업데이트 (레이어 색상 변경 시)
    */
   updateLegend() {
-    if (!this.legend || this.isochroneLayerIds.length === 0) return;
+    if (!this.legend || this.lastRunLayerIds.length === 0) return;
 
     const legendItems = this.legend.querySelector('.isochrone-legend-items');
     if (!legendItems) return;
 
-    // 현재 레이어 색상으로 범례 업데이트
-    this.isochroneLayerIds.forEach((layerId, i) => {
+    // 범례는 마지막 분석의 레이어 색을 따라간다 (여러 분석이 쌓여 있을 수 있다)
+    this.lastRunLayerIds.forEach((layerId, i) => {
       const layerInfo = layerManager.getLayer(layerId);
       if (layerInfo) {
-        const legendItem = legendItems.children[this.isochroneLayerIds.length - 1 - i];
+        const legendItem = legendItems.children[this.lastRunLayerIds.length - 1 - i];
         if (legendItem) {
           const colorSpan = legendItem.querySelector('.isochrone-legend-color');
           if (colorSpan) {
@@ -454,13 +505,14 @@ class IsochroneTool {
    * 등시선 레이어 제거
    */
   removeIsochrones() {
-    // LayerManager에서 등록된 레이어들 제거
-    this.isochroneLayerIds.forEach(layerId => {
+    // LayerManager에서 등록된 레이어들 제거 (제거 이벤트가 배열을 건드리므로 복사본으로 순회)
+    this.isochroneLayerIds.slice().forEach(layerId => {
       layerManager.removeLayer(layerId);
     });
 
     this.isochroneLayers = [];
     this.isochroneLayerIds = [];
+    this.lastRunLayerIds = [];
     this.removeLegend();
   }
 

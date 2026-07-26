@@ -8,6 +8,7 @@
  */
 
 import { fromLonLat, toLonLat } from 'ol/proj';
+import * as turf from '@turf/turf';
 import { roadNetwork } from './RoadNetwork.js';
 import { RouterEngine, PROFILES, speedProfile } from './RouterEngine.js';
 import { buildIsochronePolygons } from './isochroneField.js';
@@ -82,54 +83,95 @@ function accessSpeedOf(engine) {
   return engine.profile.speedMps || (40 / 3.6);
 }
 
+/** 등시선 폴리곤(3857 링 배열) → 경위도 링 배열 */
+function ringsToLonLat(rings) {
+  // map(toLonLat)로 넘기면 두 번째 인자에 배열 인덱스가 들어가 좌표계로 해석된다
+  const out = rings.map(ring => ring.map(xy => toLonLat(xy)));
+  // turf는 닫힌 링을 요구한다
+  out.forEach(ring => {
+    const a = ring[0], b = ring[ring.length - 1];
+    if (a[0] !== b[0] || a[1] !== b[1]) ring.push([a[0], a[1]]);
+  });
+  return out;
+}
+
+/**
+ * 여러 출발점의 도달 범위를 하나의 도형으로 만든다.
+ * @param {boolean} merge true면 합쳐서 경계선을 없애고, false면 지점별 범위를 그대로 둔다
+ */
+function combinePolygons(polygonList, merge) {
+  if (polygonList.length === 1) {
+    return { type: 'Polygon', coordinates: polygonList[0] };
+  }
+  if (merge) {
+    try {
+      const united = turf.union(turf.featureCollection(polygonList.map(rings => turf.polygon(rings))));
+      if (united && united.geometry) return united.geometry;
+    } catch (err) {
+      console.warn('등시선 합치기 실패, 겹친 채로 표시합니다:', err);
+    }
+  }
+  return { type: 'MultiPolygon', coordinates: polygonList };
+}
+
 /**
  * 등시선 GeoJSON (ORS isochrones와 같은 모양 — 값 오름차순 폴리곤들)
- * @param {number[]} lonLat 출발 지점 [경도, 위도]
- * @param {object} options { intervals: 분 배열, profile: 'car'|'foot' }
+ * @param {number[]|number[][]} lonLatOrList 출발 지점 [경도, 위도] 또는 그 배열
+ * @param {object} options { intervals: 분 배열, profile, speedKmh, chunk, onOriginProgress }
  */
-export async function buildIsochroneGeoJSON(lonLat, options = {}) {
+export async function buildIsochroneGeoJSON(lonLatOrList, options = {}) {
+  const origins = Array.isArray(lonLatOrList[0]) ? lonLatOrList : [lonLatOrList];
   const intervals = (options.intervals || [5, 10, 15]).slice().sort((a, b) => a - b);
+  const longest = intervals[intervals.length - 1] * 60;
 
   const { chunk } = await ensureNetwork(options.onProgress, options.chunk);
   engine.setProfile(resolveProfile(options));
 
-  const start = snapOrThrow(lonLat, '출발 지점');
-  // 찍은 지점에서 가장 가까운 도로까지 가는 시간. 이걸 빼야 등시선이 그 지점 기준이 된다.
-  const accessSeconds = start.meters / accessSpeedOf(engine);
-  const features = [];
-
-  intervals.forEach(minutes => {
-    const maxSeconds = minutes * 60;
-    const budget = maxSeconds - accessSeconds;
+  // 출발점마다 확산은 한 번만 계산한다 — 짧은 구간은 시간으로 걸러 쓰면 된다
+  const spread = origins.map((lonLat, i) => {
+    const start = snapOrThrow(lonLat, origins.length > 1 ? `${i + 1}번째 지점` : '출발 지점');
+    // 찍은 지점에서 가장 가까운 도로까지 가는 시간. 이걸 빼야 등시선이 그 지점 기준이 된다.
+    const accessSeconds = start.meters / accessSpeedOf(engine);
+    const budget = longest - accessSeconds;
     const reach = budget > 0
       ? engine.reachable(start.node, budget)
       : { nodes: [], times: new Float32Array(0), edgeTips: [] };
+    if (options.onOriginProgress) options.onOriginProgress(i + 1, origins.length);
+    return { start, accessSeconds, reach };
+  });
 
+  const features = [];
+  intervals.forEach(minutes => {
+    const maxSeconds = minutes * 60;
     // 도로 밖으로 벗어날 수 있는 거리 — 갈 수 있는 거리의 8% 정도, 최대 250m.
     // 이 값이 크면 등시선이 도로와 무관한 덩어리가 되고 강·산도 덮어 버린다.
-    const reachMeters = accessSpeedOf(engine) * maxSeconds;
-    const maxOffRoad = Math.min(250, reachMeters * 0.08);
+    const maxOffRoad = Math.min(250, accessSpeedOf(engine) * maxSeconds * 0.08);
+    const isLongest = maxSeconds === longest;
 
-    const { polygons } = buildIsochronePolygons(chunk, reach, {
-      maxSeconds,
-      // 도로를 벗어난 이동은 걷는 속도로 본다 (차를 타고 논밭을 가로지르진 않는다)
-      offRoadSpeed: 4 / 3.6,
-      maxOffRoad,
-      // 도보·자전거에서 지날 수 없는 링크는 구간도 그리지 않는다
-      isPassable: (edge) => isFinite(engine.costOf(edge)),
-      origin: { x: start.x, y: start.y, node: start.node, seconds: accessSeconds }
+    const polygonList = [];
+    spread.forEach(({ start, accessSeconds, reach }) => {
+      const { polygons } = buildIsochronePolygons(chunk, {
+        nodes: reach.nodes,
+        times: reach.times,
+        // 경계 보정점은 가장 긴 구간에서 계산된 것이라 그때만 쓴다
+        edgeTips: isLongest ? reach.edgeTips : []
+      }, {
+        maxSeconds,
+        // 도로를 벗어난 이동은 걷는 속도로 본다 (차를 타고 논밭을 가로지르진 않는다)
+        offRoadSpeed: 4 / 3.6,
+        maxOffRoad,
+        // 도보·자전거에서 지날 수 없는 링크는 구간도 그리지 않는다
+        isPassable: (edge) => isFinite(engine.costOf(edge)),
+        origin: { x: start.x, y: start.y, node: start.node, seconds: accessSeconds }
+      });
+      polygons.forEach(rings => polygonList.push(ringsToLonLat(rings)));
     });
 
-    if (polygons.length === 0) return;
-
+    if (polygonList.length === 0) return;
     features.push({
       type: 'Feature',
-      properties: { value: maxSeconds, group_index: 0 },
-      geometry: {
-        type: 'MultiPolygon',
-        // map(toLonLat)로 넘기면 두 번째 인자에 배열 인덱스가 들어가 좌표계로 해석된다
-        coordinates: polygons.map(rings => rings.map(ring => ring.map(xy => toLonLat(xy))))
-      }
+      properties: { value: maxSeconds, group_index: 0, origins: origins.length },
+      geometry: combinePolygons(polygonList, options.merge !== false)
     });
   });
 

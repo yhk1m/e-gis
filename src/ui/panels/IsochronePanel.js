@@ -104,6 +104,14 @@ class IsochronePanel {
           </select>
         </div>
 
+        <div class="form-group" id="isochrone-merge-group" style="display:none">
+          <label class="checkbox-label">
+            <input type="checkbox" id="isochrone-merge" checked>
+            <span>도달 범위 합치기</span>
+          </label>
+          <small class="form-hint">끄면 지점마다 범위 경계선이 그대로 보입니다. 켜면 하나의 영역으로 합쳐집니다.</small>
+        </div>
+
         <div class="form-group">
           <label>선택된 좌표</label>
           <div class="point-display" id="point-display">
@@ -261,6 +269,14 @@ class IsochronePanel {
 
     const features = layerInfo.source.getFeatures();
 
+    // 지점이 여럿이면 한 번에 분석할 수 있게 한다 (도달 범위를 합쳐서 보여 준다)
+    if (features.length >= 2) {
+      const all = document.createElement('option');
+      all.value = 'all';
+      all.textContent = `전체 지점 (${features.length}개)`;
+      featureSelect.appendChild(all);
+    }
+
     features.forEach((feature, index) => {
       // 피처 이름 또는 ID 찾기
       const props = feature.getProperties();
@@ -279,6 +295,7 @@ class IsochronePanel {
 
     this.selectedPoint = null;
     this.selectedCoordinate = null;
+    this.selectedPoints = null;
     this.updatePointDisplay();
     this.updateAnalyzeButton();
   }
@@ -290,6 +307,11 @@ class IsochronePanel {
     const featureSelect = document.getElementById('isochrone-feature');
     const featureIndex = featureSelect.value;
 
+    this.selectedPoints = null;
+    // 합치기 선택은 전체 지점 분석일 때만 의미가 있다
+    const mergeGroup = document.getElementById('isochrone-merge-group');
+    if (mergeGroup) mergeGroup.style.display = featureIndex === 'all' ? '' : 'none';
+
     if (!featureIndex || !this.selectedLayerId) {
       this.selectedPoint = null;
       this.selectedCoordinate = null;
@@ -300,6 +322,27 @@ class IsochronePanel {
 
     const layerInfo = layerManager.getLayer(this.selectedLayerId);
     if (!layerInfo) return;
+
+    // 전체 지점 — 좌표를 모두 모아 둔다
+    if (featureIndex === 'all') {
+      const points = [];
+      layerInfo.source.getFeatures().forEach(f => {
+        const g = f.getGeometry();
+        if (!g) return;
+        const type = g.getType();
+        if (type === 'Point') points.push(transform(g.getCoordinates(), 'EPSG:3857', 'EPSG:4326'));
+        else if (type === 'MultiPoint') {
+          g.getCoordinates().forEach(c => points.push(transform(c, 'EPSG:3857', 'EPSG:4326')));
+        }
+      });
+      this.selectedPoints = points;
+      this.selectedPoint = points[0] || null;
+      this.selectedCoordinate = null;
+      isochroneTool.removeMarker();
+      this.updatePointDisplay();
+      this.updateAnalyzeButton();
+      return;
+    }
 
     const features = layerInfo.source.getFeatures();
     const feature = features[parseInt(featureIndex)];
@@ -334,7 +377,10 @@ class IsochronePanel {
   updatePointDisplay() {
     const pointDisplay = document.getElementById('point-display');
 
-    if (this.selectedPoint) {
+    if (this.selectedPoints) {
+      pointDisplay.textContent = `전체 ${this.selectedPoints.length}개 지점 (도달 범위를 합쳐서 표시)`;
+      pointDisplay.classList.add('has-point');
+    } else if (this.selectedPoint) {
       pointDisplay.textContent = `${this.selectedPoint[1].toFixed(6)}, ${this.selectedPoint[0].toFixed(6)}`;
       pointDisplay.classList.add('has-point');
     } else {
@@ -407,6 +453,11 @@ class IsochronePanel {
 
     const apiKey = document.getElementById('ors-api-key').value;
     const network = parseNetworkValue(document.getElementById('isochrone-engine').value);
+
+    if (network.engine === 'ors' && this.selectedPoints) {
+      alert('전체 지점 분석은 내장 도로망에서만 됩니다.\n(API 방식은 지점마다 호출이 필요해 호출 제한에 걸립니다)');
+      return;
+    }
     if (network.engine === 'ors' && !apiKey) {
       alert('API 키를 입력해주세요.');
       return;
@@ -435,7 +486,12 @@ class IsochronePanel {
         intervals,
         rangeType,
         engine,
+        points: this.selectedPoints,
+        merge: document.getElementById('isochrone-merge').checked,
         chunk: network.chunk,
+        onOriginProgress: (done, total) => {
+          if (total > 1) analyzeBtn.textContent = `계산 중 ${done}/${total}`;
+        },
         speedKmh: engine === 'local' ? speedKmh : 0,
         excludeHighway: mode.excludeHighway,
         localLabel: `${mode.label} ${speedKmh}km/h`,
