@@ -125,33 +125,35 @@
   flex-shrink: 0;
 }
 
-/* 툴바 접기 버튼 — 화면 크기와 상관없이 쓴다 (지도를 넓게 보고 싶을 때) */
+/* 도구 모음 접기/펴기 버튼 — 헤더의 테마 버튼 오른쪽에 둔다.
+   툴바 안에 두면 접었을 때 손잡이 줄이 남아 지도가 그만큼 좁아진다. */
 .toolbar-collapse-btn {
   display: flex;
-  align-items: center;      /* 아이콘을 가운데로 (없으면 좌상단에 붙는다) */
+  align-items: center;
   justify-content: center;
-  margin-left: auto;        /* 오른쪽 끝에 붙인다 */
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
   flex-shrink: 0;
 }
 
-/* 접힌 상태: 펴기 버튼만 가는 손잡이로 남긴다 */
-#toolbar.collapsed {
-  height: auto;
-  min-height: 0;
-  padding: 2px var(--spacing-sm);
+.toolbar-collapse-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
-#toolbar.collapsed > *:not(.toolbar-collapse-btn) {
+/* 접으면 툴바 줄이 통째로 사라진다 */
+#toolbar.collapsed {
   display: none;
 }
 
-#toolbar.collapsed .toolbar-collapse-btn {
-  width: 100%;
-  height: 24px;
-  margin-left: 0;
-}
-
-#toolbar.collapsed .toolbar-collapse-btn svg {
+/* 접힌 상태에서는 화살표가 아래(펴기)를 향한다 */
+.toolbar-collapse-btn.collapsed svg {
   transform: rotate(180deg);
 }
 

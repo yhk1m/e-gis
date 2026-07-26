@@ -2591,8 +2591,27 @@ body.exporting .egis-basemap-panel {
   justify-content: flex-end;
 }
 
+/* 이 패널은 라벨을 컨트롤 위에 두는 세로 배치다.
+   공통 .form-group은 flex 가로 배치라 그대로 두면 한 줄에 밀려 들어가 글자가 겹친다. */
 .isochrone-modal .form-group {
+  display: block;
   margin-bottom: var(--spacing-md);
+}
+
+/* 두 항목을 한 줄에 나란히 (시작점 피처 · 선택된 좌표) */
+.isochrone-modal .form-row {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.isochrone-modal .form-row > .form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.isochrone-modal .form-row .point-display {
+  overflow-wrap: anywhere;
 }
 
 .isochrone-modal .form-group label {
@@ -2605,6 +2624,7 @@ body.exporting .egis-basemap-panel {
 
 .isochrone-modal .form-group select,
 .isochrone-modal .form-group input[type="text"],
+.isochrone-modal .form-group input[type="number"],
 .isochrone-modal .form-group input[type="password"] {
   width: 100%;
   padding: var(--spacing-sm);
@@ -2839,7 +2859,9 @@ body.exporting .egis-basemap-panel {
   justify-content: flex-end;
 }
 
+/* 등시선 패널과 같은 세로 배치 (공통 .form-group의 flex 가로 배치를 끈다) */
 .routing-modal .form-group {
+  display: block;
   margin-bottom: var(--spacing-md);
 }
 
@@ -2853,6 +2875,7 @@ body.exporting .egis-basemap-panel {
 
 .routing-modal .form-group select,
 .routing-modal .form-group input[type="text"],
+.routing-modal .form-group input[type="number"],
 .routing-modal .form-group input[type="password"] {
   width: 100%;
   padding: var(--spacing-sm);

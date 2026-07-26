@@ -165,6 +165,12 @@ export class AppLayout {
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
           </button>
+          <!-- 도구 모음 접기/펴기 — 접으면 툴바 줄이 통째로 사라진다 -->
+          <button class="toolbar-collapse-btn" id="toolbar-collapse" title="도구 모음 접기/펴기" aria-label="도구 모음 접기/펴기">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -321,13 +327,6 @@ export class AppLayout {
           </div>
           <div class="search-results" id="search-results" style="display:none;"></div>
         </div>
-
-        <!-- 툴바 접기/펴기 -->
-        <button class="btn-icon toolbar-collapse-btn" id="toolbar-collapse" title="도구 모음 접기/펴기" aria-label="도구 모음 접기/펴기">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="18 15 12 9 6 15"></polyline>
-          </svg>
-        </button>
       </div>
 
       <!-- 메인 컨테이너 -->
@@ -427,7 +426,11 @@ export class AppLayout {
     if (!btn || !toolbar) return;
 
     btn.addEventListener('click', () => {
-      toolbar.classList.toggle('collapsed');
+      const collapsed = toolbar.classList.toggle('collapsed');
+      // 화살표 방향과 안내 문구를 상태에 맞춘다
+      btn.classList.toggle('collapsed', collapsed);
+      btn.title = collapsed ? '도구 모음 펴기' : '도구 모음 접기';
+      // 툴바가 사라지면 지도 높이가 바뀌므로 다시 재도록 알린다
       window.dispatchEvent(new Event('resize'));
     });
   }

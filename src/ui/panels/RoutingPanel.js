@@ -75,7 +75,7 @@ class RoutingPanel {
         <div class="form-group">
           <label for="routing-engine">도로망</label>
           <select id="routing-engine">${initialNetworkOptions()}</select>
-          <small class="form-hint">내장 도로망은 API 키가 필요 없고 호출 제한도 없습니다. 주요도로만 쓰면 가볍고, 전체 도로는 골목까지 반영하는 대신 파일이 큽니다.</small>
+          <small class="form-hint">주요도로만 쓰면 가볍고 빠릅니다. 전체 도로는 골목까지 반영합니다.</small>
         </div>
         <div class="form-group" id="routing-apikey-group" style="display:none">
           <label for="routing-api-key">OpenRouteService API 키</label>
@@ -131,16 +131,20 @@ class RoutingPanel {
           <select id="routing-profile">${profileOptions}</select>
         </div>
 
-        <div class="form-group" id="routing-speed-group">
-          <label for="routing-mode">이동 수단</label>
-          <select id="routing-mode">
-            <option value="foot">도보 — 자동차전용도로 제외</option>
-            <option value="bike">자전거 — 자동차전용도로 제외</option>
-            <option value="car" selected>자동차 — 모든 도로</option>
-          </select>
-          <label for="routing-speed" style="margin-top:8px; display:block">이동 속도 (km/h)</label>
-          <input type="number" id="routing-speed" value="40" min="1" max="200" step="1">
-          <small class="form-hint">이동 수단은 지날 수 있는 도로를, 속도는 걸리는 시간을 정합니다.</small>
+        <div id="routing-speed-group">
+          <div class="form-group">
+            <label for="routing-mode">이동 수단</label>
+            <select id="routing-mode">
+              <option value="foot">도보 — 자동차전용도로 제외</option>
+              <option value="bike">자전거 — 자동차전용도로 제외</option>
+              <option value="car" selected>자동차 — 모든 도로</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="routing-speed">이동 속도 (km/h)</label>
+            <input type="number" id="routing-speed" value="40" min="1" max="200" step="1">
+            <small class="form-hint">이동 수단은 지날 수 있는 도로를, 속도는 걸리는 시간을 정합니다.</small>
+          </div>
         </div>
 
         <div class="route-result" id="route-result" style="display:none;">

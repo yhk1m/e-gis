@@ -40,8 +40,6 @@ class IsochronePanel {
   render() {
     this.close();
 
-    const profiles = isochroneTool.getProfiles();
-    const apiKey = isochroneTool.getApiKey();
     const pointLayers = this.getPointLayers();
 
     // 선택 중인 레이어가 포인트면 미리 골라 준다.
@@ -49,7 +47,7 @@ class IsochronePanel {
 
     this.modal = document.createElement('div');
     this.modal.className = 'modal-overlay isochrone-modal active';
-    this.modal.innerHTML = this.getModalHTML(profiles, apiKey, pointLayers);
+    this.modal.innerHTML = this.getModalHTML(pointLayers);
     document.body.appendChild(this.modal);
 
     this.bindEvents();
@@ -60,11 +58,7 @@ class IsochronePanel {
   /**
    * 모달 HTML 생성
    */
-  getModalHTML(profiles, apiKey, pointLayers) {
-    const profileOptions = Object.entries(profiles)
-      .map(([value, label]) => `<option value="${value}">${label}</option>`)
-      .join('');
-
+  getModalHTML(pointLayers) {
     const layerOptions = pointLayers.length > 0
       ? buildLayerOptions(pointLayers, { selectedId: this.selectedLayerId, showCount: true })
       : '<option value="">포인트 레이어 없음</option>';
@@ -78,18 +72,7 @@ class IsochronePanel {
         <div class="form-group">
           <label for="isochrone-engine">도로망</label>
           <select id="isochrone-engine">${initialNetworkOptions()}</select>
-          <small class="form-hint">내장 도로망은 API 키가 필요 없고 호출 제한도 없습니다. 주요도로만 쓰면 가볍고, 전체 도로는 골목까지 반영하는 대신 파일이 큽니다.</small>
-        </div>
-        <div class="form-group" id="isochrone-apikey-group" style="display:none">
-          <label for="ors-api-key">OpenRouteService API 키</label>
-          <div class="api-key-input-group">
-            <input type="password" id="ors-api-key" value="${apiKey}" placeholder="API 키 입력">
-            <button type="button" class="btn btn-sm" id="toggle-api-key">보기</button>
-            <button type="button" class="btn btn-sm btn-primary" id="save-api-key">저장</button>
-          </div>
-          <small class="form-hint">
-            <a href="https://openrouteservice.org/dev/#/signup" target="_blank">openrouteservice.org</a>에서 무료 API 키를 발급받으세요
-          </small>
+          <small class="form-hint">주요도로만 쓰면 가볍고 빠릅니다. 전체 도로는 골목까지 반영합니다.</small>
         </div>
 
         <div class="form-group">
@@ -97,11 +80,19 @@ class IsochronePanel {
           <select id="isochrone-layer">${layerOptions}</select>
         </div>
 
-        <div class="form-group">
-          <label for="isochrone-feature">시작점 피처</label>
-          <select id="isochrone-feature">
-            <option value="">피처 선택...</option>
-          </select>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="isochrone-feature">시작점 피처</label>
+            <select id="isochrone-feature">
+              <option value="">피처 선택...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>선택된 좌표</label>
+            <div class="point-display" id="point-display">
+              선택된 위치 없음
+            </div>
+          </div>
         </div>
 
         <div class="form-group" id="isochrone-merge-group" style="display:none">
@@ -112,28 +103,20 @@ class IsochronePanel {
           <small class="form-hint">끄면 지점마다 범위 경계선이 그대로 보입니다. 켜면 하나의 영역으로 합쳐집니다.</small>
         </div>
 
-        <div class="form-group">
-          <label>선택된 좌표</label>
-          <div class="point-display" id="point-display">
-            선택된 위치 없음
+        <div id="isochrone-speed-group">
+          <div class="form-group">
+            <label for="local-mode">이동 수단</label>
+            <select id="local-mode">
+              <option value="foot">도보 — 자동차전용도로 제외</option>
+              <option value="bike">자전거 — 자동차전용도로 제외</option>
+              <option value="car" selected>자동차 — 모든 도로</option>
+            </select>
           </div>
-        </div>
-
-        <div class="form-group" id="isochrone-profile-group" style="display:none">
-          <label for="travel-profile">이동 수단</label>
-          <select id="travel-profile">${profileOptions}</select>
-        </div>
-
-        <div class="form-group" id="isochrone-speed-group">
-          <label for="local-mode">이동 수단</label>
-          <select id="local-mode">
-            <option value="foot">도보 — 자동차전용도로 제외</option>
-            <option value="bike">자전거 — 자동차전용도로 제외</option>
-            <option value="car" selected>자동차 — 모든 도로</option>
-          </select>
-          <label for="local-speed" style="margin-top:8px; display:block">이동 속도 (km/h)</label>
-          <input type="number" id="local-speed" value="40" min="1" max="200" step="1">
-          <small class="form-hint">이동 수단은 지날 수 있는 도로를, 속도는 걸리는 시간을 정합니다. 수단을 바꾸면 기본 속도가 채워지고, 값은 직접 고칠 수 있습니다.</small>
+          <div class="form-group">
+            <label for="local-speed">이동 속도 (km/h)</label>
+            <input type="number" id="local-speed" value="40" min="1" max="200" step="1">
+            <small class="form-hint">이동 수단은 지날 수 있는 도로를, 속도는 걸리는 시간을 정합니다. 수단을 바꾸면 기본 속도가 채워지고, 값은 직접 고칠 수 있습니다.</small>
+          </div>
         </div>
 
         <div class="form-group">
@@ -172,8 +155,6 @@ class IsochronePanel {
     const cancelBtn = document.getElementById('isochrone-cancel');
     const analyzeBtn = document.getElementById('isochrone-analyze');
     const clearBtn = document.getElementById('isochrone-clear');
-    const apiKeyInput = document.getElementById('ors-api-key');
-    const toggleApiKeyBtn = document.getElementById('toggle-api-key');
     const rangeTypeSelect = document.getElementById('range-type');
     const layerSelect = document.getElementById('isochrone-layer');
     const featureSelect = document.getElementById('isochrone-feature');
@@ -184,47 +165,8 @@ class IsochronePanel {
     analyzeBtn.addEventListener('click', () => this.analyze());
     clearBtn.addEventListener('click', () => this.clearResults());
 
-    apiKeyInput.addEventListener('input', () => {
-      isochroneTool.setApiKey(apiKeyInput.value);
-      this.updateAnalyzeButton();
-    });
-
-    toggleApiKeyBtn.addEventListener('click', () => {
-      if (apiKeyInput.type === 'password') {
-        apiKeyInput.type = 'text';
-        toggleApiKeyBtn.textContent = '숨김';
-      } else {
-        apiKeyInput.type = 'password';
-        toggleApiKeyBtn.textContent = '보기';
-      }
-    });
-
-    const saveApiKeyBtn = document.getElementById('save-api-key');
-    saveApiKeyBtn.addEventListener('click', () => {
-      const key = apiKeyInput.value.trim();
-      if (key) {
-        isochroneTool.setApiKey(key);
-        alert('API 키가 저장되었습니다.');
-      } else {
-        alert('API 키를 입력해주세요.');
-      }
-    });
-
-    // 도로망 선택 — 내장 도로망을 쓰면 API 키 입력을 감춘다
-    const engineSelect = document.getElementById('isochrone-engine');
-    const apiKeyGroup = document.getElementById('isochrone-apikey-group');
-    const profileGroup = document.getElementById('isochrone-profile-group');
-    const speedGroup = document.getElementById('isochrone-speed-group');
     // 쓸 수 있는 내장 도로망 목록을 catalog.json에서 채운다
     populateNetworkSelect('isochrone-engine');
-    engineSelect.addEventListener('change', () => {
-      const isOrs = parseNetworkValue(engineSelect.value).engine === 'ors';
-      apiKeyGroup.style.display = isOrs ? '' : 'none';
-      // 내장 도로망은 시속을 직접 정한다 — 이동 수단 목록은 API 방식에서만 쓴다
-      profileGroup.style.display = isOrs ? '' : 'none';
-      speedGroup.style.display = isOrs ? 'none' : '';
-      this.updateAnalyzeButton();
-    });
 
     // 이동 수단을 바꾸면 그 수단의 기본 속도를 채워 준다
     const modeSelect = document.getElementById('local-mode');
@@ -418,13 +360,8 @@ class IsochronePanel {
     const analyzeBtn = document.getElementById('isochrone-analyze');
     if (!analyzeBtn) return;
 
-    const apiKey = document.getElementById('ors-api-key').value;
     const intervals = this.getSelectedIntervals();
-    const engineEl = document.getElementById('isochrone-engine');
-    const needsKey = !engineEl || parseNetworkValue(engineEl.value).engine === 'ors';
-
-    const canAnalyze = (!needsKey || apiKey) && this.selectedPoint && intervals.length > 0;
-    analyzeBtn.disabled = !canAnalyze;
+    analyzeBtn.disabled = !(this.selectedPoint && intervals.length > 0);
   }
 
   /**
@@ -451,17 +388,7 @@ class IsochronePanel {
       return;
     }
 
-    const apiKey = document.getElementById('ors-api-key').value;
     const network = parseNetworkValue(document.getElementById('isochrone-engine').value);
-
-    if (network.engine === 'ors' && this.selectedPoints) {
-      alert('전체 지점 분석은 내장 도로망에서만 됩니다.\n(API 방식은 지점마다 호출이 필요해 호출 제한에 걸립니다)');
-      return;
-    }
-    if (network.engine === 'ors' && !apiKey) {
-      alert('API 키를 입력해주세요.');
-      return;
-    }
 
     const intervals = this.getSelectedIntervals();
     if (intervals.length === 0) {
@@ -469,7 +396,6 @@ class IsochronePanel {
       return;
     }
 
-    const profile = document.getElementById('travel-profile').value;
     const rangeType = document.getElementById('range-type').value;
     const engine = network.engine;
 
@@ -482,7 +408,6 @@ class IsochronePanel {
       const speedKmh = parseFloat(document.getElementById('local-speed').value);
 
       const result = await isochroneTool.analyze(this.selectedPoint, {
-        profile,
         intervals,
         rangeType,
         engine,
