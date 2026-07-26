@@ -76,6 +76,17 @@ class MeasureTool {
     });
   }
 
+  /**
+   * 좌클릭만 점으로 인정한다.
+   *
+   * 이 조건이 없으면 측정을 끝내려고 누른 우클릭이 그리기 도구에도 전달돼
+   * 완료와 동시에 다음 측정의 첫 점이 찍혔다. 우클릭은 완료 전용이다.
+   */
+  leftClickOnly(evt) {
+    const original = evt && evt.originalEvent;
+    return !original || original.button === undefined || original.button === 0;
+  }
+
   activate(type) {
     if (!this.map) this.init();
     
@@ -87,12 +98,13 @@ class MeasureTool {
     this.draw = new Draw({
       source: this.source,
       type: drawType,
-      style: MEASURE_STYLE
+      style: MEASURE_STYLE,
+      condition: this.leftClickOnly
     });
 
     this.map.addInteraction(this.draw);
 
-    // 우클릭으로 측정 완료 (더블클릭 대신)
+    // 우클릭으로 측정 완료 (더블클릭 대신). 완료만 하고 다음 측정은 시작하지 않는다.
     this.rightClickHandler = (e) => {
       if (e.button === 2 && this.sketch) {
         e.preventDefault();
@@ -249,17 +261,12 @@ class MeasureTool {
 
   formatArea(polygon) {
     var area = getArea(polygon, { projection: "EPSG:3857" });
-    var output;
-    
-    if (area > 1000000) {
-      output = (area / 1000000).toFixed(2) + " km²";
-    } else if (area > 10000) {
-      output = (area / 10000).toFixed(2) + " ha";
-    } else {
-      output = area.toFixed(1) + " m²";
+
+    // 단위는 ㎡와 ㎢만 쓴다 (헥타르는 학생들이 감을 잡기 어렵다)
+    if (area >= 1000000) {
+      return (area / 1000000).toFixed(2) + " km²";
     }
-    
-    return output;
+    return area.toFixed(1) + " m²";
   }
 
   clearMeasurements() {

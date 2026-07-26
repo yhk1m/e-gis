@@ -125,9 +125,32 @@
   flex-shrink: 0;
 }
 
-/* 툴바 접기 버튼: 모바일 전용 */
+/* 툴바 접기 버튼 — 화면 크기와 상관없이 쓴다 (지도를 넓게 보고 싶을 때) */
 .toolbar-collapse-btn {
+  display: flex;
+  margin-left: auto;   /* 오른쪽 끝에 붙인다 */
+  flex-shrink: 0;
+}
+
+/* 접힌 상태: 펴기 버튼만 가는 손잡이로 남긴다 */
+#toolbar.collapsed {
+  height: auto;
+  min-height: 0;
+  padding: 2px var(--spacing-sm);
+}
+
+#toolbar.collapsed > *:not(.toolbar-collapse-btn) {
   display: none;
+}
+
+#toolbar.collapsed .toolbar-collapse-btn {
+  width: 100%;
+  height: 24px;
+  margin-left: 0;
+}
+
+#toolbar.collapsed .toolbar-collapse-btn svg {
+  transform: rotate(180deg);
 }
 
 /* 메인 컨테이너 (패널 + 지도) */
@@ -812,29 +835,7 @@
     width: 100%;
   }
 
-  /* 툴바 접기/펴기 버튼 */
-  .toolbar-collapse-btn {
-    display: flex;
-  }
-
-  /* 접힌 상태: 펴기 버튼만 가는 손잡이로 남김 */
-  #toolbar.collapsed {
-    min-height: 0;
-    padding: 2px var(--spacing-sm);
-  }
-
-  #toolbar.collapsed > *:not(.toolbar-collapse-btn) {
-    display: none;
-  }
-
-  #toolbar.collapsed .toolbar-collapse-btn {
-    width: 100%;
-    height: 24px;
-  }
-
-  #toolbar.collapsed .toolbar-collapse-btn svg {
-    transform: rotate(180deg);
-  }
+  /* 접기 버튼·접힌 상태 규칙은 기본 스타일에 있다 (화면 크기와 무관하게 동작) */
 
   /* --- 상태표시줄: 핵심 항목만 + 넘침 허용 --- */
   #statusbar {

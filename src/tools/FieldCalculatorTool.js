@@ -8,6 +8,7 @@ import { layerManager } from '../core/LayerManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { isVectorLayer } from '../utils/layerSelect.js';
 import { getArea, getLength } from 'ol/sphere';
+import LineString from 'ol/geom/LineString';
 
 class FieldCalculatorTool {
   constructor() {
@@ -29,8 +30,10 @@ class FieldCalculatorTool {
     ];
 
     // 지오메트리 함수
+    // 면적 단위는 ㎡와 ㎢만 쓴다 (헥타르는 쓰지 않는다)
     this.geoFunctions = [
       { name: '$area', desc: '면적 (㎡)' },
+      { name: '$area_km2', desc: '면적 (㎢)' },
       { name: '$length', desc: '길이 (m)' },
       { name: '$perimeter', desc: '둘레 (m)' }
     ];
@@ -91,7 +94,9 @@ class FieldCalculatorTool {
 
     if (processedExpr.includes('$area')) {
       const area = geometry ? getArea(geometry) : 0;
-      processedExpr = processedExpr.replace(/\$area/g, area);
+      // $area_km2를 먼저 바꾼다. $area를 먼저 바꾸면 '$area_km2'의 앞부분만 잘려 나간다.
+      processedExpr = processedExpr.replace(/\$area_km2/g, area / 1000000);
+      processedExpr = processedExpr.replace(/\$area\b/g, area);
     }
 
     if (processedExpr.includes('$length')) {
@@ -100,19 +105,7 @@ class FieldCalculatorTool {
     }
 
     if (processedExpr.includes('$perimeter')) {
-      // 폴리곤의 경우 둘레 계산
-      let perimeter = 0;
-      if (geometry && geometry.getType() === 'Polygon') {
-        const coords = geometry.getLinearRing(0).getCoordinates();
-        for (let i = 0; i < coords.length - 1; i++) {
-          const dx = coords[i + 1][0] - coords[i][0];
-          const dy = coords[i + 1][1] - coords[i][1];
-          perimeter += Math.sqrt(dx * dx + dy * dy);
-        }
-      } else if (geometry) {
-        perimeter = getLength(geometry);
-      }
-      processedExpr = processedExpr.replace(/\$perimeter/g, perimeter);
+      processedExpr = processedExpr.replace(/\$perimeter/g, this.perimeterOf(geometry));
     }
 
     // 속성 필드 값 치환 (필드명을 []로 감싸서 사용)
@@ -141,6 +134,27 @@ class FieldCalculatorTool {
     } catch (error) {
       throw new Error(`계산 오류: ${error.message}`);
     }
+  }
+
+  /**
+   * 둘레(m) — 폴리곤은 바깥 경계선의 길이.
+   *
+   * 예전에는 폴리곤만 지도 좌표(EPSG:3857) 위에서 직선거리를 더했다. 웹 메르카토르는
+   * 위도가 올라갈수록 거리가 늘어나 우리 위도에서 실제보다 약 1.25배 크게 나왔다.
+   * $area·$length와 같은 측지 계산으로 맞춘다.
+   */
+  perimeterOf(geometry) {
+    if (!geometry) return 0;
+
+    const ringLength = (polygon) =>
+      getLength(new LineString(polygon.getLinearRing(0).getCoordinates()));
+
+    const type = geometry.getType();
+    if (type === 'Polygon') return ringLength(geometry);
+    if (type === 'MultiPolygon') {
+      return geometry.getPolygons().reduce((sum, p) => sum + ringLength(p), 0);
+    }
+    return getLength(geometry);
   }
 
   /**

@@ -281,6 +281,12 @@ export class AppLayout {
               <path d="M3 9h18M9 3v18"/>
             </svg>
           </button>
+          <button class="btn-icon" data-tool="clear-measures" title="측정 결과 지우기">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>
+              <path d="M10 11v5M14 11v5"/>
+            </svg>
+          </button>
         </div>
 
         <div class="toolbar-group" data-group="image">
@@ -316,7 +322,7 @@ export class AppLayout {
           <div class="search-results" id="search-results" style="display:none;"></div>
         </div>
 
-        <!-- 툴바 접기/펴기 (모바일 전용) -->
+        <!-- 툴바 접기/펴기 -->
         <button class="btn-icon toolbar-collapse-btn" id="toolbar-collapse" title="도구 모음 접기/펴기" aria-label="도구 모음 접기/펴기">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="18 15 12 9 6 15"></polyline>
@@ -413,7 +419,7 @@ export class AppLayout {
   }
 
   /**
-   * 툴바 접기/펴기 토글 (모바일 전용 버튼)
+   * 툴바 접기/펴기 토글 (지도를 넓게 보고 싶을 때 — 화면 크기와 무관하게 동작)
    */
   initToolbarCollapse() {
     const btn = document.getElementById('toolbar-collapse');

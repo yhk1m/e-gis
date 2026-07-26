@@ -93,7 +93,7 @@ class FieldCalculatorPanel {
             '<div class="helper-buttons" id="field-calc-field-buttons"></div>' +
           '</div>' +
           '<div class="helper-section">' +
-            '<label>지오메트리</label>' +
+            '<label>지오메트리 <small>(면적 ㎡ · ㎢ / 길이·둘레 m)</small></label>' +
             '<div class="helper-buttons">' + geoButtons + '</div>' +
           '</div>' +
           '<div class="helper-section">' +

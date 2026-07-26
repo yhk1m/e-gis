@@ -19,6 +19,7 @@ import { projectManager } from './core/ProjectManager.js';
 // 진단용 훅에 노출 — 헤드리스 검증에서 마커·도로망 상태를 확인한다
 import { isochroneTool } from './tools/IsochroneTool.js';
 import { roadNetwork } from './core/RoadNetwork.js';
+import { measureTool } from './tools/MeasureTool.js';
 import { autoSaveManager } from './core/AutoSaveManager.js';
 import { historyManager } from './core/HistoryManager.js';
 import { selectTool } from './tools/SelectTool.js';
@@ -436,6 +437,11 @@ function initToolbar() {
         });
         return;
       }
+      case 'clear-measures':
+        // 도구를 켜는 것이 아니라 바로 실행되는 동작이다
+        toolManager.clearMeasurements();
+        showStatusMessage('측정 결과가 지워졌습니다.');
+        return;
     }
 
     // 그리기/선택 도구
@@ -1386,4 +1392,4 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // 진단용 훅 — 헤드리스 재현 테스트(버그 리포트 검증)에서 내부 상태 접근용.
 // 클라이언트 앱이라 보안 경계 아님(모든 코드·키가 이미 번들에 공개).
-window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork };
+window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool };
