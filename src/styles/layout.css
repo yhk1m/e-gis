@@ -128,7 +128,9 @@
 /* 툴바 접기 버튼 — 화면 크기와 상관없이 쓴다 (지도를 넓게 보고 싶을 때) */
 .toolbar-collapse-btn {
   display: flex;
-  margin-left: auto;   /* 오른쪽 끝에 붙인다 */
+  align-items: center;      /* 아이콘을 가운데로 (없으면 좌상단에 붙는다) */
+  justify-content: center;
+  margin-left: auto;        /* 오른쪽 끝에 붙인다 */
   flex-shrink: 0;
 }
 
