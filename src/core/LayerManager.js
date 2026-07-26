@@ -572,6 +572,15 @@ class LayerManager {
     this.updateLayerStyle(layerId);
   }
 
+  /** 같은 이름이 이미 있으면 뒤에 번호를 붙인다 */
+  uniqueName(base) {
+    const taken = new Set(this.getAllLayers().map(l => l.name));
+    if (!taken.has(base)) return base;
+    let n = 2;
+    while (taken.has(`${base} ${n}`)) n++;
+    return `${base} ${n}`;
+  }
+
   getColorPalette() {
     return SWATCH_PALETTE.map(s => s.color);
   }

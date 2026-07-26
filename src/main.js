@@ -25,6 +25,8 @@ import { selectTool } from './tools/SelectTool.js';
 import { featureEditTool } from './tools/FeatureEditTool.js';
 import { choroplethPanel } from './ui/panels/ChoroplethPanel.js';
 import { tableJoinPanel } from './ui/panels/TableJoinPanel.js';
+import { layerMergePanel } from './ui/panels/LayerMergePanel.js';
+import { layerSplitPanel } from './ui/panels/LayerSplitPanel.js';
 import { labelPanel } from './ui/panels/LabelPanel.js';
 import { bufferPanel } from './ui/panels/BufferPanel.js';
 import { voronoiPanel } from './ui/panels/VoronoiPanel.js';
@@ -696,6 +698,12 @@ function handleMenuAction(action) {
     case 'layer-field-calculator':
       fieldCalculatorPanel.show();
       break;
+    case 'layer-merge':
+      layerMergePanel.show();
+      break;
+    case 'layer-split':
+      layerSplitPanel.show();
+      break;
     case 'layer-export':
       layerExportPanel.show();
       break;
@@ -1317,6 +1325,8 @@ function showUserManual() {
             <li><strong>공간 연산:</strong> 메뉴 → 벡터 분석 → 공간 연산 (합집합, 교집합, 차집합, 클리핑)</li>
             <li><strong>테이블 결합:</strong> 메뉴 → 레이어 → 테이블 결합</li>
             <li><strong>필드 계산기:</strong> 메뉴 → 레이어 → 필드 계산기</li>
+            <li><strong>레이어 합치기:</strong> 메뉴 → 레이어 → 레이어 합치기 (창 안에서 체크해 여러 레이어를 하나로)</li>
+            <li><strong>레이어 나누기:</strong> 메뉴 → 레이어 → 레이어 나누기 (속성값 기준으로 묶거나 객체별로 분리)</li>
           </ul>
 
           <h4 style="margin-top: 24px; color: var(--primary-color);">🛣️ 11. 경로 분석</h4>
