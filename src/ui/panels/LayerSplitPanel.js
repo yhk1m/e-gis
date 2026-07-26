@@ -64,6 +64,7 @@ class LayerSplitPanel {
         <div class="choropleth-form-group" id="split-field-group">
           <label for="split-field">기준 필드</label>
           <select id="split-field"></select>
+          <small class="form-hint">이 필드의 값이 그대로 레이어 이름이 됩니다 (시도로 나누면 '강원', '경기' …).</small>
         </div>
 
         <div class="choropleth-form-group" id="split-name-group" style="display:none">

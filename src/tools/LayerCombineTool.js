@@ -136,13 +136,13 @@ class LayerCombineTool {
     }
 
     const created = [];
-    const baseName = layerInfo.name;
     const color = layerInfo.color;
 
     // 값 순서대로 만들어야 레이어 목록이 뒤죽박죽이 되지 않는다
     Array.from(groups.keys()).sort((a, b) => a.localeCompare(b, 'ko')).forEach(key => {
       const id = layerManager.addLayer({
-        name: layerManager.uniqueName(`${baseName} - ${key}`),
+        // 기준 필드의 값을 그대로 레이어 이름으로 쓴다 (시도로 나누면 '강원', '경기' …)
+        name: layerManager.uniqueName(key),
         type: 'vector',
         features: groups.get(key),
         color

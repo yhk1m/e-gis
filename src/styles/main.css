@@ -828,8 +828,10 @@ body.exporting .egis-basemap-panel {
   color: white;
 }
 
+/* --color-primary-dark는 정의된 적이 없는 변수였다.
+   값이 없으면 background 선언 자체가 무효가 되어 투명(=흰색)으로 보였다. */
 .choropleth-footer .btn-primary:hover {
-  background: var(--color-primary-dark);
+  background: var(--color-primary-hover);
 }
 
 /* ===== 테이블 결합 패널 스타일 ===== */
