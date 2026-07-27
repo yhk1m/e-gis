@@ -7,6 +7,7 @@ import VectorSource from 'ol/source/Vector';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { mapManager } from './MapManager.js';
+import { strokeWidthOf, makeStroke } from '../utils/strokeStyle.js';
 
 /**
  * 레이어별 스타일 메타데이터 필드.
@@ -638,7 +639,7 @@ class LayerManager {
     if (layerInfo.type === 'choropleth' && layerInfo._choroplethConfig) {
       const cfg = layerInfo._choroplethConfig;
       const fillOpacity = layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 0.7;
-      const strokeWidth = layerInfo.strokeWidth || 1;
+      const strokeWidth = strokeWidthOf(layerInfo, 1);
       const lineDash = this.getLineDash(layerInfo.strokeDash || "solid");
       // undefined(기존 레이어·기존 저장본)를 기본 ON으로 흡수한다
       const syncStroke = layerInfo.strokeSyncToFill !== false;
@@ -648,7 +649,7 @@ class LayerManager {
         if (isNaN(val)) {
           return new Style({
             fill: new Fill({ color: 'rgba(128,128,128,' + fillOpacity + ')' }),
-            stroke: new Stroke({
+            stroke: makeStroke({
               color: syncStroke ? '#666' : strokeColor,
               width: strokeWidth,
               lineDash: lineDash
@@ -659,7 +660,7 @@ class LayerManager {
         const color = cfg.colors[colorIdx] || cfg.colors[0];
         return new Style({
           fill: new Fill({ color: cfg.tool.hexToRgba(color, fillOpacity) }),
-          stroke: new Stroke({
+          stroke: makeStroke({
             color: syncStroke ? cfg.tool.darkenColor(color) : strokeColor,
             width: strokeWidth,
             lineDash: lineDash
@@ -685,7 +686,7 @@ class LayerManager {
       const cfg = layerInfo._cartogramConfig;
       const styleFn = cfg.tool.cartogramStyle(cfg, {
         fillOpacity: layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 0.85,
-        strokeWidth: layerInfo.strokeWidth || 1,
+        strokeWidth: strokeWidthOf(layerInfo, 1),
         strokeColor: layerInfo.strokeColor || '#333',
         syncStroke: layerInfo.strokeSyncToFill !== false,
         lineDash: this.getLineDash(layerInfo.strokeDash || "solid")
@@ -708,7 +709,7 @@ class LayerManager {
       const cfg = layerInfo._contourConfig;
       const strokeColor = layerInfo.strokeColor || layerInfo.color;
       const strokeOpacity = layerInfo.strokeOpacity !== undefined ? layerInfo.strokeOpacity : 1.0;
-      const minorWidth = layerInfo.strokeWidth || 0.8;
+      const minorWidth = strokeWidthOf(layerInfo, 0.8);
       const rgba = this.hexToRgba(strokeColor, strokeOpacity);
       const lineDash = this.getLineDash(layerInfo.strokeDash || "solid");
 
@@ -716,7 +717,7 @@ class LayerManager {
         const elev = feature.get('elevation');
         const isMajor = elev % (cfg.interval * 5) === 0;
         return new Style({
-          stroke: new Stroke({
+          stroke: makeStroke({
             color: rgba,
             width: isMajor ? minorWidth * cfg.majorRatio : minorWidth,
             lineDash: lineDash
@@ -749,27 +750,26 @@ class LayerManager {
 
     if (geoType === "LineString" || geoType === "MultiLineString") {
       newStyle = new Style({
-        stroke: new Stroke({
+        stroke: makeStroke({
           color: rgbaStroke,
-          width: layerInfo.strokeWidth || 2,
+          width: strokeWidthOf(layerInfo, 2),
           lineDash: lineDash
         })
       });
     } else if (geoType === "Point" || geoType === "MultiPoint") {
-      const pointStrokeWidth = layerInfo.strokeWidth !== undefined ? layerInfo.strokeWidth : 2;
       newStyle = new Style({
         image: new CircleStyle({
           radius: layerInfo.pointRadius || 6,
           fill: new Fill({ color: rgbaFill }),
-          stroke: new Stroke({ color: rgbaStroke, width: pointStrokeWidth })
+          stroke: makeStroke({ color: rgbaStroke, width: strokeWidthOf(layerInfo, 2) })
         })
       });
     } else {
       newStyle = new Style({
         fill: new Fill({ color: rgbaFill }),
-        stroke: new Stroke({
+        stroke: makeStroke({
           color: rgbaStroke,
-          width: layerInfo.strokeWidth || 2,
+          width: strokeWidthOf(layerInfo, 2),
           lineDash: lineDash
         })
       });

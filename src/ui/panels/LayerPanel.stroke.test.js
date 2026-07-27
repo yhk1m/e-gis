@@ -115,6 +115,81 @@ describe('스타일 편집 팝업 — 분류 레이어 분기', () => {
     expect(picker.querySelector('.stroke-color-section').style.pointerEvents).toBe('');
   });
 
+  it('숫자 입력이 슬라이더와 함께 나온다', () => {
+    const id = addPolygonLayer('일반');
+    const picker = openPicker(id);
+
+    // 슬라이더만으로는 정확한 값을 넣기 어렵다 — 숫자 입력이 짝으로 있어야 한다
+    ['fill-opacity', 'stroke-width'].forEach(cls => {
+      expect(picker.querySelector('.' + cls + '-slider')).not.toBeNull();
+      expect(picker.querySelector('.' + cls + '-number')).not.toBeNull();
+    });
+  });
+
+  it('숫자를 적으면 레이어에 반영되고 슬라이더도 따라온다', () => {
+    const id = addPolygonLayer('일반');
+    const picker = openPicker(id);
+    const number = picker.querySelector('.stroke-width-number');
+
+    number.value = '7';
+    number.dispatchEvent(new Event('input'));
+
+    expect(layerManager.getLayer(id).strokeWidth).toBe(7);
+    expect(picker.querySelector('.stroke-width-slider').value).toBe('7');
+  });
+
+  it('슬라이더를 움직이면 숫자 입력도 따라온다', () => {
+    const id = addPolygonLayer('일반');
+    const picker = openPicker(id);
+    const slider = picker.querySelector('.fill-opacity-slider');
+
+    slider.value = '80';
+    slider.dispatchEvent(new Event('input'));
+
+    expect(picker.querySelector('.fill-opacity-number').value).toBe('80');
+    expect(layerManager.getLayer(id).fillOpacity).toBeCloseTo(0.8);
+  });
+
+  it('선 두께 0을 넣을 수 있다', () => {
+    const id = addPolygonLayer('일반');
+    const picker = openPicker(id);
+    const number = picker.querySelector('.stroke-width-number');
+
+    expect(picker.querySelector('.stroke-width-slider').min).toBe('0');
+
+    number.value = '0';
+    number.dispatchEvent(new Event('input'));
+
+    expect(layerManager.getLayer(id).strokeWidth).toBe(0);
+  });
+
+  it('범위를 벗어난 값은 범위 안으로 맞춘다', () => {
+    const id = addPolygonLayer('일반');
+    const picker = openPicker(id);
+    const number = picker.querySelector('.stroke-width-number');
+
+    number.value = '999';
+    number.dispatchEvent(new Event('input'));
+
+    expect(layerManager.getLayer(id).strokeWidth).toBe(10);
+  });
+
+  it('지우는 중(빈 칸)에는 값을 되돌리지 않는다', () => {
+    const id = addPolygonLayer('일반');
+    const picker = openPicker(id);
+    const number = picker.querySelector('.stroke-width-number');
+
+    number.value = '';
+    number.dispatchEvent(new Event('input'));
+
+    // 글자를 못 지우게 막으면 안 된다
+    expect(number.value).toBe('');
+
+    // 포커스를 떼면 마지막 유효값으로 정리된다
+    number.dispatchEvent(new Event('change'));
+    expect(number.value).not.toBe('');
+  });
+
   it('체크박스를 끄면 레이어에 반영되고 선 색상이 열린다', () => {
     const id = layerManager.addLayer({
       name: '단계구분도', type: 'choropleth', geometryType: 'Polygon',

@@ -10,6 +10,7 @@ import { layerManager } from "../core/LayerManager.js";
 import { eventBus, Events } from "../utils/EventBus.js";
 import { makeDraggable } from "../utils/DraggableElement.js";
 import { isVectorLayer } from "../utils/layerSelect.js";
+import { sampleColorRamp, lerpColor } from "../utils/colorRamp.js";
 import { formatNumber } from "./legendModel.js";
 
 // 색상 팔레트 정의
@@ -501,23 +502,7 @@ class ChoroplethTool {
    * @returns {string[]} 분류 수만큼의 색상
    */
   sampleColorRamp(rampColors, numClasses) {
-    if (!rampColors || rampColors.length === 0) return [];
-    if (numClasses <= 0) return [];
-    if (rampColors.length === 1) return Array(numClasses).fill(rampColors[0]);
-    // 1분류면 팔레트의 대표색(가장 진한 쪽)
-    if (numClasses === 1) return [rampColors[rampColors.length - 1]];
-
-    const result = [];
-    for (let i = 0; i < numClasses; i++) {
-      const pos = (i / (numClasses - 1)) * (rampColors.length - 1);
-      const idx = Math.floor(pos);
-      if (idx >= rampColors.length - 1) {
-        result.push(rampColors[rampColors.length - 1]);
-      } else {
-        result.push(this.lerpColor(rampColors[idx], rampColors[idx + 1], pos - idx));
-      }
-    }
-    return result;
+    return sampleColorRamp(rampColors, numClasses);
   }
 
   /**
@@ -560,18 +545,7 @@ class ChoroplethTool {
    * 두 색상 사이 보간
    */
   lerpColor(color1, color2, t) {
-    const r1 = parseInt(color1.slice(1, 3), 16);
-    const g1 = parseInt(color1.slice(3, 5), 16);
-    const b1 = parseInt(color1.slice(5, 7), 16);
-    const r2 = parseInt(color2.slice(1, 3), 16);
-    const g2 = parseInt(color2.slice(3, 5), 16);
-    const b2 = parseInt(color2.slice(5, 7), 16);
-
-    const r = Math.round(r1 + (r2 - r1) * t);
-    const g = Math.round(g1 + (g2 - g1) * t);
-    const b = Math.round(b1 + (b2 - b1) * t);
-
-    return "#" + r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0");
+    return lerpColor(color1, color2, t);
   }
 
   getColorRamps() { return Object.keys(COLOR_RAMPS); }

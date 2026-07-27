@@ -120,23 +120,15 @@ class IsochronePanel {
         </div>
 
         <div class="form-group">
-          <label for="range-type">분석 유형</label>
-          <select id="range-type">
-            <option value="time">시간 기준</option>
-            <option value="distance">거리 기준</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label id="intervals-label">시간 간격 (분)</label>
+          <label for="intervals-input">시간 간격 (분)</label>
           <div class="intervals-input">
             <input type="text" id="intervals-input" value="5, 10, 15" placeholder="예: 5, 10, 15, 30">
-            <small class="form-hint" id="intervals-hint">쉼표로 구분하여 원하는 시간(분)을 입력하세요</small>
+            <small class="form-hint">쉼표로 구분하여 원하는 시간(분)을 입력하세요</small>
           </div>
         </div>
 
         <div class="isochrone-info">
-          <p>등시선(Isochrone)은 특정 지점에서 일정 시간/거리 내에 도달 가능한 영역을 표시합니다.</p>
+          <p>등시선(Isochrone)은 특정 지점에서 일정 시간 안에 도달할 수 있는 영역을 표시합니다.</p>
         </div>
       </div>
       <div class="modal-footer">
@@ -155,7 +147,6 @@ class IsochronePanel {
     const cancelBtn = document.getElementById('isochrone-cancel');
     const analyzeBtn = document.getElementById('isochrone-analyze');
     const clearBtn = document.getElementById('isochrone-clear');
-    const rangeTypeSelect = document.getElementById('range-type');
     const layerSelect = document.getElementById('isochrone-layer');
     const featureSelect = document.getElementById('isochrone-feature');
 
@@ -173,10 +164,6 @@ class IsochronePanel {
     const speedInput = document.getElementById('local-speed');
     modeSelect.addEventListener('change', () => {
       speedInput.value = LOCAL_MODES[modeSelect.value].defaultSpeed;
-    });
-
-    rangeTypeSelect.addEventListener('change', () => {
-      this.updateIntervalLabels();
     });
 
     const intervalsInput = document.getElementById('intervals-input');
@@ -332,28 +319,6 @@ class IsochronePanel {
   }
 
   /**
-   * 간격 레이블 업데이트
-   */
-  updateIntervalLabels() {
-    const rangeType = document.getElementById('range-type').value;
-    const label = document.getElementById('intervals-label');
-    const input = document.getElementById('intervals-input');
-    const hint = document.getElementById('intervals-hint');
-
-    if (rangeType === 'time') {
-      label.textContent = '시간 간격 (분)';
-      input.placeholder = '예: 5, 10, 15, 30';
-      hint.textContent = '쉼표로 구분하여 원하는 시간(분)을 입력하세요';
-      input.value = '5, 10, 15';
-    } else {
-      label.textContent = '거리 간격 (km)';
-      input.placeholder = '예: 1, 2, 5, 10';
-      hint.textContent = '쉼표로 구분하여 원하는 거리(km)를 입력하세요';
-      input.value = '1, 2, 5';
-    }
-  }
-
-  /**
    * 분석 버튼 상태 업데이트
    */
   updateAnalyzeButton() {
@@ -396,7 +361,8 @@ class IsochronePanel {
       return;
     }
 
-    const rangeType = document.getElementById('range-type').value;
+    // 내장 도로망은 시간 기준만 지원한다 (localRouting.js) — 거리 기준은 ORS 전용이었다
+    const rangeType = 'time';
     const engine = network.engine;
 
     const analyzeBtn = document.getElementById('isochrone-analyze');

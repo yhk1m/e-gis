@@ -15,24 +15,18 @@ import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
 import { buildIsochroneGeoJSON, toLocalProfile } from '../core/localRouting.js';
 import { eventBus, Events } from '../utils/EventBus.js';
+import { sampleColorRamp, hexToRgba } from '../utils/colorRamp.js';
 
-// 등시선 색상 (시간대별)
-const ISOCHRONE_COLORS = [
-  'rgba(0, 128, 0, 0.3)',    // 가장 가까운 영역 (녹색)
-  'rgba(144, 238, 144, 0.3)', // 연녹색
-  'rgba(255, 255, 0, 0.3)',   // 노랑
-  'rgba(255, 165, 0, 0.3)',   // 주황
-  'rgba(255, 69, 0, 0.3)',    // 빨강-주황
-  'rgba(255, 0, 0, 0.3)'      // 가장 먼 영역 (빨강)
-];
-
-const STROKE_COLORS = [
-  'rgba(0, 128, 0, 0.8)',
-  'rgba(144, 238, 144, 0.8)',
-  'rgba(255, 255, 0, 0.8)',
-  'rgba(255, 165, 0, 0.8)',
-  'rgba(255, 69, 0, 0.8)',
-  'rgba(255, 0, 0, 0.8)'
+// 등시선 색 램프 — 짧은 구간(안쪽, 빨강)에서 긴 구간(바깥, 초록)으로.
+// 칸 수는 6이지만 구간을 몇 개 넣든 sampleColorRamp가 사이를 보간해 채운다.
+// 예전에는 이 배열을 앞에서부터 잘라 써서 7번째 구간부터 전부 같은 빨강이 됐다.
+const ISOCHRONE_RAMP = [
+  '#ff0000', // 가장 짧은 구간
+  '#ff4500',
+  '#ffa500',
+  '#ffff00',
+  '#90ee90',
+  '#008000'  // 가장 긴 구간
 ];
 
 // 이동 수단
@@ -313,9 +307,12 @@ class IsochroneTool {
     const unit = rangeType === 'time' ? '분' : 'km';
     let fullExtent = null;
 
+    // 구간 수만큼 램프에서 뽑는다 — 짧은 구간이 0번, 긴 구간이 마지막
+    const colors = sampleColorRamp(ISOCHRONE_RAMP, features.length);
+
     // 각 피처를 개별 레이어로 생성
     features.forEach((feature, index) => {
-      const colorIndex = Math.min(index, ISOCHRONE_COLORS.length - 1);
+      // features는 큰 영역이 앞에 오도록 뒤집혀 있다 (위 reverse)
       const intervalIndex = features.length - 1 - index;
       const interval = intervals[intervalIndex];
 
@@ -342,7 +339,7 @@ class IsochroneTool {
 
       // LayerManager에 등록 (스타일은 LayerManager가 관리)
       // 색상 정보를 hex로 변환하여 전달
-      const fillColorHex = ['#008000', '#90EE90', '#FFFF00', '#FFA500', '#FF4500', '#FF0000'][colorIndex];
+      const fillColorHex = colors[intervalIndex];
       const layerName = this.uniqueLayerName(`등시선 ${profileName} ${interval}${unit}`);
       const layerId = layerManager.addLayer({
         name: layerName,
@@ -433,9 +430,11 @@ class IsochroneTool {
     let legendHTML = `<div class="isochrone-legend-title">${profileName} 등시선</div>`;
     legendHTML += '<div class="isochrone-legend-items">';
 
+    // 지도와 같은 색을 써야 한다 — 뽑는 방식이 어긋나면 범례가 거짓말을 한다
+    const colors = sampleColorRamp(ISOCHRONE_RAMP, intervals.length);
+
     intervals.forEach((interval, i) => {
-      const colorIndex = Math.min(intervals.length - 1 - i, ISOCHRONE_COLORS.length - 1);
-      const fillColor = ISOCHRONE_COLORS[colorIndex].replace('0.3', '0.6');
+      const fillColor = hexToRgba(colors[i], 0.6);
       const label = rangeType === 'time' ? `${interval}분` : `${interval}km`;
 
       legendHTML += `

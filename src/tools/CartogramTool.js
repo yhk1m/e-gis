@@ -14,6 +14,7 @@ import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
 import { makeDraggable } from '../utils/DraggableElement.js';
 import { choroplethTool } from './ChoroplethTool.js';
 import { eventBus, Events } from '../utils/EventBus.js';
+import { makeStroke } from '../utils/strokeStyle.js';
 
 class CartogramTool {
   constructor() {
@@ -86,7 +87,8 @@ class CartogramTool {
     const self = this;
     const { attribute, colors, breaks, showLabels } = config;
     const fillOpacity = styleOpts.fillOpacity !== undefined ? styleOpts.fillOpacity : 0.85;
-    const strokeWidth = styleOpts.strokeWidth || 1;
+    // 0은 '테두리 없음' — || 로 받으면 조용히 1로 되돌아간다
+    const strokeWidth = styleOpts.strokeWidth !== undefined ? styleOpts.strokeWidth : 1;
     const strokeColor = styleOpts.strokeColor || '#333';
     const syncStroke = styleOpts.syncStroke !== false;
     const lineDash = styleOpts.lineDash !== undefined ? styleOpts.lineDash : null;
@@ -96,7 +98,7 @@ class CartogramTool {
       const color = colors[self.cartoColorIndex(val, breaks, colors.length)] || colors[0];
       return new Style({
         fill: new Fill({ color: self.hexToRgba(color, fillOpacity) }),
-        stroke: new Stroke({
+        stroke: makeStroke({
           color: syncStroke ? choroplethTool.darkenColor(color) : strokeColor,
           width: strokeWidth,
           lineDash: lineDash

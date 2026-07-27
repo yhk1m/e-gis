@@ -589,6 +589,28 @@ export class LayerPanel {
         " " + dataAttr + "=\"" + s.color + "\" title=\"" + s.name + "\"" +
         " style=\"background-color: " + s.color + "\"></div>";
     }).join("");
+
+    /**
+     * 슬라이더 + 숫자 입력 한 줄.
+     * 대충 맞추는 건 슬라이더가 빠르고, 정확한 값은 숫자로 적는 게 빠르다. 둘 다 준다.
+     * @param {string} label - 항목 이름 (예: "면 불투명도")
+     * @param {string} cls - 컨트롤 식별 클래스 (예: "fill-opacity")
+     * @param {number} value - 현재 값
+     * @param {string} unit - 단위 표시 ("%" 또는 "px")
+     * @param {number} min - 최솟값
+     * @param {number} max - 최댓값
+     * @param {number} step - 슬라이더 눈금 (숫자 입력은 자유롭게 받는다)
+     */
+    const sliderRow = (label, cls, value, unit, min, max, step) => {
+      return "<div class=\"style-section\"><label>" + label + ":</label>" +
+        "<div class=\"slider-row\">" +
+        "<input type=\"range\" class=\"range-slider " + cls + "-slider\"" +
+        " min=\"" + min + "\" max=\"" + max + "\" step=\"" + step + "\" value=\"" + value + "\">" +
+        "<input type=\"number\" class=\"slider-number " + cls + "-number\"" +
+        " min=\"" + min + "\" max=\"" + max + "\" step=\"any\" value=\"" + value + "\">" +
+        "<span class=\"slider-unit\">" + unit + "</span>" +
+        "</div></div>";
+    };
     const picker = document.createElement("div");
     picker.className = "color-picker-popup";
 
@@ -624,8 +646,7 @@ export class LayerPanel {
         html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + fc + "\" class=\"raster-filter-color-input\"></div></div>";
       }
 
-      html += "<div class=\"style-section\"><label>불투명도: <span class=\"raster-opacity-value\">" + opacityPct + "%</span></label>";
-      html += "<input type=\"range\" class=\"opacity-slider raster-opacity-slider\" min=\"0\" max=\"100\" value=\"" + opacityPct + "\"></div>";
+      html += sliderRow("불투명도", "raster-opacity", opacityPct, "%", 0, 100, 1);
 
       if (!isFilter) {
         html += "<div class=\"style-section\" style=\"font-size:12px;color:var(--text-secondary,#888)\">색상은 분석 종류(고도/경사/향)에 따라 자동 지정됩니다.</div>";
@@ -644,9 +665,7 @@ export class LayerPanel {
         html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentFillColor + "\" class=\"fill-color-input\"></div></div>";
       }
 
-      // 면 불투명도
-      html += "<div class=\"style-section\"><label>면 불투명도: <span class=\"fill-opacity-value\">" + Math.round(currentFillOpacity * 100) + "%</span></label>";
-      html += "<input type=\"range\" class=\"opacity-slider fill-opacity-slider\" min=\"0\" max=\"100\" value=\"" + Math.round(currentFillOpacity * 100) + "\"></div>";
+      html += sliderRow("면 불투명도", "fill-opacity", Math.round(currentFillOpacity * 100), "%", 0, 100, 1);
 
       // 테두리 동기화 — 분류 레이어에만 의미가 있다
       const syncOn = layer.strokeSyncToFill !== false;
@@ -664,9 +683,7 @@ export class LayerPanel {
       html += "<label>선 색상:</label><div class=\"color-picker-grid\">" + strokeColorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentStrokeColor + "\" class=\"stroke-color-input\"></div></div>";
 
-      // 선 두께
-      html += "<div class=\"style-section\"><label>선 두께: <span class=\"stroke-width-value\">" + currentStrokeWidth + "px</span></label>";
-      html += "<input type=\"range\" class=\"stroke-width-slider\" min=\"1\" max=\"10\" value=\"" + currentStrokeWidth + "\"></div>";
+      html += sliderRow("선 두께", "stroke-width", currentStrokeWidth, "px", 0, 10, 0.5);
 
       // 선 스타일
       html += "<div class=\"style-section\"><label>선 스타일:</label><div class=\"stroke-style-options\">";
@@ -682,13 +699,8 @@ export class LayerPanel {
       html += "<div class=\"style-section\"><label>선 색상:</label><div class=\"color-picker-grid\">" + colorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + layer.color + "\" class=\"color-input\"></div></div>";
 
-      // 선 투명도
-      html += "<div class=\"style-section\"><label>선 투명도: <span class=\"stroke-opacity-value\">" + Math.round(currentStrokeOpacity * 100) + "%</span></label>";
-      html += "<input type=\"range\" class=\"opacity-slider stroke-opacity-slider\" min=\"0\" max=\"100\" value=\"" + Math.round(currentStrokeOpacity * 100) + "\"></div>";
-
-      // 선 두께
-      html += "<div class=\"style-section\"><label>선 두께: <span class=\"stroke-width-value\">" + currentStrokeWidth + "px</span></label>";
-      html += "<input type=\"range\" class=\"stroke-width-slider\" min=\"1\" max=\"10\" value=\"" + currentStrokeWidth + "\"></div>";
+      html += sliderRow("선 투명도", "stroke-opacity", Math.round(currentStrokeOpacity * 100), "%", 0, 100, 1);
+      html += sliderRow("선 두께", "stroke-width", currentStrokeWidth, "px", 0, 10, 0.5);
 
       // 선 스타일
       html += "<div class=\"style-section\"><label>선 스타일:</label><div class=\"stroke-style-options\">";
@@ -704,9 +716,7 @@ export class LayerPanel {
       html += "<div class=\"style-section\"><label>면 색상:</label><div class=\"color-picker-grid\">" + fillColorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentFillColor + "\" class=\"fill-color-input\"></div></div>";
 
-      // 면 불투명도
-      html += "<div class=\"style-section\"><label>면 불투명도: <span class=\"fill-opacity-value\">" + Math.round(currentFillOpacity * 100) + "%</span></label>";
-      html += "<input type=\"range\" class=\"opacity-slider fill-opacity-slider\" min=\"0\" max=\"100\" value=\"" + Math.round(currentFillOpacity * 100) + "\"></div>";
+      html += sliderRow("면 불투명도", "fill-opacity", Math.round(currentFillOpacity * 100), "%", 0, 100, 1);
 
       // 테두리 색상
       const strokeColorItems = swatchItems("data-stroke-color", currentStrokeColor);
@@ -714,9 +724,7 @@ export class LayerPanel {
       html += "<div class=\"style-section\"><label>테두리 색상:</label><div class=\"color-picker-grid\">" + strokeColorItems + "</div>";
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentStrokeColor + "\" class=\"stroke-color-input\"></div></div>";
 
-      // 테두리 두께
-      html += "<div class=\"style-section\"><label>테두리 두께: <span class=\"stroke-width-value\">" + currentStrokeWidth + "px</span></label>";
-      html += "<input type=\"range\" class=\"stroke-width-slider\" min=\"0\" max=\"10\" value=\"" + currentStrokeWidth + "\"></div>";
+      html += sliderRow("테두리 두께", "stroke-width", currentStrokeWidth, "px", 0, 10, 0.5);
     }
 
 
@@ -846,45 +854,66 @@ export class LayerPanel {
       });
     }
 
-    var fillOpacitySlider = picker.querySelector(".fill-opacity-slider");
-    if (fillOpacitySlider) {
-      fillOpacitySlider.addEventListener("input", function(e) {
-        var opacity = parseInt(e.target.value) / 100;
-        var label = picker.querySelector(".fill-opacity-value");
-        if (label) label.textContent = e.target.value + "%";
-        layerManager.setLayerFillOpacity(layerId, opacity);
-      });
-    }
+    /**
+     * 슬라이더와 숫자 입력을 한 값으로 묶는다.
+     * 어느 쪽을 건드려도 나머지 하나가 따라오고 apply가 불린다.
+     *
+     * 숫자 입력은 타이핑 도중에도 input이 온다. 지우는 중('')이나 '-'만 친 상태에서
+     * 값을 강제로 되돌리면 글자를 못 지운다. 그래서 그때는 넘기고,
+     * 포커스를 뗄 때(change) 범위 안으로 정리한다.
+     *
+     * @param {string} cls - sliderRow에 넘긴 식별 클래스
+     * @param {function(number)} apply - 확정된 값으로 실제 스타일을 바꾸는 함수
+     */
+    var bindSliderRow = function(cls, apply) {
+      var slider = picker.querySelector("." + cls + "-slider");
+      var number = picker.querySelector("." + cls + "-number");
+      if (!slider || !number) return;
 
-    var strokeOpacitySlider = picker.querySelector(".stroke-opacity-slider");
-    if (strokeOpacitySlider) {
-      strokeOpacitySlider.addEventListener("input", function(e) {
-        var opacity = parseInt(e.target.value) / 100;
-        var label = picker.querySelector(".stroke-opacity-value");
-        if (label) label.textContent = e.target.value + "%";
-        layerManager.setLayerStrokeOpacity(layerId, opacity);
-      });
-    }
+      var min = parseFloat(slider.min);
+      var max = parseFloat(slider.max);
+      var clamp = function(v) { return Math.min(max, Math.max(min, v)); };
 
-    var strokeWidthSlider = picker.querySelector(".stroke-width-slider");
-    if (strokeWidthSlider) {
-      strokeWidthSlider.addEventListener("input", function(e) {
-        var width = parseInt(e.target.value);
-        var label = picker.querySelector(".stroke-width-value");
-        if (label) label.textContent = width + "px";
-        layerManager.setLayerStrokeWidth(layerId, width);
+      slider.addEventListener("input", function() {
+        var v = parseFloat(slider.value);
+        number.value = v;
+        apply(v);
       });
-    }
 
-    var rasterOpacitySlider = picker.querySelector(".raster-opacity-slider");
-    if (rasterOpacitySlider) {
-      rasterOpacitySlider.addEventListener("input", function(e) {
-        var opacity = parseInt(e.target.value) / 100;
-        var label = picker.querySelector(".raster-opacity-value");
-        if (label) label.textContent = e.target.value + "%";
-        layerManager.setRasterOpacity(layerId, opacity);
+      number.addEventListener("input", function() {
+        if (number.value.trim() === "") return;
+        var v = parseFloat(number.value);
+        if (isNaN(v)) return;
+        v = clamp(v);
+        slider.value = v;
+        apply(v);
       });
-    }
+
+      // 범위를 벗어났거나 비어 있는 채로 떠나면 마지막 유효값으로 되돌린다
+      number.addEventListener("change", function() {
+        var v = parseFloat(number.value);
+        v = isNaN(v) ? parseFloat(slider.value) : clamp(v);
+        number.value = v;
+        slider.value = v;
+        apply(v);
+      });
+    };
+
+    bindSliderRow("fill-opacity", function(pct) {
+      layerManager.setLayerFillOpacity(layerId, pct / 100);
+    });
+
+    bindSliderRow("stroke-opacity", function(pct) {
+      layerManager.setLayerStrokeOpacity(layerId, pct / 100);
+    });
+
+    bindSliderRow("stroke-width", function(width) {
+      layerManager.setLayerStrokeWidth(layerId, width);
+    });
+
+    bindSliderRow("raster-opacity", function(pct) {
+      layerManager.setRasterOpacity(layerId, pct / 100);
+    });
 
     var rasterFilterColorInput = picker.querySelector(".raster-filter-color-input");
     if (rasterFilterColorInput) {

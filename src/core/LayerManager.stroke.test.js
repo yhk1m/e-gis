@@ -145,6 +145,61 @@ describe('단계구분도 테두리', () => {
   });
 });
 
+describe('선 두께 0 = 테두리 없음', () => {
+  beforeEach(() => {
+    layerManager.getAllLayers().slice().forEach(l => layerManager.removeLayer(l.id));
+  });
+
+  /** 두께 0은 '테두리를 그리지 말라'는 뜻이다. 예전에는 `|| 2`에 걸려 조용히 2로 돌아갔다. */
+  function styleWithWidth(geometryType, width) {
+    const id = layerManager.addLayer({
+      name: '두께 시험', geometryType, features: [square(1)], color: '#3388ff'
+    });
+    const info = layerManager.getLayer(id);
+    info.strokeWidth = width;
+    layerManager.updateLayerStyle(id);
+    return info.olLayer.getStyle();
+  }
+
+  it('폴리곤: 0이면 테두리를 그리지 않는다', () => {
+    expect(styleWithWidth('Polygon', 0).getStroke()).toBeFalsy();
+  });
+
+  it('폴리곤: 0이 아니면 그대로 쓴다', () => {
+    expect(styleWithWidth('Polygon', 3).getStroke().getWidth()).toBe(3);
+  });
+
+  it('선: 0이면 테두리를 그리지 않는다', () => {
+    expect(styleWithWidth('LineString', 0).getStroke()).toBeFalsy();
+  });
+
+  it('포인트: 0이면 테두리를 그리지 않는다', () => {
+    expect(styleWithWidth('Point', 0).getImage().getStroke()).toBeFalsy();
+  });
+
+  it('단계구분도: 0이면 테두리를 그리지 않는다', () => {
+    const { id, info } = makeChoropleth();
+    info.strokeWidth = 0;
+    layerManager.updateLayerStyle(id);
+
+    const style = info.olLayer.getStyle()(info.source.getFeatures()[0]);
+    expect(style.getStroke()).toBeFalsy();
+    // 채우기는 그대로 남아야 한다 — 테두리만 없애는 것이다
+    expect(style.getFill()).toBeTruthy();
+  });
+
+  it('두께를 지정하지 않으면 기본 2를 쓴다', () => {
+    const id = layerManager.addLayer({
+      name: '기본', geometryType: 'Polygon', features: [square(1)], color: '#3388ff'
+    });
+    const info = layerManager.getLayer(id);
+    delete info.strokeWidth;
+    layerManager.updateLayerStyle(id);
+
+    expect(info.olLayer.getStyle().getStroke().getWidth()).toBe(2);
+  });
+});
+
 /** 카토그램 설정을 붙인 레이어를 만든다 (CartogramTool이 하는 것과 같은 형태) */
 function makeCartogram() {
   const id = layerManager.addLayer({
@@ -196,6 +251,16 @@ describe('카토그램 스타일', () => {
     layerManager.setLayerStrokeWidth(id, 5);
 
     expect(typeof info.olLayer.getStyle()).toBe('function');
+  });
+
+  it('선 두께 0이면 테두리를 그리지 않는다', () => {
+    const { id, info } = makeCartogram();
+
+    layerManager.setLayerStrokeWidth(id, 0);
+
+    const style = info.olLayer.getStyle()(info.source.getFeatures()[0]);
+    expect(style.getStroke()).toBeFalsy();
+    expect(style.getFill()).toBeTruthy();
   });
 
   it('기본(동기화 ON)은 분류색을 어둡게 한 색이다', () => {
