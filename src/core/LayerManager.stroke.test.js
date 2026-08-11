@@ -212,8 +212,7 @@ function makeCartogram() {
   info._cartogramConfig = {
     attribute: 'pop',
     colors: ['#ffffcc', '#800026'],
-    breaks: [0, 50, 100],
-    showLabels: false
+    breaks: [0, 50, 100]
   };
   info.fillOpacity = 0.85;
   info.strokeColor = '#333';
@@ -319,8 +318,7 @@ describe('CartogramTool.attachCartogram', () => {
     cartogramTool.attachCartogram(id, {
       attribute: 'pop',
       colors: ['#ffffcc', '#800026'],
-      breaks: [0, 50, 100],
-      showLabels: false
+      breaks: [0, 50, 100]
     });
 
     const info = layerManager.getLayer(id);
@@ -343,8 +341,7 @@ describe('CartogramTool.attachCartogram', () => {
     cartogramTool.attachCartogram(id, {
       attribute: 'pop',
       colors: ['#ffffcc', '#800026'],
-      breaks: [0, 50, 100],
-      showLabels: false
+      breaks: [0, 50, 100]
     });
 
     const info = layerManager.getLayer(id);

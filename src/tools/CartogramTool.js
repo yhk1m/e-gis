@@ -11,7 +11,7 @@ import { Point, Polygon } from 'ol/geom';
 import { getCenter } from 'ol/extent';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
-import { Style, Fill, Stroke, Circle as CircleStyle, Text } from 'ol/style';
+import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { makeDraggable } from '../utils/DraggableElement.js';
 import { choroplethTool } from './ChoroplethTool.js';
 import { eventBus, Events } from '../utils/EventBus.js';
@@ -79,14 +79,17 @@ class CartogramTool {
   /**
    * 카토그램 레이어 스타일 함수 (속성값 기반 — 저장/복원 시에도 색 유지)
    *
-   * @param {Object} config - { attribute, colors, breaks, showLabels }
+   * 라벨은 그리지 않는다 — '레이어 > 라벨 설정'이 필드·글꼴·위치까지 다 다룬다.
+   * (옛 저장본에 남은 config.showLabels는 무시한다)
+   *
+   * @param {Object} config - { attribute, colors, breaks }
    * @param {Object} [styleOpts] - layerInfo에서 온 사용자 스타일.
    *   { fillOpacity, strokeWidth, strokeColor, syncStroke, lineDash }
    *   생략하면 카토그램 고유 기본값(0.85 / 1 / '#333' / 동기화 ON)을 쓴다.
    */
   cartogramStyle(config, styleOpts = {}) {
     const self = this;
-    const { attribute, colors, breaks, showLabels } = config;
+    const { attribute, colors, breaks } = config;
     const fillOpacity = styleOpts.fillOpacity !== undefined ? styleOpts.fillOpacity : 0.85;
     // 0은 '테두리 없음' — || 로 받으면 조용히 1로 되돌아간다
     const strokeWidth = styleOpts.strokeWidth !== undefined ? styleOpts.strokeWidth : 1;
@@ -103,14 +106,7 @@ class CartogramTool {
           color: syncStroke ? choroplethTool.darkenColor(color) : strokeColor,
           width: strokeWidth,
           lineDash: lineDash
-        }),
-        text: showLabels ? new Text({
-          text: String(feature.get('name') || feature.get('NAME') || ''),
-          font: 'bold 11px sans-serif',
-          fill: new Fill({ color: '#333' }),
-          stroke: new Stroke({ color: '#fff', width: 3 }),
-          overflow: true
-        }) : undefined
+        })
       });
     };
   }
@@ -191,7 +187,6 @@ class CartogramTool {
     const {
       colorScheme = 'blues',
       method = 'quantile',
-      showLabels = false,
       iterations = 120,
       sizeScale = 1
     } = options;
@@ -230,7 +225,7 @@ class CartogramTool {
     this.applyForceLayout(data, iterations);
 
     // 속성 기반 스타일 함수로 색상 적용 (저장/복원에도 유지)
-    const config = { attribute, colorScheme, method, colors: cls.colors, breaks: cls.breaks, showLabels, cartogramType: 'dorling' };
+    const config = { attribute, colorScheme, method, colors: cls.colors, breaks: cls.breaks, cartogramType: 'dorling' };
 
     const newFeatures = data.map(d => {
       const props = d.feature.getProperties();
@@ -345,8 +340,7 @@ class CartogramTool {
 
     const {
       colorScheme = 'blues',
-      method = 'quantile',
-      showLabels = false
+      method = 'quantile'
     } = options;
 
     const positives = features.filter(f => {
@@ -375,7 +369,7 @@ class CartogramTool {
       return new Feature({ geometry: scaledGeom, ...props });
     }).filter(f => f !== null);
 
-    const config = { attribute, colorScheme, method, colors: cls.colors, breaks: cls.breaks, showLabels, cartogramType: 'noncontiguous' };
+    const config = { attribute, colorScheme, method, colors: cls.colors, breaks: cls.breaks, cartogramType: 'noncontiguous' };
 
     const vectorSource = new VectorSource({ features: newFeatures });
     const vectorLayer = new VectorLayer({ source: vectorSource, style: this.cartogramStyle(config) });
@@ -417,7 +411,6 @@ class CartogramTool {
     const {
       colorScheme = 'blues',
       method = 'quantile',
-      showLabels = false,
       iterations = 15
     } = options;
 
@@ -505,7 +498,7 @@ class CartogramTool {
     }
 
     // 속성 기반 스타일 함수 (저장/복원에도 색 유지)
-    const config = { attribute, colorScheme, method, colors: cls.colors, breaks: cls.breaks, showLabels, cartogramType: 'contiguous' };
+    const config = { attribute, colorScheme, method, colors: cls.colors, breaks: cls.breaks, cartogramType: 'contiguous' };
 
     const newFeatures = data.map(d => {
       const props = d.feature.getProperties();

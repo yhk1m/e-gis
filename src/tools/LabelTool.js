@@ -7,6 +7,7 @@ import { Style, Text, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { Point } from 'ol/geom';
 import { layerManager } from '../core/LayerManager.js';
 import { collectFieldNames } from '../utils/layerSelect.js';
+import { labelPoint } from '../utils/labelPoint.js';
 import { mapManager } from '../core/MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { Translate } from 'ol/interaction';
@@ -49,43 +50,13 @@ class LabelTool {
       
       var center = null;
 
-      if (type === 'Polygon') {
-        // 무게중심점(centroid) 사용
-        try {
-          var interior = geom.getInteriorPoint();
-          if (interior) {
-            var coords = interior.getCoordinates();
-            if (coords && coords.length >= 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-              center = [coords[0], coords[1]];
-            }
-          }
-        } catch (e) {}
-        if (!center) {
-          var extent = geom.getExtent();
-          center = [(extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2];
-        }
+      if (type === 'Polygon' || type === 'MultiPolygon') {
+        // 여러 조각이면 본토(가장 큰 조각)의 내부점에 붙인다.
+        // MultiPolygon에는 getInteriorPoint()가 없어서 예전에는 예외로 떨어진 뒤
+        // polygons[0]의 경계상자 중심을 썼고, 첫 조각이 섬이면 라벨이 바다에 찍혔다.
+        center = labelPoint(geom);
       }
-      
-      else if (type === 'MultiPolygon') {
-        // 무게중심점(centroid) 사용
-        try {
-          var interior = geom.getInteriorPoint();
-          if (interior) {
-            var coords = interior.getCoordinates();
-            if (coords && coords.length >= 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-              center = [coords[0], coords[1]];
-            }
-          }
-        } catch (e) {}
-        if (!center) {
-          var polygons = geom.getPolygons();
-          if (polygons && polygons.length > 0) {
-            var extent = polygons[0].getExtent();
-            center = [(extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2];
-          }
-        }
-      }
-      
+
       else if (type === 'LineString') {
         var coords = geom.getCoordinates();
         if (coords && coords.length > 0) {

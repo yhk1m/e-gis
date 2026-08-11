@@ -139,12 +139,6 @@ class CartogramPanel {
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="cartogram-labels">
-                <span>라벨 표시</span>
-              </label>
-            </div>
           </div>
           <div class="modal-footer" style="padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: var(--spacing-sm);">
             <button class="btn btn-secondary btn-sm" id="cartogram-cancel">취소</button>
@@ -240,8 +234,8 @@ class CartogramPanel {
     const cartogramType = document.querySelector('input[name="cartogram-type"]:checked').value;
     const colorScheme = document.querySelector('input[name="color-scheme"]:checked').value;
     const method = document.getElementById('cartogram-method').value;
-    const showLabels = document.getElementById('cartogram-labels').checked;
-    const opts = { colorScheme, method, showLabels };
+    // 라벨은 '레이어 > 라벨 설정'이 담당한다 (필드·글꼴·위치까지 다룬다)
+    const opts = { colorScheme, method };
 
     try {
       let newLayerId;

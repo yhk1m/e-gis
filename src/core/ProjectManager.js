@@ -152,7 +152,7 @@ export class ProjectManager {
           const c = layer._cartogramConfig;
           base.cartogramConfig = {
             attribute: c.attribute, colorScheme: c.colorScheme, method: c.method,
-            colors: c.colors, breaks: c.breaks, showLabels: c.showLabels, cartogramType: c.cartogramType
+            colors: c.colors, breaks: c.breaks, cartogramType: c.cartogramType
           };
         }
         // 히트맵 설정 — 저장하지 않으면 복원 시 OL Heatmap이 아니라 포인트로만 표시됨

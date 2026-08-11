@@ -176,7 +176,6 @@ class StateManager {
             method: c.method,
             colors: c.colors,
             breaks: c.breaks,
-            showLabels: c.showLabels,
             cartogramType: c.cartogramType
           };
         }
