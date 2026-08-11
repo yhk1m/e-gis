@@ -113,7 +113,7 @@ class BuiltinDataDialog {
     // 공공데이터 목록은 서버에서 받아온다 — 탭을 처음 열 때만 부른다
     if (tab === 'public') {
       const root = this.overlay.querySelector('[data-public-data-root]');
-      publicDataTab.mount(root);
+      publicDataTab.mount(root, { onLayerAdded: () => this.close() });
     }
   }
 

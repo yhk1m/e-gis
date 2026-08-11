@@ -4694,3 +4694,104 @@ body.exporting .egis-basemap-panel {
   font-size: 11.5px;
   color: var(--text-secondary);
 }
+
+/* 공공데이터 — 항목 상세(선택지·미리보기) */
+.public-data-detail {
+  padding: 14px 16px;
+}
+
+.public-data-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.public-data-back {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.public-data-back:hover {
+  color: var(--text-primary);
+}
+
+.public-data-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+}
+
+.public-data-field > span {
+  min-width: 60px;
+  color: var(--text-secondary);
+}
+
+.public-data-param {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+}
+
+.public-data-load {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.public-data-summary {
+  margin: 14px 0 6px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+}
+
+.public-data-skipped {
+  color: var(--text-secondary);
+  font-size: 11.5px;
+}
+
+.public-data-table-wrap {
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.public-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.public-data-table th,
+.public-data-table td {
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.public-data-table th {
+  background: var(--bg-tertiary, var(--bg-panel));
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.public-data-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.public-data-actions .btn {
+  flex: 1;
+}
