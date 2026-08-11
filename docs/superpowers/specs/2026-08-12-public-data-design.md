@@ -61,6 +61,7 @@ GET /api/pubdata?id=air-sido&sido=서울  → 정규화된 데이터
   ],
   "count": 25,
   "skipped": 2,
+  "epsg": 4326,
   "fetchedAt": "2026-08-12T01:00:00Z"
 }
 ```

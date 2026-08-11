@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config';
 // 루트 npm test는 e-GIS 본체(src/)만 대상으로 한다.
 export default defineConfig({
   test: {
-    include: ['src/**/*.test.js']
+    // api/는 Vercel 서버리스 함수. 순수 로직(정규화·허용목록)은 여기서 함께 검증한다.
+    include: ['src/**/*.test.js', 'api/**/*.test.js']
   }
 });

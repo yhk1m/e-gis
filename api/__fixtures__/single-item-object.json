@@ -1,0 +1,16 @@
+{
+  "response": {
+    "header": { "resultCode": "00", "resultMsg": "NORMAL_CODE" },
+    "body": {
+      "totalCount": 1,
+      "items": {
+        "item": {
+          "chargerName": "가평군청 충전소",
+          "lng": "127.509742",
+          "lat": "37.831097",
+          "chgerType": "급속"
+        }
+      }
+    }
+  }
+}

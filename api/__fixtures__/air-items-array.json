@@ -1,0 +1,31 @@
+{
+  "response": {
+    "header": { "resultCode": "00", "resultMsg": "NORMAL_CODE" },
+    "body": {
+      "totalCount": 3,
+      "items": [
+        {
+          "stationName": "강남구",
+          "dmX": "37.517562",
+          "dmY": "127.047282",
+          "pm10Value": "42",
+          "pm25Value": "21"
+        },
+        {
+          "stationName": "종로구",
+          "dmX": "37.572025",
+          "dmY": "127.005028",
+          "pm10Value": "-",
+          "pm25Value": "18"
+        },
+        {
+          "stationName": "좌표없음측정소",
+          "dmX": "",
+          "dmY": "",
+          "pm10Value": "30",
+          "pm25Value": "15"
+        }
+      ]
+    }
+  }
+}
