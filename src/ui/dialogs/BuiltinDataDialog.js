@@ -13,11 +13,13 @@ import { mapManager } from '../../core/MapManager.js';
 import { tableJoinTool } from '../../tools/TableJoinTool.js';
 import { tableLoader } from '../../loaders/TableLoader.js';
 import { googleSheetLoader } from '../../loaders/GoogleSheetLoader.js';
+import { publicDataTab } from './publicDataTab.js';
 
 const TAB_FOOTER_TEXT = {
   basic: '공간정보는 레이어로 추가, 속성정보는 테이블 결합에 활용됩니다',
   sheets: '공개된 구글 스프레드시트 링크로 속성·좌표 데이터를 가져옵니다',
-  practice: '수업 실습 유형별 데이터셋을 불러옵니다'
+  practice: '수업 실습 유형별 데이터셋을 불러옵니다',
+  public: '공공데이터포털의 데이터를 실시간으로 불러옵니다'
 };
 
 const PRACTICE_TYPE_META = {
@@ -69,6 +71,7 @@ class BuiltinDataDialog {
               <button class="builtin-tab" data-tab="basic">📂 기본 데이터</button>
               <button class="builtin-tab" data-tab="sheets">📋 스프레드시트</button>
               <button class="builtin-tab" data-tab="practice">🎓 실습 데이터</button>
+              <button class="builtin-tab" data-tab="public">🌐 공공데이터</button>
             </div>
             <div class="builtin-tab-content" data-tab-content="basic">
               ${this._renderBasicTab()}
@@ -78,6 +81,9 @@ class BuiltinDataDialog {
             </div>
             <div class="builtin-tab-content" data-tab-content="practice" style="display:none;">
               ${this._renderPracticeTab()}
+            </div>
+            <div class="builtin-tab-content" data-tab-content="public" style="display:none;">
+              ${publicDataTab.render()}
             </div>
           </div>
           <div class="modal-footer" style="font-size: 11px; color: var(--text-muted); justify-content: center;">
@@ -103,6 +109,12 @@ class BuiltinDataDialog {
     });
     const footerEl = this.overlay.querySelector('#builtin-footer-text');
     if (footerEl) footerEl.textContent = TAB_FOOTER_TEXT[tab] || '';
+
+    // 공공데이터 목록은 서버에서 받아온다 — 탭을 처음 열 때만 부른다
+    if (tab === 'public') {
+      const root = this.overlay.querySelector('[data-public-data-root]');
+      publicDataTab.mount(root);
+    }
   }
 
   // ============================
