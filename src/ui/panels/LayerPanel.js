@@ -375,13 +375,18 @@ export class LayerPanel {
       // 단일 선택 메뉴 — 복사/내보내기는 벡터 기반만(래스터·도형표현도는 피처가 없어 불가)
       const info = layerManager.getLayer(layerId);
       const isVector = !!(info && info.type !== 'raster' && info.type !== 'chartmap' && info.source);
+      // 래스터는 스타일 팝업에 색상이 없고 불투명도만 있다(단색 필터 결과만 색 변경 가능).
+      // '색상 변경'이라고만 적어두면 투명도 조절을 찾지 못한다.
+      const isRaster = !!(info && info.type === 'raster');
+      const isFilterRaster = isRaster && !!(info.analysisData && info.analysisData.colorScheme === 'filter');
+      const styleLabel = isRaster ? (isFilterRaster ? '색상·투명도' : '투명도 조절') : '색상 변경';
       menu.innerHTML = `
         <div class="context-menu-item" data-action="zoom">레이어로 이동</div>
         <div class="context-menu-item" data-action="rename">이름 변경</div>
         ${isVector ? '<div class="context-menu-item" data-action="duplicate">레이어 복사</div>' : ''}
         ${isVector ? '<div class="context-menu-item" data-action="export">내보내기 (GeoJSON)</div>' : ''}
         <div class="context-menu-item" data-action="table">속성 테이블</div>
-        <div class="context-menu-item" data-action="color">색상 변경</div>
+        <div class="context-menu-item" data-action="color">${styleLabel}</div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item danger" data-action="remove">삭제</div>
       `;

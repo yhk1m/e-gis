@@ -53,6 +53,25 @@ const SWATCH_PALETTE = [
   { color: '#1e88e5', name: '파랑' }
 ];
 
+/**
+ * 새 폴리곤 레이어에 순서대로 주는 색 — 스타일 편집 팔레트와 같은 순서(흰색부터).
+ * 첫 레이어를 흰색으로 두는 건 밑그림(행정경계) 위에 색을 쌓아가는 수업 흐름 때문이다.
+ * 포인트·선은 흰색·검은색이 잘 안 보여 기존 AUTO_COLOR_SEQUENCE를 그대로 쓴다.
+ */
+const POLYGON_COLOR_SEQUENCE = SWATCH_PALETTE.map(s => s.color);
+
+/** 면 색 위에서 보이는 기본 선 색 — 검은 면에 검은 선을 그으면 테두리가 사라진다 */
+function defaultStrokeFor(fillColor) {
+  const hex = String(fillColor || '').trim().toLowerCase();
+  const isBlack = hex === '#000000' || hex === '#000';
+  return isBlack ? '#ffffff' : '#000000';
+}
+
+/** 면이 있는(채우기가 보이는) 지오메트리인가 */
+function isPolygonType(geometryType) {
+  return geometryType === 'Polygon' || geometryType === 'MultiPolygon';
+}
+
 const STROKE_DASH_OPTIONS = {
   solid: null,
   dashed: [10, 10],
@@ -67,12 +86,25 @@ class LayerManager {
     this.selectedLayerId = null;
     this.selectedLayerIds = new Set(); // 다중 선택 지원
     this.colorIndex = 0;
+    this.polygonColorIndex = 0;
   }
 
   getNextColor() {
     const color = AUTO_COLOR_SEQUENCE[this.colorIndex % AUTO_COLOR_SEQUENCE.length];
     this.colorIndex++;
     return color;
+  }
+
+  /** 폴리곤은 팔레트 순서(흰색 → 회색 → 검은색 → 유채색)대로 배정한다 */
+  getNextPolygonColor() {
+    const color = POLYGON_COLOR_SEQUENCE[this.polygonColorIndex % POLYGON_COLOR_SEQUENCE.length];
+    this.polygonColorIndex++;
+    return color;
+  }
+
+  /** 지오메트리에 맞는 자동 색 (폴리곤만 팔레트 순서) */
+  pickAutoColor(geometryType) {
+    return isPolygonType(geometryType) ? this.getNextPolygonColor() : this.getNextColor();
   }
 
   /**
@@ -113,7 +145,8 @@ class LayerManager {
 
   createStyle(color, geometryType) {
     if (!geometryType) geometryType = "polygon";
-    const rgbaColor = this.hexToRgba(color, 0.3);
+    // 폴리곤 면은 불투명하게 깔고, 테두리는 면 색에 맞춰 보이는 색으로 (addLayer 기본값과 같은 규약)
+    const rgbaColor = this.hexToRgba(color, 1);
 
     if (geometryType === "Point" || geometryType === "MultiPoint") {
       return new Style({
@@ -130,7 +163,7 @@ class LayerManager {
     } else {
       return new Style({
         fill: new Fill({ color: rgbaColor }),
-        stroke: new Stroke({ color: color, width: 2 })
+        stroke: new Stroke({ color: defaultStrokeFor(color), width: 2 })
       });
     }
   }
@@ -147,7 +180,12 @@ class LayerManager {
     const existingLayer = options.olLayer || null; // 기존 레이어 지원
 
     const layerId = options.id || ("layer-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9));
-    const layerColor = color || this.getNextColor();
+    // 자동 색은 지오메트리에 따라 다르므로(폴리곤=팔레트 순서) geometryType이 정해진 뒤에 고른다
+    let layerColor = color;
+    const resolveColor = () => {
+      if (!layerColor) layerColor = this.pickAutoColor(geometryType);
+      return layerColor;
+    };
 
     let vectorSource = null;
     let olLayer;
@@ -196,7 +234,7 @@ class LayerManager {
       }
 
       geometryType = detectGeometryType(vectorSource);
-      const layerStyle = style || this.createStyle(layerColor, geometryType);
+      const layerStyle = style || this.createStyle(resolveColor(), geometryType);
 
       olLayer = new VectorLayer({
         source: vectorSource,
@@ -210,6 +248,11 @@ class LayerManager {
     const newZIndex = zIndex !== null ? zIndex : this.layerOrder.length + 1;
     olLayer.setZIndex(newZIndex);
 
+    resolveColor();
+    // 폴리곤: 면은 불투명(100%), 선은 면 색 위에서 보이는 색.
+    // 포인트·선은 예전 그대로(색=선색, 면 30%) — 흰 점·검은 점은 배경에 묻힌다.
+    const polygonal = isPolygonType(geometryType);
+
     const layerInfo = {
       id: layerId,
       name: name,
@@ -218,13 +261,13 @@ class LayerManager {
       source: vectorSource,
       visible: visible,
       color: layerColor,
-      strokeColor: layerColor,
+      strokeColor: polygonal ? defaultStrokeFor(layerColor) : layerColor,
       fillColor: layerColor,
       geometryType: geometryType,
       featureCount: featureCount,
       strokeDash: "solid",
       strokeSyncToFill: true,
-      fillOpacity: 0.3,
+      fillOpacity: polygonal ? 1.0 : 0.3,
       strokeOpacity: 1.0,
       strokeWidth: 2,
       pointRadius: 6
@@ -260,6 +303,12 @@ class LayerManager {
 
     // 다중 선택에서도 제거
     this.selectedLayerIds.delete(layerId);
+
+    // 레이어가 하나도 없으면 색 순서를 처음으로 — 새로 시작할 때 첫 폴리곤은 다시 흰색이어야 한다
+    if (this.layers.size === 0) {
+      this.colorIndex = 0;
+      this.polygonColorIndex = 0;
+    }
 
     eventBus.emit(Events.LAYER_REMOVED, { layerId: layerId });
     return true;

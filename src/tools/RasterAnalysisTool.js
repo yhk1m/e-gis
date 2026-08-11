@@ -93,7 +93,9 @@ class RasterAnalysisTool {
     const cellSizeY = (extent[3] - extent[1]) / height;
 
     // Hillshade 데이터 생성
-    const hillshadeData = new Float32Array(width * height);
+    // 3x3 이웃이 필요해 가장자리 1셀은 계산에서 빠진다. 기본값 0으로 두면
+    // "유효한 값"으로 칠해져 DEM 범위에 테두리 사각형이 그려진다 → nodata로 채운다.
+    const hillshadeData = new Float32Array(width * height).fill(noDataValue);
 
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
@@ -369,7 +371,9 @@ class RasterAnalysisTool {
     const cellSizeY = (extent[3] - extent[1]) / height;
 
     // Slope 데이터 생성
-    const slopeData = new Float32Array(width * height);
+    // 가장자리 1셀은 3x3 이웃이 없어 계산에서 빠진다. 0으로 남기면 경사 0°(초록)로
+    // 칠해져 DEM 범위에 사각형 테두리가 생긴다 → computeMetric과 같이 nodata로 채운다.
+    const slopeData = new Float32Array(width * height).fill(noDataValue);
     let minSlope = Infinity, maxSlope = -Infinity;
 
     for (let y = 1; y < height - 1; y++) {
@@ -434,7 +438,9 @@ class RasterAnalysisTool {
     const cellSizeY = (extent[3] - extent[1]) / height;
 
     // Aspect 데이터 생성
-    const aspectData = new Float32Array(width * height);
+    // 가장자리 1셀은 계산에서 빠진다. 0으로 남기면 향 0°(북=빨강)로 칠해져
+    // DEM 범위에 사각형 테두리가 생긴다 → nodata로 채운다.
+    const aspectData = new Float32Array(width * height).fill(noDataValue);
 
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
