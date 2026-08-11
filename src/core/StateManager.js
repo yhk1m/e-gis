@@ -220,6 +220,10 @@ class StateManager {
           color: layerInfo.color,
           ...pickStyleFields(layerInfo),
           visible: layerInfo.visible,
+          // 화면 순서 — 복원 시 이 값으로 아래에서 위 순서를 되살린다
+          zIndex: (layerInfo.olLayer && typeof layerInfo.olLayer.getZIndex === 'function')
+            ? layerInfo.olLayer.getZIndex()
+            : undefined,
           choroplethConfig,
           chartMapConfig,
           cartogramConfig,

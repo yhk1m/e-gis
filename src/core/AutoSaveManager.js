@@ -16,6 +16,7 @@ import { heatmapTool } from '../tools/HeatmapTool.js';
 class AutoSaveManager {
   constructor() {
     this.saveTimeout = null;
+    this.pendingSaves = new Set(); // 저장 예약된 레이어 ID
     this.mapSaveTimeout = null;
     this.isRestoring = false;
     this.geoJSON = new GeoJSON();
@@ -123,6 +124,13 @@ class AutoSaveManager {
       }
     });
 
+    // 레이어 순서 변경 시 저장 (순서는 레코드의 zIndex에 담긴다)
+    eventBus.on(Events.LAYER_ORDER_CHANGED, () => {
+      if (!this.isRestoring) {
+        this.scheduleOrderSave();
+      }
+    });
+
     // 지도 이동/확대 시 저장 (디바운스)
     eventBus.on(Events.MAP_MOVEEND, () => {
       if (!this.isRestoring) {
@@ -133,12 +141,36 @@ class AutoSaveManager {
 
   /**
    * 레이어 저장 스케줄 (디바운스)
+   *
+   * 예약은 레이어별로 쌓아 두고 타이머만 하나 쓴다. 예전에는 타이머 하나에
+   * 레이어 ID 하나만 물려 있어서, 파일을 여러 개 올리면 앞의 예약이 취소되고
+   * 마지막 레이어만 저장됐다(복원하면 나머지가 사라졌다).
    */
   scheduleSave(layerId) {
     if (!stateManager.isAutoSaveEnabled()) return;
 
+    this.pendingSaves.add(layerId);
+
     clearTimeout(this.saveTimeout);
-    this.saveTimeout = setTimeout(async () => {
+    this.saveTimeout = setTimeout(() => this.flushSaves(), 1000); // 1초 디바운스
+  }
+
+  /**
+   * 레이어 순서가 바뀌면 전부 다시 저장한다.
+   * 순서는 레코드의 zIndex로 남으므로, 순서만 바꾸고 새로고침해도 그대로 복원된다.
+   */
+  scheduleOrderSave() {
+    layerManager.getAllLayers().forEach(layerInfo => this.scheduleSave(layerInfo.id));
+  }
+
+  /**
+   * 예약된 레이어를 모두 저장한다. 하나가 실패해도 나머지는 계속 저장한다.
+   */
+  async flushSaves() {
+    const layerIds = Array.from(this.pendingSaves);
+    this.pendingSaves.clear();
+
+    for (const layerId of layerIds) {
       try {
         const layerInfo = layerManager.getLayer(layerId);
         if (layerInfo) {
@@ -148,7 +180,7 @@ class AutoSaveManager {
       } catch (e) {
         console.error('레이어 저장 실패:', e);
       }
-    }, 1000); // 1초 디바운스
+    }
   }
 
   /**
@@ -192,34 +224,28 @@ class AutoSaveManager {
         }
       }
 
-      // 레이어 복원 — 같은 (이름, 타입, 피처수) 그룹에서 가장 최신만 남기고 중복 제거
-      const allSaved = await stateManager.getAllLayers();
-      const groups = new Map();
-      for (const rec of allSaved) {
-        const fc = rec.features && rec.features.features ? rec.features.features.length : 0;
-        const key = `${rec.name}|${rec.type || 'vector'}|${fc}`;
-        const prev = groups.get(key);
-        if (!prev || (rec.timestamp || 0) > (prev.timestamp || 0)) {
-          groups.set(key, rec);
-        }
-      }
-      const savedLayers = Array.from(groups.values());
+      // 레이어 복원 — 저장은 레이어 ID를 키로 하고 복원도 그 ID를 그대로 되살리므로
+      // (restoreLayer / HeatmapTool.restoreHeatmap) 같은 레이어가 두 벌 쌓이지 않는다.
+      // 예전에는 (이름·타입·피처수)가 같으면 중복으로 보고 하나를 지웠는데,
+      // 같은 파일을 두 번 올린 경우까지 저장 레코드째 날려 버렸다.
+      const savedLayers = (await stateManager.getAllLayers()).slice();
+
+      // IndexedDB는 ID 키 순서로 돌려준다. 같은 밀리초에 만든 레이어들은 ID 뒤 난수로
+      // 갈리므로 화면 순서가 뒤바뀐다 → 저장해 둔 zIndex로 아래에서 위 순서를 되살린다.
+      // (zIndex가 없는 옛 저장본은 받은 순서를 그대로 둔다)
+      savedLayers.forEach((rec, index) => { rec._restoreIndex = index; });
+      savedLayers.sort((a, b) => {
+        const az = a.zIndex, bz = b.zIndex;
+        if (az !== undefined && bz !== undefined && az !== bz) return az - bz;
+        return a._restoreIndex - b._restoreIndex;
+      });
+
       // 도형표현도(chartmap)는 원본 레이어가 먼저 복원돼야 하므로 마지막에 처리
       savedLayers.sort((a, b) => {
         const ax = a.type === 'chartmap' ? 1 : 0;
         const bx = b.type === 'chartmap' ? 1 : 0;
         return ax - bx;
       });
-      const removedCount = allSaved.length - savedLayers.length;
-      if (removedCount > 0) {
-        const keepIds = new Set(savedLayers.map(l => l.id));
-        for (const rec of allSaved) {
-          if (!keepIds.has(rec.id)) {
-            await stateManager.deleteLayer(rec.id);
-          }
-        }
-        console.log(`중복 레이어 ${removedCount}개 정리`);
-      }
       console.log(`${savedLayers.length}개 레이어 복원 중...`);
 
       for (const layerData of savedLayers) {
