@@ -66,6 +66,12 @@ class RoutingTool {
         this.markersLayer.setVisible(data.visible);
       }
     });
+
+    // 저장본을 복원할 때(새로고침·프로젝트 열기) 마커 표시를 되살린다.
+    // 피처 스타일은 저장되지 않으므로 속성(routeMarker)을 보고 다시 입힌다.
+    eventBus.on(Events.LAYER_ADDED, (data) => {
+      if (data && data.layer) this.applyMarkerStyles(data.layer);
+    });
   }
 
   /**
@@ -151,6 +157,50 @@ class RoutingTool {
   /**
    * 마커 업데이트
    */
+  /**
+   * 출발·경유·도착 마커 피처를 만든다 (호출할 때마다 새 인스턴스).
+   *
+   * 종류와 라벨을 속성으로 남기는 이유: 이 피처들은 경로 레이어에 실려
+   * 저장·복원되는데, 피처 스타일은 저장되지 않는다. 복원 뒤 applyMarkerStyles가
+   * 속성만 보고 표시를 되살린다.
+   */
+  buildMarkerFeatures() {
+    const features = [];
+
+    const make = (point, kind, label) => {
+      const feature = new Feature({
+        geometry: new Point(point.coordinate),
+        routeMarker: kind,
+        markerLabel: label
+      });
+      feature.setStyle(this.createMarkerStyle(kind, label));
+      return feature;
+    };
+
+    if (this.startPoint) features.push(make(this.startPoint, 'start', 'S'));
+    this.waypoints.forEach((wp, index) => {
+      features.push(make(wp, 'waypoint', String(index + 1)));
+    });
+    if (this.endPoint) features.push(make(this.endPoint, 'end', 'E'));
+
+    return features;
+  }
+
+  /**
+   * 복원된 경로 레이어의 마커 표시를 되살린다.
+   * 피처 스타일은 프로젝트에 저장되지 않으므로 새로고침하면 마커가 사라졌다.
+   * @param {Object} layerInfo - LayerManager의 레이어 정보
+   */
+  applyMarkerStyles(layerInfo) {
+    if (!layerInfo || !layerInfo.source || typeof layerInfo.source.getFeatures !== 'function') return;
+
+    layerInfo.source.getFeatures().forEach(feature => {
+      const kind = feature.get('routeMarker');
+      if (!kind || feature.getStyle()) return;   // 마커가 아니거나 이미 표시가 있으면 그대로
+      feature.setStyle(this.createMarkerStyle(kind, feature.get('markerLabel') || ''));
+    });
+  }
+
   updateMarkers() {
     const map = mapManager.getMap();
     if (!map) return;
@@ -158,38 +208,8 @@ class RoutingTool {
     // 기존 마커 레이어 제거
     this.removeMarkers();
 
-    const features = [];
-
-    // 출발지 마커
-    if (this.startPoint) {
-      const startFeature = new Feature({
-        geometry: new Point(this.startPoint.coordinate),
-        type: 'start'
-      });
-      startFeature.setStyle(this.createMarkerStyle('start', 'S'));
-      features.push(startFeature);
-    }
-
-    // 경유지 마커
-    this.waypoints.forEach((wp, index) => {
-      const wpFeature = new Feature({
-        geometry: new Point(wp.coordinate),
-        type: 'waypoint',
-        index: index
-      });
-      wpFeature.setStyle(this.createMarkerStyle('waypoint', String(index + 1)));
-      features.push(wpFeature);
-    });
-
-    // 도착지 마커
-    if (this.endPoint) {
-      const endFeature = new Feature({
-        geometry: new Point(this.endPoint.coordinate),
-        type: 'end'
-      });
-      endFeature.setStyle(this.createMarkerStyle('end', 'E'));
-      features.push(endFeature);
-    }
+    // 지점을 고르는 동안만 쓰는 임시 표시 — 경로가 만들어지면 경로 레이어로 옮겨간다
+    const features = this.buildMarkerFeatures();
 
     if (features.length > 0) {
       this.markersLayer = new VectorLayer({
@@ -335,12 +355,14 @@ class RoutingTool {
     const profileName = TRAVEL_PROFILES[profile] || profile;
 
     // LayerManager에 레이어 등록 (스타일은 LayerManager가 관리)
+    // 출발·도착 표시도 이 레이어에 함께 싣는다 — 지도에 직접 얹으면 레이어 순서를
+    // 무시하고 늘 맨 위에 뜨고, 저장 대상이 아니라 새로고침하면 사라진다.
     const layerName = `최단경로 ${profileName} (${routeInfo.distanceText})`;
     this.routeLayerId = layerManager.addLayer({
       name: layerName,
       type: 'vector',
       geometryType: 'LineString',
-      features: features.map(f => f.clone())
+      features: [...features.map(f => f.clone()), ...this.buildMarkerFeatures()]
     });
 
     // LayerManager가 생성한 레이어 참조 저장
@@ -354,8 +376,8 @@ class RoutingTool {
     const extent = source.getExtent();
     map.getView().fit(extent, { padding: [50, 50, 50, 50], maxZoom: 16 });
 
-    // 마커 다시 추가 (경로 위에 표시)
-    this.updateMarkers();
+    // 지점 선택용 임시 마커는 걷어낸다 (표시는 이제 경로 레이어가 갖고 있다)
+    this.removeMarkers();
 
     return routeInfo;
   }
