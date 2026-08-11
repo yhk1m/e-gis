@@ -4,6 +4,7 @@
  */
 
 import { layerManager } from '../core/LayerManager.js';
+import { collectNumericFields } from '../utils/layerSelect.js';
 import { mapManager } from '../core/MapManager.js';
 import Feature from 'ol/Feature';
 import { Point, Polygon } from 'ol/geom';
@@ -995,24 +996,7 @@ class CartogramTool {
     const layer = layerManager.getLayer(layerId);
     if (!layer || !layer.source) return [];
 
-    const features = layer.source.getFeatures();
-    if (features.length === 0) return [];
-
-    const attributes = new Set();
-    const sampleFeature = features[0];
-    const props = sampleFeature.getProperties();
-
-    Object.keys(props).forEach(key => {
-      if (key === 'geometry') return;
-
-      // 숫자 값인지 확인
-      const value = props[key];
-      if (typeof value === 'number' || !isNaN(parseFloat(value))) {
-        attributes.add(key);
-      }
-    });
-
-    return Array.from(attributes);
+    return collectNumericFields(layer.source.getFeatures());
   }
 }
 

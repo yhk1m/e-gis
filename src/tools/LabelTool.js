@@ -6,6 +6,7 @@
 import { Style, Text, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { Point } from 'ol/geom';
 import { layerManager } from '../core/LayerManager.js';
+import { collectFieldNames } from '../utils/layerSelect.js';
 import { mapManager } from '../core/MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { Translate } from 'ol/interaction';
@@ -465,12 +466,8 @@ class LabelTool {
 
     var source = layerInfo.olLayer.getSource();
     if (!source) return [];
-    
-    var features = source.getFeatures();
-    if (features.length === 0) return [];
 
-    var props = features[0].getProperties();
-    return Object.keys(props).filter(function(key) { return key !== 'geometry'; });
+    return collectFieldNames(source.getFeatures());
   }
 }
 

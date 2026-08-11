@@ -5,7 +5,7 @@
 
 import { layerManager } from "../core/LayerManager.js";
 import { eventBus, Events } from "../utils/EventBus.js";
-import { isVectorLayer } from "../utils/layerSelect.js";
+import { isVectorLayer, collectFieldNames } from "../utils/layerSelect.js";
 import * as XLSX from 'xlsx';
 
 class TableJoinTool {
@@ -141,19 +141,7 @@ class TableJoinTool {
     const layerInfo = layerManager.getLayer(layerId);
     if (!layerInfo || !layerInfo.source) return [];
 
-    const features = layerInfo.source.getFeatures();
-    if (features.length === 0) return [];
-
-    const properties = features[0].getProperties();
-    const fields = [];
-
-    for (const key in properties) {
-      if (key !== "geometry") {
-        fields.push(key);
-      }
-    }
-
-    return fields;
+    return collectFieldNames(layerInfo.source.getFeatures());
   }
 
   /**

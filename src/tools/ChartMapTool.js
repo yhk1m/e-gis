@@ -13,6 +13,7 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { Style, Icon } from 'ol/style';
 import { layerManager } from '../core/LayerManager.js';
+import { collectNumericFields } from '../utils/layerSelect.js';
 import { mapManager } from '../core/MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { makeDraggable } from '../utils/DraggableElement.js';
@@ -827,20 +828,7 @@ class ChartMapTool {
     if (!layerInfo) return [];
 
     const source = layerInfo.olLayer.getSource();
-    const features = source.getFeatures();
-    if (features.length === 0) return [];
-
-    const props = features[0].getProperties();
-    const numericFields = [];
-
-    for (const key in props) {
-      if (key === 'geometry') continue;
-      if (typeof props[key] === 'number') {
-        numericFields.push(key);
-      }
-    }
-
-    return numericFields;
+    return collectNumericFields(source ? source.getFeatures() : []);
   }
 
   /**

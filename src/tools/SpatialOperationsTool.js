@@ -7,6 +7,7 @@ import * as turf from '@turf/turf';
 import { layerManager } from '../core/LayerManager.js';
 import { eventBus } from '../utils/EventBus.js';
 import GeoJSON from 'ol/format/GeoJSON';
+import { mergeProperties, withTag } from './spatialAttributes.js';
 
 class SpatialOperationsTool {
   constructor() {
@@ -17,9 +18,11 @@ class SpatialOperationsTool {
    * 두 레이어 간 교차(Intersect) 연산
    * @param {string} layerId1 - 첫 번째 레이어 ID
    * @param {string} layerId2 - 두 번째 레이어 ID
+   * @param {Object} [options]
+   * @param {boolean} [options.keepFeatures=false] true면 자르지 않고 겹치는 피처를 통째로 남긴다
    * @returns {Object} 결과 정보
    */
-  intersect(layerId1, layerId2) {
+  intersect(layerId1, layerId2, options = {}) {
     const layer1 = layerManager.getLayer(layerId1);
     const layer2 = layerManager.getLayer(layerId2);
 
@@ -34,37 +37,136 @@ class SpatialOperationsTool {
       throw new Error('레이어에 피처가 없습니다.');
     }
 
+    const results = options.keepFeatures
+      ? this.keepOverlapping(features1, features2)
+      : this.clipOverlapping(features1, features2);
+
+    if (results.length === 0) {
+      throw new Error('겹치는 영역이 없습니다.');
+    }
+
+    const separator = options.keepFeatures ? '_겹침_' : '_∩_';
+    return this.createResultLayer(
+      results,
+      `${layer1.name}${separator}${layer2.name}`,
+      '#22c55e'
+    );
+  }
+
+  /**
+   * 겹치는 부분만 잘라낸다. 결과 피처는 양쪽 레이어 속성을 모두 승계한다.
+   */
+  clipOverlapping(features1, features2) {
+    const boxes2 = features2.map(f => this.safeBbox(f));
     const results = [];
 
     for (const f1 of features1) {
-      for (const f2 of features2) {
+      const box1 = this.safeBbox(f1);
+      for (let i = 0; i < features2.length; i++) {
+        // 경계 상자가 안 겹치면 교차도 없다 (무거운 turf.intersect 호출을 아낀다)
+        if (!this.bboxOverlaps(box1, boxes2[i])) continue;
+
         try {
-          const intersection = turf.intersect(
-            turf.featureCollection([f1, f2])
-          );
-          if (intersection) {
-            results.push(intersection);
-          }
+          const intersection = turf.intersect(turf.featureCollection([f1, features2[i]]), {
+            properties: mergeProperties(f1.properties, features2[i].properties)
+          });
+          if (intersection) results.push(intersection);
         } catch (e) {
           console.warn('교차 연산 실패:', e);
         }
       }
     }
 
-    if (results.length === 0) {
-      throw new Error('교차하는 영역이 없습니다.');
+    return results;
+  }
+
+  /**
+   * 자르지 않고, 레이어2와 겹치는 레이어1 피처를 원본 지오메트리 그대로 남긴다.
+   * 겹친 상대가 여럿이면 가장 넓게 겹친 피처의 속성을 승계한다.
+   */
+  keepOverlapping(features1, features2) {
+    const boxes2 = features2.map(f => this.safeBbox(f));
+    const results = [];
+
+    for (const f1 of features1) {
+      const box1 = this.safeBbox(f1);
+      const partners = [];
+
+      for (let i = 0; i < features2.length; i++) {
+        if (!this.bboxOverlaps(box1, boxes2[i])) continue;
+        if (this.geomIntersects(f1, features2[i])) partners.push(features2[i]);
+      }
+
+      if (partners.length === 0) continue;
+
+      const partner = partners.length === 1 ? partners[0] : this.largestOverlap(f1, partners);
+      const clone = JSON.parse(JSON.stringify(f1));
+      clone.properties = mergeProperties(f1.properties, partner.properties);
+      results.push(clone);
     }
 
-    return this.createResultLayer(results, `${layer1.name}_∩_${layer2.name}`, '#22c55e');
+    return results;
+  }
+
+  /**
+   * 겹치는 상대 후보 중 겹침 넓이가 가장 큰 피처를 고른다.
+   */
+  largestOverlap(feature, candidates) {
+    let best = candidates[0];
+    let bestArea = -1;
+
+    for (const candidate of candidates) {
+      let area = 0;
+      try {
+        const overlap = turf.intersect(turf.featureCollection([feature, candidate]));
+        if (overlap) area = turf.area(overlap);
+      } catch (e) {
+        area = 0;
+      }
+      if (area > bestArea) {
+        bestArea = area;
+        best = candidate;
+      }
+    }
+
+    return best;
+  }
+
+  /**
+   * 두 지오메트리가 겹치는지 검사한다. 잘못된 지오메트리는 미겹침 처리.
+   */
+  geomIntersects(f1, f2) {
+    try {
+      return turf.booleanIntersects(f1, f2);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /** 경계 상자 계산 (실패 시 무한 상자로 두어 걸러내지 않는다) */
+  safeBbox(feature) {
+    try {
+      return turf.bbox(feature);
+    } catch (e) {
+      return [-Infinity, -Infinity, Infinity, Infinity];
+    }
+  }
+
+  /** 두 경계 상자가 겹치는지 */
+  bboxOverlaps(a, b) {
+    return !(a[2] < b[0] || b[2] < a[0] || a[3] < b[1] || b[3] < a[1]);
   }
 
   /**
    * 두 레이어 간 합집합(Union) 연산
    * @param {string} layerId1 - 첫 번째 레이어 ID
    * @param {string} layerId2 - 두 번째 레이어 ID
+   * @param {Object} [options]
+   * @param {boolean} [options.dissolve=true] true면 모든 피처를 하나의 도형으로 병합한다.
+   *   false면 두 레이어 피처를 그대로 합쳐 각자의 속성을 유지한다.
    * @returns {Object} 결과 정보
    */
-  union(layerId1, layerId2) {
+  union(layerId1, layerId2, options = {}) {
     const layer1 = layerManager.getLayer(layerId1);
     const layer2 = layerManager.getLayer(layerId2);
 
@@ -79,7 +181,16 @@ class SpatialOperationsTool {
       throw new Error('레이어에 피처가 없습니다.');
     }
 
-    // 모든 피처 병합
+    // 피처 유지 모드: 자르지도 뭉치지도 않고 그대로 합친다 (속성이 온전히 남는다)
+    if (options.dissolve === false) {
+      const results = [
+        ...this.taggedCopies(features1, layer1.name),
+        ...this.taggedCopies(features2, layer2.name)
+      ];
+      return this.createResultLayer(results, `${layer1.name}_∪_${layer2.name}`, '#3b82f6');
+    }
+
+    // 병합 모드: 모든 피처를 하나의 도형으로 (경계선이 사라지므로 속성은 남길 수 없다)
     const allFeatures = [...features1, ...features2];
 
     let result = allFeatures[0];
@@ -99,12 +210,26 @@ class SpatialOperationsTool {
   }
 
   /**
+   * 피처를 깊은 복제하고 어느 레이어에서 왔는지 표시한다.
+   */
+  taggedCopies(features, layerName) {
+    return features.map(feature => {
+      const clone = JSON.parse(JSON.stringify(feature));
+      clone.properties = withTag(feature.properties, '출처레이어', layerName);
+      return clone;
+    });
+  }
+
+  /**
    * 차집합(Difference) 연산 - 첫 번째 레이어에서 두 번째 레이어 영역 제거
    * @param {string} layerId1 - 첫 번째 레이어 ID (유지할 레이어)
    * @param {string} layerId2 - 두 번째 레이어 ID (제거할 레이어)
+   * @param {Object} [options]
+   * @param {boolean} [options.keepFeatures=false] true면 부분적으로 자르는 대신
+   *   레이어2와 겹치는 피처를 통째로 제외한다 (남는 피처는 원본 그대로).
    * @returns {Object} 결과 정보
    */
-  difference(layerId1, layerId2) {
+  difference(layerId1, layerId2, options = {}) {
     const layer1 = layerManager.getLayer(layerId1);
     const layer2 = layerManager.getLayer(layerId2);
 
@@ -119,41 +244,90 @@ class SpatialOperationsTool {
       throw new Error('레이어에 피처가 없습니다.');
     }
 
+    const results = options.keepFeatures
+      ? this.excludeOverlapping(features1, features2)
+      : this.subtractOverlapping(features1, features2);
+
+    if (results.length === 0) {
+      throw new Error(
+        options.keepFeatures
+          ? '모든 피처가 겹쳐서 남는 피처가 없습니다.'
+          : '차집합 연산에 실패했습니다.'
+      );
+    }
+
+    const separator = options.keepFeatures ? '_겹침제외_' : '_−_';
+    return this.createResultLayer(
+      results,
+      `${layer1.name}${separator}${layer2.name}`,
+      '#ef4444'
+    );
+  }
+
+  /**
+   * 겹치는 부분을 잘라낸다. 입력 레이어의 속성은 그대로 유지된다.
+   */
+  subtractOverlapping(features1, features2) {
+    const boxes2 = features2.map(f => this.safeBbox(f));
     const results = [];
 
     for (const f1 of features1) {
+      const box1 = this.safeBbox(f1);
       let current = f1;
-      for (const f2 of features2) {
+
+      for (let i = 0; i < features2.length; i++) {
+        if (!this.bboxOverlaps(box1, boxes2[i])) continue;
         try {
-          const diff = turf.difference(turf.featureCollection([current, f2]));
+          const diff = turf.difference(turf.featureCollection([current, features2[i]]));
           if (diff) {
+            // turf.difference는 첫 피처의 속성을 물려주지만, 명시적으로 고정해 둔다
+            diff.properties = mergeProperties(f1.properties, null);
             current = diff;
           }
         } catch (e) {
           console.warn('차집합 연산 실패:', e);
         }
       }
-      if (current) {
-        results.push(current);
-      }
+
+      if (current) results.push(current);
     }
 
-    if (results.length === 0) {
-      throw new Error('차집합 연산에 실패했습니다.');
+    return results;
+  }
+
+  /**
+   * 자르지 않고, 레이어2와 겹치는 레이어1 피처를 통째로 제외한다.
+   */
+  excludeOverlapping(features1, features2) {
+    const boxes2 = features2.map(f => this.safeBbox(f));
+    const results = [];
+
+    for (const f1 of features1) {
+      const box1 = this.safeBbox(f1);
+      const overlaps = features2.some(
+        (f2, i) => this.bboxOverlaps(box1, boxes2[i]) && this.geomIntersects(f1, f2)
+      );
+
+      if (overlaps) continue;
+
+      const clone = JSON.parse(JSON.stringify(f1));
+      clone.properties = mergeProperties(f1.properties, null);
+      results.push(clone);
     }
 
-    return this.createResultLayer(results, `${layer1.name}_−_${layer2.name}`, '#ef4444');
+    return results;
   }
 
   /**
    * 클리핑(Clip) - 첫 번째 레이어를 두 번째 레이어 범위로 자르기
    * @param {string} inputLayerId - 자를 레이어 ID
    * @param {string} clipLayerId - 클리핑 영역 레이어 ID
+   * @param {Object} [options] intersect와 동일한 옵션
    * @returns {Object} 결과 정보
    */
-  clip(inputLayerId, clipLayerId) {
+  clip(inputLayerId, clipLayerId, options = {}) {
     // Intersect와 동일하게 작동
-    return this.intersect(inputLayerId, clipLayerId);
+    return this.intersect(inputLayerId, clipLayerId, options);
   }
 
   /**

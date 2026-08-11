@@ -86,6 +86,29 @@ class SpatialOperationsPanel {
           '<label id="layer2-label">입력 레이어 2</label>' +
           '<select id="spatial-ops-layer2">' + layerOptions + '</select>' +
         '</div>' +
+        '<div class="form-group spatial-ops-optgroup" id="spatial-ops-mode-group">' +
+          '<label>결과 형태</label>' +
+          '<label class="spatial-ops-option">' +
+            '<input type="radio" name="spatial-ops-mode" value="clip" checked>' +
+            '<span id="mode-clip-label">겹치는 부분만 잘라내기</span>' +
+          '</label>' +
+          '<label class="spatial-ops-option">' +
+            '<input type="radio" name="spatial-ops-mode" value="keep">' +
+            '<span id="mode-keep-label">겹치는 피처를 통째로 유지 (자르지 않음)</span>' +
+          '</label>' +
+          '<small class="spatial-ops-hint" id="mode-hint"></small>' +
+        '</div>' +
+        '<div class="form-group spatial-ops-optgroup" id="spatial-ops-union-group">' +
+          '<label>합집합 방식</label>' +
+          '<label class="spatial-ops-option">' +
+            '<input type="checkbox" id="spatial-ops-dissolve" checked>' +
+            '<span>하나의 도형으로 병합</span>' +
+          '</label>' +
+          '<small class="spatial-ops-hint">' +
+            '체크하면 경계선을 없애고 바깥 윤곽만 남깁니다 (속성 없음). ' +
+            '해제하면 각 피처를 그대로 두어 속성이 유지되고 출처레이어 필드가 추가됩니다.' +
+          '</small>' +
+        '</div>' +
         '<div class="operation-description" id="operation-desc">' +
           '<p>두 레이어가 겹치는 영역을 추출합니다.</p>' +
         '</div>' +
@@ -193,10 +216,10 @@ class SpatialOperationsPanel {
     const operation = operationSelect.value;
 
     const descriptions = {
-      intersect: '두 레이어가 겹치는 영역만 추출합니다.',
-      union: '두 레이어의 모든 영역을 하나로 합칩니다.',
-      difference: '첫 번째 레이어에서 두 번째 레이어와 겹치는 영역을 제거합니다.',
-      clip: '입력 레이어를 클립 레이어의 범위로 자릅니다.',
+      intersect: '두 레이어가 겹치는 영역을 추출합니다. 양쪽 레이어의 속성이 모두 승계됩니다.',
+      union: '두 레이어의 영역을 합칩니다.',
+      difference: '첫 번째 레이어에서 두 번째 레이어와 겹치는 부분을 제거합니다. 입력 레이어의 속성은 유지됩니다.',
+      clip: '입력 레이어를 클립 레이어의 범위로 자릅니다. 양쪽 레이어의 속성이 모두 승계됩니다.',
       pointsInPolygon: '폴리곤 안에 들어가는 포인트만 남기고, 각 포인트에 포함하는 폴리곤의 속성을 poly_ 접두사로 추가합니다.'
     };
 
@@ -212,11 +235,56 @@ class SpatialOperationsPanel {
     layer1Label.textContent = labels[operation]?.l1 || '레이어 1';
     layer2Label.textContent = labels[operation]?.l2 || '레이어 2';
 
+    // 연산별 옵션 표시
+    this.updateOptions(operation);
+
     // 연산에 맞게 레이어 드롭다운 재구성
     this.populateLayerSelects(operation);
 
     // 미리보기 다이어그램 업데이트
     previewEl.className = 'preview-diagram ' + operation;
+  }
+
+  /**
+   * 연산에 맞는 옵션만 보여준다.
+   * - 교차·클리핑·차집합: 자르기 / 피처 통째로 (결과 형태)
+   * - 합집합: 하나로 병합 여부
+   * - 포인트 추출: 옵션 없음
+   */
+  updateOptions(operation) {
+    const modeGroup = document.getElementById('spatial-ops-mode-group');
+    const unionGroup = document.getElementById('spatial-ops-union-group');
+    const keepLabel = document.getElementById('mode-keep-label');
+    const hint = document.getElementById('mode-hint');
+    if (!modeGroup || !unionGroup) return;
+
+    const hasMode = ['intersect', 'clip', 'difference'].includes(operation);
+
+    modeGroup.style.display = hasMode ? '' : 'none';
+    unionGroup.style.display = operation === 'union' ? '' : 'none';
+
+    if (!hasMode) return;
+
+    if (operation === 'difference') {
+      keepLabel.textContent = '겹치는 피처를 통째로 제외 (자르지 않음)';
+      hint.textContent = '겹치는 피처를 잘라내는 대신 통째로 빼고, 남는 피처는 원본 그대로 유지합니다.';
+    } else {
+      keepLabel.textContent = '겹치는 피처를 통째로 유지 (자르지 않음)';
+      hint.textContent = '겹치는 피처를 원본 모양 그대로 남깁니다. 상대 피처가 여럿이면 가장 넓게 겹친 피처의 속성을 가져옵니다.';
+    }
+  }
+
+  /**
+   * 선택된 결과 형태 → 도구 옵션
+   */
+  readOptions(operation) {
+    if (operation === 'union') {
+      const dissolve = document.getElementById('spatial-ops-dissolve');
+      return { dissolve: dissolve ? dissolve.checked : true };
+    }
+
+    const checked = document.querySelector('input[name="spatial-ops-mode"]:checked');
+    return { keepFeatures: checked ? checked.value === 'keep' : false };
   }
 
   /**
@@ -237,21 +305,23 @@ class SpatialOperationsPanel {
     applyBtn.disabled = true;
     applyBtn.textContent = '처리 중...';
 
+    const options = this.readOptions(operation);
+
     try {
       let result;
 
       switch (operation) {
         case 'intersect':
-          result = spatialOperationsTool.intersect(layerId1, layerId2);
+          result = spatialOperationsTool.intersect(layerId1, layerId2, options);
           break;
         case 'union':
-          result = spatialOperationsTool.union(layerId1, layerId2);
+          result = spatialOperationsTool.union(layerId1, layerId2, options);
           break;
         case 'difference':
-          result = spatialOperationsTool.difference(layerId1, layerId2);
+          result = spatialOperationsTool.difference(layerId1, layerId2, options);
           break;
         case 'clip':
-          result = spatialOperationsTool.clip(layerId1, layerId2);
+          result = spatialOperationsTool.clip(layerId1, layerId2, options);
           break;
         case 'pointsInPolygon':
           result = spatialOperationsTool.pointsInPolygons(layerId1, layerId2);

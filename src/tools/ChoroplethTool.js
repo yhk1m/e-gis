@@ -9,7 +9,7 @@ import VectorSource from "ol/source/Vector";
 import { layerManager } from "../core/LayerManager.js";
 import { eventBus, Events } from "../utils/EventBus.js";
 import { makeDraggable } from "../utils/DraggableElement.js";
-import { isVectorLayer } from "../utils/layerSelect.js";
+import { isVectorLayer, collectNumericFields } from "../utils/layerSelect.js";
 import { sampleColorRamp, lerpColor } from "../utils/colorRamp.js";
 import { formatNumber } from "./legendModel.js";
 
@@ -105,19 +105,7 @@ class ChoroplethTool {
   getNumericAttributes(layerId) {
     const layerInfo = layerManager.getLayer(layerId);
     if (!layerInfo || !layerInfo.source) return [];
-    const features = layerInfo.source.getFeatures();
-    if (features.length === 0) return [];
-    const firstFeature = features[0];
-    const properties = firstFeature.getProperties();
-    const numericAttrs = [];
-    for (const key in properties) {
-      if (key === "geometry") continue;
-      const value = properties[key];
-      if (typeof value === "number" || (typeof value === "string" && !isNaN(parseFloat(value)))) {
-        numericAttrs.push(key);
-      }
-    }
-    return numericAttrs;
+    return collectNumericFields(layerInfo.source.getFeatures());
   }
 
   getAttributeValues(layerId, attribute) {

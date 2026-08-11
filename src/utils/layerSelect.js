@@ -59,6 +59,78 @@ export function buildLayerOptions(layers, options = {}) {
   return head + body;
 }
 
+/**
+ * 속성 목록을 만들 때 첫 피처만 보면 안 되는 이유:
+ * 테이블 결합은 CSV에 짝이 있는 피처에만 필드를 붙이고, 공간 연산 결과도
+ * 피처마다 필드 구성이 다를 수 있다. 첫 피처에 그 필드가 없다는 이유로
+ * "적용할 수 있는 레이어가 없다"고 판정하면 안 된다.
+ *
+ * 그래서 아래 두 함수는 전체 피처를 훑어 필드 이름의 합집합을 만든다.
+ * (이미 확정된 필드는 다시 검사하지 않아 실사용 레이어에서는 충분히 빠르다)
+ */
+
+/** 속성값이 숫자로 쓸 수 있는지 판별한다. 숫자 문자열("103")도 숫자로 본다. */
+export function isNumericValue(value) {
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed !== '' && !isNaN(parseFloat(trimmed));
+  }
+  return false;
+}
+
+/**
+ * 피처들의 속성 이름을 처음 나온 순서대로 모은다 (geometry 제외).
+ * @param {Array} features OpenLayers 피처 배열
+ * @returns {string[]}
+ */
+export function collectFieldNames(features) {
+  const names = [];
+  const seen = new Set();
+
+  for (const feature of features || []) {
+    for (const key of featureKeys(feature)) {
+      if (key === 'geometry' || seen.has(key)) continue;
+      seen.add(key);
+      names.push(key);
+    }
+  }
+
+  return names;
+}
+
+/**
+ * 숫자로 쓸 수 있는 속성 이름을 모은다.
+ * 어느 한 피처에서라도 숫자 값이 나오면 숫자 필드로 본다.
+ * (값이 비어 있는 피처가 섞여 있어도 필드를 놓치지 않기 위해서다)
+ * @param {Array} features OpenLayers 피처 배열
+ * @returns {string[]}
+ */
+export function collectNumericFields(features) {
+  const names = [];
+  const numeric = new Set();
+
+  for (const feature of features || []) {
+    for (const key of featureKeys(feature)) {
+      if (key === 'geometry' || numeric.has(key)) continue;
+      if (isNumericValue(feature.get(key))) {
+        numeric.add(key);
+        names.push(key);
+      }
+    }
+  }
+
+  return names;
+}
+
+/** 피처의 속성 키 목록 (getKeys가 없으면 getProperties로 대체) */
+function featureKeys(feature) {
+  if (!feature) return [];
+  if (typeof feature.getKeys === 'function') return feature.getKeys();
+  if (typeof feature.getProperties === 'function') return Object.keys(feature.getProperties());
+  return [];
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')

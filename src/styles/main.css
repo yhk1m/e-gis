@@ -1879,6 +1879,46 @@ body.exporting .egis-basemap-panel {
   font-size: var(--font-size-sm);
 }
 
+/* 옵션 그룹은 세로로 쌓는다.
+   공통 .form-group이 display:flex(가로)라 그대로 두면 제목·선택지·설명이
+   한 줄에 늘어서서 어색하게 줄바꿈된다. */
+.spatial-ops-modal .form-group.spatial-ops-optgroup {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.spatial-ops-modal .form-group.spatial-ops-optgroup > label:first-child {
+  min-width: 0;
+}
+
+/* 결과 형태(라디오)·합집합 방식(체크박스) 옵션 줄 */
+.spatial-ops-modal .form-group label.spatial-ops-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+  margin-bottom: 0;
+  min-width: 0;
+  font-weight: 400;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.spatial-ops-modal .form-group label.spatial-ops-option input {
+  margin: 3px 0 0 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.spatial-ops-modal .spatial-ops-hint {
+  display: block;
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
 .operation-description {
   background: var(--bg-hover);
   border-radius: var(--radius-sm);

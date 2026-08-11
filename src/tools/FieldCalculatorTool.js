@@ -6,7 +6,7 @@
 import * as math from 'mathjs';
 import { layerManager } from '../core/LayerManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
-import { isVectorLayer } from '../utils/layerSelect.js';
+import { isVectorLayer, collectFieldNames } from '../utils/layerSelect.js';
 import { getArea, getLength } from 'ol/sphere';
 import LineString from 'ol/geom/LineString';
 
@@ -174,11 +174,7 @@ class FieldCalculatorTool {
     if (!layerInfo) return [];
 
     const source = layerInfo.olLayer.getSource();
-    const features = source.getFeatures();
-    if (features.length === 0) return [];
-
-    const props = features[0].getProperties();
-    return Object.keys(props).filter(key => key !== 'geometry');
+    return collectFieldNames(source ? source.getFeatures() : []);
   }
 
   /**
