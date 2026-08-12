@@ -19,10 +19,89 @@ const CACHE_HEADER = 'public, s-maxage=600, stale-while-revalidate=3600';
 const TIMEOUT_MS = 10000;
 
 /**
+ * 제공처별로 다른 것 세 가지를 여기서 흡수한다: 키 이름 · URL 조립 · 오류 판정.
+ * 응답 구조 차이(배열 위치·좌표 필드)는 카탈로그의 path/lon/lat이 이미 흡수한다.
+ */
+const PROVIDERS = {
+  'data.go.kr': {
+    keyName: 'DATA_GO_KR_KEY',
+    label: '공공데이터포털',
+    /** ?serviceKey=…&조건 (쿼리스트링) */
+    buildUrl(entry, params, key) {
+      const search = new URLSearchParams({ ...(entry.fixed || {}), ...params });
+      // serviceKey는 포털이 인코딩된 값을 요구해 URLSearchParams와 따로 붙인다
+      return `${entry.endpoint}?serviceKey=${encodeURIComponent(key)}&${search.toString()}`;
+    },
+    /** 정상은 resultCode '00'. 그 외는 오류다 */
+    findError(raw) {
+      const header = (raw && raw.response && raw.response.header) || {};
+      if (header.resultCode === undefined) return null;
+      const code = String(header.resultCode);
+      if (code === '00' || code === '0') return null;
+      return { code, message: header.resultMsg };
+    },
+    total(raw) {
+      const body = (raw && raw.response && raw.response.body) || {};
+      return Number(body.totalCount) || null;
+    }
+  },
+
+  seoul: {
+    keyName: 'SEOUL_OPENAPI_KEY',
+    label: '서울열린데이터광장',
+    /** /{키}/json/{서비스}/{시작}/{끝}/{조건…} (경로에 박는다) */
+    buildUrl(entry, params, key) {
+      const maxRows = entry.maxRows || 1000;
+      const ordered = (entry.params || [])
+        .map(param => params[param.sendAs || param.key])
+        .filter(value => value !== undefined && value !== '')
+        .map(value => encodeURIComponent(value));
+
+      const parts = [entry.endpoint, encodeURIComponent(key), 'json',
+                     entry.service, '1', String(maxRows), ...ordered];
+      return parts.join('/') + '/';
+    },
+    /** 정상은 RESULT.CODE가 INFO-000 */
+    findError(raw) {
+      const service = raw && typeof raw === 'object' ? raw[Object.keys(raw)[0]] : null;
+      const result = (service && service.RESULT) || (raw && raw.RESULT);
+      if (!result || result.CODE === undefined) return null;
+      const code = String(result.CODE);
+      if (code === 'INFO-000') return null;
+      return { code, message: result.MESSAGE };
+    },
+    total(raw) {
+      const service = raw && typeof raw === 'object' ? raw[Object.keys(raw)[0]] : null;
+      return service ? Number(service.list_total_count) || null : null;
+    }
+  }
+};
+
+function providerOf(entry) {
+  return PROVIDERS[entry.provider] || PROVIDERS['data.go.kr'];
+}
+
+/** 서울열린데이터광장 오류코드 */
+const SEOUL_ERRORS = {
+  'INFO-100': '인증키가 잘못되었습니다. 서버의 서울시 인증키 설정을 확인해 주세요.',
+  'INFO-200': '조건에 맞는 자료가 없습니다.',
+  'ERROR-300': '요청 형식이 올바르지 않습니다. 카탈로그 설정을 확인해야 합니다.',
+  'ERROR-301': '요청 형식이 올바르지 않습니다. 카탈로그 설정을 확인해야 합니다.',
+  'ERROR-310': '없는 서비스를 요청했습니다. 카탈로그 설정을 확인해야 합니다.',
+  'ERROR-331': '한 번에 요청할 수 있는 건수를 넘었습니다.',
+  'ERROR-332': '한 번에 요청할 수 있는 건수를 넘었습니다.',
+  'ERROR-336': '한 번에 받을 수 있는 건수(1,000건)를 넘겼습니다.',
+  'ERROR-500': '서울열린데이터광장에 일시적인 오류가 있습니다. 잠시 후 다시 시도해 주세요.',
+  'ERROR-600': '서울열린데이터광장 서버가 응답하지 않습니다.',
+  'ERROR-601': '서울열린데이터광장 서버가 응답하지 않습니다.'
+};
+
+/**
  * 포털 오류를 수업 중에 읽고 대처할 수 있는 문장으로 바꾼다.
  * 원문 메시지는 영어 대문자 코드라 학생·교사가 원인을 알 수 없다.
  */
 function translateError(code, message) {
+  if (SEOUL_ERRORS[code]) return SEOUL_ERRORS[code];
   const table = {
     '01': '공공데이터포털에 일시적인 오류가 있습니다. 잠시 후 다시 시도해 주세요.',
     '12': '요청한 데이터 서비스가 폐기되었습니다. 카탈로그 항목을 수정해야 합니다.',
@@ -50,7 +129,7 @@ function stripKey(text, key) {
   return String(text).split(key).join('***').split(encodeURIComponent(key)).join('***');
 }
 
-/** 질의를 카탈로그 정의에 맞춰 검증하고 포털이 요구하는 이름으로 바꾼다 */
+/** 질의를 카탈로그 정의에 맞춰 검증하고 제공처가 요구하는 이름으로 바꾼다 */
 function buildParams(entry, query) {
   const params = {};
 
@@ -78,7 +157,7 @@ function buildParams(entry, query) {
  * 실제 처리. 테스트가 부르는 지점이라 fetch와 키를 주입받는다.
  * @returns {{status: number, body: Object, headers: Object}}
  */
-export async function handle(query = {}, { fetchFn, key } = {}) {
+export async function handle(query = {}, { fetchFn, keys = {} } = {}) {
   if (query.list) {
     return {
       status: 200,
@@ -97,17 +176,18 @@ export async function handle(query = {}, { fetchFn, key } = {}) {
     return { status: 400, headers: {}, body: { error: built.error } };
   }
 
+  const provider = providerOf(entry);
+  const key = keys[entry.provider || 'data.go.kr'] || '';
+
   if (!key) {
     return {
       status: 500,
       headers: {},
-      body: { error: '서버에 서비스키가 설정되어 있지 않습니다. 관리자에게 알려 주세요.' }
+      body: { error: `서버에 ${provider.label} 서비스키가 설정되어 있지 않습니다. 관리자에게 알려 주세요.` }
     };
   }
 
-  const search = new URLSearchParams({ ...(entry.fixed || {}), ...built.params });
-  // serviceKey는 포털이 인코딩된 값을 요구해 URLSearchParams와 따로 붙인다
-  const url = `${entry.endpoint}?serviceKey=${encodeURIComponent(key)}&${search.toString()}`;
+  const url = provider.buildUrl(entry, built.params, key);
 
   let text;
   try {
@@ -117,14 +197,14 @@ export async function handle(query = {}, { fetchFn, key } = {}) {
       return {
         status: 502,
         headers: {},
-        body: { error: `공공데이터포털이 응답하지 않았습니다. (${response.status})` }
+        body: { error: `${provider.label}이(가) 응답하지 않았습니다. (${response.status})` }
       };
     }
   } catch (e) {
     return {
       status: 502,
       headers: {},
-      body: { error: '공공데이터포털에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.' }
+      body: { error: `${provider.label}에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.` }
     };
   }
 
@@ -136,25 +216,32 @@ export async function handle(query = {}, { fetchFn, key } = {}) {
     return {
       status: 502,
       headers: {},
-      body: { error: '공공데이터포털이 데이터 대신 오류 안내를 보냈습니다. 서비스 점검 중일 수 있습니다.' }
+      body: { error: `${provider.label}이(가) 데이터 대신 오류 안내를 보냈습니다. 서비스 점검 중일 수 있습니다.` }
     };
   }
 
-  const header = (raw && raw.response && raw.response.header) || {};
-  const code = header.resultCode !== undefined ? String(header.resultCode) : null;
-  if (code && code !== '00' && code !== '0') {
+  const failure = provider.findError(raw);
+  if (failure) {
     return {
       status: 502,
       headers: {},
-      body: { error: stripKey(translateError(code, header.resultMsg), key) }
+      body: { error: stripKey(translateError(failure.code, failure.message), key) }
     };
   }
 
   const result = normalize(raw, entry);
+  const total = provider.total(raw);
+
   return {
     status: 200,
     headers: { 'Cache-Control': CACHE_HEADER },
-    body: { ...result, fetchedAt: new Date().toISOString() }
+    body: {
+      ...result,
+      // 제공처가 한 번에 주는 양보다 자료가 많으면 일부만 받은 것이다 — 숨기지 않는다
+      total: total,
+      truncated: !!(total && total > result.count + result.skipped),
+      fetchedAt: new Date().toISOString()
+    }
   };
 }
 
@@ -162,7 +249,10 @@ export async function handle(query = {}, { fetchFn, key } = {}) {
 export default async function handler(req, res) {
   const result = await handle(req.query || {}, {
     fetchFn: fetch,
-    key: process.env.DATA_GO_KR_KEY || ''
+    keys: {
+      'data.go.kr': process.env.DATA_GO_KR_KEY || '',
+      seoul: process.env.SEOUL_OPENAPI_KEY || ''
+    }
   });
 
   for (const [name, value] of Object.entries(result.headers || {})) {

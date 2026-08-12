@@ -17,6 +17,7 @@
 export const CATALOG = [
   {
     id: 'ev-charger',
+    provider: 'data.go.kr',
     name: '전기차 충전소',
     description: '지역별 전기차 충전소 위치와 충전기 종류',
     endpoint: 'https://apis.data.go.kr/B552584/EvCharger/getChargerInfo',
@@ -49,6 +50,23 @@ export const CATALOG = [
     epsg: 4326,
     label: 'statNm',
     numeric: []
+  },
+  {
+    id: 'seoul-bike',
+    provider: 'seoul',
+    name: '서울 공공자전거 대여소 (실시간)',
+    description: '따릉이 대여소 위치와 거치 현황',
+    // 서울시는 키와 조건을 경로에 넣는다: /{키}/json/{서비스}/{시작}/{끝}/{조건…}
+    endpoint: 'http://openapi.seoul.go.kr:8088',
+    service: 'bikeList',
+    params: [],
+    maxRows: 1000,          // 한 번에 받을 수 있는 상한 (서울시 규격)
+    path: 'rentBikeStatus.row',
+    lon: 'stationLongitude',
+    lat: 'stationLatitude',
+    epsg: 4326,
+    label: 'stationName',
+    numeric: ['parkingBikeTotCnt', 'rackTotCnt']
   }
 ];
 
