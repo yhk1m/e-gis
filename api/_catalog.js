@@ -162,6 +162,58 @@ export const CATALOG = [
     epsg: 4326,
     label: 'X_SWIFI_MAIN_NM',
     numeric: []
+  },
+  {
+    id: 'seoul-busstop',
+    provider: 'seoul',
+    name: '서울 버스정류소',
+    description: '시내버스 정류소 위치 (약 11,000곳 — 대중교통 접근성 수업용)',
+    endpoint: 'http://openapi.seoul.go.kr:8088',
+    service: 'busStopLocationXyInfo',
+    params: [],
+    maxRows: 1000,
+    maxPages: 15,        // 1만 1천 건이라 12장쯤 된다
+    path: 'busStopLocationXyInfo.row',
+    lon: 'XCRD',
+    lat: 'YCRD',
+    epsg: 4326,
+    label: 'STOPS_NM',
+    numeric: []
+  },
+  {
+    id: 'seoul-sports',
+    provider: 'seoul',
+    name: '서울 공공체육시설 예약',
+    description: '예약할 수 있는 공공 체육시설·프로그램 (약 600건)',
+    endpoint: 'http://openapi.seoul.go.kr:8088',
+    service: 'ListPublicReservationSport',
+    params: [],
+    maxRows: 1000,
+    maxPages: 2,
+    path: 'ListPublicReservationSport.row',
+    lon: 'X',
+    lat: 'Y',
+    epsg: 4326,
+    // 시설이 아니라 '예약 서비스' 한 건이 한 줄이다 — 같은 장소가 여러 번 나온다
+    label: 'PLACENM',
+    numeric: []
+  },
+  {
+    id: 'seoul-culture-program',
+    provider: 'seoul',
+    name: '서울 문화체험 프로그램',
+    description: '예약할 수 있는 문화체험 프로그램 (약 900건)',
+    endpoint: 'http://openapi.seoul.go.kr:8088',
+    service: 'ListPublicReservationCulture',
+    params: [],
+    maxRows: 1000,
+    maxPages: 2,
+    path: 'ListPublicReservationCulture.row',
+    lon: 'X',
+    lat: 'Y',
+    epsg: 4326,
+    label: 'PLACENM',
+    numeric: []
   }
 ];
 
