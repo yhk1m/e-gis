@@ -74,6 +74,94 @@ export const CATALOG = [
     epsg: 4326,
     label: 'stationName',
     numeric: ['parkingBikeTotCnt', 'rackTotCnt']
+  },
+  {
+    id: 'seoul-culture',
+    provider: 'seoul',
+    name: '서울 문화공간',
+    description: '공연장·박물관·미술관 등 문화시설 위치 (약 1,000곳)',
+    endpoint: 'http://openapi.seoul.go.kr:8088',
+    service: 'culturalSpaceInfo',
+    params: [],
+    maxRows: 1000,
+    maxPages: 3,
+    path: 'culturalSpaceInfo.row',
+    // ⚠️ X_COORD가 위도, Y_COORD가 경도다 (이름과 반대) — 실제 응답으로 확인함
+    lon: 'Y_COORD',
+    lat: 'X_COORD',
+    epsg: 4326,
+    label: 'FAC_NAME',
+    numeric: []
+  },
+  {
+    id: 'seoul-library',
+    provider: 'seoul',
+    name: '서울 공공도서관',
+    description: '구립·시립 공공도서관 위치 (약 200곳)',
+    endpoint: 'http://openapi.seoul.go.kr:8088',
+    service: 'SeoulPublicLibraryInfo',
+    params: [],
+    maxRows: 1000,
+    maxPages: 1,
+    path: 'SeoulPublicLibraryInfo.row',
+    // ⚠️ XCNTS가 위도, YDNTS가 경도다 (이름과 반대)
+    lon: 'YDNTS',
+    lat: 'XCNTS',
+    epsg: 4326,
+    label: 'LBRRY_NAME',
+    numeric: []
+  },
+  {
+    id: 'seoul-parking',
+    provider: 'seoul',
+    name: '서울 공영주차장',
+    description: '시·구 공영주차장 위치와 주차면수 (약 2,200곳)',
+    endpoint: 'http://openapi.seoul.go.kr:8088',
+    service: 'GetParkInfo',
+    params: [],
+    maxRows: 1000,
+    maxPages: 4,
+    path: 'GetParkInfo.row',
+    lon: 'LOT',
+    lat: 'LAT',
+    epsg: 4326,
+    label: 'PKLT_NM',
+    numeric: ['TPKCT']   // 총 주차면수 — 격자 합계에 쓸 만하다
+  },
+  {
+    id: 'seoul-park',
+    provider: 'seoul',
+    name: '서울 공원',
+    description: '도시공원 위치와 면적 (약 130곳)',
+    endpoint: 'http://openapi.seoul.go.kr:8088',
+    service: 'SearchParkInfoService',
+    params: [],
+    maxRows: 1000,
+    maxPages: 1,
+    path: 'SearchParkInfoService.row',
+    // 이 자료만 위경도가 아니라 TM 좌표다. 남산공원 198364,450395 → 126.98,37.55로 확인
+    lon: 'XCRD_G',
+    lat: 'YCRD_G',
+    epsg: 5181,
+    label: 'PARK_NM',
+    numeric: ['AREA']
+  },
+  {
+    id: 'seoul-wifi',
+    provider: 'seoul',
+    name: '서울 공공와이파이',
+    description: '공공와이파이 설치 지점 (약 26,000곳 — 격자 집계로 보기 좋다)',
+    endpoint: 'http://openapi.seoul.go.kr:8088',
+    service: 'TbPublicWifiInfo',
+    params: [],
+    maxRows: 1000,
+    maxPages: 30,        // 2만 6천 건이라 27장쯤 된다 (약 3초)
+    path: 'TbPublicWifiInfo.row',
+    lon: 'LNT',
+    lat: 'LAT',
+    epsg: 4326,
+    label: 'X_SWIFI_MAIN_NM',
+    numeric: []
   }
 ];
 

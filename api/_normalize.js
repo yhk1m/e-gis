@@ -58,6 +58,13 @@ export function normalize(raw, entry) {
       continue;
     }
 
+    // 0, 0은 기니만 앞바다다. 국내 자료에서 이 값은 '좌표 없음'을 뜻한다
+    // (서울시 주차장 자료는 1,000건 중 142건이 이렇게 온다).
+    if (epsg === 4326 && lon === 0 && lat === 0) {
+      skipped++;
+      continue;
+    }
+
     const props = {};
     for (const key of Object.keys(row)) {
       if (key === entry.lon || key === entry.lat) continue;

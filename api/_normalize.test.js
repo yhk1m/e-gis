@@ -99,6 +99,27 @@ describe('normalize — 응답을 한 가지 모양으로', () => {
     expect(result.items[0].props.name).toBe('정상');
   });
 
+  it('좌표가 0, 0이면 좌표 없음으로 본다 (기니만 앞바다에 찍히면 안 된다)', () => {
+    // 서울시 주차장 자료는 1,000건 중 142건이 LAT=0, LOT=0으로 온다
+    const raw = { response: { body: { items: [
+      { name: '정상', lon: '127.0', lat: '37.5' },
+      { name: '좌표없음', lon: '0', lat: '0' }
+    ] } } };
+    const entry = { path: 'response.body.items', lon: 'lon', lat: 'lat', epsg: 4326 };
+
+    const result = normalize(raw, entry);
+
+    expect(result.count).toBe(1);
+    expect(result.skipped).toBe(1);
+  });
+
+  it('투영좌표계에서는 0을 버리지 않는다 (원점 근처가 실제로 있을 수 있다)', () => {
+    const raw = { response: { body: { items: [{ x: '0', y: '0' }] } } };
+    const entry = { path: 'response.body.items', lon: 'x', lat: 'y', epsg: 5181 };
+
+    expect(normalize(raw, entry).count).toBe(1);
+  });
+
   it('투영좌표계(TM)는 위경도 범위 검사를 하지 않는다', () => {
     const raw = { response: { body: { items: [
       { name: '중부원점TM', x: '200000', y: '600000' }

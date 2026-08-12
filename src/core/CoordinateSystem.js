@@ -23,6 +23,12 @@ const CRS_DEFINITIONS = {
     proj4: '+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs',
     units: 'meters'
   },
+  'EPSG:5181': {
+    // 5186과 원점은 같고 y_0만 다르다(50만/60만). 서울시 공원 등 옛 자료가 이 계열을 쓴다.
+    name: 'Korea 2000 / 중부원점 (y_0=500000)',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +units=m +no_defs',
+    units: 'meters'
+  },
   'EPSG:5186': {
     name: 'Korea 2000 / 중부원점',
     proj4: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=600000 +ellps=GRS80 +units=m +no_defs',
