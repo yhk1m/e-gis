@@ -14,6 +14,50 @@ const ITEMS = [
 /** 목록 응답을 주는 가짜 fetch */
 const fetchOk = (body) => vi.fn(async () => ({ ok: true, json: async () => body }));
 
+describe('갈래로 접어 보여주기', () => {
+  const MIXED = [
+    { id: 'a', name: '서울 공공도서관', description: '', category: '교육', params: [] },
+    { id: 'b', name: '서울 버스정류소', description: '', category: '교통', params: [] },
+    { id: 'c', name: '서울 지하철역', description: '', category: '교통', params: [] },
+    { id: 'd', name: '분류없는것', description: '', params: [] }
+  ];
+
+  it('갈래마다 묶고 개수를 보여준다', () => {
+    const html = renderCatalogList(MIXED, '');
+
+    expect(html).toContain('교통');
+    expect(html).toContain('교육');
+    expect(html).toContain('2개');   // 교통 2건
+  });
+
+  it('갈래는 접힌 채로 시작한다 (350종이 한 번에 펼쳐지면 못 쓴다)', () => {
+    const root = document.createElement('div');
+    root.innerHTML = renderCatalogList(MIXED, '');
+
+    expect(root.querySelectorAll('.builtin-category.open')).toHaveLength(0);
+  });
+
+  it('갈래 머리를 누르면 펼쳐진다', async () => {
+    const root = document.createElement('div');
+    await publicDataTab.mount(root, { fetchFn: vi.fn(async () => ({ ok: true, json: async () => ({ items: MIXED }) })) });
+
+    root.querySelector('[data-pubdata-cat]').click();
+
+    expect(root.querySelectorAll('.builtin-category.open').length).toBe(1);
+  });
+
+  it('갈래가 없는 항목은 기타로 간다', () => {
+    expect(renderCatalogList(MIXED, '')).toContain('기타');
+  });
+
+  it('검색 중에는 갈래를 접지 않고 결과만 보여준다', () => {
+    const html = renderCatalogList(MIXED, '버스');
+
+    expect(html).toContain('버스정류소');
+    expect(html).not.toContain('builtin-category');
+  });
+});
+
 describe('검색 (항목이 수백 개다)', () => {
   const MANY = [
     { id: 'a', name: '서울 공공도서관', description: '도서관 위치', params: [] },

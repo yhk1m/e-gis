@@ -5966,7 +5966,7 @@ export const SEOUL_CATALOG = [
     "path": "tbClicomCnt.row",
     "lon": "MAP_COORD_X",
     "lat": "MAP_COORD_Y",
-    "epsg": 5174,
+    "epsg": 5186,
     "label": "CNT_NM",
     "numeric": [
       "SN"
@@ -6302,7 +6302,7 @@ export const SEOUL_CATALOG = [
     "path": "TbGiEmerhydP.row",
     "lon": "XCRD",
     "lat": "YCRD",
-    "epsg": 5174,
+    "epsg": 5186,
     "label": "YR_NO",
     "numeric": [
       "EMRG_EXF_DVC_SN",
@@ -6543,7 +6543,7 @@ export const SEOUL_CATALOG = [
     "path": "trafficSafetyA073PInfo.row",
     "lon": "XCRD",
     "lat": "YCRD",
-    "epsg": 5174,
+    "epsg": 5186,
     "label": "NEW_NMLZ_ID",
     "numeric": [
       "DRCT",
@@ -6565,7 +6565,7 @@ export const SEOUL_CATALOG = [
     "path": "trafficSafetyA077PInfo.row",
     "lon": "XCRD",
     "lat": "YCRD",
-    "epsg": 5174,
+    "epsg": 5186,
     "label": "PDSN_OPER_SGNM_MNG_NO1",
     "numeric": [
       "DRCT",
@@ -6587,7 +6587,7 @@ export const SEOUL_CATALOG = [
     "path": "trafficSafetyA008PInfo.row",
     "lon": "XCRD",
     "lat": "YCRD",
-    "epsg": 5174,
+    "epsg": 5186,
     "label": "INTR_NM",
     "numeric": [
       "EXPRS_SE",
@@ -6607,7 +6607,7 @@ export const SEOUL_CATALOG = [
     "path": "trafficSafetyA074PInfo.row",
     "lon": "XCRD",
     "lat": "YCRD",
-    "epsg": 5174,
+    "epsg": 5186,
     "label": "NEW_NMLZ_ID",
     "numeric": [
       "DRCT",
@@ -6629,7 +6629,7 @@ export const SEOUL_CATALOG = [
     "path": "trafficSafetyA057PInfo.row",
     "lon": "XCRD",
     "lat": "YCRD",
-    "epsg": 5174,
+    "epsg": 5186,
     "label": "NEW_NMLZ_ID",
     "numeric": [
       "ATCH_MTHD",
@@ -6785,7 +6785,7 @@ export const SEOUL_CATALOG = [
     "path": "tbTrfcSeoulRemainingTime.row",
     "lon": "COORD_X",
     "lat": "COORD_Y",
-    "epsg": 5174,
+    "epsg": 5186,
     "label": "INTERSECTION_NAME",
     "numeric": [
       "SN"

@@ -21,6 +21,7 @@
  */
 
 import { SEOUL_CATALOG } from './_catalog.seoul.js';
+import { categoryOf } from './_categories.js';
 
 /** 손으로 다듬은 항목 — 이름·설명·선택지가 정리되어 있어 자동 생성본보다 우선한다 */
 const CURATED = [
@@ -253,6 +254,7 @@ export function publicView(entry) {
       required: !!param.required,
       options: param.options || undefined
     })),
+    category: categoryOf(entry),
     label: entry.label,
     numeric: entry.numeric || []
   };

@@ -29,9 +29,22 @@ export function renderNotice(message) {
   return `<div class="public-data-notice">${message}</div>`;
 }
 
+/** 항목 하나 */
+function renderItem(item) {
+  return `
+    <button class="public-data-item" data-pubdata-id="${item.id}">
+      <span class="public-data-item-name">${item.name}</span>
+      <span class="public-data-item-desc">${item.description || ''}</span>
+    </button>
+  `;
+}
+
 /**
- * 카탈로그 목록 → 고를 수 있는 버튼들.
- * 항목이 수백 개라 검색어로 좁혀서 본다.
+ * 카탈로그 목록.
+ *
+ * 350종이 넘어 그냥 늘어놓으면 못 찾는다.
+ *  - 평소에는 갈래별로 접어 둔다 (기본 데이터 탭의 분류와 같은 모양)
+ *  - 검색 중에는 갈래를 접지 않고 걸린 것만 죽 보여준다
  */
 export function renderCatalogList(items, keyword = '') {
   if (!items || items.length === 0) {
@@ -39,22 +52,37 @@ export function renderCatalogList(items, keyword = '') {
   }
 
   const q = String(keyword || '').trim().toLowerCase();
-  const shown = q
-    ? items.filter(item => `${item.name} ${item.description || ''}`.toLowerCase().includes(q))
-    : items;
 
-  if (shown.length === 0) {
-    return renderNotice(`'${keyword}'에 해당하는 데이터가 없습니다.`);
+  if (q) {
+    const shown = items.filter(item =>
+      `${item.name} ${item.description || ''}`.toLowerCase().includes(q));
+    if (shown.length === 0) return renderNotice(`'${keyword}'에 해당하는 데이터가 없습니다.`);
+    return `<div class="public-data-list">${shown.map(renderItem).join('')}</div>`;
   }
 
-  const rows = shown.map(item => `
-    <button class="public-data-item" data-pubdata-id="${item.id}">
-      <span class="public-data-item-name">${item.name}</span>
-      <span class="public-data-item-desc">${item.description || ''}</span>
-    </button>
-  `).join('');
+  // 갈래별로 묶는다. 순서는 서버가 준 순서를 따르고, 갈래가 없으면 기타로 보낸다.
+  const groups = new Map();
+  for (const item of items) {
+    const key = item.category || '기타';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  const etc = groups.get('기타');
+  if (etc) { groups.delete('기타'); groups.set('기타', etc); }
 
-  return `<div class="public-data-list">${rows}</div>`;
+  return [...groups].map(([name, list]) => `
+    <div class="builtin-category" data-pubdata-group="${name}">
+      <div class="builtin-category-header" data-pubdata-cat="${name}">
+        <span>${name}</span>
+        <span class="builtin-badge" style="margin-left:auto; margin-right:8px;">${list.length}개</span>
+        <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="builtin-category-body">
+        <div class="public-data-list">${list.map(renderItem).join('')}</div>
+      </div>
+    </div>
+  `).join('');
 }
 
 /** 검색창 + 결과 수 */
@@ -211,6 +239,12 @@ export const publicDataTab = {
       if (item) {
         const entry = (cachedItems || []).find(e => e.id === item.dataset.pubdataId);
         if (entry) this._openEntry(root, entry);
+        return;
+      }
+
+      const catHead = event.target.closest('[data-pubdata-cat]');
+      if (catHead) {
+        catHead.parentElement.classList.toggle('open');
         return;
       }
 
