@@ -19,7 +19,7 @@ import {
 let cachedItems = null;
 
 /** 지금 보고 있는 항목과 불러온 결과 */
-let state = { entry: null, result: null, fetchFn: null, onLayerAdded: null };
+let state = { entry: null, result: null, fetchFn: null, onLayerAdded: null, keyword: '' };
 
 /** 목록 요청 세대 번호 — 늦게 도착한 응답이 새 화면을 덮지 않게 한다 */
 let mountSeq = 0;
@@ -29,13 +29,25 @@ export function renderNotice(message) {
   return `<div class="public-data-notice">${message}</div>`;
 }
 
-/** 카탈로그 목록 → 고를 수 있는 버튼들 */
-export function renderCatalogList(items) {
+/**
+ * 카탈로그 목록 → 고를 수 있는 버튼들.
+ * 항목이 수백 개라 검색어로 좁혀서 본다.
+ */
+export function renderCatalogList(items, keyword = '') {
   if (!items || items.length === 0) {
     return renderNotice('불러올 수 있는 공공데이터가 없습니다.');
   }
 
-  const rows = items.map(item => `
+  const q = String(keyword || '').trim().toLowerCase();
+  const shown = q
+    ? items.filter(item => `${item.name} ${item.description || ''}`.toLowerCase().includes(q))
+    : items;
+
+  if (shown.length === 0) {
+    return renderNotice(`'${keyword}'에 해당하는 데이터가 없습니다.`);
+  }
+
+  const rows = shown.map(item => `
     <button class="public-data-item" data-pubdata-id="${item.id}">
       <span class="public-data-item-name">${item.name}</span>
       <span class="public-data-item-desc">${item.description || ''}</span>
@@ -43,6 +55,23 @@ export function renderCatalogList(items) {
   `).join('');
 
   return `<div class="public-data-list">${rows}</div>`;
+}
+
+/** 검색창 + 결과 수 */
+function renderSearchBox(items, keyword = '') {
+  return `
+    <div class="public-data-searchbar">
+      <input type="text" class="public-data-search" data-pubdata-search
+             placeholder="데이터 검색 (예: 도서관, 주차장, 음식점)" value="${keyword}">
+      <span class="public-data-count">${items.length}종</span>
+    </div>
+  `;
+}
+
+/** 검색창과 목록을 함께 그린다 */
+function renderBrowse(items, keyword = '') {
+  return renderSearchBox(items, keyword) +
+    `<div data-pubdata-listbox>${renderCatalogList(items, keyword)}</div>`;
 }
 
 /** 항목 상세 — 선택지와 불러오기 버튼 */
@@ -128,7 +157,7 @@ export const publicDataTab = {
     this._bind(root);
 
     if (cachedItems) {
-      root.innerHTML = renderCatalogList(cachedItems);
+      root.innerHTML = renderBrowse(cachedItems);
       return;
     }
 
@@ -149,7 +178,7 @@ export const publicDataTab = {
       }
 
       cachedItems = (body && body.items) || [];
-      if (!stale()) root.innerHTML = renderCatalogList(cachedItems);
+      if (!stale()) root.innerHTML = renderBrowse(cachedItems);
     } catch (e) {
       // 로컬에서 `vite dev`만 띄우면 /api가 없어 여기로 온다
       if (!stale()) root.innerHTML = renderNotice('목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
@@ -169,6 +198,14 @@ export const publicDataTab = {
     if (root._pubdataBound) return;
     root._pubdataBound = true;
 
+    root.addEventListener('input', (event) => {
+      const box = event.target.closest('[data-pubdata-search]');
+      if (!box) return;
+      state.keyword = box.value;
+      const listBox = root.querySelector('[data-pubdata-listbox]');
+      if (listBox) listBox.innerHTML = renderCatalogList(cachedItems, state.keyword);
+    });
+
     root.addEventListener('click', (event) => {
       const item = event.target.closest('[data-pubdata-id]');
       if (item) {
@@ -180,7 +217,7 @@ export const publicDataTab = {
       if (event.target.closest('[data-pubdata-back]')) {
         state.entry = null;
         state.result = null;
-        root.innerHTML = renderCatalogList(cachedItems);
+        root.innerHTML = renderBrowse(cachedItems, state.keyword);
         return;
       }
 
@@ -306,6 +343,6 @@ export const publicDataTab = {
   _resetCache() {
     cachedItems = null;
     mountSeq = 0;
-    state = { entry: null, result: null, fetchFn: null, onLayerAdded: null };
+    state = { entry: null, result: null, fetchFn: null, onLayerAdded: null, keyword: '' };
   }
 };

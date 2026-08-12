@@ -14,6 +14,52 @@ const ITEMS = [
 /** 목록 응답을 주는 가짜 fetch */
 const fetchOk = (body) => vi.fn(async () => ({ ok: true, json: async () => body }));
 
+describe('검색 (항목이 수백 개다)', () => {
+  const MANY = [
+    { id: 'a', name: '서울 공공도서관', description: '도서관 위치', params: [] },
+    { id: 'b', name: '서울 버스정류소', description: '정류소 위치', params: [] },
+    { id: 'c', name: '일반음식점 인허가', description: '음식점', params: [] }
+  ];
+
+  it('이름으로 걸러낸다', () => {
+    expect(renderCatalogList(MANY, '도서')).toContain('공공도서관');
+    expect(renderCatalogList(MANY, '도서')).not.toContain('버스정류소');
+  });
+
+  it('설명으로도 걸러낸다', () => {
+    expect(renderCatalogList(MANY, '정류소')).toContain('버스정류소');
+  });
+
+  it('검색어가 없으면 전부 보여준다', () => {
+    const html = renderCatalogList(MANY, '');
+    expect(html).toContain('공공도서관');
+    expect(html).toContain('일반음식점');
+  });
+
+  it('찾는 게 없으면 그렇다고 알려준다', () => {
+    expect(renderCatalogList(MANY, '없는데이터')).toContain('없습니다');
+  });
+
+  it('검색창과 개수를 함께 그린다', async () => {
+    const root = document.createElement('div');
+    await publicDataTab.mount(root, { fetchFn: vi.fn(async () => ({ ok: true, json: async () => ({ items: MANY }) })) });
+
+    expect(root.querySelector('[data-pubdata-search]')).toBeTruthy();
+    expect(root.textContent).toContain('3');
+  });
+
+  it('검색창에 입력하면 목록이 좁아진다', async () => {
+    const root = document.createElement('div');
+    await publicDataTab.mount(root, { fetchFn: vi.fn(async () => ({ ok: true, json: async () => ({ items: MANY }) })) });
+
+    const box = root.querySelector('[data-pubdata-search]');
+    box.value = '음식';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(root.querySelectorAll('.public-data-item')).toHaveLength(1);
+  });
+});
+
 describe('renderCatalogList', () => {
   it('항목 이름과 설명을 그린다', () => {
     const html = renderCatalogList(ITEMS);

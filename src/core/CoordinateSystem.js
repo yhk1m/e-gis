@@ -23,6 +23,13 @@ const CRS_DEFINITIONS = {
     proj4: '+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs',
     units: 'meters'
   },
+  'EPSG:5174': {
+    // 서울시 인허가(LOCALDATA) 자료가 쓰는 옛 좌표계. 병원 79곳을 위경도 자료와
+    // 이름으로 대조해 확인했다 — 5174는 중앙값 21m, 5181은 314m, 2097은 259m였다.
+    name: 'Korean 1985 / 중부원점 (서울 인허가)',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=127.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    units: 'meters'
+  },
   'EPSG:5181': {
     // 5186과 원점은 같고 y_0만 다르다(50만/60만). 서울시 공원 등 옛 자료가 이 계열을 쓴다.
     name: 'Korea 2000 / 중부원점 (y_0=500000)',

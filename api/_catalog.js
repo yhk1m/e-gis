@@ -20,7 +20,10 @@
  *    포털 문서와 실제 응답이 다른 경우가 흔하다.
  */
 
-export const CATALOG = [
+import { SEOUL_CATALOG } from './_catalog.seoul.js';
+
+/** 손으로 다듬은 항목 — 이름·설명·선택지가 정리되어 있어 자동 생성본보다 우선한다 */
+const CURATED = [
   {
     id: 'ev-charger',
     provider: 'data.go.kr',
@@ -139,10 +142,11 @@ export const CATALOG = [
     maxRows: 1000,
     maxPages: 1,
     path: 'SearchParkInfoService.row',
-    // 이 자료만 위경도가 아니라 TM 좌표다. 남산공원 198364,450395 → 126.98,37.55로 확인
-    lon: 'XCRD_G',
-    lat: 'YCRD_G',
-    epsg: 5181,
+    // XCRD_G/YCRD_G(TM)도 있지만 XCRD/YCRD에 위경도가 이미 들어 있다.
+    // TM 쪽을 쓰면 남산공원이 760m 어긋난다 — 위경도를 쓴다.
+    lon: 'XCRD',
+    lat: 'YCRD',
+    epsg: 4326,
     label: 'PARK_NM',
     numeric: ['AREA']
   },
@@ -215,6 +219,16 @@ export const CATALOG = [
     label: 'PLACENM',
     numeric: []
   }
+];
+
+/**
+ * 손질한 항목 + 자동 생성 항목. 같은 서비스가 겹치면 손질한 쪽을 쓴다.
+ * 자동 생성본은 서울열린데이터광장 오픈API 1,024건을 훑어 좌표가 확인된 것만 담았다.
+ */
+const curatedServices = new Set(CURATED.map(entry => entry.service).filter(Boolean));
+export const CATALOG = [
+  ...CURATED,
+  ...SEOUL_CATALOG.filter(entry => !curatedServices.has(entry.service))
 ];
 
 /** id로 항목을 찾는다. 없으면 null */

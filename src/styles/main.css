@@ -4795,3 +4795,29 @@ body.exporting .egis-basemap-panel {
 .public-data-actions .btn {
   flex: 1;
 }
+
+/* 공공데이터 — 검색창 (항목이 수백 개다) */
+.public-data-searchbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary, var(--bg-panel));
+}
+
+.public-data-search {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+}
+
+.public-data-count {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
