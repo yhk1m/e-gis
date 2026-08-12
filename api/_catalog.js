@@ -67,6 +67,7 @@ export const CATALOG = [
     service: 'bikeList',
     params: [],
     maxRows: 1000,          // 한 번에 받을 수 있는 상한 (서울시 규격)
+    maxPages: 5,            // 이만큼까지 이어 받는다 (따릉이는 2,700곳쯤 된다)
     path: 'rentBikeStatus.row',
     lon: 'stationLongitude',
     lat: 'stationLatitude',

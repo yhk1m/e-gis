@@ -230,17 +230,70 @@ describe('서울열린데이터광장', () => {
     expect(fetchFn.calls).toHaveLength(0);
   });
 
-  it('받을 수 있는 건수보다 자료가 많으면 알려준다', async () => {
+  /**
+   * 서울시는 한 번에 1,000건까지만 준다. 게다가 list_total_count가 전체가 아니라
+   * '요청 범위의 건수'라서 그 값만 보면 더 있는지 알 수 없다(1/5로 물으면 5가 온다).
+   * 그래서 한 페이지가 꽉 차면 다음 페이지를 마저 받아야 한다.
+   */
+  function pagedFetch(pageSizes) {
+    const calls = [];
     const service = SEOUL_ENTRY.path.split('.')[0];
-    const rows = Array.from({ length: 3 }, SEOUL_ROW);
-    const fetchFn = fakeFetch({
-      [service]: { list_total_count: 5000, RESULT: { CODE: 'INFO-000' }, row: rows }
-    });
+    let page = 0;
+    const fn = async (url) => {
+      calls.push(url);
+      const size = pageSizes[page++] ?? 0;
+      const rows = Array.from({ length: size }, SEOUL_ROW);
+      return { ok: true, status: 200, text: async () => JSON.stringify({
+        [service]: { list_total_count: size, RESULT: { CODE: 'INFO-000' }, row: rows } }) };
+    };
+    fn.calls = calls;
+    return fn;
+  }
+
+  it('한 페이지가 꽉 차면 다음 페이지를 마저 받는다', async () => {
+    const max = SEOUL_ENTRY.maxRows;
+    const fetchFn = pagedFetch([max, max, 300]);
 
     const res = await handle(seoulQuery(), { fetchFn, keys: KEYS });
 
-    expect(res.body.total).toBe(5000);
+    expect(fetchFn.calls).toHaveLength(3);
+    expect(res.body.count).toBe(max * 2 + 300);
+  });
+
+  it('페이지마다 시작·끝 번호를 옮겨 부른다', async () => {
+    const max = SEOUL_ENTRY.maxRows;
+    const fetchFn = pagedFetch([max, 1]);
+
+    await handle(seoulQuery(), { fetchFn, keys: KEYS });
+
+    expect(fetchFn.calls[0]).toContain(`/1/${max}/`);
+    expect(fetchFn.calls[1]).toContain(`/${max + 1}/${max * 2}/`);
+  });
+
+  it('덜 찬 페이지가 나오면 멈춘다', async () => {
+    const fetchFn = pagedFetch([300]);
+
+    await handle(seoulQuery(), { fetchFn, keys: KEYS });
+
+    expect(fetchFn.calls).toHaveLength(1);
+  });
+
+  it('상한까지 받고도 더 있으면 잘렸다고 알린다', async () => {
+    const max = SEOUL_ENTRY.maxRows;
+    const fetchFn = pagedFetch(Array(20).fill(max));
+
+    const res = await handle(seoulQuery(), { fetchFn, keys: KEYS });
+
     expect(res.body.truncated).toBe(true);
+    expect(res.body.count).toBeLessThanOrEqual(max * (SEOUL_ENTRY.maxPages || 5));
+  });
+
+  it('공공데이터포털은 페이지를 넘기지 않는다 (한 번에 받는다)', async () => {
+    const fetchFn = fakeFetch(payloadWith(Array.from({ length: 1000 }, ROW)));
+
+    await handle(validQuery(), { fetchFn, keys: KEYS });
+
+    expect(fetchFn.calls).toHaveLength(1);
   });
 
   it('어떤 오류에서도 서울시 키가 응답에 섞이지 않는다', async () => {

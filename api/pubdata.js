@@ -43,24 +43,35 @@ const PROVIDERS = {
     total(raw) {
       const body = (raw && raw.response && raw.response.body) || {};
       return Number(body.totalCount) || null;
-    }
+    },
+    pageSize() { return null; },   // 한 번에 받는다
+    maxPages() { return 1; }
   },
 
   seoul: {
     keyName: 'SEOUL_OPENAPI_KEY',
     label: '서울열린데이터광장',
     /** /{키}/json/{서비스}/{시작}/{끝}/{조건…} (경로에 박는다) */
-    buildUrl(entry, params, key) {
+    buildUrl(entry, params, key, range = {}) {
       const maxRows = entry.maxRows || 1000;
+      const start = range.start || 1;
+      const end = range.end || maxRows;
       const ordered = (entry.params || [])
         .map(param => params[param.sendAs || param.key])
         .filter(value => value !== undefined && value !== '')
         .map(value => encodeURIComponent(value));
 
       const parts = [entry.endpoint, encodeURIComponent(key), 'json',
-                     entry.service, '1', String(maxRows), ...ordered];
+                     entry.service, String(start), String(end), ...ordered];
       return parts.join('/') + '/';
     },
+    /**
+     * 한 번에 1,000건까지만 주고, list_total_count는 '요청 범위의 건수'라서
+     * 전체가 몇 건인지 알 수 없다(1/5로 물으면 5가 온다).
+     * 그래서 꽉 찬 페이지가 나오면 다음 장을 마저 받는다.
+     */
+    pageSize(entry) { return entry.maxRows || 1000; },
+    maxPages(entry) { return entry.maxPages || 5; },
     /** 정상은 RESULT.CODE가 INFO-000 */
     findError(raw) {
       const service = raw && typeof raw === 'object' ? raw[Object.keys(raw)[0]] : null;
@@ -187,59 +198,70 @@ export async function handle(query = {}, { fetchFn, keys = {} } = {}) {
     };
   }
 
-  const url = provider.buildUrl(entry, built.params, key);
+  const pageSize = provider.pageSize(entry);
+  const maxPages = provider.maxPages(entry);
+  const fail = (message) => ({ status: 502, headers: {}, body: { error: message } });
 
-  let text;
-  try {
-    const response = await fetchFn(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
-    text = await response.text();
-    if (!response.ok) {
-      return {
-        status: 502,
-        headers: {},
-        body: { error: `${provider.label}이(가) 응답하지 않았습니다. (${response.status})` }
-      };
+  const items = [];
+  let skipped = 0;
+  let total = null;
+  let truncated = false;
+
+  for (let page = 0; page < maxPages; page++) {
+    const range = pageSize
+      ? { start: page * pageSize + 1, end: (page + 1) * pageSize }
+      : {};
+    const url = provider.buildUrl(entry, built.params, key, range);
+
+    let text;
+    try {
+      const response = await fetchFn(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+      text = await response.text();
+      if (!response.ok) {
+        return fail(`${provider.label}이(가) 응답하지 않았습니다. (${response.status})`);
+      }
+    } catch (e) {
+      return fail(`${provider.label}에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.`);
     }
-  } catch (e) {
-    return {
-      status: 502,
-      headers: {},
-      body: { error: `${provider.label}에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.` }
-    };
-  }
 
-  let raw;
-  try {
-    raw = JSON.parse(text);
-  } catch (e) {
-    // 점검 중이거나 오류일 때 HTML·XML이 온다
-    return {
-      status: 502,
-      headers: {},
-      body: { error: `${provider.label}이(가) 데이터 대신 오류 안내를 보냈습니다. 서비스 점검 중일 수 있습니다.` }
-    };
-  }
+    let raw;
+    try {
+      raw = JSON.parse(text);
+    } catch (e) {
+      // 점검 중이거나 오류일 때 HTML·XML이 온다
+      return fail(`${provider.label}이(가) 데이터 대신 오류 안내를 보냈습니다. 서비스 점검 중일 수 있습니다.`);
+    }
 
-  const failure = provider.findError(raw);
-  if (failure) {
-    return {
-      status: 502,
-      headers: {},
-      body: { error: stripKey(translateError(failure.code, failure.message), key) }
-    };
-  }
+    const failure = provider.findError(raw);
+    if (failure) {
+      // 첫 장이 실패하면 실패다. 뒷장에서 '자료 없음'이 오는 건 다 받았다는 뜻이다.
+      if (page === 0) {
+        return fail(stripKey(translateError(failure.code, failure.message), key));
+      }
+      break;
+    }
 
-  const result = normalize(raw, entry);
-  const total = provider.total(raw);
+    const result = normalize(raw, entry);
+    items.push(...result.items);
+    skipped += result.skipped;
+    if (page === 0) total = provider.total(raw);
+
+    const received = result.items.length + result.skipped;
+    if (!pageSize || received < pageSize) break;   // 덜 찬 장이면 마지막이다
+    if (page === maxPages - 1) truncated = true;   // 상한까지 받고도 더 남았다
+  }
 
   return {
     status: 200,
     headers: { 'Cache-Control': CACHE_HEADER },
     body: {
-      ...result,
-      // 제공처가 한 번에 주는 양보다 자료가 많으면 일부만 받은 것이다 — 숨기지 않는다
-      total: total,
-      truncated: !!(total && total > result.count + result.skipped),
+      items,
+      count: items.length,
+      skipped,
+      epsg: Number(entry.epsg) || 4326,
+      total,
+      // 다 받지 못했으면 숨기지 않는다 — 일부만 보여주면서 전부라고 하면 안 된다
+      truncated,
       fetchedAt: new Date().toISOString()
     }
   };
