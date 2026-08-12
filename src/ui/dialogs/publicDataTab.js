@@ -10,7 +10,10 @@
  * 화면 흐름: 목록 → 항목 선택(선택지 입력) → 불러오기 → 미리보기 → 레이어 추가
  */
 
-import { renderParamForm, collectParams, renderPreview, addPointLayer } from './publicDataLoad.js';
+import {
+  renderParamForm, collectParams, renderPreview,
+  addPointLayer, addGridLayer, addHeatmapLayer, numericFields
+} from './publicDataLoad.js';
 
 /** 목록은 자주 바뀌지 않는다. 다이얼로그를 여닫을 때마다 다시 부르지 않는다. */
 let cachedItems = null;
@@ -62,6 +65,42 @@ function renderActions() {
   return `
     <div class="public-data-actions">
       <button class="btn btn-primary" data-pubdata-add="point">포인트로 추가</button>
+      <button class="btn btn-secondary" data-pubdata-add="grid">격자 집계</button>
+      <button class="btn btn-secondary" data-pubdata-add="heatmap">히트맵</button>
+    </div>
+    <div data-pubdata-grid-options></div>
+  `;
+}
+
+/** 격자 집계 옵션 — 칸 크기와 집계 방식 */
+function renderGridOptions(result) {
+  const fields = numericFields(result);
+  const fieldOptions = fields.map(f => `<option value="${f}">${f}</option>`).join('');
+
+  return `
+    <div class="public-data-grid-options">
+      <label class="public-data-field">
+        <span>격자 크기</span>
+        <select class="public-data-param" data-grid="cellSize">
+          <option value="500">500m</option>
+          <option value="1000" selected>1km</option>
+          <option value="5000">5km</option>
+          <option value="10000">10km</option>
+        </select>
+      </label>
+      <label class="public-data-field">
+        <span>집계</span>
+        <select class="public-data-param" data-grid="method">
+          <option value="count">개수</option>
+          ${fields.length ? '<option value="sum">합계</option><option value="avg">평균</option>' : ''}
+        </select>
+      </label>
+      ${fields.length ? `
+      <label class="public-data-field" data-grid-field-row style="display:none;">
+        <span>대상 값</span>
+        <select class="public-data-param" data-grid="field">${fieldOptions}</select>
+      </label>` : ''}
+      <button class="btn btn-primary" data-pubdata-grid-create>격자 만들기</button>
     </div>
   `;
 }
@@ -150,6 +189,11 @@ export const publicDataTab = {
         return;
       }
 
+      if (event.target.closest('[data-pubdata-grid-create]')) {
+        this._createGrid(root);
+        return;
+      }
+
       const addBtn = event.target.closest('[data-pubdata-add]');
       if (addBtn) this._add(root, addBtn.dataset.pubdataAdd);
     });
@@ -192,15 +236,64 @@ export const publicDataTab = {
     const { entry, result } = state;
     if (!entry || !result) return;
 
-    const resultEl = root.querySelector('[data-pubdata-result]');
-    try {
-      if (kind === 'point') {
-        addPointLayer(this._layerName(entry), result);
+    // 격자는 칸 크기·집계 방식을 먼저 고른다
+    if (kind === 'grid') {
+      const box = root.querySelector('[data-pubdata-grid-options]');
+      if (box) {
+        box.innerHTML = box.innerHTML.trim() ? '' : renderGridOptions(result);
+        this._bindGridMethod(box);
       }
+      return;
+    }
+
+    try {
+      if (kind === 'point') addPointLayer(this._layerName(entry), result);
+      if (kind === 'heatmap') addHeatmapLayer(this._layerName(entry), result);
       if (state.onLayerAdded) state.onLayerAdded();
     } catch (e) {
-      if (resultEl) resultEl.innerHTML = renderNotice(e.message || '레이어를 만들지 못했습니다.');
+      this._showError(root, e);
     }
+  },
+
+  /** 합계·평균을 고르면 대상 값 선택칸을 보여준다 */
+  _bindGridMethod(box) {
+    const method = box.querySelector('[data-grid="method"]');
+    const fieldRow = box.querySelector('[data-grid-field-row]');
+    if (!method || !fieldRow) return;
+
+    method.addEventListener('change', () => {
+      fieldRow.style.display = method.value === 'count' ? 'none' : '';
+    });
+  },
+
+  /** 고른 옵션으로 격자 레이어를 만든다 */
+  _createGrid(root) {
+    const { entry, result } = state;
+    if (!entry || !result) return;
+
+    const box = root.querySelector('[data-pubdata-grid-options]');
+    const read = (key) => {
+      const el = box && box.querySelector(`[data-grid="${key}"]`);
+      return el ? el.value : null;
+    };
+
+    const cellSize = Number(read('cellSize')) || 1000;
+    const method = read('method') || 'count';
+    const field = read('field');
+    const sizeLabel = cellSize >= 1000 ? `${cellSize / 1000}km` : `${cellSize}m`;
+
+    try {
+      addGridLayer(`${entry.name} 격자 ${sizeLabel}`, result, { cellSize, method, field });
+      if (state.onLayerAdded) state.onLayerAdded();
+    } catch (e) {
+      this._showError(root, e);
+    }
+  },
+
+  /** 실패 이유를 미리보기 자리에 그대로 보여준다 */
+  _showError(root, error) {
+    const resultEl = root.querySelector('[data-pubdata-result]');
+    if (resultEl) resultEl.innerHTML = renderNotice(error.message || '레이어를 만들지 못했습니다.');
   },
 
   /** 무엇을 어디에서 받은 자료인지 이름에 남긴다 */

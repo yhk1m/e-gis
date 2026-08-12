@@ -142,8 +142,11 @@ class HeatmapTool {
     }
 
     // 원래 레이어 숨기기 옵션
+    // layerInfo.visible까지 같이 내려야 한다. 지도에서만 감추면 레이어 목록의
+    // 체크는 켜진 채로 남아, 켜져 있는데 안 보이는 상태가 된다.
     if (options.hideSource) {
       layerInfo.olLayer.setVisible(false);
+      layerInfo.visible = false;
     }
 
     // 범례 생성

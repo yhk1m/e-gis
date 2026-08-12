@@ -11,7 +11,8 @@ import { fromLonLat } from 'ol/proj.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { coordinateSystem } from '../../core/CoordinateSystem.js';
 import {
-  renderParamForm, collectParams, renderPreview, toFeatures, addPointLayer
+  renderParamForm, collectParams, renderPreview, toFeatures, addPointLayer,
+  addGridLayer, addHeatmapLayer, GRID_CELL_LIMIT
 } from './publicDataLoad.js';
 
 coordinateSystem.init();   // proj4에 한국 좌표계를 등록해 둔다
@@ -36,7 +37,23 @@ const RESULT = {
 
 beforeEach(() => {
   layerManager.getAllLayers().slice().forEach(l => layerManager.removeLayer(l.id));
+  // 범례가 지도 컨테이너를 찾는다
+  if (!document.getElementById('map')) {
+    const map = document.createElement('div');
+    map.id = 'map';
+    document.body.appendChild(map);
+  }
 });
+
+/** 서울 부근에 격자 여러 칸에 걸치도록 흩어 놓은 점들 */
+function spreadResult(count = 30) {
+  const items = Array.from({ length: count }, (_, i) => ({
+    lon: 126.9 + (i % 6) * 0.05,
+    lat: 37.45 + Math.floor(i / 6) * 0.04,
+    props: { statNm: `충전소${i}`, output: 50 + i }
+  }));
+  return { items, count: items.length, skipped: 0, epsg: 4326 };
+}
 
 describe('renderParamForm', () => {
   it('선택 항목을 드롭다운으로 만든다', () => {
@@ -160,5 +177,76 @@ describe('addPointLayer', () => {
   it('만들 피처가 없으면 예외를 던진다 (빈 레이어를 만들지 않는다)', () => {
     expect(() => addPointLayer('빈것', { items: [], count: 0, skipped: 0, epsg: 4326 }))
       .toThrow();
+  });
+});
+
+describe('addGridLayer — 격자 집계 레이어', () => {
+  it('격자 폴리곤 레이어를 만든다', () => {
+    const layerId = addGridLayer('충전소 격자', spreadResult(), { cellSize: 5000, method: 'count' });
+    const info = layerManager.getLayer(layerId);
+
+    expect(info.geometryType).toBe('Polygon');
+    expect(info.source.getFeatures().length).toBeGreaterThan(0);
+  });
+
+  it('칸마다 개수와 집계값을 속성으로 넣는다', () => {
+    const layerId = addGridLayer('격자', spreadResult(), { cellSize: 20000, method: 'count' });
+    const feature = layerManager.getLayer(layerId).source.getFeatures()[0];
+
+    expect(feature.get('개수')).toBeGreaterThan(0);
+    expect(feature.get('값')).toBe(feature.get('개수'));
+  });
+
+  it('셀을 크게 잡으면 칸 수가 줄어든다', () => {
+    const fine = addGridLayer('촘촘', spreadResult(), { cellSize: 2000, method: 'count' });
+    const coarse = addGridLayer('성김', spreadResult(), { cellSize: 30000, method: 'count' });
+
+    const fineCount = layerManager.getLayer(fine).source.getFeatures().length;
+    const coarseCount = layerManager.getLayer(coarse).source.getFeatures().length;
+    expect(coarseCount).toBeLessThan(fineCount);
+  });
+
+  it('합계·평균은 지정한 필드로 낸다', () => {
+    const layerId = addGridLayer('합계', spreadResult(6), {
+      cellSize: 50000, method: 'sum', field: 'output'
+    });
+    const features = layerManager.getLayer(layerId).source.getFeatures();
+
+    // 칸이 어떻게 나뉘든 전체 합은 보존된다 (output 50..55)
+    const total = features.reduce((sum, f) => sum + f.get('값'), 0);
+    expect(total).toBe(50 + 51 + 52 + 53 + 54 + 55);
+  });
+
+  it('단계구분도 설정이 붙어 저장·복원에서 색이 유지된다', () => {
+    const layerId = addGridLayer('격자', spreadResult(), { cellSize: 5000, method: 'count' });
+
+    expect(layerManager.getLayer(layerId)._choroplethConfig).toBeTruthy();
+  });
+
+  it('칸이 너무 많으면 만들지 않고 알려준다', () => {
+    const wide = { items: [
+      { lon: 124, lat: 33, props: {} },
+      { lon: 132, lat: 39, props: {} }
+    ], count: 2, skipped: 0, epsg: 4326 };
+
+    expect(() => addGridLayer('너무촘촘', wide, { cellSize: 100, method: 'count' }))
+      .toThrow(new RegExp(String(GRID_CELL_LIMIT).slice(0, 2)));
+  });
+
+  it('만들 점이 없으면 예외를 던진다', () => {
+    expect(() => addGridLayer('빈것', { items: [], count: 0, skipped: 0, epsg: 4326 },
+      { cellSize: 1000, method: 'count' })).toThrow();
+  });
+});
+
+// 히트맵은 OpenLayers가 캔버스 그라디언트를 만들어야 해서 jsdom에서는 생성되지 않는다.
+// 실제 동작은 브라우저에서 확인한다. 여기서는 인자 규약만 지킨다.
+describe('addHeatmapLayer', () => {
+  it('원본 포인트 레이어를 먼저 만든다', () => {
+    try { addHeatmapLayer('충전소 히트맵', spreadResult()); } catch (e) { /* 캔버스 없음 */ }
+
+    const source = layerManager.getAllLayers().find(l => l.geometryType === 'Point');
+    expect(source).toBeTruthy();
+    expect(source.name).toContain('충전소 히트맵');
   });
 });

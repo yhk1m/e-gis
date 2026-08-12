@@ -211,6 +211,63 @@ describe('목록이 늦게 도착할 때', () => {
   });
 });
 
+describe('격자 집계를 누르면', () => {
+  it('칸 크기와 집계 방식을 먼저 고르게 한다', async () => {
+    const root = document.createElement('div');
+    await openDetail(root, fetchFlow());
+    await publicDataTab._load(root);
+
+    root.querySelector('[data-pubdata-add="grid"]').click();
+
+    expect(root.querySelector('[data-grid="cellSize"]')).toBeTruthy();
+    expect(root.querySelector('[data-grid="method"]')).toBeTruthy();
+    expect(root.querySelector('[data-pubdata-grid-create]')).toBeTruthy();
+  });
+
+  it('한 번 더 누르면 옵션을 접는다', async () => {
+    const root = document.createElement('div');
+    await openDetail(root, fetchFlow());
+    await publicDataTab._load(root);
+
+    root.querySelector('[data-pubdata-add="grid"]').click();
+    root.querySelector('[data-pubdata-add="grid"]').click();
+
+    expect(root.querySelector('[data-grid="cellSize"]')).toBeFalsy();
+  });
+
+  it('격자 만들기를 누르면 격자 레이어가 생긴다', async () => {
+    const { layerManager } = await import('../../core/LayerManager.js');
+    layerManager.getAllLayers().slice().forEach(l => layerManager.removeLayer(l.id));
+
+    const root = document.createElement('div');
+    await openDetail(root, fetchFlow());
+    await publicDataTab._load(root);
+    root.querySelector('[data-pubdata-add="grid"]').click();
+    root.querySelector('[data-grid="cellSize"]').value = '5000';
+
+    root.querySelector('[data-pubdata-grid-create]').click();
+
+    const layer = layerManager.getAllLayers()[0];
+    expect(layer.geometryType).toBe('Polygon');
+    expect(layer.name).toContain('격자 5km');
+  });
+
+  it('만들 수 없으면 이유를 보여준다 (칸이 너무 많을 때 등)', async () => {
+    const wide = { items: [
+      { lon: 124, lat: 33, props: {} }, { lon: 132, lat: 39, props: {} }
+    ], count: 2, skipped: 0, epsg: 4326 };
+    const root = document.createElement('div');
+    await openDetail(root, fetchFlow(wide));
+    await publicDataTab._load(root);
+    root.querySelector('[data-pubdata-add="grid"]').click();
+    root.querySelector('[data-grid="cellSize"]').value = '500';
+
+    root.querySelector('[data-pubdata-grid-create]').click();
+
+    expect(root.textContent).toContain('격자가 너무 촘촘합니다');
+  });
+});
+
 describe('포인트로 추가를 누르면', () => {
   it('레이어가 생기고 다이얼로그를 닫는다', async () => {
     const { layerManager } = await import('../../core/LayerManager.js');
