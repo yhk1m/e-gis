@@ -20,8 +20,30 @@ const RULES = [
   ['환경', /대기|수질|기상|미세먼지|에너지|하천|기후|소음|악취|폐기물|태양광|온실/]
 ];
 
+/**
+ * 포털이 자체 분류를 주면 그것을 먼저 믿는다 — 제목만 보고 맞히는 것보다 정확하다.
+ * 경기데이터드림은 12가지로 나눠 준다.
+ */
+const SOURCE_CATEGORY = {
+  '교통물류': '교통',
+  '교육': '교육',
+  '보건': '복지·의료',
+  '사회복지': '복지·의료',
+  '문화관광': '문화·관광',
+  '공공안전': '안전',
+  '산업통상': '상업',
+  '재정금융': '상업',
+  '환경보호': '환경',
+  '농림수산': '농림·수산',
+  '지역개발': '지역개발',
+  '공공행정': '행정'
+};
+
 /** 갈래 목록. 화면에 이 순서대로 나오고 '기타'는 마지막이다. */
-export const CATEGORIES = [...RULES.map(([name]) => name), '기타'];
+export const CATEGORIES = [
+  ...RULES.map(([name]) => name),
+  '농림·수산', '지역개발', '행정', '기타'
+];
 
 /**
  * 항목이 어느 갈래인가.
@@ -29,6 +51,9 @@ export const CATEGORIES = [...RULES.map(([name]) => name), '기타'];
  * @returns {string} CATEGORIES 중 하나
  */
 export function categoryOf(entry) {
+  const fromSource = entry && SOURCE_CATEGORY[entry.srcCategory];
+  if (fromSource) return fromSource;
+
   const text = `${(entry && entry.name) || ''} ${(entry && entry.description) || ''}`;
   const hit = RULES.find(([, pattern]) => pattern.test(text));
   return hit ? hit[0] : '기타';

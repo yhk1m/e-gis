@@ -65,3 +65,26 @@ describe('regionOf — 어느 지역 자료인가', () => {
     expect(regionOf({})).toBe('전국');
   });
 });
+
+describe('포털이 준 분류를 먼저 믿는다', () => {
+  it('경기 포털 분류를 우리 갈래로 옮긴다', () => {
+    expect(categoryOf({ name: '무엇', srcCategory: '교통물류' })).toBe('교통');
+    expect(categoryOf({ name: '무엇', srcCategory: '사회복지' })).toBe('복지·의료');
+    expect(categoryOf({ name: '무엇', srcCategory: '농림수산' })).toBe('농림·수산');
+  });
+
+  it('제목으로 짐작한 것보다 포털 분류가 우선한다', () => {
+    // 제목에 '음식'이 있어도 포털이 사회복지라고 하면 그쪽을 따른다
+    expect(categoryOf({ name: '무료급식 음식 지원', srcCategory: '사회복지' })).toBe('복지·의료');
+  });
+
+  it('모르는 포털 분류면 제목 규칙으로 넘어간다', () => {
+    expect(categoryOf({ name: '버스정류소 위치', srcCategory: '알수없는분류' })).toBe('교통');
+  });
+
+  it('경기 항목의 기타 비율이 10%를 넘지 않는다', () => {
+    const gg = CATALOG.filter(e => e.provider === 'gg');
+    const etc = gg.filter(e => categoryOf(e) === '기타').length;
+    expect(etc / gg.length).toBeLessThan(0.1);
+  });
+});

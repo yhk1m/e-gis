@@ -24,7 +24,8 @@ export const GG_CATALOG = [
     "label": "FACLT_NM",
     "numeric": [
       "FACLT_FNOP"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-tbuclibm",
@@ -43,7 +44,8 @@ export const GG_CATALOG = [
     "label": "LIB_NAME",
     "numeric": [
       "JIYUK"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-tb25bpttourspotm",
@@ -60,7 +62,8 @@ export const GG_CATALOG = [
     "lat": "LAT",
     "epsg": 4326,
     "label": "TURSM_SPOT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tb13bforestm",
@@ -82,7 +85,8 @@ export const GG_CATALOG = [
       "AREASEQ",
       "ISLIVE",
       "IMAGESEQ1"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tbftgbusdrviginfodatam",
@@ -104,7 +108,8 @@ export const GG_CATALOG = [
       "COLCT_MONTH",
       "COLCT_DAY",
       "COLCT_HOUR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-tbftgbusgpsinsinfodatam",
@@ -126,7 +131,8 @@ export const GG_CATALOG = [
       "HDR_SN",
       "SS_NUM",
       "NANO_SS_NUM"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-tbftgbusdrviginfodatam",
@@ -148,7 +154,8 @@ export const GG_CATALOG = [
       "COLCT_MONTH",
       "COLCT_DAY",
       "COLCT_HOUR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-tbkintexhotellistm",
@@ -165,7 +172,8 @@ export const GG_CATALOG = [
     "lat": "LAT",
     "epsg": 4326,
     "label": "HOTEL_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tbkickboardparkplcstusm",
@@ -182,7 +190,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "MNGINST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-tbggtechnofalctm",
@@ -199,7 +208,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SPACE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tbggtechnoentrprsm",
@@ -219,7 +229,8 @@ export const GG_CATALOG = [
     "numeric": [
       "ENTRPS_FOUND_DAY",
       "FRGNR_INVEST_ENTRPRS_INFO"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tbgssfacility",
@@ -241,7 +252,8 @@ export const GG_CATALOG = [
       "SCALE",
       "ACEPTNC_PSNCNT",
       "UPD_DAY"
-    ]
+    ],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-tbgsscamping",
@@ -260,7 +272,8 @@ export const GG_CATALOG = [
     "label": "UP_INST_NM",
     "numeric": [
       "INQ_CNT"
-    ]
+    ],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-tbgssadmsvc",
@@ -282,7 +295,8 @@ export const GG_CATALOG = [
       "RSVTN_BEGIN_DIV",
       "CANCL_CLOS_BF_TM",
       "DAY_ACCTO_APLCATN_POSBL_TRNORD"
-    ]
+    ],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-tbgssdataresource",
@@ -304,7 +318,8 @@ export const GG_CATALOG = [
       "RESRCE_DIV_ACCTO_SEQ",
       "RESRCE_DIV_SN",
       "STATE_DIV_SN"
-    ]
+    ],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-tbgssadmsvc",
@@ -326,7 +341,8 @@ export const GG_CATALOG = [
       "RSVTN_BEGIN_DIV",
       "CANCL_CLOS_BF_TM",
       "DAY_ACCTO_APLCATN_POSBL_TRNORD"
-    ]
+    ],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-tbairhysplitresultm",
@@ -348,7 +364,8 @@ export const GG_CATALOG = [
       "MT",
       "DAY",
       "TM"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-tbairhysplitinfom",
@@ -367,7 +384,8 @@ export const GG_CATALOG = [
     "label": "BCKTR_CD",
     "numeric": [
       "BCKTR_DIFF_VL"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-tbairsurfacestationm",
@@ -388,7 +406,8 @@ export const GG_CATALOG = [
       "USE_YN",
       "X_CRDNT",
       "Y_CRDNT"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-tbairsurfacestationm",
@@ -409,7 +428,8 @@ export const GG_CATALOG = [
       "USE_YN",
       "X_CRDNT",
       "Y_CRDNT"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-tbeqaltcombcaream",
@@ -426,7 +446,8 @@ export const GG_CATALOG = [
     "lat": "LAT",
     "epsg": 4326,
     "label": "NO",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-tbggrgnentrstdtlm",
@@ -445,7 +466,8 @@ export const GG_CATALOG = [
     "label": "ENTRPS_NM",
     "numeric": [
       "STD_YM"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-tbdspsnconvncefacltinfom",
@@ -462,7 +484,8 @@ export const GG_CATALOG = [
     "lat": "FACLT_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-tbstggobgyninfom",
@@ -484,7 +507,8 @@ export const GG_CATALOG = [
       "STD_YM",
       "REFINE_WGS84_LOGT",
       "REFINE_WGS84_LAT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-tbwidanimexhbtnhlm",
@@ -501,7 +525,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CMPNM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-tbggfrcsheadqutrstusm",
@@ -520,7 +545,8 @@ export const GG_CATALOG = [
     "label": "COPRTN_NM",
     "numeric": [
       "STD_YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tbgconfacltlistm",
@@ -539,7 +565,8 @@ export const GG_CATALOG = [
     "label": "CENTER_NM",
     "numeric": [
       "ACEPTNC_PSNCNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-drowseshltrstus",
@@ -559,7 +586,8 @@ export const GG_CATALOG = [
     "numeric": [
       "INSTL_YY",
       "DETAIL_DSTN"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-tbuniquevenuelistm",
@@ -578,7 +606,8 @@ export const GG_CATALOG = [
     "label": "INST_NM",
     "numeric": [
       "SELECT_YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ggwrkrshltrstus",
@@ -595,7 +624,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "RESTARER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-emgchlcpthndvrstus",
@@ -612,7 +642,8 @@ export const GG_CATALOG = [
     "lat": "LAT",
     "epsg": 4326,
     "label": "SPOT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-ggprmsnsmdentrstus",
@@ -631,7 +662,8 @@ export const GG_CATALOG = [
     "label": "ENTRPS_NM",
     "numeric": [
       "PARTCPTN_YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-srvlswimstormstus",
@@ -648,7 +680,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SPORT_ADMT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tbgolfcrsstusm",
@@ -668,7 +701,8 @@ export const GG_CATALOG = [
     "numeric": [
       "GOLFCRS_AR",
       "GOLFCRS_HOLE_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tbpublbuildstusm",
@@ -688,7 +722,8 @@ export const GG_CATALOG = [
     "numeric": [
       "AR",
       "ACQS_DAY"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-tunneldisastrprvnfaclt",
@@ -710,7 +745,8 @@ export const GG_CATALOG = [
       "TOT_BT",
       "VLD_BT",
       "HG"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-gasstationadblueprice",
@@ -729,7 +765,8 @@ export const GG_CATALOG = [
     "label": "OILSTATN_NM",
     "numeric": [
       "SALE_UNPC"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-ggexpsdlv",
@@ -746,7 +783,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "STR_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-otherhalfanimediwelf",
@@ -763,7 +801,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INDUTYPE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-otherhalfanientpark",
@@ -780,7 +819,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "PARK_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-otherhalfaniconvefac",
@@ -797,7 +837,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INDUTYPE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-ferocdoglimitfac",
@@ -814,7 +855,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-ggemdlfln",
@@ -831,7 +873,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BRGH_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-visactsuvp",
@@ -850,7 +893,8 @@ export const GG_CATALOG = [
     "label": "TURSM_PLCNM",
     "numeric": [
       "EXT_TNF"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ggempltsp",
@@ -867,7 +911,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-jobsocentp",
@@ -884,7 +929,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPRS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-gggoodinflstorest",
@@ -901,7 +947,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CMPNM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-zooregsta",
@@ -922,7 +969,8 @@ export const GG_CATALOG = [
       "SCALE",
       "SPCS_CNT",
       "ANIMAL_CNT"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-tbenvbasicinfostm",
@@ -939,7 +987,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "REGION_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-tbinfoconscomstm",
@@ -956,7 +1005,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CMPNM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tbzerovehgpsinsstm",
@@ -978,7 +1028,8 @@ export const GG_CATALOG = [
       "CLCT_DIV",
       "UP_VL",
       "UP_UTR_VL"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-ggstreetvendstm",
@@ -997,7 +1048,8 @@ export const GG_CATALOG = [
     "label": "STORE_NM",
     "numeric": [
       "OCCUPTN_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tbgghealresmestm",
@@ -1014,7 +1066,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "RECPER_INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-tbggscreeclstm",
@@ -1031,7 +1084,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-tbggrespclstm",
@@ -1048,7 +1102,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-tbggsafehosstm",
@@ -1065,7 +1120,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-gglifelongstm",
@@ -1082,7 +1138,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-dreamspacestm",
@@ -1102,7 +1159,8 @@ export const GG_CATALOG = [
     "numeric": [
       "REGION_DIV",
       "OPR_DIV"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-gggencounselstm",
@@ -1119,7 +1177,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggsocialeldjobstm",
@@ -1136,7 +1195,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-gasureainvenstm",
@@ -1157,7 +1217,8 @@ export const GG_CATALOG = [
       "QTY",
       "DATA_STD_DTM",
       "SI_TAX_DIV"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-ggchemiaccevastm",
@@ -1177,7 +1238,8 @@ export const GG_CATALOG = [
     "numeric": [
       "ACEPTNC_AR",
       "PSNCNT"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-ggsharedlivdisabled",
@@ -1199,7 +1261,8 @@ export const GG_CATALOG = [
       "ENTRNC_MAN_PSTPSN_CNT",
       "ENFLPSN_FNOP_CNT",
       "ENFLPSN_PSTPSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-gggosist",
@@ -1216,7 +1279,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-gghelthpublhelth",
@@ -1233,7 +1297,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-lcfvtbst",
@@ -1250,7 +1315,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-corsvst",
@@ -1267,7 +1333,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CENTER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-ggcsmfstt",
@@ -1284,7 +1351,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-inmarbrost",
@@ -1303,7 +1371,8 @@ export const GG_CATALOG = [
     "label": "ENTRPS_NM",
     "numeric": [
       "PERD"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-etst",
@@ -1320,7 +1389,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "TURSM_INFO_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tsst",
@@ -1337,7 +1407,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "LOC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ttst",
@@ -1354,7 +1425,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "TURSM_INFO_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-htst",
@@ -1371,7 +1443,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "TURSM_INFO_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-lsst",
@@ -1388,7 +1461,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SIGUN_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-csst",
@@ -1405,7 +1479,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SIGUN_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ctst",
@@ -1422,7 +1497,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "TURSM_INFO_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ctst",
@@ -1439,7 +1515,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "TURSM_INFO_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-adst",
@@ -1456,7 +1533,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "NM_SM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-hysst",
@@ -1473,7 +1551,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-contemporaryarchat",
@@ -1490,7 +1569,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "NM_SM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-gghistoricarchat",
@@ -1507,7 +1587,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "NM_SM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-ggmodernarchat",
@@ -1524,7 +1605,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "NM_SM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-hissitevisitorl",
@@ -1543,7 +1625,8 @@ export const GG_CATALOG = [
     "label": "HISSN_NM",
     "numeric": [
       "UPD_DAY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ggagrctproddist",
@@ -1560,7 +1643,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "GRP_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-dscvraccpriskarea",
@@ -1579,7 +1663,8 @@ export const GG_CATALOG = [
     "label": "ACDNT_TYPE",
     "numeric": [
       "GOUT_RESN"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-facildisinoblign",
@@ -1596,7 +1681,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZEST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-alleybizdist",
@@ -1615,7 +1701,8 @@ export const GG_CATALOG = [
     "label": "BIZDIST_NM",
     "numeric": [
       "STORE_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-developbizdist",
@@ -1634,7 +1721,8 @@ export const GG_CATALOG = [
     "label": "BIZDIST_NM",
     "numeric": [
       "STORE_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-safetyrestrntinfo",
@@ -1653,7 +1741,8 @@ export const GG_CATALOG = [
     "label": "SIDO_NM",
     "numeric": [
       "RM_MATR"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-canopyinstlstus",
@@ -1673,7 +1762,8 @@ export const GG_CATALOG = [
     "numeric": [
       "HG_VL",
       "DMTR_LENG_VL"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-familyrestarerinstl",
@@ -1692,7 +1782,8 @@ export const GG_CATALOG = [
     "label": "EMD_NM",
     "numeric": [
       "STD_YY"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-rwdmrtgrpinfom",
@@ -1711,7 +1802,8 @@ export const GG_CATALOG = [
     "label": "GRP_NM",
     "numeric": [
       "FOUND_YY"
-    ]
+    ],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-bannerappontnotistus",
@@ -1730,7 +1822,8 @@ export const GG_CATALOG = [
     "label": "MANAGE_INST_NM",
     "numeric": [
       "TEMP_CONT03"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-clsnowbxinstlstus",
@@ -1752,7 +1845,8 @@ export const GG_CATALOG = [
       "SAND_QTY",
       "CACHOD_CNT",
       "SAND_CNT"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-riskcntrmsrsoclentr",
@@ -1769,7 +1863,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-qrynstatmntstus",
@@ -1786,7 +1881,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CMPNM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-shnnjchchstus",
@@ -1803,7 +1899,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-tursmcertfiyprogstus",
@@ -1820,7 +1917,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "REGION_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ggtursmexhibitfaclt",
@@ -1842,7 +1940,8 @@ export const GG_CATALOG = [
       "HG",
       "THEAT_ACEPTNC_PSN_CNT",
       "LCTRE_ACEPTNC_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ggtursmexhibitfaclt",
@@ -1864,7 +1963,8 @@ export const GG_CATALOG = [
       "HG",
       "THEAT_ACEPTNC_PSN_CNT",
       "LCTRE_ACEPTNC_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-techvallymoveinentrprs",
@@ -1884,7 +1984,8 @@ export const GG_CATALOG = [
     "numeric": [
       "FOUND_YY",
       "RENT_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-regionlernspaceappont",
@@ -1903,7 +2004,8 @@ export const GG_CATALOG = [
     "label": "FACLT_NM",
     "numeric": [
       "APPONT_YY"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-ggtursmhotelstus",
@@ -1922,7 +2024,8 @@ export const GG_CATALOG = [
     "label": "FACLT_TYPE_NM",
     "numeric": [
       "ROOM_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-rstareventinfo",
@@ -1942,7 +2045,8 @@ export const GG_CATALOG = [
     "numeric": [
       "RSTAR_ID",
       "SN_ID"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-icetfcacdar",
@@ -1964,7 +2068,8 @@ export const GG_CATALOG = [
       "CASLT_CNT",
       "DPRS_CNT",
       "SERINJRY_INDVDL_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-restrtsanittngradstus",
@@ -1981,7 +2086,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-frmprdinspectinst",
@@ -2000,7 +2106,8 @@ export const GG_CATALOG = [
     "label": "APPONT_INST_NM",
     "numeric": [
       "APPONT_ID"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-pstofcsearchinq",
@@ -2020,7 +2127,8 @@ export const GG_CATALOG = [
     "numeric": [
       "DIV_ID",
       "PSTOFC_DIV_ID"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-carinspectbizestblstus",
@@ -2041,7 +2149,8 @@ export const GG_CATALOG = [
       "INSPECT_PTH_CNT",
       "PLOT_AR",
       "BULDNG_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-mechnclparkplcmendstus",
@@ -2058,7 +2167,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CMPNM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-knowlgprprtycenterstus",
@@ -2075,7 +2185,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CENTER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-restrtsanittngradstus",
@@ -2092,7 +2203,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-pstofcsearchinq",
@@ -2112,7 +2224,8 @@ export const GG_CATALOG = [
     "numeric": [
       "DIV_ID",
       "PSTOFC_DIV_ID"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-riskmanagetargetbizplc",
@@ -2132,7 +2245,8 @@ export const GG_CATALOG = [
     "numeric": [
       "BIZPLC_ID",
       "RESEVC_FACLT_DSTN"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-chmstrymttrbizplc",
@@ -2149,7 +2263,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-femailsafetycustodybox",
@@ -2170,7 +2285,8 @@ export const GG_CATALOG = [
       "FREECHG_USE_TM",
       "OVDUE_CHRG_LEVY_UNIT_TM",
       "OVDUE_CHRG"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-electrchairfastcharger",
@@ -2189,7 +2305,8 @@ export const GG_CATALOG = [
     "label": "FACLT_NM",
     "numeric": [
       "ATSTM_USE_POSBL_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-coursprvtreatbizestbl",
@@ -2208,7 +2325,8 @@ export const GG_CATALOG = [
     "label": "BIZESTBL_NM",
     "numeric": [
       "DISCNT_APPLCTN_MIN_AGE"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-transitcenter",
@@ -2229,7 +2347,8 @@ export const GG_CATALOG = [
       "TRANSIT_CENTER_AR",
       "DEVLOP_BEGIN_YY",
       "DEVLOP_END_YY"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-femalesafetykeeper",
@@ -2248,7 +2367,8 @@ export const GG_CATALOG = [
     "label": "STORE_NM",
     "numeric": [
       "APPONT_YY"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-electrchairfastcharger",
@@ -2267,7 +2387,8 @@ export const GG_CATALOG = [
     "label": "FACLT_NM",
     "numeric": [
       "ATSTM_USE_POSBL_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-transitcenter",
@@ -2288,7 +2409,8 @@ export const GG_CATALOG = [
       "TRANSIT_CENTER_AR",
       "DEVLOP_BEGIN_YY",
       "DEVLOP_END_YY"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-oldpsndspsnprotectzone",
@@ -2307,7 +2429,8 @@ export const GG_CATALOG = [
     "label": "TARGET_FACLT_NM",
     "numeric": [
       "LIMITN_SPEED_INFO"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-coursprvtreatbizestbl",
@@ -2326,7 +2449,8 @@ export const GG_CATALOG = [
     "label": "BIZESTBL_NM",
     "numeric": [
       "DISCNT_APPLCTN_MIN_AGE"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-rebuildrentstus",
@@ -2345,7 +2469,8 @@ export const GG_CATALOG = [
     "label": "RENT_HOUSNG_NM",
     "numeric": [
       "SUPLY_VOLM"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-femaleentrprsprodstus",
@@ -2362,7 +2487,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INDUTYPE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-dspsncmwelfctopertprog",
@@ -2379,7 +2505,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "PROG_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-liqrlicenserecommend",
@@ -2396,7 +2523,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "GRP_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-shareprprtygenrlstus",
@@ -2416,7 +2544,8 @@ export const GG_CATALOG = [
     "numeric": [
       "AR",
       "RL_POSESN_AR"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-rtlzrprodctnregist",
@@ -2435,7 +2564,8 @@ export const GG_CATALOG = [
     "label": "CMPNM_NM",
     "numeric": [
       "PRODCTN_ABLTY"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-firefgtcarprvtusezone",
@@ -2455,7 +2585,8 @@ export const GG_CATALOG = [
     "numeric": [
       "DONG_NO_INFO",
       "PRVTUSE_PARKNG_UNIT_COMPRT_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-elctychrgstatn",
@@ -2472,7 +2603,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "OPERT_INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-ggcertflyregionbkstr",
@@ -2489,7 +2621,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BKSTR_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-regionmnyfacltstus",
@@ -2506,7 +2639,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CMPNM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-asembystus",
@@ -2528,7 +2662,8 @@ export const GG_CATALOG = [
       "HOSPTLRM_CNT",
       "SICKBD_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-stockrsprcssentrps",
@@ -2547,7 +2682,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR_INFO"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-stockrsprcssentrps",
@@ -2566,7 +2702,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR_INFO"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-feedmanufctentrps",
@@ -2586,7 +2723,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-washngentrps",
@@ -2607,7 +2745,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-fodndrkwstmuchemisn",
@@ -2628,7 +2767,8 @@ export const GG_CATALOG = [
       "BIZEST_AR",
       "BIZEST_ROOM_CNT",
       "EMISN_AMNT"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-phstrnitemdspsngrp",
@@ -2645,7 +2785,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ITEM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-multphssaleentrps",
@@ -2662,7 +2803,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-elecpwrtechdesign",
@@ -2681,7 +2823,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "RL_CAPTL_AMT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-oldpsnlsrwelfaclt",
@@ -2703,7 +2846,8 @@ export const GG_CATALOG = [
       "ENFLPSN_PSN_CAPA",
       "ENFLPSN_PSTPSN_SUM",
       "ENFLPSN_PSTPSN_MALE_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-synthrecrtnindutype",
@@ -2723,7 +2867,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-forestbizcoprtn",
@@ -2740,7 +2885,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "COPRTN_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-specltyindustappont",
@@ -2760,7 +2906,8 @@ export const GG_CATALOG = [
     "numeric": [
       "ASGN_PSNNUM_CNT",
       "SELECT_YY"
-    ]
+    ],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-inlcappontmedinst",
@@ -2777,7 +2924,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "JURISD_BRCH_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-lpgchrgstatn",
@@ -2794,7 +2942,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-oldpsnlsrwelfaclt",
@@ -2816,7 +2965,8 @@ export const GG_CATALOG = [
       "ENFLPSN_PSN_CAPA",
       "ENFLPSN_PSTPSN_SUM",
       "ENFLPSN_PSTPSN_MALE_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-livestckmigtsoilfaclt",
@@ -2836,7 +2986,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-bysigunphstrninst",
@@ -2853,7 +3004,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SIGUN_CD",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-sngrumindutype",
@@ -2873,7 +3025,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-deathtfcacd",
@@ -2895,7 +3048,8 @@ export const GG_CATALOG = [
       "DEATH_PSN_CNT",
       "INJURY_PSNNUM_CNT",
       "SERINJRY_PSNNUM_CNT"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-lpgchrgstatn",
@@ -2912,7 +3066,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-htygdwelfaclt",
@@ -2933,7 +3088,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSTPSN_SUM",
       "FYR_USE_PSNNUM_SUM",
       "ENFLPSN_PSTPSN_SUM"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-haccpfoodappont",
@@ -2950,7 +3106,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INDUTYPE_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-carsharegarage",
@@ -2967,7 +3124,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SIGUN_CD",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-oldpsnmanpwrgrp",
@@ -2984,7 +3142,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-synthamsmparkindutype",
@@ -3004,7 +3163,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-livestcknigtsoilproc",
@@ -3023,7 +3183,8 @@ export const GG_CATALOG = [
     "label": "DIV_NM",
     "numeric": [
       "FACLT_CAPA"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-oldpsnmanpwrgrp",
@@ -3040,7 +3201,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-childnighttreathosptl",
@@ -3057,7 +3219,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "MEDCARE_FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-dwtwtursmindutype",
@@ -3078,7 +3241,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "REFINE_WGS84_LAT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-oldpsnprotectinst",
@@ -3099,7 +3263,8 @@ export const GG_CATALOG = [
       "ENFLPSN_PSTPSN_WORK_ACCTO_SUM",
       "ENFLPSN_PSTPSN_RGLLBR_CNT",
       "ENFLPSN_PSTPSN_IRGLLBR_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-govsportrcs",
@@ -3118,7 +3283,8 @@ export const GG_CATALOG = [
     "label": "FACLT_NM",
     "numeric": [
       "YM"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-livestcknigtsoilproc",
@@ -3137,7 +3303,8 @@ export const GG_CATALOG = [
     "label": "DIV_NM",
     "numeric": [
       "FACLT_CAPA"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-govsportrcs",
@@ -3156,7 +3323,8 @@ export const GG_CATALOG = [
     "label": "FACLT_NM",
     "numeric": [
       "YM"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-livestcknigtsoilproc",
@@ -3175,7 +3343,8 @@ export const GG_CATALOG = [
     "label": "DIV_NM",
     "numeric": [
       "FACLT_CAPA"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-oldpsncaringservc",
@@ -3192,7 +3361,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SERVC_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-skigrdindutype",
@@ -3212,7 +3382,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-livestcknigtsoilproc",
@@ -3231,7 +3402,8 @@ export const GG_CATALOG = [
     "label": "DIV_NM",
     "numeric": [
       "FACLT_CAPA"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-livestckmigtsoilfaclt",
@@ -3251,7 +3423,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-lpgchrgstatn",
@@ -3268,7 +3441,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-nothgobstcltourinfo",
@@ -3285,7 +3459,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SIGUN_CD",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-foodvenmchindutype",
@@ -3306,7 +3481,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "FACLT_TOT_SCALE_INFO"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-pttrymanufctindutype",
@@ -3325,7 +3501,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "FACLT_TOT_SCALE_INFO"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-synthamsmparkindutype",
@@ -3345,7 +3522,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-specltyrecrtnindutype",
@@ -3365,7 +3543,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-elecpwrtechdesign",
@@ -3384,7 +3563,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "RL_CAPTL_AMT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-livestckmigtsoilfaclt",
@@ -3404,7 +3584,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-oldpsnjobsportinst",
@@ -3421,7 +3602,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-exclncfoodcertfiy",
@@ -3438,7 +3620,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CERTFIY_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-gameprovsnindutype",
@@ -3459,7 +3642,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "FACLT_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-culturartcardmrhst",
@@ -3476,7 +3660,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "GENRE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-frfireoccur",
@@ -3498,7 +3683,8 @@ export const GG_CATALOG = [
       "FRPOUT_END_MT",
       "FRPOUT_END_YY",
       "OCCUR_MT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-fortypexperimplmtinst",
@@ -3517,7 +3703,8 @@ export const GG_CATALOG = [
     "label": "INSPECT_INST_NM",
     "numeric": [
       "APPONT_TM"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-parmacyinfo",
@@ -3534,7 +3721,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-cngchrgstatn",
@@ -3551,7 +3739,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-elecpwrtechdesign",
@@ -3570,7 +3759,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "RL_CAPTL_AMT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-carcampgrdindutype",
@@ -3587,7 +3777,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-cultaset",
@@ -3604,7 +3795,8 @@ export const GG_CATALOG = [
     "lat": "WGS84_LAT",
     "epsg": 4326,
     "label": "CULTASET_APPONT_NO_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-synthamsmparkindutype",
@@ -3624,7 +3816,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-oldpsnresidewelfaclt",
@@ -3646,7 +3839,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSTPSN_SUM",
       "ENTRNC_PSTPSN_MALE_CNT",
       "ENTRNC_PSTPSN_FEMALE_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-renthousng",
@@ -3668,7 +3862,8 @@ export const GG_CATALOG = [
       "HSHLD_CNT",
       "SUPLY_PRVTUSE_AR",
       "SUPLY_CMNUSE_AR"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-hdwoodprodctnindutype",
@@ -3685,7 +3880,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-phstrnitemacctogrp",
@@ -3702,7 +3898,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ITEM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-cngchrgstatn",
@@ -3719,7 +3916,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-mealhallfoodindutype",
@@ -3741,7 +3939,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "FACLT_TOT_SCALE_INFO"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-synthamsmparkindutype",
@@ -3761,7 +3960,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-traditnvilageforest",
@@ -3782,7 +3982,8 @@ export const GG_CATALOG = [
       "HISTRY_EXAMIN_CONT",
       "CULTUR_EXAMIN_CONT",
       "ZONE_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-cngchrgstatn",
@@ -3799,7 +4000,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-parmacyinfo",
@@ -3816,7 +4018,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-animalregistacting",
@@ -3833,7 +4036,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-seniorstr",
@@ -3850,7 +4054,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "STR_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-phstrnitemacctogrp",
@@ -3867,7 +4072,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ITEM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-inlcappontparmacy",
@@ -3884,7 +4090,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-foodsaleentrps",
@@ -3905,7 +4112,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-oldpsnmedcarewelfac",
@@ -3927,7 +4135,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSTPSN_SUM",
       "ENTRNC_PSTPSN_FEMALE_CNT",
       "ENTRNC_PSTPSN_GRAD_ISE_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-sglparntfamilyfaclt",
@@ -3944,7 +4153,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-atdtlstockrsfrmhsstus",
@@ -3963,7 +4173,8 @@ export const GG_CATALOG = [
     "label": "FARM_NM",
     "numeric": [
       "BREDNG_HEAD_CNT"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-emgncymedcareinststus",
@@ -3980,7 +4191,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "HOSPTL_CENTER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-firefgtfacltdevice",
@@ -3999,7 +4211,8 @@ export const GG_CATALOG = [
     "label": "FACLT_DEVICE_DETAIL_DIV_NM",
     "numeric": [
       "INSTL_YY"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-mnlssregltcamera",
@@ -4020,7 +4233,8 @@ export const GG_CATALOG = [
       "ROUTE_INFO",
       "LIMITN_SPEED_INFO",
       "INSTL_YY"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-crowk",
@@ -4041,7 +4255,8 @@ export const GG_CATALOG = [
       "CARTRK_CNT",
       "CROWK_BT",
       "CROWK_EXTS"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-signlamp",
@@ -4063,7 +4278,8 @@ export const GG_CATALOG = [
       "INSTL_METHD",
       "ROAD_FROM",
       "SIGNLAMP_METHD"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-carimprventrpsinfo",
@@ -4082,7 +4298,8 @@ export const GG_CATALOG = [
     "label": "FACLT_NM",
     "numeric": [
       "AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-smartstlamp",
@@ -4099,7 +4316,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "STLAMP_KIND_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-safeemrgncbell",
@@ -4120,7 +4338,8 @@ export const GG_CATALOG = [
       "INSTL_PURPS",
       "CONCTN__METHD",
       "INSTL_YY"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-tpwpsnmovmntcenter",
@@ -4141,7 +4360,8 @@ export const GG_CATALOG = [
       "CAR_CNT",
       "WHSL_CAR_CNT",
       "WHLF_CAR_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-foodtruckpmisnrezone",
@@ -4160,7 +4380,8 @@ export const GG_CATALOG = [
     "label": "ZONE_NM",
     "numeric": [
       "OPERT_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-speedbumd",
@@ -4181,7 +4402,8 @@ export const GG_CATALOG = [
       "SPEED_BUMD_HG",
       "SPEED_BUMD_BT",
       "SPEED_BUMD_DSTN_EXTS"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-buscartrkinfo",
@@ -4202,7 +4424,8 @@ export const GG_CATALOG = [
       "END_WGS84_LAT",
       "END_WGS84_LOGT",
       "PRVTUSE_CARTRK_EXTS"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-roadguidsignal",
@@ -4224,7 +4447,8 @@ export const GG_CATALOG = [
       "DRCTN01_INFO",
       "DRCTN01_NEAR_NMFPC02",
       "DRCTN02_INFO"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-roadsafesignal",
@@ -4246,7 +4470,8 @@ export const GG_CATALOG = [
       "ROAD_FROM",
       "CARTRK_CNT",
       "ROAD_BT"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-aws1hourobser",
@@ -4268,7 +4493,8 @@ export const GG_CATALOG = [
       "HT_INFO",
       "WD_INFO",
       "WS_INFO"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-tbcortlsale",
@@ -4288,7 +4514,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-gdreamcard",
@@ -4305,7 +4532,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-busstation",
@@ -4324,7 +4552,8 @@ export const GG_CATALOG = [
     "label": "STATION_DIV_NM",
     "numeric": [
       "STATION_ID"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-landpickperminsn",
@@ -4343,7 +4572,8 @@ export const GG_CATALOG = [
     "label": "PURPOS_DIV_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-femalesafetydelrybox",
@@ -4362,7 +4592,8 @@ export const GG_CATALOG = [
     "label": "FACLT_NM",
     "numeric": [
       "MTLY_USE_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-constwkcotnhousng",
@@ -4381,7 +4612,8 @@ export const GG_CATALOG = [
     "label": "SIGUN_NM",
     "numeric": [
       "HSHLD_CNT"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-fodndrkresrcefalct",
@@ -4398,7 +4630,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-busgarage",
@@ -4415,7 +4648,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-drngpumpfaclt",
@@ -4434,7 +4668,8 @@ export const GG_CATALOG = [
     "label": "FACLT_NM",
     "numeric": [
       "EMR_GENOR_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-funrlfaclt",
@@ -4451,7 +4686,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-avianfarm",
@@ -4468,7 +4704,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-oldpsnrecrtnwelfare",
@@ -4487,7 +4724,8 @@ export const GG_CATALOG = [
     "label": "FACLT_DIV_NM",
     "numeric": [
       "ENTRNC_PSN_CAPA"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-dspsnwelfarefaclt",
@@ -4508,7 +4746,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggaotowetherequpinstl",
@@ -4525,7 +4764,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SPOT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-childwelfarefaclt",
@@ -4546,7 +4786,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-mhrhlfamilyprotect",
@@ -4563,7 +4804,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-vgbondwelfarefaclt",
@@ -4584,7 +4826,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-admdongshopgstbizestbl",
@@ -4601,7 +4844,8 @@ export const GG_CATALOG = [
     "lat": "LAT",
     "epsg": 4326,
     "label": "CMPNM_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-ggdspsngrpstus",
@@ -4618,7 +4862,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggdspsntaxistus",
@@ -4635,7 +4880,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggdspsnprotectwrkshp",
@@ -4657,7 +4903,8 @@ export const GG_CATALOG = [
       "LABOR_DSPSN_PSTPSN_CNT",
       "ENFLPSN_PSN_CAPA_CNT",
       "ENFLPSN_PSTPSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggdspsnrelatefaclt",
@@ -4674,7 +4921,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggsigunemplymtplus",
@@ -4691,7 +4939,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggsigundspsnphstrn",
@@ -4708,7 +4957,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggspecleducenterstus",
@@ -4725,7 +4975,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggsersillnsdspsnfaclt",
@@ -4747,7 +4998,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSTPSN_CNT",
       "ENFLPSN_PSN_CAPA_CNT",
       "ENFLPSN_PSTPSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggunityoccptnedu",
@@ -4764,7 +5016,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggmyhomecenter",
@@ -4781,7 +5034,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggsigundspsnactsport",
@@ -4798,7 +5052,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggmajkwaspeclstus",
@@ -4820,7 +5075,8 @@ export const GG_CATALOG = [
       "YRSCHA01_CLAS_CNT",
       "YRSCHA02_CLAS_CNT",
       "YRSCHA03_CLAS_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggdspsnkidgartn",
@@ -4842,7 +5098,8 @@ export const GG_CATALOG = [
       "TOT_PSTPSN_CNT",
       "HADCPCHD_PSTPSN_CNT",
       "TOT_SCHLSTAF_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggpthoccptnspecl",
@@ -4859,7 +5116,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggdspsnlivelhmovmnt",
@@ -4876,7 +5134,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggdspsnactasstnedu",
@@ -4893,7 +5152,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggobstcltyperesidnc",
@@ -4915,7 +5175,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSTPSN_CNT",
       "ENFLPSN_PSN_CAPA_CNT",
       "ENFLPSN_PSTPSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggminddspsnreturn",
@@ -4932,7 +5193,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggdspsnphstrnfaclt",
@@ -4949,7 +5211,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-gglibrryprovsnservc",
@@ -4966,7 +5229,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-gglaborwelfareisrlpx",
@@ -4983,7 +5247,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggdspsncustmzbizinst",
@@ -5000,7 +5265,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggbrlllibrry",
@@ -5017,7 +5283,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggsersillnsdspsncenter",
@@ -5034,7 +5301,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggdspsnshtpedresidnc",
@@ -5056,7 +5324,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSTPSN_CNT",
       "ENFLPSN_PSN_CAPA_CNT",
       "ENFLPSN_PSTPSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggspeclschoolstus",
@@ -5073,7 +5342,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SCHOOL_TYPE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggkordspsnemplymt",
@@ -5090,7 +5360,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggmindmedinst",
@@ -5107,7 +5378,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "HOSPTL_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggresidewelfareinst",
@@ -5124,7 +5396,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggasstnmhrlsservc",
@@ -5143,7 +5416,8 @@ export const GG_CATALOG = [
     "label": "INST_NM",
     "numeric": [
       "RM"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-profservcdevlist",
@@ -5160,7 +5434,8 @@ export const GG_CATALOG = [
     "lat": "INSTL_LAT",
     "epsg": 4326,
     "label": "KOR_SERVC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-mesurstnlistinqstus",
@@ -5179,7 +5454,8 @@ export const GG_CATALOG = [
     "label": "MESURSTN_NM",
     "numeric": [
       "INSTL_YY"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-ggmrfnhealthisrlpx",
@@ -5196,7 +5472,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ggsoctydevelprehabt",
@@ -5213,7 +5490,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-elmntymdclslocm",
@@ -5230,7 +5508,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SCHOOL_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-carlendbiz",
@@ -5247,7 +5526,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-mesurinstmanufbizstus",
@@ -5267,7 +5547,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-funrlinstrcteduinst",
@@ -5287,7 +5568,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-mesurinstverifbiz",
@@ -5304,7 +5586,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-slaugbiz",
@@ -5323,7 +5606,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR_INFO"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-trainmealhallstus",
@@ -5340,7 +5624,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-disatrtempresidefaclt",
@@ -5361,7 +5646,8 @@ export const GG_CATALOG = [
       "FACLT_SN",
       "FACLT_AR",
       "RESIDE_ABLTY_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-clscoinfo",
@@ -5382,7 +5668,8 @@ export const GG_CATALOG = [
       "CLSCO_YY",
       "PLOT_AR",
       "REGSTR_PC"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-newcrtnprearngeschool",
@@ -5401,7 +5688,8 @@ export const GG_CATALOG = [
     "label": "EDU_SPORT_ADMT_NM",
     "numeric": [
       "OPSCO_PREARNGE_YM"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-pedstrnprvtuseroad",
@@ -5422,7 +5710,8 @@ export const GG_CATALOG = [
       "PEDSTRN_PRVTUSE_ROAD_EDPT_LAT",
       "PEDSTRN_PRVTUSE_ROAD_EDPT_LOGT",
       "PEDSTRN_PRVTUSE_ROAD_BT"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-rstarinfostus",
@@ -5443,7 +5732,8 @@ export const GG_CATALOG = [
       "ROAD_ROUTE_NO_INFO",
       "ROAD_OCCUPTN_AR",
       "PARKNG_MYEON_CNT"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-lecarentrpsinfo",
@@ -5465,7 +5755,8 @@ export const GG_CATALOG = [
       "PSGCAR_HOLD_CNT",
       "VAN_HOLD_CNT",
       "ELCTY_RIDNG_CAR_HOLD_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-pedovpsinfostus",
@@ -5487,7 +5778,8 @@ export const GG_CATALOG = [
       "PEDOVPS_HG",
       "PASNG_LIMITN_HG",
       "PEDOVPS_BT"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-roadtunnelinfostus",
@@ -5509,7 +5801,8 @@ export const GG_CATALOG = [
       "TUNNEL_EDPT_LAT",
       "TUNNEL_EDPT_LOGT",
       "TUNNEL_TOT_LENG"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-earthquksnamishelter",
@@ -5528,7 +5821,8 @@ export const GG_CATALOG = [
     "label": "EATQSNM_SHELTER_NM",
     "numeric": [
       "MAX_ACEPTNC_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-anmprotcenterinfo",
@@ -5548,7 +5842,8 @@ export const GG_CATALOG = [
     "numeric": [
       "VETRAN_PSN_CNT",
       "NURT_CONTR_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-widanimstrctcenterinfo",
@@ -5568,7 +5863,8 @@ export const GG_CATALOG = [
     "numeric": [
       "VETRAN_PSN_CNT",
       "DISS_RECHER_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-ggindutypebiznes",
@@ -5587,7 +5883,8 @@ export const GG_CATALOG = [
     "label": "ADMINIST_ZONE_NM",
     "numeric": [
       "EXAMIN_STD_YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-resrestrt",
@@ -5604,7 +5901,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SANITTN_BIZCOND_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-foodbizestbl",
@@ -5623,7 +5921,8 @@ export const GG_CATALOG = [
     "label": "INDUTYPE_NM",
     "numeric": [
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-foodsaleentrps",
@@ -5640,7 +5939,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INDUTYPE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-travehcledeposit",
@@ -5660,7 +5960,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "CUSTODY_CNT"
-    ]
+    ],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-touresrtinfo",
@@ -5681,7 +5982,8 @@ export const GG_CATALOG = [
       "FACLT_AR",
       "ACEPTNC_POSBL_PSN_CNT",
       "PARKNG_COMPRT_PLANE_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-smscalepubfacltrikpont",
@@ -5701,7 +6003,8 @@ export const GG_CATALOG = [
     "numeric": [
       "EXTS",
       "BT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-fishplcinfo",
@@ -5721,7 +6024,8 @@ export const GG_CATALOG = [
     "numeric": [
       "WTR_AR",
       "ACEPTNC_POSBL_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-localcultrelc",
@@ -5738,7 +6042,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-demntacenter",
@@ -5760,7 +6065,8 @@ export const GG_CATALOG = [
       "BULDNG_AR",
       "DOCTER_CNT",
       "NURSE_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-residncpriparknginfo",
@@ -5777,7 +6083,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-reusecenter",
@@ -5798,7 +6105,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR",
       "FOUND_YM",
       "CAR_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-healthenhnccenter",
@@ -5820,7 +6128,8 @@ export const GG_CATALOG = [
       "DOCTER_CNT",
       "NURSE_CNT",
       "SOCIAL_WORKER_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-clnsevactnfaclt",
@@ -5840,7 +6149,8 @@ export const GG_CATALOG = [
     "numeric": [
       "FACLT_AR",
       "ACEPTNC_PSNCNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-campgrd",
@@ -5862,7 +6172,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "BUILD_TOT_AR",
       "ACEPTNC_POSBL_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-bicycl",
@@ -5881,7 +6192,8 @@ export const GG_CATALOG = [
     "label": "BICYCL_LEND_PLC_NM_INST_NM",
     "numeric": [
       "BICYCL_HOLD_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-regionspeclizdstnc",
@@ -5903,7 +6215,8 @@ export const GG_CATALOG = [
       "STORE_CNT",
       "APPONT_YY",
       "REFINE_WGS84_LOGT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-farmcnrent",
@@ -5925,7 +6238,8 @@ export const GG_CATALOG = [
       "CULTVT_HOLD_CNT",
       "FRMMSTR_HOLD_CNT",
       "FRGHRVSTR_HOLD_CNT"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-museumartglryinfo",
@@ -5946,7 +6260,8 @@ export const GG_CATALOG = [
       "ADLT_VIEWNG_CHRG_INFO",
       "YOUNGBG_VIEWNG_CHRG_INFO",
       "CHILD_VIEWNG_CHRG_INFO"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-secrtlgt",
@@ -5968,7 +6283,8 @@ export const GG_CATALOG = [
       "INSTL_YY",
       "REFINE_WGS84_LOGT",
       "REFINE_WGS84_LAT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-bicycldeposit",
@@ -5989,7 +6305,8 @@ export const GG_CATALOG = [
       "CUSTODY_CNT",
       "REFINE_WGS84_LOGT",
       "REFINE_WGS84_LAT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-vilageentrpr",
@@ -6009,7 +6326,8 @@ export const GG_CATALOG = [
     "numeric": [
       "VILAGE_ENTRPRS_FOUND_YM",
       "VILAGE_ENTRPRS_CERTFIY_YM"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-dmhllfrtmtst",
@@ -6031,7 +6349,8 @@ export const GG_CATALOG = [
       "MAKE_AR",
       "BIZ_EXPN_SUM",
       "BIZ_EXPN_NATION_EXPN"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-hosptlevaltninjctn",
@@ -6048,7 +6367,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-nfcrenvrn",
@@ -6065,7 +6385,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "REGION_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-oilsalebiz",
@@ -6085,7 +6406,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-genrlhosptlobgyn",
@@ -6107,7 +6429,8 @@ export const GG_CATALOG = [
       "SPECL_AMBLNC_CNT",
       "SICKBD_CNT",
       "MEDSTAF_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-medequprepair",
@@ -6127,7 +6450,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-mmktwhsal",
@@ -6146,7 +6470,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-bathpublicbathfomen",
@@ -6165,7 +6490,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-resrestrtfrwy",
@@ -6185,7 +6511,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-genrestrtjpnfood",
@@ -6202,7 +6529,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ldgscndmnm",
@@ -6223,7 +6551,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR",
       "YY",
       "WSTROOM_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-foodsubdiv",
@@ -6243,7 +6572,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-lunchmfcrtr",
@@ -6263,7 +6593,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-wtrqultinstletc",
@@ -6280,7 +6611,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-gvrngrainprcssfctry",
@@ -6299,7 +6631,8 @@ export const GG_CATALOG = [
     "label": "FACTRY_NM",
     "numeric": [
       "DAY1_PRODCTN_ABLTY"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-pblcsftycenterstus",
@@ -6316,7 +6649,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "LOCAL_INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-livecafe",
@@ -6336,7 +6670,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-resrestrtdrts",
@@ -6357,7 +6692,8 @@ export const GG_CATALOG = [
       "MALE_ENFLPSN_CNT",
       "FEMALE_ENFLPSN_CNT",
       "TOT_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-offclrsdncstu",
@@ -6377,7 +6713,8 @@ export const GG_CATALOG = [
     "numeric": [
       "AR",
       "ACQUSTN_AMT"
-    ]
+    ],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-hosptlevaltnhhprs",
@@ -6394,7 +6731,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-resrestrtcvnstr",
@@ -6411,7 +6749,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tbchildnatnprvntncltnmdnstm",
@@ -6428,7 +6767,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-tfcacdarm",
@@ -6450,7 +6790,8 @@ export const GG_CATALOG = [
       "CASLT_CNT",
       "DPRS_CNT",
       "SERINJRY_INDVDL_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-pwnmsoctysevinst",
@@ -6469,7 +6810,8 @@ export const GG_CATALOG = [
     "label": "SIDO_NM",
     "numeric": [
       "PROVSN_INST_ID"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-resrestrtamsmpark",
@@ -6491,7 +6833,8 @@ export const GG_CATALOG = [
       "MALE_ENFLPSN_CNT",
       "YY",
       "FEMALE_ENFLPSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-resrestrtfodtuck",
@@ -6511,7 +6854,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tbinstutm",
@@ -6528,7 +6872,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "EMD_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-ptrldvsnsubpolcstus",
@@ -6545,7 +6890,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "LOCAL_INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-coldnoodle",
@@ -6564,7 +6910,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tbwtrmscrslktfcacdarm",
@@ -6586,7 +6933,8 @@ export const GG_CATALOG = [
       "CASLT_CNT",
       "DPRS_CNT",
       "SERINJRY_INDVDL_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-mmktcmpnd",
@@ -6605,7 +6953,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-infrmvilage",
@@ -6622,7 +6971,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "VILAGE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-erntrs",
@@ -6642,7 +6992,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-assitentrps",
@@ -6661,7 +7012,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "CAPTL_AMT_SCALE_INFO"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-hosptlevaltncrdv",
@@ -6678,7 +7030,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-plesrbarhostbar",
@@ -6700,7 +7053,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "FACLT_TOT_SCALE_INFO"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-resrestrtrickecafe",
@@ -6720,7 +7074,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tbbcycltfcacdarm",
@@ -6742,7 +7097,8 @@ export const GG_CATALOG = [
       "CASLT_CNT",
       "DPRS_CNT",
       "SERINJRY_INDVDL_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-sanittnprocbiz",
@@ -6762,7 +7118,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-envrnconsltngcompny",
@@ -6779,7 +7136,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-resrestrtsweshop",
@@ -6800,7 +7158,8 @@ export const GG_CATALOG = [
       "MALE_ENFLPSN_CNT",
       "FEMALE_ENFLPSN_CNT",
       "TOT_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-hsptlobgyn",
@@ -6822,7 +7181,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-csmtlgyskin",
@@ -6841,7 +7201,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR_INFO"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-genrestrtlunch",
@@ -6858,7 +7219,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-familyrstrt",
@@ -6877,7 +7239,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-genrestrtmovmntcook",
@@ -6894,7 +7257,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-pblfcltyprfplc",
@@ -6914,7 +7278,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-hosptlevaltnpsychs",
@@ -6931,7 +7296,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-elmschlm",
@@ -6948,7 +7314,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SCHOOL_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-prhsmkzone",
@@ -6967,7 +7334,8 @@ export const GG_CATALOG = [
     "label": "PRHSMK_ZONE_NM",
     "numeric": [
       "VIOLT_NEGLGN_FINE_INFO"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-envrnpolutnmttremisnbi",
@@ -6984,7 +7352,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-contnrpavepapentrps",
@@ -7004,7 +7373,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-distrbspecltysalebiz",
@@ -7025,7 +7395,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-grupmealhallpblinstt",
@@ -7047,7 +7418,8 @@ export const GG_CATALOG = [
       "HEADOFC_EMPLY_CNT",
       "TOT_FACLT_SCALE",
       "TOT_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-lxryfwtrfishprdctnentrp",
@@ -7064,7 +7436,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "RAISNGPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-dancinghall",
@@ -7084,7 +7457,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-resrestrtfastfood",
@@ -7104,7 +7478,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-infntcrcnter",
@@ -7121,7 +7496,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CENTER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-plesrbardiscoclub",
@@ -7138,7 +7514,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-healthskllfoodincom",
@@ -7159,7 +7536,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR",
       "YY",
       "TOT_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-genrestrtstandpub",
@@ -7178,7 +7556,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "FEMALE_ENFLPSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-childhousekndrgrm",
@@ -7195,7 +7574,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-sanitnmanageseventps",
@@ -7215,7 +7595,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-elvmaintncmanageentrps",
@@ -7237,7 +7618,8 @@ export const GG_CATALOG = [
       "MANAGE_RESPNSBL_PSNNUM_CNT",
       "TECH_MANPWR_CNT",
       "TOT_EMPL_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-frntnrstrtintha",
@@ -7257,7 +7639,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tbpdstrnodsntfcacdarm",
@@ -7279,7 +7662,8 @@ export const GG_CATALOG = [
       "CASLT_CNT",
       "DPRS_CNT",
       "SERINJRY_INDVDL_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-buildofc",
@@ -7296,7 +7680,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "OFC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-hosptlobgyn",
@@ -7318,7 +7703,8 @@ export const GG_CATALOG = [
       "SPECL_AMBLNC_CNT",
       "SICKBD_CNT",
       "MEDSTAF_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-sexviolnccslc",
@@ -7335,7 +7721,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-tbcowhsal",
@@ -7352,7 +7739,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-fdbpnfaclt",
@@ -7373,7 +7761,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-edygsalbiz",
@@ -7392,7 +7781,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-hosptlevaltnbrec",
@@ -7409,7 +7799,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-odsnfreemlsvm",
@@ -7426,7 +7817,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-fowlbrd",
@@ -7443,7 +7835,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-resrestrtkidscafe",
@@ -7463,7 +7856,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "TOT_FACLT_SCALE"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-plesrbarbeerbar",
@@ -7480,7 +7874,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-mtrhsp",
@@ -7502,7 +7897,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-compndvimgprodprovsn",
@@ -7523,7 +7919,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "FACLT_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-bathpublicbath",
@@ -7544,7 +7941,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-hosptlevaltnpen",
@@ -7561,7 +7959,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-plesrbarhghcaskorrest",
@@ -7578,7 +7977,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-contnrrfrmcnspecequp",
@@ -7595,7 +7995,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-videocityhlprovsnbiz",
@@ -7615,7 +8016,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-youngbgfacltinst",
@@ -7632,7 +8034,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SIDO_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-oilosrgysalebiz",
@@ -7649,7 +8052,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-hosptlevaltninfantb",
@@ -7666,7 +8070,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-sdbpnrecperfaclt",
@@ -7687,7 +8092,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-foodbankstu",
@@ -7704,7 +8110,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-tbggibllbr",
@@ -7726,7 +8133,8 @@ export const GG_CATALOG = [
       "DMSTC_BOOK_DATA_CNT",
       "FRN_BOOK_DATA_CNT",
       "NONBOOK_DATA_CNT"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-songclub",
@@ -7746,7 +8154,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-plesrbarcabaret",
@@ -7763,7 +8172,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-hmvlncnslredu",
@@ -7780,7 +8190,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-childrdcl",
@@ -7797,7 +8208,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "HOSRIDCT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-hosptlevaltnprantbi",
@@ -7814,7 +8226,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-specifchhpsrgasentrps",
@@ -7836,7 +8249,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "ACEPTNC_PSN_CAPA_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-plesrbareasebar",
@@ -7856,7 +8270,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-plesrbarnightclub",
@@ -7875,7 +8290,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-hosptlevaltnmcex",
@@ -7892,7 +8308,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-pubphstftm",
@@ -7909,7 +8326,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-wrfrmanufctincombiz",
@@ -7926,7 +8344,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tkcragefaclt",
@@ -7945,7 +8364,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "ENTRNC_PSN_CAPA"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-hosptlevaltnlundi",
@@ -7962,7 +8382,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-limbsdspsnfaclt",
@@ -7983,7 +8404,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-tbpdstrnchildtfcacdarm",
@@ -8005,7 +8427,8 @@ export const GG_CATALOG = [
       "CASLT_CNT",
       "DPRS_CNT",
       "SERINJRY_INDVDL_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-hosptlevaltnlunc",
@@ -8022,7 +8445,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-genrestrtbsrpcook",
@@ -8039,7 +8463,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-meatbyprdsalbiz",
@@ -8058,7 +8483,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-sllby",
@@ -8075,7 +8501,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "LIBRRY_TYPE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-dryexpnc",
@@ -8096,7 +8523,8 @@ export const GG_CATALOG = [
       "MAKE_YY",
       "BREDNG_HEAD_CNT",
       "STKFRM_AR"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-oldpsnwelfareasemct",
@@ -8115,7 +8543,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "ENTRNC_PSN_CAPA"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-ducklbrd",
@@ -8132,7 +8561,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-elctyentrps",
@@ -8151,7 +8581,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "EQUPMT_CAPA"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-hosptlevaltnstmac",
@@ -8168,7 +8599,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-sbbiz",
@@ -8187,7 +8619,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-cnstctncompnyadmdpstn",
@@ -8204,7 +8637,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "POSITN_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-plesrbarkarokbar",
@@ -8226,7 +8660,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "FEMALE_ENFLPSN_CNT",
       "X_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-plesrbarstandbar",
@@ -8245,7 +8680,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-sigunemplycntr",
@@ -8262,7 +8698,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CENTER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-hhpsrgasentrps",
@@ -8279,7 +8716,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-gghosptlm",
@@ -8301,7 +8739,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "SICKBD_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-funrlcochngeduins",
@@ -8318,7 +8757,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "STATMNT_NO_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-resrestrtice",
@@ -8338,7 +8778,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-dspsnweeklgprotefaclt",
@@ -8357,7 +8798,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "ENTRNC_PSN_CAPA"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-genrestrtfugu",
@@ -8374,7 +8816,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-hosptlevaltnmedcin",
@@ -8391,7 +8834,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-washnglndrrm",
@@ -8410,7 +8854,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-tninsttinstutm",
@@ -8427,7 +8872,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "EMD_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-kidscafe",
@@ -8447,7 +8893,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "TOT_FACLT_SCALE"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-genrestrtsoup",
@@ -8464,7 +8911,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-dspsnsrtpdprotefaclt",
@@ -8483,7 +8931,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "ENTRNC_PSN_CAPA"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-videoapprectnentrps",
@@ -8504,7 +8953,8 @@ export const GG_CATALOG = [
       "FACLT_AR",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ggschoolm",
@@ -8521,7 +8971,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SCHOOL_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-resrestrttouhotel",
@@ -8540,7 +8991,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-kndrgrschoolstus",
@@ -8562,7 +9014,8 @@ export const GG_CATALOG = [
       "AGE3_CLAS_CNT",
       "AGE4_CLAS_CNT",
       "AGE5_CLAS_CNT"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-doanmalfunrlprmisnentrp",
@@ -8579,7 +9032,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-foodrefrigcoldstetrps",
@@ -8596,7 +9050,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-edibleiecsalebiz",
@@ -8618,7 +9073,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "HEADOFC_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-foodaddtvsmanufentr",
@@ -8639,7 +9095,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-genrestrtchifood",
@@ -8659,7 +9116,8 @@ export const GG_CATALOG = [
     "numeric": [
       "MALE_ENFLPSN_CNT",
       "FEMALE_ENFLPSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tbtninsttm",
@@ -8681,7 +9139,8 @@ export const GG_CATALOG = [
       "CASLT_CNT",
       "DPRS_CNT",
       "SERINJRY_INDVDL_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-nonprftmkprvategrp",
@@ -8698,7 +9157,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-plesrbaretc",
@@ -8718,7 +9178,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-mtstmxtr",
@@ -8735,7 +9196,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ASSOCTN_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-resrestrttratearm",
@@ -8755,7 +9217,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-washngshoes",
@@ -8772,7 +9235,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-frgnrsovenrsale",
@@ -8789,7 +9253,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-hosptlevaltnlgsnc",
@@ -8806,7 +9271,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-heatwaverestarere",
@@ -8823,7 +9289,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "RESTARER_FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-bakery",
@@ -8842,7 +9309,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR_INFO"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-resrestrttearm",
@@ -8861,7 +9329,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "FEMALE_ENFLPSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tdtornmdchosptlobgyn",
@@ -8883,7 +9352,8 @@ export const GG_CATALOG = [
       "GENRL_AMBLNC_CNT",
       "SPECL_AMBLNC_CNT",
       "SICKBD_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-hygyo",
@@ -8900,7 +9370,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-hosptlevaltncorarby",
@@ -8917,7 +9388,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-vnentrintgtfcty",
@@ -8938,7 +9410,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "BUILD_AR",
       "APPONT_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-nfcogzenvrn",
@@ -8955,7 +9428,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "REGION_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-resrestrtrailroad",
@@ -8974,7 +9448,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-videosmtheatentrps",
@@ -8995,7 +9470,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "FACLT_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-intrlmeetngplanng",
@@ -9015,7 +9491,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-copertnlivelhhomeetc",
@@ -9032,7 +9509,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-firesttnpolcsttnm",
@@ -9049,7 +9527,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-fmlgedfrm",
@@ -9068,7 +9547,8 @@ export const GG_CATALOG = [
     "label": "FARM_NM",
     "numeric": [
       "MAKE_YY"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-korhouexprn",
@@ -9085,7 +9565,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-hosptlevaltnboldi",
@@ -9102,7 +9583,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-socwfcorpadmdpst",
@@ -9121,7 +9603,8 @@ export const GG_CATALOG = [
     "label": "COPRTN_NM",
     "numeric": [
       "APPONT_YY"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-nurstree",
@@ -9143,7 +9626,8 @@ export const GG_CATALOG = [
       "TREE_AGE",
       "TREE_HG",
       "BREAST_HG_CIRCUM_LENG"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-genrestrtsash",
@@ -9160,7 +9644,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-genrestrtcate",
@@ -9180,7 +9665,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "TOT_FACLT_SCALE"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-foodmanufctetcprsbiz",
@@ -9197,7 +9683,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-consignmealsrvetc",
@@ -9214,7 +9701,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-meatsaleetcentrps",
@@ -9231,7 +9719,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-hosptlevaltnrcper",
@@ -9248,7 +9737,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-youngbgactopertinst",
@@ -9265,7 +9755,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-polcsttnstus",
@@ -9282,7 +9773,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "LOCAL_INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-jnclluniv",
@@ -9299,7 +9791,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SCHOOL_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-hosptlevaltnglycsr",
@@ -9316,7 +9809,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-wstprocentrps",
@@ -9333,7 +9827,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "PROC_INDUTYPE_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-erkldesignsprvisn",
@@ -9354,7 +9849,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "RL_CAPTL_AMT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-bathfomen",
@@ -9373,7 +9869,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "BATHRM_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-traditninvstgtn",
@@ -9390,7 +9887,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-mrktstorem",
@@ -9407,7 +9905,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-carwsh",
@@ -9424,7 +9923,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-bathsauna",
@@ -9443,7 +9943,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-oldpsnwelfarehousng",
@@ -9463,7 +9964,8 @@ export const GG_CATALOG = [
     "numeric": [
       "ENTRNC_PSN_CAPA",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-hosptlevaltnast",
@@ -9480,7 +9982,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-washngetc",
@@ -9500,7 +10003,8 @@ export const GG_CATALOG = [
     "numeric": [
       "WHM_CNT",
       "RETRVL_DRY_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-dtrgntmanufbiz",
@@ -9520,7 +10024,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-mskulm",
@@ -9537,7 +10042,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SCHOOL_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-genrestrtfastfood",
@@ -9558,7 +10064,8 @@ export const GG_CATALOG = [
       "MALE_ENFLPSN_CNT",
       "FEMALE_ENFLPSN_CNT",
       "TOT_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-signlangintrprtcenter",
@@ -9579,7 +10086,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-tbyoungmanemplymtinternm",
@@ -9596,7 +10104,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "JURISD_EMPLYMT_CENTER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-genrestrttratearm",
@@ -9617,7 +10126,8 @@ export const GG_CATALOG = [
       "MALE_ENFLPSN_CNT",
       "FEMALE_ENFLPSN_CNT",
       "TOT_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-genrestrtbuff",
@@ -9638,7 +10148,8 @@ export const GG_CATALOG = [
       "MALE_ENFLPSN_CNT",
       "FEMALE_ENFLPSN_CNT",
       "TOT_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tbtninsttmm",
@@ -9655,7 +10166,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "EMD_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-knowlgindustcntr",
@@ -9677,7 +10189,8 @@ export const GG_CATALOG = [
       "BUILD_AR",
       "FACTRY_FACLT_AR",
       "SPORT_FACLT_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-aedstus",
@@ -9699,7 +10212,8 @@ export const GG_CATALOG = [
       "MON_AVB_END_TM",
       "TUE_AVB_BGNG_TM",
       "TUE_AVB_END_TM"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-hosptlevaltncbvca",
@@ -9716,7 +10230,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-liqoilgassupmanufbiz",
@@ -9738,7 +10253,8 @@ export const GG_CATALOG = [
       "Y_CRDNT_VL",
       "CONTNR_STRG_AR",
       "GARAGE_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-regionselfsupport",
@@ -9759,7 +10275,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-animalhosptl",
@@ -9778,7 +10295,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR_INFO"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-speclmedcintrtbiztbl",
@@ -9795,7 +10313,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-consignmealsrv",
@@ -9812,7 +10331,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-hgschlm",
@@ -9829,7 +10349,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SCHOOL_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-cntrysidebus",
@@ -9848,7 +10369,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "ENTRPS_TYPE"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-pblfcltygmnsm",
@@ -9868,7 +10390,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-hosptlevaltnantbit",
@@ -9885,7 +10408,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-sanittnsuplimanufentr",
@@ -9904,7 +10428,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-hosptlevaltnints",
@@ -9921,7 +10446,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-museumartglry",
@@ -9938,7 +10464,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-milksalbiz",
@@ -9957,7 +10484,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-alifetimelearninglecture",
@@ -9977,7 +10505,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LECT_PSN_CNT",
       "ATENLECT_CHRG"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-governmentoffice",
@@ -9994,7 +10523,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-manlesscivilappealissue",
@@ -10011,7 +10541,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "MNGINST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-publicfacilityopening",
@@ -10028,7 +10559,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "OPEN_FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공행정"
   },
   {
     "id": "gg-recrfrst",
@@ -10048,7 +10580,8 @@ export const GG_CATALOG = [
     "numeric": [
       "RECRFRST_AR",
       "ACEPTNC_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-lodgingpension",
@@ -10067,7 +10600,8 @@ export const GG_CATALOG = [
     "label": "BIZESTBL_NM",
     "numeric": [
       "ROOM_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-freechargemealhall",
@@ -10084,7 +10618,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-childhouse",
@@ -10106,7 +10641,8 @@ export const GG_CATALOG = [
       "CHLDCARE_SCHLSTAF_CNT",
       "CHLDCR_ROOM_CNT",
       "PLAYGRND_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-culturefestival",
@@ -10123,7 +10659,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FASTVL_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tourisminformationdesk",
@@ -10142,7 +10679,8 @@ export const GG_CATALOG = [
     "label": "TURSM_INFODESK_NM",
     "numeric": [
       "AVG_WORK_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-library",
@@ -10164,7 +10702,8 @@ export const GG_CATALOG = [
       "BOOK_DATA_CNT",
       "CONTUATN_PUBLCTN_DATA_CNT",
       "NONBOOK_DATA_CNT"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-traditionmarket",
@@ -10184,7 +10723,8 @@ export const GG_CATALOG = [
     "numeric": [
       "STORE_CNT",
       "ESTBLSMT_YY"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-cctv",
@@ -10206,7 +10746,8 @@ export const GG_CATALOG = [
       "CAMERA_PIXEL_CNT",
       "CUSTODY_DAY_CNT",
       "INSTL_YM"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-publtolt",
@@ -10228,7 +10769,8 @@ export const GG_CATALOG = [
       "MALE_UIL_CNT",
       "MALE_DSPSN_WTRCLS_CNT",
       "MALE_DSPSN_UIL_CNT"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-freechargewifi",
@@ -10245,7 +10787,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INSTL_SIDO_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-electricitycarcharging",
@@ -10266,7 +10809,8 @@ export const GG_CATALOG = [
       "CHARGER_STATE",
       "CHARGER_ID",
       "CHARGER_CAPA"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-citypark",
@@ -10285,7 +10829,8 @@ export const GG_CATALOG = [
     "label": "PARK_DIV_NM",
     "numeric": [
       "PARK_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-childprotectionarea",
@@ -10304,7 +10849,8 @@ export const GG_CATALOG = [
     "label": "TARGET_FACLT_NM",
     "numeric": [
       "CCTV_INSTL_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-parkingplace",
@@ -10324,7 +10870,8 @@ export const GG_CATALOG = [
     "numeric": [
       "PARKNG_COMPRT_PLANE_CNT",
       "PARKNG_BASIS_TM"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-socialenterprise",
@@ -10341,7 +10888,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-farmingexperiencevillage",
@@ -10358,7 +10906,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "EXPRN_VILAGE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-youngboyandgirsrestarea",
@@ -10375,7 +10924,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "RESTARER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-excellencechildplayfaciliti",
@@ -10392,7 +10942,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-greenenterpriseappoinment",
@@ -10409,7 +10960,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "ENTRPS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-childbringingupfacility",
@@ -10431,7 +10983,8 @@ export const GG_CATALOG = [
       "ENFLPSN_CNT",
       "ACEPTNC_CHILD_PSN_CAPA",
       "ACEPTNC_CHILD_NOWPSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-gyeonggifirestation",
@@ -10450,7 +11003,8 @@ export const GG_CATALOG = [
     "label": "ALL_INST_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-youngboyandgirswelfare",
@@ -10471,7 +11025,8 @@ export const GG_CATALOG = [
       "SUM_YY",
       "ACEPTNC_PSN_CAPA",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-eatwtrwtrltinspeint",
@@ -10490,7 +11045,8 @@ export const GG_CATALOG = [
     "label": "APPONT_INST_NM",
     "numeric": [
       "SUM_YM"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-foodanddrinkwasteprocessfacili",
@@ -10507,7 +11063,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-cultureassemblyroom",
@@ -10529,7 +11086,8 @@ export const GG_CATALOG = [
       "TOT_EMPL_CNT",
       "SPECLTY_EMPL_CNT",
       "PERFORM_DAY_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-livelihoodwasteprocessfacility",
@@ -10551,7 +11109,8 @@ export const GG_CATALOG = [
       "FACLT_SELCTN_CAPA",
       "BFYY_TKIN_QTY",
       "REUSE_PRODLST_WATERS"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-livelihoodwasteprocessfacilty",
@@ -10573,7 +11132,8 @@ export const GG_CATALOG = [
       "PHYSIC_FACLT_CAPA",
       "BIOLGCL_FACLT_CAPA",
       "ALTD_FACLT_CAPA"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-childplayfacility",
@@ -10590,7 +11150,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "PLAY_FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-supportmultiphaseprepayment",
@@ -10607,7 +11168,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INDUTYPE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-foreignerresidentcenter",
@@ -10626,7 +11188,8 @@ export const GG_CATALOG = [
     "label": "SUM_YY",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-harmfulnesschemistrymaterialac",
@@ -10643,7 +11206,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "SUM_YM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-childwelfarecooperationlivelih",
@@ -10665,7 +11229,8 @@ export const GG_CATALOG = [
       "ENFLPSN_CNT",
       "ACEPTNC_CHILD_PSN_CAPA",
       "ACEPTNC_CHILD_NOWPSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-youngboyandgirswelfareconsult",
@@ -10684,7 +11249,8 @@ export const GG_CATALOG = [
     "label": "CONSLTN_CENTER_OPERT_GRP_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-factorywastewaterprocess",
@@ -10705,7 +11271,8 @@ export const GG_CATALOG = [
       "SUM_YY",
       "FACLT_CAPA",
       "AVG_INFLOW_QTY"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-multipleculturesfamilysupport",
@@ -10724,7 +11291,8 @@ export const GG_CATALOG = [
     "label": "INST_FORM_DIV_NM",
     "numeric": [
       "OPNOFC_YY"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-funeralfacilitystatus",
@@ -10746,7 +11314,8 @@ export const GG_CATALOG = [
       "FUNRLPRL_CNT",
       "PLCMNT_ABLTY_CNT",
       "COLDSTRG_PLCMNT_CHRG"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-femalemanpowerdevelopmentceter",
@@ -10763,7 +11332,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZ_MAINBD_INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-undergroundwaterqualityofwater",
@@ -10782,7 +11352,8 @@ export const GG_CATALOG = [
     "label": "MAIN_PURPOS_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-healthassumptionsupportcent",
@@ -10799,7 +11370,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-atomospollutiontotalquantity",
@@ -10818,7 +11390,8 @@ export const GG_CATALOG = [
     "label": "ENTRPS_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-femalejobinstitution",
@@ -10835,7 +11408,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CENTER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-nonpointpollutionsurveillan",
@@ -10856,7 +11430,8 @@ export const GG_CATALOG = [
       "SUM_YM",
       "NATION_EXPN",
       "FACLT_SCALE"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-logisticshousingcomplexfacilit",
@@ -10878,7 +11453,8 @@ export const GG_CATALOG = [
       "LOGIST_FACLT_LAND_USE_PLAN",
       "UPSTRM_FACLT_LAND_USE_PLAN",
       "COMPND_FACLT_LAND_USE_PLAN"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-locfood",
@@ -10897,7 +11473,8 @@ export const GG_CATALOG = [
     "label": "CMPNM_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-tourismfarmappoinmentstatus",
@@ -10918,7 +11495,8 @@ export const GG_CATALOG = [
       "SUM_YM",
       "FARM_AR",
       "APRV_YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-pubphystrainfaciltyshootrange",
@@ -10940,7 +11518,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "BUILD_AR",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-childwelfareregionchildcener",
@@ -10957,7 +11536,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-selfcontrolcheckbusiness",
@@ -10974,7 +11554,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-femaleconsultationinstitutio",
@@ -10991,7 +11572,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FEMALE_CONSLTN_TYPE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-environmentmanagementlicensig",
@@ -11010,7 +11592,8 @@ export const GG_CATALOG = [
     "label": "INDUTYPE_DIV_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-childcareabetmentinstitute",
@@ -11029,7 +11612,8 @@ export const GG_CATALOG = [
     "label": "EDU_INST_NM",
     "numeric": [
       "SUM_YM"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-templestay",
@@ -11046,7 +11630,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INVSTGTN_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-chimneyautomaticmeasurement",
@@ -11065,7 +11650,8 @@ export const GG_CATALOG = [
     "label": "DIV_NM",
     "numeric": [
       "TEMP_VL04"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-publicphysicaltraininggolf",
@@ -11086,7 +11672,8 @@ export const GG_CATALOG = [
       "SUM_YY",
       "PLOT_AR",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-publicgameofballgymnasium",
@@ -11108,7 +11695,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "BUILD_AR",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-publictennis",
@@ -11130,7 +11718,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "AR",
       "COURT_PLANE_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-arboretumstatus",
@@ -11152,7 +11741,8 @@ export const GG_CATALOG = [
       "REGIST_APRV_YY",
       "ARBRTM_SCALE",
       "HOLD_SPECS_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-safetymanagementnumber",
@@ -11171,7 +11761,8 @@ export const GG_CATALOG = [
     "label": "INDUTYPE_NM",
     "numeric": [
       "APPONT_YY"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-publicnationalarcherycenter",
@@ -11193,7 +11784,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "BUILD_AR",
       "STADM_DSTN"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-publicarcherycenter",
@@ -11214,7 +11806,8 @@ export const GG_CATALOG = [
       "SUM_YY",
       "PLOT_AR",
       "COMPLTN_YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-publicphysicaltraininget",
@@ -11235,7 +11828,8 @@ export const GG_CATALOG = [
       "SUM_YY",
       "PLOT_AR",
       "COMPLTN_YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-publicthrowaway",
@@ -11257,7 +11851,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "BUILD_AR",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-hospital",
@@ -11279,7 +11874,8 @@ export const GG_CATALOG = [
       "SPECL_AMBLNC_CNT",
       "SICKBD_CNT",
       "MEDSTAF_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-placethatdoatasteyfoodst",
@@ -11296,7 +11892,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "RESTRT_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-soilspecialityinstitution",
@@ -11315,7 +11912,8 @@ export const GG_CATALOG = [
     "label": "DIV_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-oldpersonspecialityhospital",
@@ -11335,7 +11933,8 @@ export const GG_CATALOG = [
     "numeric": [
       "SICKBD_CNT",
       "TREAT_SBJECT_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-gamesoftwaresfacilityprovis",
@@ -11357,7 +11956,8 @@ export const GG_CATALOG = [
       "TOT_GAMEMCHN_CNT",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-healthtreatmentfacility",
@@ -11379,7 +11979,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-incomefeedmanufacture",
@@ -11396,7 +11997,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-touristresort",
@@ -11416,7 +12018,8 @@ export const GG_CATALOG = [
     "numeric": [
       "APPONT_AR",
       "MAKE_PLAN_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-villagebus",
@@ -11435,7 +12038,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-specialpassanger",
@@ -11454,7 +12058,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-foreigncountrytour",
@@ -11475,7 +12080,8 @@ export const GG_CATALOG = [
       "CAPTL_AMT",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-safetypreparednessmedicine",
@@ -11492,7 +12098,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-publictrainingfacilityicerink",
@@ -11514,7 +12121,8 @@ export const GG_CATALOG = [
       "SHRTRACT_RINK_BT",
       "SHRTRACT_RINK_LENG",
       "SHRTRACT_RINK_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-publictrainingfacilitybasebal",
@@ -11536,7 +12144,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "CENTER_LENG",
       "F_THDBASE_LENG"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-generaltaxi",
@@ -11555,7 +12164,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-individualsewage",
@@ -11572,7 +12182,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-generalcouriertransportser",
@@ -11591,7 +12202,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-environmentmeasurement",
@@ -11608,7 +12220,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-foreignertourismrestaurant",
@@ -11628,7 +12241,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-factryregisttm",
@@ -11649,7 +12263,8 @@ export const GG_CATALOG = [
       "LOT_AR",
       "SUBFACLT_AR",
       "EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-generalpleasureground",
@@ -11669,7 +12284,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-localityculturecenter",
@@ -11686,7 +12302,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-paychargeemployment",
@@ -11706,7 +12323,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-logisticswarehouse",
@@ -11728,7 +12346,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "GENRL_WAREHS_AR_INFO"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-stockfarmproductscustody",
@@ -11749,7 +12368,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-sledge",
@@ -11769,7 +12389,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-performanceartgroupstatus",
@@ -11788,7 +12409,8 @@ export const GG_CATALOG = [
     "label": "GRP_DIV_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-danceacademy",
@@ -11808,7 +12430,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-culturalassetsrepair",
@@ -11825,7 +12448,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-golfplace",
@@ -11845,7 +12469,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-subsidiarybusiness",
@@ -11862,7 +12487,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-wldnsrescuemedicaltreatinst",
@@ -11879,7 +12505,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "RESCUE_INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-synthesizephysicaltraining",
@@ -11899,7 +12526,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-internationallogisticsservic",
@@ -11918,7 +12546,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "CAPTL_AMT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-livestockproductsstore",
@@ -11937,7 +12566,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-synthesizehospital",
@@ -11959,7 +12589,8 @@ export const GG_CATALOG = [
       "SPECL_AMBLNC_CNT",
       "SICKBD_CNT",
       "MEDSTAF_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-moviescreening",
@@ -11979,7 +12610,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-foundationchildcarecenter",
@@ -11998,7 +12630,8 @@ export const GG_CATALOG = [
     "label": "CENTER_NM",
     "numeric": [
       "CHLDCR_ROOM_CNT"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-generalmoveservice",
@@ -12017,7 +12650,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-medicalcaremassage",
@@ -12038,7 +12672,8 @@ export const GG_CATALOG = [
       "SICKBD_CNT",
       "EMPLY_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-oldpersonclassroom",
@@ -12057,7 +12692,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "ENTRNC_PSN_CAPA"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-publicfacilityduty",
@@ -12077,7 +12713,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-mindhealthinstitution",
@@ -12094,7 +12731,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "FACLT_KIND_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-tourismstaying",
@@ -12116,7 +12754,8 @@ export const GG_CATALOG = [
       "BUILD_TOT_AR",
       "FACLT_SCALE",
       "X_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-citybus",
@@ -12135,7 +12774,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-golfpracticerange",
@@ -12155,7 +12795,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-fishingplacestatus",
@@ -12175,7 +12816,8 @@ export const GG_CATALOG = [
     "numeric": [
       "SUM_YY",
       "FISHPLC_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-stockfarmproductsmeatprocess",
@@ -12195,7 +12837,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "TOT_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-imbecilityconsultationcenter",
@@ -12212,7 +12855,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "REGION_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-gmarkregistrationstatus",
@@ -12229,7 +12873,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "MNGSYS_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-publicfacilityetcetera",
@@ -12249,7 +12894,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-healthmedicalcareinstitute",
@@ -12266,7 +12912,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "PUBLHELTH_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-horseridingcenterestablishment",
@@ -12283,7 +12930,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-generalgameprovision",
@@ -12303,7 +12951,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-livestckintrauterine",
@@ -12324,7 +12973,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-wasteenvelopesale",
@@ -12341,7 +12991,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-glasses",
@@ -12363,7 +13014,8 @@ export const GG_CATALOG = [
       "EYECHART_CNT",
       "PEAK_REFRCTN_INSTRMT_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-attachmentmedicalinstitution",
@@ -12385,7 +13037,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-foodimprovespecialdistance",
@@ -12407,7 +13060,8 @@ export const GG_CATALOG = [
       "DSTN_EXTS",
       "TARGET_BIZESTBL_CNT",
       "DSTN_APPONT_YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-disablepersoncooperation",
@@ -12428,7 +13082,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-stayingmotel",
@@ -12450,7 +13105,8 @@ export const GG_CATALOG = [
       "YY",
       "WSTROOM_CNT",
       "KORROOM_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-animalpharmacy",
@@ -12467,7 +13123,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-chineseprivatehospital",
@@ -12489,7 +13146,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-atmosmeasurevicariousexecut",
@@ -12506,7 +13164,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "MNG_INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-publictrainingfacilitytrack",
@@ -12528,7 +13187,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "BUILD_AR",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-chinesesynthesizehospital",
@@ -12550,7 +13210,8 @@ export const GG_CATALOG = [
       "GENRL_AMBLNC_CNT",
       "SPECL_AMBLNC_CNT",
       "SICKBD_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-publichealthcenter",
@@ -12572,7 +13233,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "TREAT_SBJECT_CD_INFO"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-generaldeliveryservice",
@@ -12591,7 +13253,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-stayingtourismhotel",
@@ -12608,7 +13271,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-stayinglodging",
@@ -12629,7 +13293,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR",
       "YY",
       "KORROOM_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-ctmritomographymedicaldevices",
@@ -12646,7 +13311,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-livestocknightsoiltransport",
@@ -12666,7 +13332,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-dentistryhospital",
@@ -12683,7 +13350,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-privatehospital",
@@ -12705,7 +13373,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-publicfacilitybuilding",
@@ -12725,7 +13394,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "YY"
-    ]
+    ],
+    "srcCategory": "지역개발"
   },
   {
     "id": "gg-environmentconstructionwork",
@@ -12742,7 +13412,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-undergroundwaterconstruct",
@@ -12764,7 +13435,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "SPCMNPW_TOT_CNT"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-medicalcareinstitutionlaundry",
@@ -12785,7 +13457,8 @@ export const GG_CATALOG = [
       "TOT_FACLT_SCALE",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-publictrainingfacilitysoccer",
@@ -12807,7 +13480,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "BT",
       "LENG"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-stayinggeneralhotel",
@@ -12829,7 +13503,8 @@ export const GG_CATALOG = [
       "YY",
       "WSTROOM_CNT",
       "KORROOM_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-livestockdeal",
@@ -12846,7 +13521,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-disablepersonlabor",
@@ -12865,7 +13541,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "ENTRNC_PSN_CAPA"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-disablepersoncmwelfct",
@@ -12885,7 +13562,8 @@ export const GG_CATALOG = [
     "numeric": [
       "ENTRNC_PSN_CAPA",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-environmentmanagementacting",
@@ -12902,7 +13580,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-freechargeemployment",
@@ -12922,7 +13601,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "교육"
   },
   {
     "id": "gg-physicaltraining",
@@ -12942,7 +13622,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-groupmealhall",
@@ -12964,7 +13645,8 @@ export const GG_CATALOG = [
       "X_CRDNT_VL",
       "Y_CRDNT_VL",
       "FACLT_TOT_SCALE_INFO"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-diagnosisradiationgenerator",
@@ -12981,7 +13663,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-pleasureground",
@@ -13001,7 +13684,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-publictrainingfacilityhockey",
@@ -13023,7 +13707,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "FIELD_BT",
       "FIELD_LENG"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-parmacy",
@@ -13043,7 +13728,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-foreignertourismlodging",
@@ -13065,7 +13751,8 @@ export const GG_CATALOG = [
       "FACLT_SCALE",
       "FACLT_AR",
       "X_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-disinfection",
@@ -13087,7 +13774,8 @@ export const GG_CATALOG = [
       "GASMASK_CNT",
       "PROTECT_GLSS_CNT",
       "PROTCUSE_CLOTHS_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-largescalestore",
@@ -13108,7 +13796,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-mindhealthpromotioncenter",
@@ -13125,7 +13814,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "CENTER_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-slaughtermilkcollection",
@@ -13144,7 +13834,8 @@ export const GG_CATALOG = [
     "label": "SLAUGHT_MLKC_DIV_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-generalcourierservice",
@@ -13163,7 +13854,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-waitingemissionfacilities",
@@ -13183,7 +13875,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-medicalcarecorporation",
@@ -13203,7 +13896,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-purification",
@@ -13220,7 +13914,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-removalcourierservice",
@@ -13239,7 +13934,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-nfluenceinvestigation",
@@ -13256,7 +13952,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-civildefensewatersupply",
@@ -13275,7 +13972,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR_INFO"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-largecalamityoccurhumandamage",
@@ -13297,7 +13995,8 @@ export const GG_CATALOG = [
       "DEATH_PSNNUM_CNT",
       "SERINJRY_PSNNUM_CNT",
       "SLTINJRY_PSNNUM_CNT"
-    ]
+    ],
+    "srcCategory": "공공안전"
   },
   {
     "id": "gg-tourismbusinessman",
@@ -13318,7 +14017,8 @@ export const GG_CATALOG = [
       "CAPTL_AMT",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-staying",
@@ -13340,7 +14040,8 @@ export const GG_CATALOG = [
       "KORROOM_CNT",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-suicidepreventioncenter",
@@ -13359,7 +14060,8 @@ export const GG_CATALOG = [
     "label": "CONSIGN_INST_NM",
     "numeric": [
       "MANPWR_STUS"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-theatplesr",
@@ -13379,7 +14081,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-generaltour",
@@ -13400,7 +14103,8 @@ export const GG_CATALOG = [
       "CAPTL_AMT",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-labunon",
@@ -13420,7 +14124,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LABOR_ASOCNTMB_CNT",
       "ASOCNTMB_MALE_CNT"
-    ]
+    ],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-performplace",
@@ -13440,7 +14145,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-medicalcaremassageprocedure",
@@ -13461,7 +14167,8 @@ export const GG_CATALOG = [
       "SICKBD_CNT",
       "EMPLY_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-oldpersonrecuperationhome",
@@ -13480,7 +14187,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "WELFARE_FACLT_KIND"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-exhaustgasimprovement",
@@ -13497,7 +14205,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "산업통상"
   },
   {
     "id": "gg-femalewelfarefacility",
@@ -13514,7 +14223,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-childcareserviceofferinstitute",
@@ -13531,7 +14241,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INST_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-assistancefeedmanufacture",
@@ -13548,7 +14259,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-dentistryfactory",
@@ -13570,7 +14282,8 @@ export const GG_CATALOG = [
       "SURVYR_CNT",
       "ACETLN_CNT",
       "CENTFGL_CASTMCHN_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-postnatalcare",
@@ -13592,7 +14305,8 @@ export const GG_CATALOG = [
       "NURSAID_CNT",
       "MEALSRV_FACLT_AR",
       "CLEANER_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-disablepersonerrand",
@@ -13613,7 +14327,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-animalmedicinewholesale",
@@ -13634,7 +14349,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-singleingredientmanufacture",
@@ -13653,7 +14369,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-publictrainingfacilitycycle",
@@ -13675,7 +14392,8 @@ export const GG_CATALOG = [
       "PLOT_AR",
       "BUILD_AR",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-dentistryprivatehospital",
@@ -13697,7 +14415,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "TOT_AR"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-oldpeoplewelfarefacility",
@@ -13714,7 +14433,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-tourismrestaurant",
@@ -13734,7 +14454,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-cartent",
@@ -13753,7 +14474,8 @@ export const GG_CATALOG = [
     "label": "TENT_DIV_NM",
     "numeric": [
       "SUM_YY"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-disablepersonrehabilitation",
@@ -13774,7 +14496,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-surveybusiness",
@@ -13791,7 +14514,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "INDUTYPE_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-meatpave",
@@ -13812,7 +14536,8 @@ export const GG_CATALOG = [
       "LOCPLC_AR_INFO",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-stockfarmproductsincomesale",
@@ -13832,7 +14557,8 @@ export const GG_CATALOG = [
     "numeric": [
       "LOCPLC_AR",
       "TOT_EMPLY_CNT"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-breasttomographymedicaldevies",
@@ -13849,7 +14575,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-charteredbus",
@@ -13868,7 +14595,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-domestictour",
@@ -13889,7 +14617,8 @@ export const GG_CATALOG = [
       "CAPTL_AMT",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-youngboygameprovision",
@@ -13910,7 +14639,8 @@ export const GG_CATALOG = [
       "FACLT_AR",
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-consultationprotectioncenter",
@@ -13929,7 +14659,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "ENTRNC_PSN_CAPA"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-psychiatrichospital",
@@ -13951,7 +14682,8 @@ export const GG_CATALOG = [
       "GENRL_AMBLNC_CNT",
       "SPECL_AMBLNC_CNT",
       "SICKBD_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-nightsoilcollectiontrans",
@@ -13971,7 +14703,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-homelesspersonrestarea",
@@ -13992,7 +14725,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-swimmingpool",
@@ -14009,7 +14743,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-recuperationcarehelperedui",
@@ -14026,7 +14761,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-oldpersonrecuperationfacility",
@@ -14047,7 +14783,8 @@ export const GG_CATALOG = [
       "ENTRNC_PSN_CAPA",
       "QUALFCTN_POSESN_PSN_CNT",
       "TOT_PSN_CNT"
-    ]
+    ],
+    "srcCategory": "사회복지"
   },
   {
     "id": "gg-medicalcarefacility",
@@ -14069,7 +14806,8 @@ export const GG_CATALOG = [
       "MEDSTAF_CNT",
       "HOSPTLRM_CNT",
       "TREAT_SBJECT_CD_INFO"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-constructionwaste",
@@ -14089,7 +14827,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "교통물류"
   },
   {
     "id": "gg-physicafitnesstrainingplace",
@@ -14109,7 +14848,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-purificationconstruct",
@@ -14129,7 +14869,8 @@ export const GG_CATALOG = [
     "numeric": [
       "X_CRDNT_VL",
       "Y_CRDNT_VL"
-    ]
+    ],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-recuperationhospital",
@@ -14151,7 +14892,8 @@ export const GG_CATALOG = [
       "GENRL_AMBLNC_CNT",
       "SPECL_AMBLNC_CNT",
       "SICKBD_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-cultureartcorporation",
@@ -14170,7 +14912,8 @@ export const GG_CATALOG = [
     "label": "BIZPLC_NM",
     "numeric": [
       "LOCPLC_AR_INFO"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-tourismpension",
@@ -14187,7 +14930,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-natureecologyexcellencevillage",
@@ -14204,7 +14948,8 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "APPONT_DIV_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "환경보호"
   },
   {
     "id": "gg-emergencymedicalcarecenter",
@@ -14226,7 +14971,8 @@ export const GG_CATALOG = [
       "SPECL_AMBLNC_CNT",
       "SICKBD_CNT",
       "HOSPTLRM_CNT"
-    ]
+    ],
+    "srcCategory": "보건"
   },
   {
     "id": "gg-movietheater",
@@ -14248,7 +14994,8 @@ export const GG_CATALOG = [
       "Y_CRDNT_VL",
       "TOT_FLOOR_CNT",
       "GROUND_FLOOR_CNT"
-    ]
+    ],
+    "srcCategory": "문화관광"
   },
   {
     "id": "gg-organicanimalprotectionfacilit",
@@ -14268,7 +15015,8 @@ export const GG_CATALOG = [
     "numeric": [
       "SUM_YY",
       "ACEPTNC_ABLTY_CNT"
-    ]
+    ],
+    "srcCategory": "농림수산"
   },
   {
     "id": "gg-formulafeedmanufacture",
@@ -14285,6 +15033,7 @@ export const GG_CATALOG = [
     "lat": "REFINE_WGS84_LAT",
     "epsg": 4326,
     "label": "BIZPLC_NM",
-    "numeric": []
+    "numeric": [],
+    "srcCategory": "농림수산"
   }
 ];
