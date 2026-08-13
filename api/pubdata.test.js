@@ -363,3 +363,105 @@ describe('오류를 한국어로 바꾼다', () => {
     }
   });
 });
+
+// ── 경기데이터드림 ────────────────────────────────────────────────
+
+const GG_KEY = 'GG-KEY-7777';
+const GG_ENTRY = {
+  id: 'gg-test', provider: 'gg', name: '경기 시험 자료', description: '',
+  endpoint: 'https://openapi.gg.go.kr', service: 'TBTEST', params: [],
+  maxRows: 1000, maxPages: 3, path: 'TBTEST.1.row',
+  lon: 'REFINE_WGS84_LOGT', lat: 'REFINE_WGS84_LAT', epsg: 4326, label: 'FACLT_NM', numeric: []
+};
+
+/** 경기 응답 모양: {서비스: [{head:[{list_total_count},{RESULT},{api_version}]}, {row:[…]}]} */
+function ggPayload(rows, code = 'INFO-000', total = null) {
+  return {
+    TBTEST: [
+      { head: [{ list_total_count: total === null ? rows.length : total },
+               { RESULT: { CODE: code, MESSAGE: '메시지' } },
+               { api_version: '1.0' }] },
+      { row: rows }
+    ]
+  };
+}
+const GG_ROW = () => ({ REFINE_WGS84_LOGT: 127.14, REFINE_WGS84_LAT: 37.41, FACLT_NM: '시험시설' });
+
+describe('경기데이터드림', () => {
+  it('KEY·Type·페이지를 쿼리로 붙여 부른다', async () => {
+    const fetchFn = fakeFetch(ggPayload([GG_ROW()]));
+
+    await handle({ id: GG_ENTRY.id }, { fetchFn, keys: { gg: GG_KEY }, catalog: [GG_ENTRY] });
+
+    expect(fetchFn.calls[0]).toContain('/TBTEST?KEY=' + GG_KEY);
+    expect(fetchFn.calls[0]).toContain('Type=json');
+    expect(fetchFn.calls[0]).toContain('pIndex=1');
+    expect(fetchFn.calls[0]).toContain('pSize=1000');
+  });
+
+  it('배열 속 row를 찾아 정규화한다', async () => {
+    const fetchFn = fakeFetch(ggPayload([GG_ROW(), GG_ROW()]));
+
+    const res = await handle({ id: GG_ENTRY.id }, { fetchFn, keys: { gg: GG_KEY }, catalog: [GG_ENTRY] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.count).toBe(2);
+    expect(res.body.items[0]).toMatchObject({ lon: 127.14, lat: 37.41 });
+  });
+
+  it('head의 전체 건수를 그대로 알려준다 (경기는 진짜 총건수를 준다)', async () => {
+    const fetchFn = fakeFetch(ggPayload([GG_ROW()], 'INFO-000', 420));
+
+    const res = await handle({ id: GG_ENTRY.id }, { fetchFn, keys: { gg: GG_KEY }, catalog: [GG_ENTRY] });
+
+    expect(res.body.total).toBe(420);
+  });
+
+  it('오류코드를 한국어로 바꾼다', async () => {
+    const fetchFn = fakeFetch(ggPayload([], 'ERROR-310'));
+
+    const res = await handle({ id: GG_ENTRY.id }, { fetchFn, keys: { gg: GG_KEY }, catalog: [GG_ENTRY] });
+
+    expect(res.status).toBe(502);
+    expect(res.body.error).not.toContain('ERROR-310');
+  });
+
+  it('키가 없으면 부르지 않는다', async () => {
+    const fetchFn = fakeFetch(ggPayload([GG_ROW()]));
+
+    const res = await handle({ id: GG_ENTRY.id }, { fetchFn, keys: {}, catalog: [GG_ENTRY] });
+
+    expect(res.status).toBe(500);
+    expect(fetchFn.calls).toHaveLength(0);
+  });
+
+  it('브라우저인 척 부른다 (User-Agent가 없으면 차단당한 적이 있다)', async () => {
+    const headers = [];
+    const fetchFn = async (url, init) => {
+      headers.push(init && init.headers);
+      return { ok: true, status: 200, text: async () => JSON.stringify(ggPayload([GG_ROW()])) };
+    };
+    fetchFn.calls = [];
+
+    await handle({ id: GG_ENTRY.id }, { fetchFn, keys: { gg: GG_KEY }, catalog: [GG_ENTRY] });
+
+    expect(headers[0] && headers[0]['User-Agent']).toBeTruthy();
+  });
+});
+
+describe('카탈로그 자체', () => {
+  it('id가 겹치지 않는다 (겹치면 뒤엣것을 영영 못 부른다)', () => {
+    const ids = CATALOG.map(entry => entry.id);
+    expect(ids.length).toBe(new Set(ids).size);
+  });
+
+  it('모든 항목에 좌표 필드와 경로가 있다', () => {
+    const broken = CATALOG.filter(e => !e.lon || !e.lat || !e.path);
+    expect(broken.map(e => e.name)).toEqual([]);
+  });
+
+  it('모든 항목의 제공처를 아는 것으로 둔다', () => {
+    const providers = new Set(CATALOG.map(e => e.provider));
+    expect([...providers].sort()).toEqual(['data.go.kr', 'gg', 'seoul']);
+  });
+});

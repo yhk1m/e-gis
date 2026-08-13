@@ -19,7 +19,7 @@ import {
 let cachedItems = null;
 
 /** 지금 보고 있는 항목과 불러온 결과 */
-let state = { entry: null, result: null, fetchFn: null, onLayerAdded: null, keyword: '' };
+let state = { entry: null, result: null, fetchFn: null, onLayerAdded: null, keyword: '', region: '전체' };
 
 /** 목록 요청 세대 번호 — 늦게 도착한 응답이 새 화면을 덮지 않게 한다 */
 let mountSeq = 0;
@@ -85,6 +85,21 @@ export function renderCatalogList(items, keyword = '') {
   `).join('');
 }
 
+/** 지역 단추 — 서울·경기가 섞이므로 갈라 볼 수 있게 한다 */
+function renderRegionChips(items, region) {
+  const regions = [...new Set(items.map(item => item.region).filter(Boolean))];
+  if (regions.length < 2) return '';
+
+  const chip = (name, count) => `
+    <button class="public-data-chip${region === name ? ' active' : ''}"
+            data-pubdata-region="${name}">${name} ${count}</button>`;
+
+  return `<div class="public-data-regions">
+      ${chip('전체', items.length)}
+      ${regions.map(r => chip(r, items.filter(i => i.region === r).length)).join('')}
+    </div>`;
+}
+
 /** 검색창 + 결과 수 */
 function renderSearchBox(items, keyword = '') {
   return `
@@ -96,10 +111,17 @@ function renderSearchBox(items, keyword = '') {
   `;
 }
 
-/** 검색창과 목록을 함께 그린다 */
-function renderBrowse(items, keyword = '') {
-  return renderSearchBox(items, keyword) +
-    `<div data-pubdata-listbox>${renderCatalogList(items, keyword)}</div>`;
+/** 고른 지역만 남긴다 */
+function byRegion(items, region) {
+  return !region || region === '전체' ? items : items.filter(item => item.region === region);
+}
+
+/** 지역 단추 + 검색창 + 목록 */
+function renderBrowse(items, keyword = '', region = '전체') {
+  const shown = byRegion(items, region);
+  return renderRegionChips(items, region) +
+    renderSearchBox(shown, keyword) +
+    `<div data-pubdata-listbox>${renderCatalogList(shown, keyword)}</div>`;
 }
 
 /** 항목 상세 — 선택지와 불러오기 버튼 */
@@ -185,7 +207,7 @@ export const publicDataTab = {
     this._bind(root);
 
     if (cachedItems) {
-      root.innerHTML = renderBrowse(cachedItems);
+      root.innerHTML = renderBrowse(cachedItems, state.keyword, state.region);
       return;
     }
 
@@ -206,7 +228,7 @@ export const publicDataTab = {
       }
 
       cachedItems = (body && body.items) || [];
-      if (!stale()) root.innerHTML = renderBrowse(cachedItems);
+      if (!stale()) root.innerHTML = renderBrowse(cachedItems, state.keyword, state.region);
     } catch (e) {
       // 로컬에서 `vite dev`만 띄우면 /api가 없어 여기로 온다
       if (!stale()) root.innerHTML = renderNotice('목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
@@ -231,7 +253,7 @@ export const publicDataTab = {
       if (!box) return;
       state.keyword = box.value;
       const listBox = root.querySelector('[data-pubdata-listbox]');
-      if (listBox) listBox.innerHTML = renderCatalogList(cachedItems, state.keyword);
+      if (listBox) listBox.innerHTML = renderCatalogList(byRegion(cachedItems, state.region), state.keyword);
     });
 
     root.addEventListener('click', (event) => {
@@ -239,6 +261,13 @@ export const publicDataTab = {
       if (item) {
         const entry = (cachedItems || []).find(e => e.id === item.dataset.pubdataId);
         if (entry) this._openEntry(root, entry);
+        return;
+      }
+
+      const chip = event.target.closest('[data-pubdata-region]');
+      if (chip) {
+        state.region = chip.dataset.pubdataRegion;
+        root.innerHTML = renderBrowse(cachedItems, state.keyword, state.region);
         return;
       }
 
@@ -251,7 +280,7 @@ export const publicDataTab = {
       if (event.target.closest('[data-pubdata-back]')) {
         state.entry = null;
         state.result = null;
-        root.innerHTML = renderBrowse(cachedItems, state.keyword);
+        root.innerHTML = renderBrowse(cachedItems, state.keyword, state.region);
         return;
       }
 
@@ -377,6 +406,6 @@ export const publicDataTab = {
   _resetCache() {
     cachedItems = null;
     mountSeq = 0;
-    state = { entry: null, result: null, fetchFn: null, onLayerAdded: null, keyword: '' };
+    state = { entry: null, result: null, fetchFn: null, onLayerAdded: null, keyword: '', region: '전체' };
   }
 };

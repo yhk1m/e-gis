@@ -4821,3 +4821,34 @@ body.exporting .egis-basemap-panel {
   color: var(--text-secondary);
   white-space: nowrap;
 }
+
+/* 공공데이터 — 지역 단추 (서울·경기가 섞인다) */
+.public-data-regions {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px 0;
+  flex-wrap: wrap;
+}
+
+.public-data-chip {
+  padding: 5px 11px;
+  font-size: 11.5px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.public-data-chip:hover {
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+.public-data-chip.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+  font-weight: 600;
+}

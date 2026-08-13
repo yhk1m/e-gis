@@ -378,3 +378,59 @@ describe('포인트로 추가를 누르면', () => {
     expect(closed).toBe(true);
   });
 });
+
+describe('지역 나누기 (서울·경기가 섞인다)', () => {
+  const TWO = [
+    { id: 's1', name: '서울 공공도서관', description: '', category: '교육', region: '서울', params: [] },
+    { id: 'g1', name: '경기도 도서관 현황', description: '', category: '교육', region: '경기', params: [] },
+    { id: 'g2', name: '경기도 버스정류소', description: '', category: '교통', region: '경기', params: [] }
+  ];
+
+  it('지역 단추를 그린다', async () => {
+    const root = document.createElement('div');
+    await publicDataTab.mount(root, { fetchFn: vi.fn(async () => ({ ok: true, json: async () => ({ items: TWO }) })) });
+
+    const chips = [...root.querySelectorAll('[data-pubdata-region]')].map(e => e.dataset.pubdataRegion);
+    expect(chips).toContain('서울');
+    expect(chips).toContain('경기');
+    expect(chips).toContain('전체');
+  });
+
+  it('지역을 고르면 그 지역만 남는다', async () => {
+    const root = document.createElement('div');
+    await publicDataTab.mount(root, { fetchFn: vi.fn(async () => ({ ok: true, json: async () => ({ items: TWO }) })) });
+
+    root.querySelector('[data-pubdata-region="경기"]').click();
+
+    // 접힌 갈래도 DOM에는 남아 있으므로(CSS로 감춘다) 이름으로 확인한다
+    const names = [...root.querySelectorAll('.public-data-item-name')].map(e => e.textContent);
+    expect(names).toEqual(['경기도 도서관 현황', '경기도 버스정류소']);
+    expect(root.textContent).toContain('교통');
+    const counts = [...root.querySelectorAll('.builtin-badge')].map(e => e.textContent);
+    expect(counts).toEqual(['1개', '1개']);   // 경기: 교육 1, 교통 1
+  });
+
+  it('전체를 고르면 다시 다 보인다', async () => {
+    const root = document.createElement('div');
+    await publicDataTab.mount(root, { fetchFn: vi.fn(async () => ({ ok: true, json: async () => ({ items: TWO }) })) });
+
+    root.querySelector('[data-pubdata-region="경기"]').click();
+    root.querySelector('[data-pubdata-region="전체"]').click();
+
+    const counts = [...root.querySelectorAll('.builtin-badge')].map(e => e.textContent);
+    expect(counts).toEqual(['2개', '1개']);   // 교육 2, 교통 1
+  });
+
+  it('지역과 검색어가 함께 걸린다', async () => {
+    const root = document.createElement('div');
+    await publicDataTab.mount(root, { fetchFn: vi.fn(async () => ({ ok: true, json: async () => ({ items: TWO }) })) });
+
+    root.querySelector('[data-pubdata-region="경기"]').click();
+    const box = root.querySelector('[data-pubdata-search]');
+    box.value = '도서관';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const names = [...root.querySelectorAll('.public-data-item-name')].map(e => e.textContent);
+    expect(names).toEqual(['경기도 도서관 현황']);
+  });
+});

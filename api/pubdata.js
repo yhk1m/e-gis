@@ -17,6 +17,7 @@ import { normalize } from './_normalize.js';
 
 const CACHE_HEADER = 'public, s-maxage=600, stale-while-revalidate=3600';
 const TIMEOUT_MS = 10000;
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 
 /**
  * 제공처별로 다른 것 세 가지를 여기서 흡수한다: 키 이름 · URL 조립 · 오류 판정.
@@ -46,6 +47,38 @@ const PROVIDERS = {
     },
     pageSize() { return null; },   // 한 번에 받는다
     maxPages() { return 1; }
+  },
+
+  gg: {
+    keyName: 'GG_OPENAPI_KEY',
+    label: '경기데이터드림',
+    /** ?KEY=…&Type=json&pIndex=1&pSize=1000 */
+    buildUrl(entry, params, key, range = {}) {
+      const search = new URLSearchParams({
+        KEY: key,
+        Type: 'json',
+        pIndex: String(range.page || 1),
+        pSize: String(entry.maxRows || 1000),
+        ...params
+      });
+      return `${entry.endpoint}/${entry.service}?${search.toString()}`;
+    },
+    /** 응답이 배열이다: {서비스: [{head:[…{RESULT}…]}, {row:[…]}]} */
+    findError(raw) {
+      const result = findResultBlock(raw);
+      if (!result || result.CODE === undefined) return null;
+      const code = String(result.CODE);
+      if (code === 'INFO-000') return null;
+      return { code, message: result.MESSAGE };
+    },
+    total(raw) {
+      const head = findHead(raw);
+      const entry = (head || []).find(h => h && h.list_total_count !== undefined);
+      return entry ? Number(entry.list_total_count) || null : null;
+    },
+    /** 경기는 head에 진짜 전체 건수를 준다 — 그래도 1,000건씩 나눠 받는다 */
+    pageSize(entry) { return entry.maxRows || 1000; },
+    maxPages(entry) { return entry.maxPages || 10; }
   },
 
   seoul: {
@@ -88,12 +121,28 @@ const PROVIDERS = {
   }
 };
 
+/** 경기 응답의 head 배열을 찾는다 */
+function findHead(raw) {
+  const body = raw && typeof raw === 'object' ? raw[Object.keys(raw)[0]] : null;
+  if (!Array.isArray(body)) return null;
+  const headBlock = body.find(part => part && part.head);
+  return headBlock ? headBlock.head : null;
+}
+
+/** 정상·오류 코드가 담긴 RESULT를 찾는다 (경기는 head 안, 키 오류면 최상위) */
+function findResultBlock(raw) {
+  if (raw && raw.RESULT) return raw.RESULT;
+  const head = findHead(raw);
+  const hit = (head || []).find(h => h && h.RESULT);
+  return hit ? hit.RESULT : null;
+}
+
 function providerOf(entry) {
   return PROVIDERS[entry.provider] || PROVIDERS['data.go.kr'];
 }
 
-/** 서울열린데이터광장 오류코드 */
-const SEOUL_ERRORS = {
+/** 서울·경기 공통 오류코드 (두 포털이 같은 규약을 쓴다) */
+const PORTAL_ERRORS = {
   'INFO-100': '인증키가 잘못되었습니다. 서버의 서울시 인증키 설정을 확인해 주세요.',
   'INFO-200': '조건에 맞는 자료가 없습니다.',
   'ERROR-300': '요청 형식이 올바르지 않습니다. 카탈로그 설정을 확인해야 합니다.',
@@ -112,7 +161,7 @@ const SEOUL_ERRORS = {
  * 원문 메시지는 영어 대문자 코드라 학생·교사가 원인을 알 수 없다.
  */
 function translateError(code, message) {
-  if (SEOUL_ERRORS[code]) return SEOUL_ERRORS[code];
+  if (PORTAL_ERRORS[code]) return PORTAL_ERRORS[code];
   const table = {
     '01': '공공데이터포털에 일시적인 오류가 있습니다. 잠시 후 다시 시도해 주세요.',
     '12': '요청한 데이터 서비스가 폐기되었습니다. 카탈로그 항목을 수정해야 합니다.',
@@ -168,16 +217,16 @@ function buildParams(entry, query) {
  * 실제 처리. 테스트가 부르는 지점이라 fetch와 키를 주입받는다.
  * @returns {{status: number, body: Object, headers: Object}}
  */
-export async function handle(query = {}, { fetchFn, keys = {} } = {}) {
+export async function handle(query = {}, { fetchFn, keys = {}, catalog = CATALOG } = {}) {
   if (query.list) {
     return {
       status: 200,
       headers: { 'Cache-Control': CACHE_HEADER },
-      body: { items: CATALOG.map(publicView) }
+      body: { items: catalog.map(publicView) }
     };
   }
 
-  const entry = findEntry(query.id);
+  const entry = catalog.find(item => item.id === query.id) || null;
   if (!entry) {
     return { status: 400, headers: {}, body: { error: '등록되지 않은 데이터입니다.' } };
   }
@@ -209,13 +258,17 @@ export async function handle(query = {}, { fetchFn, keys = {} } = {}) {
 
   for (let page = 0; page < maxPages; page++) {
     const range = pageSize
-      ? { start: page * pageSize + 1, end: (page + 1) * pageSize }
-      : {};
+      ? { start: page * pageSize + 1, end: (page + 1) * pageSize, page: page + 1 }
+      : { page: page + 1 };
     const url = provider.buildUrl(entry, built.params, key, range);
 
     let text;
     try {
-      const response = await fetchFn(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+      // 경기데이터드림은 User-Agent가 없으면 보안 정책으로 막는다(HTML 안내가 온다)
+      const response = await fetchFn(url, {
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        headers: { 'User-Agent': BROWSER_UA }
+      });
       text = await response.text();
       if (!response.ok) {
         return fail(`${provider.label}이(가) 응답하지 않았습니다. (${response.status})`);
@@ -273,7 +326,8 @@ export default async function handler(req, res) {
     fetchFn: fetch,
     keys: {
       'data.go.kr': process.env.DATA_GO_KR_KEY || '',
-      seoul: process.env.SEOUL_OPENAPI_KEY || ''
+      seoul: process.env.SEOUL_OPENAPI_KEY || '',
+      gg: process.env.GG_OPENAPI_KEY || ''
     }
   });
 

@@ -33,3 +33,16 @@ export function categoryOf(entry) {
   const hit = RULES.find(([, pattern]) => pattern.test(text));
   return hit ? hit[0] : '기타';
 }
+
+/** 제공처 → 지역. 서울·경기가 섞이므로 화면에서 갈라 볼 수 있게 한다. */
+const REGION_BY_PROVIDER = {
+  seoul: '서울',
+  gg: '경기',
+  'data.go.kr': '전국'
+};
+
+export const REGIONS = ['서울', '경기', '전국'];
+
+export function regionOf(entry) {
+  return REGION_BY_PROVIDER[entry && entry.provider] || '전국';
+}

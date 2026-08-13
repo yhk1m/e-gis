@@ -21,7 +21,8 @@
  */
 
 import { SEOUL_CATALOG } from './_catalog.seoul.js';
-import { categoryOf } from './_categories.js';
+import { GG_CATALOG } from './_catalog.gg.js';
+import { categoryOf, regionOf } from './_categories.js';
 
 /** 손으로 다듬은 항목 — 이름·설명·선택지가 정리되어 있어 자동 생성본보다 우선한다 */
 const CURATED = [
@@ -227,10 +228,25 @@ const CURATED = [
  * 자동 생성본은 서울열린데이터광장 오픈API 1,024건을 훑어 좌표가 확인된 것만 담았다.
  */
 const curatedServices = new Set(CURATED.map(entry => entry.service).filter(Boolean));
-export const CATALOG = [
+
+/**
+ * 같은 API를 여러 데이터셋이 가리키는 경우가 있어 id가 겹친다.
+ * 먼저 온 것을 남긴다 — 손질본 > 서울 자동생성 > 경기 자동생성 순.
+ */
+function dedupeById(entries) {
+  const seen = new Set();
+  return entries.filter(entry => {
+    if (seen.has(entry.id)) return false;
+    seen.add(entry.id);
+    return true;
+  });
+}
+
+export const CATALOG = dedupeById([
   ...CURATED,
-  ...SEOUL_CATALOG.filter(entry => !curatedServices.has(entry.service))
-];
+  ...SEOUL_CATALOG.filter(entry => !curatedServices.has(entry.service)),
+  ...GG_CATALOG
+]);
 
 /** id로 항목을 찾는다. 없으면 null */
 export function findEntry(id) {
@@ -255,6 +271,7 @@ export function publicView(entry) {
       options: param.options || undefined
     })),
     category: categoryOf(entry),
+    region: regionOf(entry),
     label: entry.label,
     numeric: entry.numeric || []
   };

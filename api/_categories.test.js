@@ -50,3 +50,18 @@ describe('CATEGORIES', () => {
     expect(etc / CATALOG.length).toBeLessThan(0.5);
   });
 });
+
+import { regionOf } from './_categories.js';
+
+describe('regionOf — 어느 지역 자료인가', () => {
+  it('제공처로 지역을 정한다', () => {
+    expect(regionOf({ provider: 'seoul' })).toBe('서울');
+    expect(regionOf({ provider: 'gg' })).toBe('경기');
+    expect(regionOf({ provider: 'data.go.kr' })).toBe('전국');
+  });
+
+  it('모르는 제공처는 전국으로 본다', () => {
+    expect(regionOf({ provider: '어디' })).toBe('전국');
+    expect(regionOf({})).toBe('전국');
+  });
+});
