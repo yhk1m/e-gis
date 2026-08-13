@@ -1145,7 +1145,7 @@ body.exporting .egis-basemap-panel {
   font-weight: 500;
   border-radius: 10px;
   background: var(--bg-badge, rgba(59,130,246,0.1));
-  color: var(--primary-color);
+  color: var(--color-primary);
 }
 
 .builtin-dataset-loading {
@@ -1162,7 +1162,7 @@ body.exporting .egis-basemap-panel {
   width: 14px;
   height: 14px;
   border: 2px solid var(--border-color);
-  border-top-color: var(--primary-color);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: builtin-spin 0.6s linear infinite;
 }
@@ -1197,8 +1197,8 @@ body.exporting .egis-basemap-panel {
 }
 
 .builtin-tab.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 /* ===== 스프레드시트 탭: 데이터 유형 선택 ===== */
@@ -1219,13 +1219,13 @@ body.exporting .egis-basemap-panel {
 }
 
 .sheet-type-option:has(input:checked) {
-  border-color: var(--primary-color);
+  border-color: var(--color-primary);
   background: var(--bg-badge, rgba(59,130,246,0.08));
 }
 
 .sheet-type-option input {
   margin-top: 2px;
-  accent-color: var(--primary-color);
+  accent-color: var(--color-primary);
 }
 
 .sheet-type-name {
@@ -4842,13 +4842,34 @@ body.exporting .egis-basemap-panel {
 }
 
 .public-data-chip:hover {
-  border-color: var(--primary-color);
+  border-color: var(--color-primary);
   color: var(--text-primary);
 }
 
 .public-data-chip.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 공공데이터 — 펼친 갈래를 눈에 띄게 (뭘 보고 있는지 바로 알아야 한다) */
+.public-data-tab .builtin-category.open > .builtin-category-header {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.public-data-tab .builtin-category.open > .builtin-category-header .builtin-badge {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* 선택한 지역 단추 — 변수 이름이 틀려 흰 글자만 남아 '사라져' 보였다 */
+.public-data-chip.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
   font-weight: 600;
 }

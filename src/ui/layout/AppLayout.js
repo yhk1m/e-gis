@@ -130,7 +130,7 @@ export class AppLayout {
               </div>
             </div>
             <div class="menu-item" data-menu="builtin-data">
-              <button class="menu-button" data-action="builtin-data" title="데이터 불러오기" style="color: var(--primary-color); font-weight: 600;"><span class="menu-btn-icon">📂</span><span class="menu-btn-label">📂 데이터 불러오기</span></button>
+              <button class="menu-button" data-action="builtin-data" title="데이터 불러오기" style="color: var(--color-primary); font-weight: 600;"><span class="menu-btn-icon">📂</span><span class="menu-btn-label">📂 데이터 불러오기</span></button>
             </div>
             <button class="btn-help" id="btn-help" title="사용 설명서">❓</button>
             <a href="https://cafe.naver.com/egiskr" class="btn-community" target="_blank" title="e-GIS 커뮤니티">
