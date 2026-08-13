@@ -86,7 +86,7 @@
 }
 
 .btn-community:hover {
-  color: var(--primary-color);
+  color: var(--color-primary);
   background: var(--bg-hover);
 }
 
@@ -108,7 +108,7 @@
 }
 
 .header-privacy-link:hover {
-  color: var(--primary-color);
+  color: var(--color-primary);
   background: var(--bg-hover);
 }
 
@@ -352,7 +352,7 @@
 }
 
 .visitor-value {
-  color: var(--primary-color);
+  color: var(--color-primary);
   font-weight: 600;
 }
 

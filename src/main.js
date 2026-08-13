@@ -1249,10 +1249,10 @@ function showUserManual() {
             #manual-modal li { margin: 4px 0; }
           </style>
 
-          <h4 style="margin-top: 0; color: var(--primary-color);">📍 1. 시작하기</h4>
+          <h4 style="margin-top: 0; color: var(--color-primary);">📍 1. 시작하기</h4>
           <p>e-GIS는 교육용 GIS 웹 애플리케이션입니다. 별도의 설치 없이 웹 브라우저에서 바로 사용할 수 있습니다.</p>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">📂 2. 파일 불러오기</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">📂 2. 파일 불러오기</h4>
           <ul>
             <li><strong>지원 형식:</strong> GeoJSON(.geojson, .json), Shapefile(.zip), GeoPackage(.gpkg), DEM(.tif, .tiff, .img)</li>
             <li><strong>방법 1:</strong> 좌측 패널의 "+" 버튼 클릭 → 파일 선택</li>
@@ -1260,7 +1260,7 @@ function showUserManual() {
             <li><strong>방법 3:</strong> 메뉴 → 프로젝트 → 열기로 프로젝트 파일(.egis) 불러오기</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">🗺️ 3. 지도 조작</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">🗺️ 3. 지도 조작</h4>
           <ul>
             <li><strong>이동:</strong> 마우스 드래그 또는 화살표 키</li>
             <li><strong>확대/축소:</strong> 마우스 휠 또는 툴바의 +/- 버튼</li>
@@ -1268,7 +1268,7 @@ function showUserManual() {
             <li><strong>위치 검색:</strong> 상단 검색창에 주소나 장소명 입력</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">📋 4. 레이어 관리</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">📋 4. 레이어 관리</h4>
           <ul>
             <li><strong>선택:</strong> 레이어 패널에서 레이어 클릭 (Shift+클릭으로 다중 선택)</li>
             <li><strong>표시/숨기기:</strong> 레이어 이름 왼쪽 눈 아이콘 클릭</li>
@@ -1277,7 +1277,7 @@ function showUserManual() {
             <li><strong>속성 편집:</strong> 레이어 선택 후 메뉴 → 레이어 → 속성 테이블</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">✏️ 5. 도형 그리기</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">✏️ 5. 도형 그리기</h4>
           <ul>
             <li><strong>점(Point):</strong> 툴바에서 점 도구 선택 → 지도에서 클릭</li>
             <li><strong>선(Line):</strong> 툴바에서 선 도구 선택 → 클릭으로 꼭짓점 추가, 더블클릭으로 완료</li>
@@ -1287,7 +1287,7 @@ function showUserManual() {
             <li><strong>멀티폴리곤(MultiPolygon):</strong> 툴바에서 멀티폴리곤 도구 선택 → 여러 폴리곤 그리기, 더블클릭으로 각 폴리곤 완료</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">🔍 6. 피처 선택 및 편집</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">🔍 6. 피처 선택 및 편집</h4>
           <ul>
             <li><strong>선택:</strong> 툴바에서 선택 도구 → 피처 클릭</li>
             <li><strong>다중 선택:</strong> Shift+클릭</li>
@@ -1297,7 +1297,7 @@ function showUserManual() {
             <li><strong>복사/붙여넣기:</strong> Ctrl+C / Ctrl+V</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">📊 7. 속성 테이블</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">📊 7. 속성 테이블</h4>
           <ul>
             <li><strong>열기:</strong> 레이어 선택 → 메뉴 → 레이어 → 속성 테이블</li>
             <li><strong>행 선택:</strong> 행 클릭 (Shift+클릭으로 범위 선택, Ctrl+클릭으로 개별 추가)</li>
@@ -1307,14 +1307,14 @@ function showUserManual() {
             <li><strong>지도에서 보기:</strong> 행 선택 후 "지도에서 보기" 버튼</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">📐 8. 측정</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">📐 8. 측정</h4>
           <ul>
             <li><strong>거리 측정:</strong> 메뉴 → 측정 → 거리 측정 → 지도에서 클릭</li>
             <li><strong>면적 측정:</strong> 메뉴 → 측정 → 면적 측정 → 폴리곤 그리기</li>
             <li><strong>측정 삭제:</strong> 메뉴 → 측정 → 측정 결과 지우기</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">🎨 9. 주제도 · 시각화</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">🎨 9. 주제도 · 시각화</h4>
           <p style="color: var(--text-secondary); font-style: italic; margin-bottom: 8px;">※ 레이어를 미리 고르지 않아도 됩니다. 기능을 실행한 뒤 창 안에서 레이어를 선택하세요. 레이어를 선택한 상태로 실행하면 그 레이어가 미리 골라집니다.</p>
           <ul>
             <li><strong>단계구분도:</strong> 메뉴 → 주제도 → 단계구분도 (수치 속성 기반 색상 표현)</li>
@@ -1325,7 +1325,7 @@ function showUserManual() {
             <li><strong>라벨:</strong> 레이어 선택 → 메뉴 → 레이어 → 라벨 설정</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">🔧 10. 공간 분석</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">🔧 10. 공간 분석</h4>
           <ul>
             <li><strong>버퍼:</strong> 메뉴 → 벡터 분석 → 버퍼 분석</li>
             <li><strong>공간 연산:</strong> 메뉴 → 벡터 분석 → 공간 연산 (합집합, 교집합, 차집합, 클리핑)</li>
@@ -1335,20 +1335,20 @@ function showUserManual() {
             <li><strong>레이어 나누기:</strong> 메뉴 → 레이어 → 레이어 나누기 (속성값 기준으로 묶거나 객체별로 분리)</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">🛣️ 11. 경로 분석</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">🛣️ 11. 경로 분석</h4>
           <ul>
             <li><strong>등시선 분석:</strong> 메뉴 → 벡터 분석 → 등시선 분석 (이동 시간 영역)</li>
             <li><strong>최단경로 분석:</strong> 메뉴 → 벡터 분석 → 최단경로 분석</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">💾 12. 저장 및 내보내기</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">💾 12. 저장 및 내보내기</h4>
           <ul>
             <li><strong>프로젝트 저장:</strong> 메뉴 → 프로젝트 → 저장 (.egis 파일)</li>
             <li><strong>레이어 내보내기:</strong> 레이어 선택 → 메뉴 → 레이어 → 레이어 내보내기 (GeoJSON, Shapefile)</li>
             <li><strong>지도 이미지 내보내기:</strong> 메뉴 → 프로젝트 → 지도 내보내기</li>
           </ul>
 
-          <h4 style="margin-top: 24px; color: var(--primary-color);">💡 13. 팁</h4>
+          <h4 style="margin-top: 24px; color: var(--color-primary);">💡 13. 팁</h4>
           <ul>
             <li>상태 표시줄에서 현재 좌표와 축척을 확인할 수 있습니다.</li>
             <li>축척 입력란에 직접 숫자를 입력하여 원하는 축척으로 이동할 수 있습니다.</li>
