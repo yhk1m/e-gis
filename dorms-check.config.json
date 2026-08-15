@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "e-GIS",
-    "url": "https://e-gis.kr",
+    "url": "https://www.e-gis.kr",
     "stack": "Vite"
   },
   "tracks": [
