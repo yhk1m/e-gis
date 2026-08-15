@@ -1,7 +1,7 @@
 /**
  * 개인정보 처리방침 전용 페이지
  */
-import { PRIVACY_POLICY_CONTENT, PRIVACY_POLICY_VERSION } from './ui/panels/PrivacyPolicyPanel.js';
+import { privacyPageHTML } from './ui/privacyPageMarkup.js';
 
 // 테마 감지 및 적용
 function initTheme() {
@@ -15,46 +15,7 @@ function render() {
   initTheme();
 
   const app = document.getElementById('privacy-app');
-  app.innerHTML = `
-    <div class="privacy-page">
-      <header class="privacy-page-header">
-        <a href="/" class="privacy-page-logo">e-GIS</a>
-        <span class="privacy-page-title">개인정보 처리방침</span>
-      </header>
-      <main class="privacy-page-main">
-        <h1 class="privacy-page-heading">${PRIVACY_POLICY_CONTENT.title}</h1>
-        <div class="privacy-page-meta">
-          <span>버전: ${PRIVACY_POLICY_VERSION}</span>
-          <span>시행일: ${PRIVACY_POLICY_CONTENT.effectiveDate}</span>
-          <span>최종 수정: ${PRIVACY_POLICY_CONTENT.lastUpdated}</span>
-        </div>
-        <div class="privacy-page-intro">${PRIVACY_POLICY_CONTENT.intro}</div>
-        <div class="privacy-page-sections">
-          ${PRIVACY_POLICY_CONTENT.sections.map(section => `
-            <section class="privacy-page-section">
-              <h2>${section.title}</h2>
-              <div class="privacy-page-section-content">${section.content.replace(/\n/g, '<br>')}</div>
-            </section>
-          `).join('')}
-        </div>
-        <div class="privacy-page-actions">
-          <a href="${import.meta.env.BASE_URL}privacy-policy.pdf" download="개인정보 처리방침(e-GIS).pdf" class="privacy-page-btn privacy-page-btn-primary">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            PDF 다운로드
-          </a>
-          <a href="javascript:void(0)" class="privacy-page-btn" onclick="window.close(); setTimeout(() => history.back(), 100);">창 닫기</a>
-        </div>
-      </main>
-      <footer class="privacy-page-footer">
-        <p>e-GIS - 교육용 GIS 웹 애플리케이션</p>
-        <p>개인정보 보호책임자: 김용현 (bgnlkim@gmail.com)</p>
-      </footer>
-    </div>
-  `;
+  app.innerHTML = privacyPageHTML(import.meta.env.BASE_URL);
 }
 
 // 스타일 삽입
