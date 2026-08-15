@@ -9,6 +9,7 @@ import ImageCanvasSource from 'ol/source/ImageCanvas';
 import { transformExtent } from 'ol/proj';
 import { layerManager } from '../core/LayerManager.js';
 import { mapManager } from '../core/MapManager.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { makeDraggable } from '../utils/DraggableElement.js';
 
@@ -328,7 +329,7 @@ class DEMLoader {
     const fmt = (v) => Number.isFinite(v) ? `${Math.round(v)} m` : '—';
 
     legendEl.innerHTML = `
-      <div class="raster-legend-title">${layerName}</div>
+      <div class="raster-legend-title">${escapeHtml(layerName)}</div>
       <div class="raster-legend-content">
         <div class="dem-legend-gradient"></div>
         <div class="raster-legend-labels">

@@ -150,6 +150,28 @@ class CloudPanel {
               </label>
             </div>
 
+            <!-- 만 14세 미만 아동은 법정대리인 동의가 있어야 가입할 수 있다 (개인정보 보호법 제22조의2) -->
+            <div class="privacy-consent-section age-gate-section">
+              <div class="privacy-consent-box">
+                <div class="privacy-consent-header">
+                  <span class="privacy-required-badge">필수</span>
+                  <span>나이 확인</span>
+                </div>
+                <label class="privacy-consent-checkbox">
+                  <input type="checkbox" id="age-14-check">
+                  <span>만 14세 이상입니다 <em>(필수)</em></span>
+                </label>
+                <label class="privacy-consent-checkbox">
+                  <input type="checkbox" id="guardian-consent-check">
+                  <span>만 14세 미만이며, 법정대리인(보호자)의 동의를 받았습니다</span>
+                </label>
+                <p class="privacy-consent-note">
+                  만 14세 미만 학생은 학기 초 가정통신문(개인정보 수집·이용 동의서)으로
+                  법정대리인 동의를 받은 뒤 가입해야 합니다. 담당 교사가 동의 여부를 확인합니다.
+                </p>
+              </div>
+            </div>
+
             <button class="btn btn-primary btn-full" id="signup-btn">회원가입</button>
           </div>
         </div>
@@ -295,9 +317,23 @@ class CloudPanel {
       return;
     }
 
+    // 만 14세 확인 — 둘 중 하나는 반드시 체크되어야 하고, 둘 다는 성립하지 않는다
+    const isOver14 = document.getElementById('age-14-check')?.checked;
+    const hasGuardianConsent = document.getElementById('guardian-consent-check')?.checked;
+
+    if (!isOver14 && !hasGuardianConsent) {
+      alert('나이 확인이 필요합니다.\n만 14세 이상이거나, 만 14세 미만이면 법정대리인 동의를 받았는지 선택해주세요.');
+      return;
+    }
+
+    if (isOver14 && hasGuardianConsent) {
+      alert('만 14세 이상과 만 14세 미만 중 하나만 선택해주세요.');
+      return;
+    }
+
     try {
       // 동의 정보와 함께 회원가입
-      const consentData = consentManager.createConsentData();
+      const consentData = consentManager.createConsentData({ isOver14, hasGuardianConsent });
       await supabaseManager.signUpWithConsent(email, password, consentData);
       alert('회원가입 완료! 로그인해주세요.');
       this.switchTab('login');

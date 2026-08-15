@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "e-GIS",
+    "url": "https://e-gis.kr",
+    "stack": "Vite"
+  },
+  "tracks": [
+    "security",
+    "edzip"
+  ],
+  "edzipCase": "D",
+  "teacher": {
+    "dormsHandle": ""
+  },
+  "ownershipConfirmed": true
+}

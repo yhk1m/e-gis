@@ -7,6 +7,7 @@ import Heatmap from 'ol/layer/Heatmap';
 import VectorSource from 'ol/source/Vector';
 import { layerManager } from '../core/LayerManager.js';
 import { collectNumericFields } from '../utils/layerSelect.js';
+import { escapeHtml } from '../utils/escapeHtml.js';
 import { mapManager } from '../core/MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { makeDraggable } from '../utils/DraggableElement.js';
@@ -249,7 +250,7 @@ class HeatmapTool {
     const gradientCSS = `linear-gradient(to right, ${gradient.join(', ')})`;
 
     legendEl.innerHTML = `
-      <div class="heatmap-legend-title">${layerName} 히트맵</div>
+      <div class="heatmap-legend-title">${escapeHtml(layerName)} 히트맵</div>
       <div class="heatmap-legend-bar" style="background: ${gradientCSS}"></div>
       <div class="heatmap-legend-labels">
         <span>낮음</span>

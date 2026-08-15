@@ -841,6 +841,18 @@
   font-size: var(--font-size-xs);
 }
 
+/* 나이 확인 — 체크박스 두 개가 한 상자 안에 들어가므로 간격을 따로 준다 */
+.age-gate-section .privacy-consent-box .privacy-consent-checkbox {
+  margin-top: var(--spacing-xs);
+}
+
+.privacy-consent-note {
+  margin: var(--spacing-sm) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
 /* ===== 마이페이지 개인정보 관리 탭 ===== */
 .privacy-management {
   display: flex;

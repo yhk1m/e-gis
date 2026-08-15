@@ -6,6 +6,7 @@ import { labelTool } from '../../tools/LabelTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { eventBus, Events } from '../../utils/EventBus.js';
 import { resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { escapeHtml } from '../../utils/escapeHtml.js';
 
 class LabelPanel {
   constructor() {
@@ -213,7 +214,7 @@ class LabelPanel {
     const layers = layerManager.getAllLayers();
 
     select.innerHTML = layers.map(layer =>
-      `<option value="${layer.id}" ${layer.id === this.currentLayerId ? 'selected' : ''}>${layer.name}</option>`
+      `<option value="${escapeHtml(layer.id)}" ${layer.id === this.currentLayerId ? 'selected' : ''}>${escapeHtml(layer.name)}</option>`
     ).join('');
 
     this.populateFields();

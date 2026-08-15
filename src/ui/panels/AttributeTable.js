@@ -4,6 +4,7 @@
  */
 
 import { eventBus, Events } from '../../utils/EventBus.js';
+import { escapeHtml } from '../../utils/escapeHtml.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { mapManager } from '../../core/MapManager.js';
 import Select from 'ol/interaction/Select';
@@ -156,7 +157,7 @@ export class AttributeTable {
     overlay.className = 'attr-table-mobile';
     overlay.innerHTML = `
       <div class="attr-mobile-header">
-        <div class="attr-mobile-title">${layerInfo.name}
+        <div class="attr-mobile-title">${escapeHtml(layerInfo.name)}
           <span class="attr-mobile-count">${features.length}개</span>
           <span class="attr-mobile-selcount"></span>
         </div>

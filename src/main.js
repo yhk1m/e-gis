@@ -9,6 +9,7 @@ import { mapManager } from './core/MapManager.js';
 import { layerManager } from './core/LayerManager.js';
 import { themeManager } from './utils/ThemeManager.js';
 import { askText } from './utils/askText.js';
+import { escapeHtml } from './utils/escapeHtml.js';
 import { eventBus, Events } from './utils/EventBus.js';
 import { LayerPanel } from './ui/panels/LayerPanel.js';
 import { BrowserPanel } from './ui/panels/BrowserPanel.js';
@@ -1163,8 +1164,8 @@ function updateRecentFilesUI() {
   }
 
   recentFilesList.innerHTML = recentFiles.map((file, index) => `
-    <div class="dropdown-item" data-action="recent-file" data-index="${index}" title="${file.name}">
-      ${file.name}
+    <div class="dropdown-item" data-action="recent-file" data-index="${index}" title="${escapeHtml(file.name)}">
+      ${escapeHtml(file.name)}
     </div>
   `).join('');
 }

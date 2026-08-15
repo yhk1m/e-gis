@@ -13,12 +13,19 @@ class ConsentManager {
 
   /**
    * 동의 정보 생성
+   *
+   * 만 14세 미만 아동은 법정대리인 동의가 있어야 개인정보를 처리할 수 있다
+   * (개인정보 보호법 제22조의2). 가입 시 확인한 결과를 함께 남겨 두어야
+   * 나중에 동의 근거를 증빙할 수 있다.
    */
-  createConsentData() {
+  createConsentData({ isOver14 = true, hasGuardianConsent = false } = {}) {
     return {
       privacy_consent: true,
       privacy_consent_at: new Date().toISOString(),
-      privacy_policy_version: PRIVACY_POLICY_VERSION
+      privacy_policy_version: PRIVACY_POLICY_VERSION,
+      age_over_14: !!isOver14,
+      guardian_consent: !!hasGuardianConsent,
+      guardian_consent_method: hasGuardianConsent ? '학기 초 가정통신문(교사 확인)' : null
     };
   }
 
