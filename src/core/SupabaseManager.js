@@ -18,6 +18,7 @@ class SupabaseManager {
     this.supabase = null;
     this.user = null;
     this.isConfigured = false;
+    this.profileCache = null; // 헤더 표시용 프로필 캐시 (닉네임 등)
   }
 
   /**
@@ -52,6 +53,7 @@ class SupabaseManager {
           eventBus.emit('auth:login', { user: this.user });
         } else if (event === 'SIGNED_OUT') {
           this.user = null;
+          this.profileCache = null;
           eventBus.emit('auth:logout', {});
         }
       });
@@ -178,6 +180,7 @@ class SupabaseManager {
     const { error } = await this.supabase.auth.signOut();
     if (error) throw error;
     this.user = null;
+    this.profileCache = null;
   }
 
   /**
@@ -239,6 +242,33 @@ class SupabaseManager {
   // ==================== 프로필 관리 ====================
 
   /**
+   * 헤더 등 상시 표시 영역에서 쓸 프로필을 미리 읽어 캐시에 담는다.
+   * 프로필 미작성·네트워크 오류는 예외로 올리지 않고 캐시를 비운 채 넘어간다.
+   */
+  async loadProfileCache() {
+    if (!this.supabase || !this.user) {
+      this.profileCache = null;
+      return null;
+    }
+
+    try {
+      this.profileCache = await this.getProfile();
+    } catch (error) {
+      console.warn('프로필 로드 실패:', error);
+      this.profileCache = null;
+    }
+    return this.profileCache;
+  }
+
+  /**
+   * 캐시된 닉네임 (설정 전이면 null)
+   */
+  getNickname() {
+    const nickname = this.profileCache?.nickname?.trim();
+    return nickname || null;
+  }
+
+  /**
    * 사용자 프로필 가져오기
    */
   async getProfile() {
@@ -279,6 +309,11 @@ class SupabaseManager {
       .select();
 
     if (error) throw error;
+
+    // 헤더의 닉네임 표시가 저장 즉시 반영되도록 캐시도 함께 갱신
+    this.profileCache = { ...(this.profileCache || {}), ...profileData };
+    eventBus.emit('auth:profile-updated', { profile: this.profileCache });
+
     return data;
   }
 

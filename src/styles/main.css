@@ -3473,6 +3473,16 @@ body.exporting .egis-basemap-panel {
   color: var(--text-secondary);
 }
 
+/* 닉네임(이메일) 표기 — 닉네임 미설정 시 .header-user-name 에 이메일이 들어간다 */
+.header-user-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.header-user-mail {
+  margin-left: 3px;
+}
+
 .cloud-actions {
   margin-bottom: var(--spacing-md);
 }

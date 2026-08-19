@@ -1081,8 +1081,13 @@ function initHeaderAuth() {
   });
 
   // 인증 상태 변경 이벤트 구독
-  eventBus.on('auth:login', () => updateHeaderAuth());
+  // 로그인 직후엔 아직 프로필이 없으므로 이메일로 먼저 그리고, 닉네임을 받으면 다시 그린다.
+  eventBus.on('auth:login', () => {
+    updateHeaderAuth();
+    supabaseManager.loadProfileCache().then(() => updateHeaderAuth());
+  });
   eventBus.on('auth:logout', () => updateHeaderAuth());
+  eventBus.on('auth:profile-updated', () => updateHeaderAuth());
 }
 
 /**
@@ -1095,8 +1100,16 @@ function updateHeaderAuth() {
   if (supabaseManager.isLoggedIn()) {
     const user = supabaseManager.getUser();
     const isAdmin = supabaseManager.isAdmin();
+    const nickname = supabaseManager.getNickname();
+
+    // 닉네임이 있으면 "닉네임(이메일)" — 태블릿·모바일에서는 CSS 가 괄호 부분을 숨겨 닉네임만 남는다.
+    // 닉네임을 설정하지 않았으면 이메일만 표시한다.
+    const userLabel = nickname
+      ? `<span class="header-user-name">${escapeHtml(nickname)}</span><span class="header-user-mail">(${escapeHtml(user.email)})</span>`
+      : `<span class="header-user-name">${escapeHtml(user.email)}</span>`;
+
     headerAuth.innerHTML = `
-      <span class="header-user-email">${user.email}${isAdmin ? ' <span class="admin-badge">관리자</span>' : ''}</span>
+      <span class="header-user-email">${userLabel}${isAdmin ? ' <span class="admin-badge">관리자</span>' : ''}</span>
       <button class="btn btn-sm btn-primary" id="header-mypage-btn"><span class="auth-label-ko">마이페이지</span><span class="auth-label-en">Mypage</span></button>
       <button class="btn btn-sm btn-secondary" id="header-logout-btn"><span class="auth-label-ko">로그아웃</span><span class="auth-label-en">Logout</span></button>
     `;

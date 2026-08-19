@@ -649,6 +649,9 @@
   .header-privacy-link { font-size: 13px; padding: 6px 10px; }
   .menu-button { font-size: 14px !important; padding: 6px 12px !important; }
 
+  /* 좁은 화면에서는 닉네임만 남긴다 (닉네임이 없으면 이메일이 그 자리에 있어 그대로 보인다) */
+  .header-user-mail { display: none; }
+
   /* 툴바 아이콘 버튼 확대 */
   .btn-icon {
     width: 40px;
