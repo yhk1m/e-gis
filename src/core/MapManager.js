@@ -342,16 +342,23 @@ class BasemapControl extends Control {
   }
 }
 
+// 배경 타일은 예외 없이 익명 CORS 로 받는다.
+// crossOrigin 을 주지 않으면 타일 이미지가 캔버스를 오염시켜(tainted canvas)
+// 지도 내보내기의 canvas.toDataURL() 이 SecurityError 로 막힌다.
+// ol/source/OSM 만 기본값이 'anonymous' 이고 ol/source/XYZ 는 지정하지 않으면 null 이다.
+const TILE_CROSS_ORIGIN = 'anonymous';
+
 // 기본 배경지도 옵션
-const BASEMAPS = {
+export const BASEMAPS = {
   OSM: {
     name: 'OpenStreetMap',
-    source: () => new OSM()
+    source: () => new OSM({ crossOrigin: TILE_CROSS_ORIGIN })
   },
   CARTO_LIGHT: {
     name: 'Carto Light',
     source: () => new XYZ({
       url: 'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      crossOrigin: TILE_CROSS_ORIGIN,
       attributions: '&copy; <a href="https://carto.com/">CARTO</a>'
     })
   },
@@ -359,6 +366,7 @@ const BASEMAPS = {
     name: 'Carto Dark',
     source: () => new XYZ({
       url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+      crossOrigin: TILE_CROSS_ORIGIN,
       attributions: '&copy; <a href="https://carto.com/">CARTO</a>'
     })
   },
@@ -367,13 +375,30 @@ const BASEMAPS = {
     source: () => new XYZ({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       maxZoom: 19,
+      crossOrigin: TILE_CROSS_ORIGIN,
       attributions: '&copy; Esri'
     })
   },
   NONE: {
     name: '없음',
-    source: () => new XYZ({ url: '' })
+    source: () => new XYZ({ url: '', crossOrigin: TILE_CROSS_ORIGIN })
   }
+};
+
+// 라벨(지명/도로명) 오버레이 타일 — 위성+라벨 모드에서만 표시
+// Esri World_Boundaries_and_Places는 광역 지명만 있어 확대 시 라벨이 사라지므로,
+// 거리·동네까지 촘촘한 CARTO(OSM 기반) 라벨 전용 타일로 교체.
+// voyager_only_labels: 도로·지명이 서로 다른 색(+흰 외곽선)이라 위성 위에서 잘 보임.
+// @2x 레티나 타일(tilePixelRatio:2)로 고해상도 화면에서도 선명.
+export const REFERENCE_LABELS = {
+  name: 'CARTO 라벨',
+  source: () => new XYZ({
+    url: 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png',
+    tilePixelRatio: 2,
+    maxZoom: 20,
+    crossOrigin: TILE_CROSS_ORIGIN,
+    attributions: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  })
 };
 
 export class MapManager {
@@ -406,17 +431,8 @@ export class MapManager {
 
     // 라벨(지명/도로명) 오버레이 레이어 — 위성+라벨 모드에서만 표시
     // zIndex 0.5: 베이스맵(0) 위 · 사용자 데이터(1+) 아래에 위치
-    // Esri World_Boundaries_and_Places는 광역 지명만 있어 확대 시 라벨이 사라지므로,
-    // 거리·동네까지 촘촘한 CARTO(OSM 기반) 라벨 전용 타일로 교체.
-    // voyager_only_labels: 도로·지명이 서로 다른 색(+흰 외곽선)이라 위성 위에서 잘 보임.
-    // @2x 레티나 타일(tilePixelRatio:2)로 고해상도 화면에서도 선명.
     this.referenceLayer = new TileLayer({
-      source: new XYZ({
-        url: 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png',
-        tilePixelRatio: 2,
-        maxZoom: 20,
-        attributions: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }),
+      source: REFERENCE_LABELS.source(),
       visible: false,
       zIndex: 0.5,
       properties: {
