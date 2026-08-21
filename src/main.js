@@ -32,6 +32,7 @@ import { layerMergePanel } from './ui/panels/LayerMergePanel.js';
 import { layerSplitPanel } from './ui/panels/LayerSplitPanel.js';
 import { labelPanel } from './ui/panels/LabelPanel.js';
 import { bufferPanel } from './ui/panels/BufferPanel.js';
+import { gridPanel } from './ui/panels/GridPanel.js';
 import { voronoiPanel } from './ui/panels/VoronoiPanel.js';
 import { exportPanel } from './ui/panels/ExportPanel.js';
 import { fieldCalculatorPanel } from './ui/panels/FieldCalculatorPanel.js';
@@ -769,6 +770,9 @@ function handleMenuAction(action) {
       break;
     case 'analysis-choropleth':
       choroplethPanel.show();
+      break;
+    case 'analysis-grid':
+      gridPanel.show();
       break;
     case 'analysis-buffer':
       bufferPanel.show();

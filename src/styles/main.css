@@ -1421,7 +1421,8 @@ body.exporting .egis-basemap-panel {
 }
 
 /* ===== 버퍼 분석 모달 스타일 ===== */
-.buffer-modal {
+.buffer-modal,
+.grid-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -1434,7 +1435,8 @@ body.exporting .egis-basemap-panel {
   z-index: 2000;
 }
 
-.buffer-content {
+.buffer-content,
+.grid-content {
   background: var(--bg-panel);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -1445,7 +1447,8 @@ body.exporting .egis-basemap-panel {
   flex-direction: column;
 }
 
-.buffer-header {
+.buffer-header,
+.grid-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1453,13 +1456,15 @@ body.exporting .egis-basemap-panel {
   border-bottom: 1px solid var(--border-color);
 }
 
-.buffer-header h3 {
+.buffer-header h3,
+.grid-header h3 {
   font-size: var(--font-size-md);
   font-weight: 600;
   margin: 0;
 }
 
-.buffer-close {
+.buffer-close,
+.grid-close {
   width: 28px;
   height: 28px;
   display: flex;
@@ -1471,22 +1476,26 @@ body.exporting .egis-basemap-panel {
   transition: all var(--transition-fast);
 }
 
-.buffer-close:hover {
+.buffer-close:hover,
+.grid-close:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
 
-.buffer-body {
+.buffer-body,
+.grid-body {
   padding: var(--spacing-lg);
   overflow-y: auto;
   flex: 1;
 }
 
-.buffer-form-group {
+.buffer-form-group,
+.grid-form-group {
   margin-bottom: var(--spacing-md);
 }
 
-.buffer-form-group label {
+.buffer-form-group label,
+.grid-form-group label {
   display: block;
   font-size: var(--font-size-sm);
   font-weight: 500;
@@ -1495,8 +1504,11 @@ body.exporting .egis-basemap-panel {
 }
 
 .buffer-form-group select,
+.grid-form-group select,
 .buffer-form-group input[type="number"],
-.buffer-form-group input[type="range"] {
+.grid-form-group input[type="number"],
+.buffer-form-group input[type="range"],
+.grid-form-group input[type="range"] {
   width: 100%;
   padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
@@ -1505,7 +1517,8 @@ body.exporting .egis-basemap-panel {
   color: var(--text-primary);
 }
 
-.buffer-form-group input[type="color"] {
+.buffer-form-group input[type="color"],
+.grid-form-group input[type="color"] {
   width: 60px;
   height: 32px;
   padding: 2px;
@@ -1514,11 +1527,13 @@ body.exporting .egis-basemap-panel {
   cursor: pointer;
 }
 
-.buffer-form-group input[type="checkbox"] {
+.buffer-form-group input[type="checkbox"],
+.grid-form-group input[type="checkbox"] {
   margin-right: var(--spacing-xs);
 }
 
-.buffer-layer-name {
+.buffer-layer-name,
+.grid-layer-name {
   font-size: var(--font-size-sm);
   color: var(--text-primary);
   padding: var(--spacing-sm);
@@ -1533,7 +1548,8 @@ body.exporting .egis-basemap-panel {
   color: var(--color-primary);
 }
 
-.buffer-footer {
+.buffer-footer,
+.grid-footer {
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-sm);
