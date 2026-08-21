@@ -41,5 +41,62 @@ export const INCHEON_CATALOG = [
       'LOAN_PSBLTY_DCO'      // 대출 가능 일수
     ],
     srcCategory: '교육'
+  },
+  {
+    id: 'incheon-bike-rack',
+    provider: 'incheon',
+    name: '인천 자전거보관소',
+    description: '인천광역시 자전거보관소 위치와 수용 대수·설치 형태',
+    endpoint: 'https://data.incheon.go.kr',
+    service: '/openapi/BCYCL_DPSTRY/BCYCL_DPSTRY',
+    params: [],
+    pageParam: 'pageNo',
+    maxRows: 100,   // numOfRows 를 줘도 무시하고 100건씩 준다
+    maxPages: 15,   // 1,410건 전량
+    path: 'data',
+    lon: 'WSG84_LOT',   // 포털 표기가 WGS 가 아니라 WSG 다 (원문 그대로)
+    lat: 'WSG84_LAT',
+    epsg: 4326,
+    label: 'BCYCL_DPSTRY_NM',
+    numeric: ['CSTDY_CNTOM'],   // 수용 대수
+    srcCategory: '교통물류'
+  },
+  {
+    id: 'incheon-tour-stay',
+    provider: 'incheon',
+    name: '인천투어 — 숙박',
+    description: '인천 관광 숙박시설 위치와 이용 안내',
+    endpoint: 'https://data.incheon.go.kr',
+    service: '/openapi/ITOUR/ACMDT_INTRCN',
+    params: [],
+    pageParam: 'pageNo',
+    maxRows: 100,
+    maxPages: 4,   // 358건 전량
+    path: 'data',
+    lon: 'MAP_LOT',
+    lat: 'MAP_LAT',
+    epsg: 4326,
+    label: 'CONTS_TTL',
+    numeric: [],
+    srcCategory: '문화관광'
+  },
+  {
+    id: 'incheon-tour-leisure',
+    provider: 'incheon',
+    name: '인천투어 — 레포츠',
+    description: '인천 레저·체험 시설 위치와 이용 안내',
+    endpoint: 'https://data.incheon.go.kr',
+    service: '/openapi/ITOUR/LPRT_INTRCN',
+    params: [],
+    pageParam: 'pageNo',
+    maxRows: 100,
+    maxPages: 3,   // 246건 전량
+    path: 'data',
+    lon: 'MAP_LOT',
+    lat: 'MAP_LAT',
+    epsg: 4326,
+    label: 'CONTS_TTL',
+    numeric: [],
+    srcCategory: '문화관광'
   }
 ];
