@@ -24,6 +24,7 @@ import { measureTool } from './tools/MeasureTool.js';
 import { autoSaveManager } from './core/AutoSaveManager.js';
 import { historyManager } from './core/HistoryManager.js';
 import { selectTool } from './tools/SelectTool.js';
+import { featureInfoCard } from './ui/FeatureInfoCard.js';
 import { featureEditTool } from './tools/FeatureEditTool.js';
 import { choroplethPanel } from './ui/panels/ChoroplethPanel.js';
 import { tableJoinPanel } from './ui/panels/TableJoinPanel.js';
@@ -468,17 +469,49 @@ function initToolbar() {
     });
   }
 
+  // 속성정보 보기 — 선택 도구가 켜져 있는 동안에만 나타나는 토글
+  const btnFeatureInfo = document.getElementById('btn-feature-info');
+  if (btnFeatureInfo) {
+    const syncFeatureInfoBtn = () => {
+      btnFeatureInfo.classList.toggle('active', featureInfoCard.isEnabled());
+    };
+    featureInfoCard.onChange = syncFeatureInfoBtn;
+
+    btnFeatureInfo.addEventListener('click', () => {
+      featureInfoCard.setEnabled(!featureInfoCard.isEnabled());
+    });
+
+    const hideFeatureInfo = () => {
+      btnFeatureInfo.style.display = 'none';
+      featureInfoCard.setEnabled(false);
+    };
+
+    eventBus.on(Events.TOOL_ACTIVATED, ({ tool }) => {
+      if (tool !== 'select') return;
+      btnFeatureInfo.style.display = '';
+      syncFeatureInfoBtn();
+    });
+
+    eventBus.on(Events.TOOL_DEACTIVATED, ({ tool }) => {
+      if (tool !== 'select') return;
+      hideFeatureInfo();
+    });
+
+    eventBus.on(Events.PROJECT_NEW, () => hideFeatureInfo());
+  }
+
   // 피처 합치기 (선택한 피처들을 하나로) — 모드가 아닌 즉시 액션
   const btnMerge = document.getElementById('btn-merge-features');
   if (btnMerge) {
     btnMerge.addEventListener('click', () => featureEditTool.mergeSelected());
   }
 
-  // 선택 개수가 바뀌면 버튼 표시/숨김
+  // 선택 개수가 바뀌면 버튼 표시/숨김 + 속성 카드 갱신
   eventBus.on(Events.SELECTION_CHANGED, ({ count }) => {
     const display = count > 0 ? '' : 'none';
     if (btnClearSel) btnClearSel.style.display = display;
     if (btnDeleteSel) btnDeleteSel.style.display = display;
+    featureInfoCard.refresh();
   });
 }
 

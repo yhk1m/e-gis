@@ -205,6 +205,13 @@ export class AppLayout {
               <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
             </svg>
           </button>
+          <button class="btn-icon" id="btn-feature-info" title="선택한 피처 속성 보기" style="display:none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </button>
           <button class="btn-icon selection-action" id="btn-clear-selection" title="선택 취소" style="display:none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
