@@ -11,6 +11,7 @@ import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
+import { pickOrphanFeatures } from './selectionCleanup.js';
 
 // 선택 스타일
 const SELECT_STYLE = new Style({
@@ -37,6 +38,26 @@ class SelectTool {
     this.dragPan = null;
     this.isActive = false;
     this.selectedFeatures = null;
+
+    // 레이어를 지우면 그 안에 있던 피처는 선택 상태로 남을 수 없다.
+    // 선택이 줄면 SELECTION_CHANGED 가 나가므로 툴바 버튼과 속성 카드가 함께 정리된다.
+    eventBus.on(Events.LAYER_REMOVED, () => this.dropRemovedFeatures());
+  }
+
+  /**
+   * 사라진 레이어의 피처를 선택에서 뺀다.
+   * 삭제 시점엔 그 레이어가 이미 layerManager 에서 빠진 뒤라,
+   * 남은 레이어 어디에도 없는 피처를 골라 내는 방식으로 찾는다.
+   */
+  dropRemovedFeatures() {
+    if (!this.selectedFeatures) return;
+
+    const orphans = pickOrphanFeatures(
+      this.selectedFeatures.getArray(),
+      layerManager.getAllLayers()
+    );
+
+    orphans.forEach((feature) => this.selectedFeatures.remove(feature));
   }
 
   /**
