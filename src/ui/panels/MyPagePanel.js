@@ -6,12 +6,7 @@
 import { supabaseManager } from '../../core/SupabaseManager.js';
 import { consentManager } from '../../core/ConsentManager.js';
 import { privacyPolicyPanel, PRIVACY_POLICY_CONTENT } from './PrivacyPolicyPanel.js';
-
-// 시도 목록 (짧은 이름)
-const REGIONS = [
-  '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
-  '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'
-];
+import { REGIONS, normalizeRegion } from './regions.js';
 
 class MyPagePanel {
   constructor() {
@@ -90,14 +85,14 @@ class MyPagePanel {
               <h4>학교 등록</h4>
               ${this.profile?.school ? `
                 <div class="current-school">
-                  <span class="school-badge">${this.profile.region || ''} ${this.profile.school}</span>
+                  <span class="school-badge">${normalizeRegion(this.profile.region)} ${this.profile.school}</span>
                 </div>
               ` : ''}
               <div class="form-group">
                 <label for="profile-region">지역 (시/도)</label>
                 <select id="profile-region">
                   <option value="">지역을 선택하세요</option>
-                  ${REGIONS.map(r => `<option value="${r}" ${this.profile?.region === r ? 'selected' : ''}>${r}</option>`).join('')}
+                  ${REGIONS.map(r => `<option value="${r}" ${normalizeRegion(this.profile?.region) === r ? 'selected' : ''}>${r}</option>`).join('')}
                 </select>
               </div>
               <div class="form-group">
@@ -667,7 +662,7 @@ class MyPagePanel {
             <label for="edit-member-region">지역 (시/도)</label>
             <select id="edit-member-region">
               <option value="">선택 안 함</option>
-              ${REGIONS.map(r => `<option value="${r}" ${member.region === r ? 'selected' : ''}>${r}</option>`).join('')}
+              ${REGIONS.map(r => `<option value="${r}" ${normalizeRegion(member.region) === r ? 'selected' : ''}>${r}</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
@@ -890,7 +885,7 @@ class MyPagePanel {
           </div>
           <div class="data-item">
             <span class="data-label">지역</span>
-            <span class="data-value">${profile?.region || '(미등록)'}</span>
+            <span class="data-value">${normalizeRegion(profile?.region) || '(미등록)'}</span>
           </div>
           <div class="data-item">
             <span class="data-label">학교</span>
