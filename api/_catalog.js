@@ -56,7 +56,8 @@ const CURATED = [
     ],
     // 항상 붙는 고정 파라미터
     fixed: { dataType: 'JSON', pageNo: '1', numOfRows: '1000' },
-    path: 'response.body.items.item',
+    // 이 API 는 response 로 감싸지 않고 최상위에 items 를 둔다 (실측, 2026-08-21)
+    path: 'items.item',
     lon: 'lng',
     lat: 'lat',
     epsg: 4326,

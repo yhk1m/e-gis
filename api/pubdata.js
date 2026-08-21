@@ -33,17 +33,23 @@ const PROVIDERS = {
       // serviceKey는 포털이 인코딩된 값을 요구해 URLSearchParams와 따로 붙인다
       return `${entry.endpoint}?serviceKey=${encodeURIComponent(key)}&${search.toString()}`;
     },
-    /** 정상은 resultCode '00'. 그 외는 오류다 */
+    /**
+     * 정상은 resultCode '00'. 그 외는 오류다.
+     * 봉투가 두 가지다 — 대개는 response.header/body 로 감싸지만
+     * 그냥 최상위에 resultCode·totalCount 를 두는 API 도 있다(전기차 충전소).
+     */
     findError(raw) {
       const header = (raw && raw.response && raw.response.header) || {};
-      if (header.resultCode === undefined) return null;
-      const code = String(header.resultCode);
-      if (code === '00' || code === '0') return null;
-      return { code, message: header.resultMsg };
+      const code = header.resultCode !== undefined ? header.resultCode : (raw && raw.resultCode);
+      if (code === undefined) return null;
+      const text = String(code);
+      if (text === '00' || text === '0') return null;
+      return { code: text, message: header.resultMsg || (raw && raw.resultMsg) };
     },
     total(raw) {
       const body = (raw && raw.response && raw.response.body) || {};
-      return Number(body.totalCount) || null;
+      const count = body.totalCount !== undefined ? body.totalCount : (raw && raw.totalCount);
+      return Number(count) || null;
     },
     pageSize() { return null; },   // 한 번에 받는다
     maxPages() { return 1; }
@@ -350,6 +356,10 @@ export async function handle(query = {}, { fetchFn, keys = {}, catalog = CATALOG
     if (!pageSize || received < pageSize) break;   // 덜 찬 장이면 마지막이다
     if (page === maxPages - 1) truncated = true;   // 상한까지 받고도 더 남았다
   }
+
+  // 쪽을 나누지 않고 한 번에 받는 제공처는 위 판정을 못 거친다.
+  // 전체 건수를 알려주는데 그보다 적게 받았으면 그것도 잘린 것이다.
+  if (!truncated && total && total > items.length + skipped) truncated = true;
 
   return {
     status: 200,

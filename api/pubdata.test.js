@@ -288,6 +288,32 @@ describe('서울열린데이터광장', () => {
     expect(res.body.count).toBeLessThanOrEqual(max * (SEOUL_ENTRY.maxPages || 5));
   });
 
+  it('한 번에 받는 제공처도 전체 건수보다 적게 받으면 잘렸다고 알린다', async () => {
+    // 전기차 충전소는 서울만 75,959건인데 한 번에 1,000건만 온다.
+    // 쪽 나눔을 안 하므로 상한 판정을 못 거쳐 예전에는 조용히 일부만 보여줬다.
+    const rows = Array.from({ length: 3 }, ROW);
+    const payload = payloadWith(rows);
+    payload.totalCount = 500;
+
+    const fetchFn = fakeFetch(payload);
+    const res = await handle(validQuery(), { fetchFn, keys: { 'data.go.kr': KEY } });
+
+    expect(res.body.count).toBe(3);
+    expect(res.body.total).toBe(500);
+    expect(res.body.truncated).toBe(true);
+  });
+
+  it('전부 받았으면 잘렸다고 하지 않는다', async () => {
+    const rows = Array.from({ length: 3 }, ROW);
+    const payload = payloadWith(rows);
+    payload.totalCount = 3;
+
+    const fetchFn = fakeFetch(payload);
+    const res = await handle(validQuery(), { fetchFn, keys: { 'data.go.kr': KEY } });
+
+    expect(res.body.truncated).toBe(false);
+  });
+
   it('공공데이터포털은 페이지를 넘기지 않는다 (한 번에 받는다)', async () => {
     const fetchFn = fakeFetch(payloadWith(Array.from({ length: 1000 }, ROW)));
 
