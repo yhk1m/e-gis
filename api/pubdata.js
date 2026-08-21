@@ -63,8 +63,9 @@ const PROVIDERS = {
         ...(entry.fixed || {}),
         ...params
       });
-      // 쪽 나눔 인자는 API마다 이름이 달라 카탈로그가 정해 준다
-      if (entry.pageParam) search.set(entry.pageParam, String(range.page || 1));
+      // 쪽 나눔 인자는 API마다 이름이 달라 카탈로그가 정해 준다.
+      // 인천은 쪽 번호가 0부터다 — 1을 넣으면 빈 배열이 온다(실측).
+      if (entry.pageParam) search.set(entry.pageParam, String((range.page || 1) - 1));
       if (entry.sizeParam) search.set(entry.sizeParam, String(entry.maxRows || 1000));
       return `${entry.endpoint}${entry.service}?${search.toString()}`;
     },

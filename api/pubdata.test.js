@@ -462,6 +462,97 @@ describe('카탈로그 자체', () => {
 
   it('모든 항목의 제공처를 아는 것으로 둔다', () => {
     const providers = new Set(CATALOG.map(e => e.provider));
-    expect([...providers].sort()).toEqual(['data.go.kr', 'gg', 'seoul']);
+    expect([...providers].sort()).toEqual(['data.go.kr', 'gg', 'incheon', 'seoul']);
+  });
+});
+
+/**
+ * 인천데이터포털은 봉투가 두 가지다 (실측, 2026-08-21)
+ *   성공: { data: [...], message: 'Success' }
+ *   오류: { code, msg, host, result: null }
+ * 게다가 쪽 번호가 0부터라 1을 넣으면 빈 배열이 온다.
+ */
+const INCHEON_KEY = 'INCHEON-KEY-7777';
+const INCHEON_ENTRY = CATALOG.find(e => e.provider === 'incheon');
+const IN_KEYS = { 'data.go.kr': KEY, seoul: SEOUL_KEY, incheon: INCHEON_KEY };
+
+const incheonQuery = () => ({ id: INCHEON_ENTRY.id });
+const incheonOk = (rows) => ({ data: rows, message: 'Success' });
+const incheonErr = (code, msg) => ({ code, msg, host: 'idata-was-server1', result: null });
+const IN_ROW = () => ({ [INCHEON_ENTRY.lon]: '126.63', [INCHEON_ENTRY.lat]: '37.46', LBRRY_NM: '율목도서관' });
+
+describe('인천데이터포털', () => {
+  it('serviceUri 뒤에 apiKey와 returnType을 붙여 부른다', async () => {
+    const fetchFn = fakeFetch(incheonOk([IN_ROW()]));
+
+    await handle(incheonQuery(), { fetchFn, keys: IN_KEYS });
+
+    const url = fetchFn.calls[0];
+    expect(url).toContain('/openapi/');
+    expect(url).toContain(`apiKey=${INCHEON_KEY}`);
+    expect(url).toContain('returnType=json');
+    expect(url).not.toContain('serviceKey=');
+  });
+
+  it('다른 포털 키를 쓰지 않는다', async () => {
+    const fetchFn = fakeFetch(incheonOk([IN_ROW()]));
+
+    await handle(incheonQuery(), { fetchFn, keys: IN_KEYS });
+
+    expect(fetchFn.calls[0]).not.toContain(KEY);
+    expect(fetchFn.calls[0]).not.toContain(SEOUL_KEY);
+  });
+
+  it('필수인 pageNo를 빠뜨리지 않는다 (없으면 706이 온다)', async () => {
+    const fetchFn = fakeFetch(incheonOk([IN_ROW()]));
+
+    await handle(incheonQuery(), { fetchFn, keys: IN_KEYS });
+
+    expect(fetchFn.calls[0]).toContain('pageNo=0');
+  });
+
+  it('성공 봉투({data, message})에서 데이터를 읽는다', async () => {
+    const fetchFn = fakeFetch(incheonOk([IN_ROW(), IN_ROW()]));
+
+    const res = await handle(incheonQuery(), { fetchFn, keys: IN_KEYS });
+
+    expect(res.status).toBe(200);
+    expect(res.body.count).toBe(2);
+  });
+
+  it('활용신청하지 않은 API(707)는 그 사실을 한국어로 알린다', async () => {
+    const fetchFn = fakeFetch(incheonErr('707', 'NOT_FOUND_SERVICE_HISTORY-해당 API서비스가 없거나 신청하지 않은 서비스입니다.'));
+
+    const res = await handle(incheonQuery(), { fetchFn, keys: IN_KEYS });
+
+    expect(res.status).toBe(502);
+    expect(res.body.error).toContain('활용신청');
+    expect(res.body.error).not.toContain('NOT_FOUND_SERVICE_HISTORY');
+  });
+
+  it('잘못된 키(701)도 한국어로 바꾼다', async () => {
+    const fetchFn = fakeFetch(incheonErr('701', 'NOT_FOUND_APIKEY_ISSUE_HISTORY-확인되지 않는 KEY입니다.'));
+
+    const res = await handle(incheonQuery(), { fetchFn, keys: IN_KEYS });
+
+    expect(res.status).toBe(502);
+    expect(res.body.error).toContain('인증키');
+  });
+
+  it('인천 키가 없으면 원본을 부르지 않는다', async () => {
+    const fetchFn = fakeFetch(incheonOk([IN_ROW()]));
+
+    const res = await handle(incheonQuery(), { fetchFn, keys: { 'data.go.kr': KEY } });
+
+    expect(res.status).toBe(500);
+    expect(fetchFn.calls).toHaveLength(0);
+  });
+
+  it('어떤 오류에서도 인천 키가 응답에 섞이지 않는다', async () => {
+    const fetchFn = fakeFetch(incheonErr('707', `키는 ${INCHEON_KEY} 입니다`));
+
+    const res = await handle(incheonQuery(), { fetchFn, keys: IN_KEYS });
+
+    expect(JSON.stringify(res.body)).not.toContain(INCHEON_KEY);
   });
 });

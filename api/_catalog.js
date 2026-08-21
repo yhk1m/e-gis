@@ -22,6 +22,7 @@
 
 import { SEOUL_CATALOG } from './_catalog.seoul.js';
 import { GG_CATALOG } from './_catalog.gg.js';
+import { INCHEON_CATALOG } from './_catalog.incheon.js';
 import { categoryOf, regionOf } from './_categories.js';
 
 /** 손으로 다듬은 항목 — 이름·설명·선택지가 정리되어 있어 자동 생성본보다 우선한다 */
@@ -245,7 +246,8 @@ function dedupeById(entries) {
 export const CATALOG = dedupeById([
   ...CURATED,
   ...SEOUL_CATALOG.filter(entry => !curatedServices.has(entry.service)),
-  ...GG_CATALOG
+  ...GG_CATALOG,
+  ...INCHEON_CATALOG
 ]);
 
 /** id로 항목을 찾는다. 없으면 null */
