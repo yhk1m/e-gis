@@ -24,6 +24,7 @@ import { SEOUL_CATALOG } from './_catalog.seoul.js';
 import { GG_CATALOG } from './_catalog.gg.js';
 import { INCHEON_CATALOG } from './_catalog.incheon.js';
 import { categoryOf, regionOf } from './_categories.js';
+import { SIGUNGU_OPTIONS } from './_sigungu.js';
 
 /** 손으로 다듬은 항목 — 이름·설명·선택지가 정리되어 있어 자동 생성본보다 우선한다 */
 const CURATED = [
@@ -34,28 +35,21 @@ const CURATED = [
     description: '지역별 전기차 충전소 위치와 충전기 종류',
     endpoint: 'https://apis.data.go.kr/B552584/EvCharger/getChargerInfo',
     // 학생이 고르는 값. key는 우리 API에서 쓰는 이름, sendAs는 포털이 요구하는 이름.
+    //
+    // 시도 단위로 물으면 서울만 75,959건인데 한 번에 9,999건까지만 온다 —
+    // 늘 잘린다. 시군구로 좁히면 가장 많은 곳도 6,000건 남짓이라 전량이 들어온다.
     params: [
       {
-        key: 'sido',
-        label: '시도',
+        key: 'sigungu',
+        label: '시군구',
         type: 'select',
-        sendAs: 'zcode',
+        sendAs: 'zscode',
         required: true,
-        options: [
-          { value: '11', label: '서울' }, { value: '26', label: '부산' },
-          { value: '27', label: '대구' }, { value: '28', label: '인천' },
-          { value: '29', label: '광주' }, { value: '30', label: '대전' },
-          { value: '31', label: '울산' }, { value: '36', label: '세종' },
-          { value: '41', label: '경기' }, { value: '43', label: '충북' },
-          { value: '44', label: '충남' }, { value: '46', label: '전남' },
-          { value: '47', label: '경북' }, { value: '48', label: '경남' },
-          { value: '50', label: '제주' }, { value: '51', label: '강원' },
-          { value: '52', label: '전북' }
-        ]
+        options: SIGUNGU_OPTIONS
       }
     ],
     // 항상 붙는 고정 파라미터
-    fixed: { dataType: 'JSON', pageNo: '1', numOfRows: '1000' },
+    fixed: { dataType: 'JSON', pageNo: '1', numOfRows: '9999' },   // 이 API 의 한 번 최대치
     // 이 API 는 response 로 감싸지 않고 최상위에 items 를 둔다 (실측, 2026-08-21)
     path: 'items.item',
     lon: 'lng',
