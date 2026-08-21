@@ -16,7 +16,10 @@ import { CATALOG, findEntry, publicView } from './_catalog.js';
 import { normalize } from './_normalize.js';
 
 const CACHE_HEADER = 'public, s-maxage=600, stale-while-revalidate=3600';
-const TIMEOUT_MS = 10000;
+// 큰 시군구(용인 15,110건)는 포털 응답이 10초를 넘나든다 — 실측 10.5초.
+// vercel.json 의 maxDuration(30초) 보다 짧게 잡아, 함수가 죽기 전에
+// 우리가 먼저 한국어 안내를 돌려주도록 한다.
+const TIMEOUT_MS = 25000;
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 
 /**
