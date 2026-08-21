@@ -23,6 +23,24 @@ const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
  * 제공처별로 다른 것 세 가지를 여기서 흡수한다: 키 이름 · URL 조립 · 오류 판정.
  * 응답 구조 차이(배열 위치·좌표 필드)는 카탈로그의 path/lon/lat이 이미 흡수한다.
  */
+/**
+ * 공공데이터포털은 인증키를 '인코딩'과 '디코딩' 두 가지로 보여준다.
+ * 우리는 붙일 때 한 번 인코딩하므로 디코딩 값을 받아야 하는데,
+ * 인코딩 값을 넣으면 %2B가 %252B가 되어 403이 난다. 환경변수에 어느 쪽을
+ * 넣었든 동작하도록, 이미 인코딩된 값으로 보이면 한 번 풀고 쓴다.
+ *
+ * 디코딩 키는 base64(A-Z a-z 0-9 + / =)라 '%'가 나올 일이 없어 오판하지 않는다.
+ */
+function decodedKey(key) {
+  const text = String(key || '');
+  if (!/%[0-9A-Fa-f]{2}/.test(text)) return text;
+  try {
+    return decodeURIComponent(text);
+  } catch {
+    return text;   // 반쯤 인코딩된 이상한 값이면 건드리지 않는다
+  }
+}
+
 const PROVIDERS = {
   'data.go.kr': {
     keyName: 'DATA_GO_KR_KEY',
@@ -31,7 +49,7 @@ const PROVIDERS = {
     buildUrl(entry, params, key) {
       const search = new URLSearchParams({ ...(entry.fixed || {}), ...params });
       // serviceKey는 포털이 인코딩된 값을 요구해 URLSearchParams와 따로 붙인다
-      return `${entry.endpoint}?serviceKey=${encodeURIComponent(key)}&${search.toString()}`;
+      return `${entry.endpoint}?serviceKey=${encodeURIComponent(decodedKey(key))}&${search.toString()}`;
     },
     /**
      * 정상은 resultCode '00'. 그 외는 오류다.

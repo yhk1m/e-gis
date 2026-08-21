@@ -145,6 +145,29 @@ describe('데이터 조회', () => {
     expect(fetchFn.calls[0]).toContain(encodeURIComponent(KEY));
   });
 
+  it('인코딩 키를 넣어도 이중 인코딩하지 않는다 (403 회귀 방지)', async () => {
+    // 포털이 보여주는 '인코딩 키'를 환경변수에 넣는 실수가 잦다.
+    // 그대로 한 번 더 인코딩하면 %2B가 %252B가 되어 포털이 403으로 막는다.
+    const decoded = 'abc+def/ghi==';
+    const encoded = encodeURIComponent(decoded);            // abc%2Bdef%2Fghi%3D%3D
+    const fetchFn = fakeFetch(payloadWith([ROW()]));
+
+    await handle(validQuery(), { fetchFn, keys: { 'data.go.kr': encoded } });
+
+    const url = fetchFn.calls[0];
+    expect(url).toContain(`serviceKey=${encoded}`);
+    expect(url).not.toContain('%252B');
+  });
+
+  it('디코딩 키를 넣으면 한 번만 인코딩한다', async () => {
+    const decoded = 'abc+def/ghi==';
+    const fetchFn = fakeFetch(payloadWith([ROW()]));
+
+    await handle(validQuery(), { fetchFn, keys: { 'data.go.kr': decoded } });
+
+    expect(fetchFn.calls[0]).toContain(`serviceKey=${encodeURIComponent(decoded)}`);
+  });
+
   it('서버에 키가 없으면 원본을 부르지 않고 안내한다', async () => {
     const fetchFn = fakeFetch(payloadWith([ROW()]));
 
