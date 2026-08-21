@@ -27,6 +27,30 @@ const VALUE_FIELD = '값';
 /** 격자 색 (ColorBrewer Blues 5단계) */
 const GRID_COLORS = ['#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'];
 
+/**
+ * 선택지를 그린다. 항목에 `group` 이 있으면 그 이름으로 묶는다.
+ * 시군구처럼 200개가 넘는 목록을 한 줄로 늘어놓으면 학생이 찾지 못한다.
+ */
+function renderOptions(options) {
+  const one = (option) => `<option value="${option.value}">${option.label}</option>`;
+  if (!options.some(option => option.group)) {
+    return options.map(one).join('');
+  }
+
+  // 묶음 순서는 목록에 나온 순서를 그대로 따른다 (시도 코드 순)
+  const groups = [];
+  for (const option of options) {
+    const name = option.group || '기타';
+    const last = groups[groups.length - 1];
+    if (last && last.name === name) last.items.push(option);
+    else groups.push({ name, items: [option] });
+  }
+
+  return groups.map(group =>
+    `<optgroup label="${group.name}">${group.items.map(one).join('')}</optgroup>`
+  ).join('');
+}
+
 /** 항목이 요구하는 선택지를 폼으로 만든다 */
 export function renderParamForm(entry) {
   const params = (entry && entry.params) || [];
@@ -35,8 +59,7 @@ export function renderParamForm(entry) {
   return params.map(param => {
     const control = param.type === 'select'
       ? `<select class="public-data-param" data-param="${param.key}">
-           ${(param.options || []).map(option =>
-             `<option value="${option.value}">${option.label}</option>`).join('')}
+           ${renderOptions(param.options || [])}
          </select>`
       : `<input type="text" class="public-data-param" data-param="${param.key}"
                 placeholder="${param.label}">`;

@@ -16,10 +16,12 @@ import { CATALOG, findEntry, publicView } from './_catalog.js';
 import { normalize } from './_normalize.js';
 
 const CACHE_HEADER = 'public, s-maxage=600, stale-while-revalidate=3600';
-// 큰 시군구(용인 15,110건)는 포털 응답이 10초를 넘나든다 — 실측 10.5초.
-// vercel.json 의 maxDuration(30초) 보다 짧게 잡아, 함수가 죽기 전에
+// 큰 시군구는 Vercel 에서 응답이 매우 느리다 — 실측으로 1,000건당 약 2.3초
+// (종로 1,403건 3.6초 / 강남 5,923건 14초 / 용인 9,999건 22초 / 화성 25초 초과).
+// 잘린 분포를 지도에 올리면 그 자체가 오개념이라, 시간을 넉넉히 주고 전량을 받는다.
+// vercel.json 의 maxDuration(60초) 보다 짧게 잡아, 함수가 죽어 502 가 되기 전에
 // 우리가 먼저 한국어 안내를 돌려주도록 한다.
-const TIMEOUT_MS = 25000;
+const TIMEOUT_MS = 50000;
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 
 /**

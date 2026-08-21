@@ -250,3 +250,35 @@ describe('addHeatmapLayer', () => {
     expect(source.name).toContain('충전소 히트맵');
   });
 });
+
+describe('renderParamForm — 묶음 선택지', () => {
+  it('group 이 있으면 optgroup 으로 묶는다', () => {
+    const html = renderParamForm({
+      params: [{
+        key: 'sigungu', label: '시군구', type: 'select', required: true,
+        options: [
+          { value: '11110', group: '서울특별시', label: '종로구' },
+          { value: '11140', group: '서울특별시', label: '중구' },
+          { value: '28125', group: '인천광역시', label: '제물포구' }
+        ]
+      }]
+    });
+
+    expect(html).toContain('<optgroup label="서울특별시">');
+    expect(html).toContain('<optgroup label="인천광역시">');
+    expect(html.match(/<optgroup/g)).toHaveLength(2);
+    expect(html).toContain('<option value="11110">종로구</option>');
+  });
+
+  it('group 이 없으면 예전처럼 평평하게 그린다', () => {
+    const html = renderParamForm({
+      params: [{
+        key: 'sido', label: '시도', type: 'select',
+        options: [{ value: '11', label: '서울' }, { value: '26', label: '부산' }]
+      }]
+    });
+
+    expect(html).not.toContain('optgroup');
+    expect(html).toContain('<option value="11">서울</option>');
+  });
+});
