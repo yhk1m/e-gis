@@ -90,6 +90,11 @@ class GridPanel {
             <select id="grid-field"></select>
           </div>
           <div class="grid-form-group">
+            <label for="grid-empty">
+              <input type="checkbox" id="grid-empty"> 데이터가 없는 칸도 표시
+            </label>
+          </div>
+          <div class="grid-form-group">
             <label for="grid-name">레이어 이름</label>
             <input type="text" id="grid-name" value="">
           </div>
@@ -192,7 +197,10 @@ class GridPanel {
 
     try {
       const points = this.points();
-      const layerId = createGridLayer(name, points, { cellSize: size.cellSize, method, field });
+      const includeEmpty = document.getElementById('grid-empty').checked;
+      const layerId = createGridLayer(name, points, {
+        cellSize: size.cellSize, method, field, includeEmpty
+      });
       const cells = layerManager.getLayer(layerId).source.getFeatures().length;
 
       alert(`격자를 만들었습니다.\n레이어: ${name}\n점 ${points.length.toLocaleString()}개 → ${cells.toLocaleString()}칸`);

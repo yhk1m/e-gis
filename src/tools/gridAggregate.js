@@ -27,11 +27,14 @@ function toNumber(value) {
  * @param {number} options.cellSize 한 칸의 한 변 길이(미터)
  * @param {'count'|'sum'|'avg'} [options.method='count'] 집계 방식
  * @param {string} [options.field] sum·avg에서 쓸 속성 이름
+ * @param {boolean} [options.includeEmpty=false] 점이 없는 칸도 포함할지
  * @returns {Array<{minX: number, minY: number, maxX: number, maxY: number, count: number, value: number|null}>}
- *   점이 하나도 없는 칸은 결과에 넣지 않는다 (폴리곤 수가 폭발한다)
+ *   기본값은 점이 있는 칸만이다 — 빈 칸까지 넣으면 폴리곤 수가 크게 는다.
+ *   includeEmpty 를 켜면 점들이 차지하는 사각 범위를 빈 칸까지 채워 돌려준다.
+ *   '없음'과 '0'을 구분해 보여주고 싶을 때 쓴다.
  */
 export function aggregateToGrid(points, options = {}) {
-  const { cellSize, method = 'count', field } = options;
+  const { cellSize, method = 'count', field, includeEmpty = false } = options;
 
   if (!(cellSize > 0)) {
     throw new Error('격자 크기는 0보다 커야 합니다.');
@@ -65,6 +68,10 @@ export function aggregateToGrid(points, options = {}) {
     }
   }
 
+  if (includeEmpty && cells.size > 0) {
+    fillEmptyCells(cells);
+  }
+
   const result = [];
   for (const cell of cells.values()) {
     let value;
@@ -89,6 +96,29 @@ export function aggregateToGrid(points, options = {}) {
   // 결과 순서를 고정한다 — 아래에서 위로, 같은 줄에서는 왼쪽에서 오른쪽으로
   result.sort((a, b) => (a.minY - b.minY) || (a.minX - b.minX));
   return result;
+}
+
+/**
+ * 점이 있는 칸들이 이루는 사각 범위를 빈 칸으로 채운다.
+ * 범위는 실제 데이터가 있는 칸 기준이라, estimateCellCount 가 어림한 상한과 같다.
+ */
+function fillEmptyCells(cells) {
+  let minCol = Infinity, minRow = Infinity, maxCol = -Infinity, maxRow = -Infinity;
+  for (const cell of cells.values()) {
+    if (cell.col < minCol) minCol = cell.col;
+    if (cell.col > maxCol) maxCol = cell.col;
+    if (cell.row < minRow) minRow = cell.row;
+    if (cell.row > maxRow) maxRow = cell.row;
+  }
+
+  for (let col = minCol; col <= maxCol; col++) {
+    for (let row = minRow; row <= maxRow; row++) {
+      const key = `${col},${row}`;
+      if (!cells.has(key)) {
+        cells.set(key, { col, row, count: 0, sum: 0, valueCount: 0 });
+      }
+    }
+  }
 }
 
 /**

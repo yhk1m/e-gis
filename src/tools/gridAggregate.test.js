@@ -143,3 +143,43 @@ describe('estimateCellCount — 그리기 전 칸 수 어림', () => {
     expect(estimateCellCount([pt(NaN, NaN)], 1000)).toBe(0);
   });
 });
+
+describe('빈 칸 포함 (includeEmpty)', () => {
+  // 두 점이 대각선으로 떨어져 있으면 2x2 범위가 되고, 가운데 두 칸이 빈다
+  const points = [{ x: 50, y: 50 }, { x: 150, y: 150 }];
+
+  it('기본값은 점이 있는 칸만이다', () => {
+    const cells = aggregateToGrid(points, { cellSize: 100 });
+    expect(cells).toHaveLength(2);
+  });
+
+  it('켜면 사각 범위를 빈 칸까지 채운다', () => {
+    const cells = aggregateToGrid(points, { cellSize: 100, includeEmpty: true });
+    expect(cells).toHaveLength(4);
+  });
+
+  it('빈 칸은 개수 0 이다', () => {
+    const cells = aggregateToGrid(points, { cellSize: 100, includeEmpty: true });
+    const empty = cells.filter(cell => cell.count === 0);
+    expect(empty).toHaveLength(2);
+    expect(empty.every(cell => cell.value === 0)).toBe(true);
+  });
+
+  it('합계·평균에서 빈 칸의 값은 null 이다 (0 과 구분한다)', () => {
+    const withValues = [{ x: 50, y: 50, props: { v: 10 } }, { x: 150, y: 150, props: { v: 20 } }];
+    const cells = aggregateToGrid(withValues, { cellSize: 100, method: 'sum', field: 'v', includeEmpty: true });
+    const empty = cells.filter(cell => cell.count === 0);
+    expect(empty).toHaveLength(2);
+    expect(empty.every(cell => cell.value === null)).toBe(true);
+  });
+
+  it('점이 하나도 없으면 켜도 빈 배열이다', () => {
+    expect(aggregateToGrid([], { cellSize: 100, includeEmpty: true })).toEqual([]);
+  });
+
+  it('빈 칸도 순서 규칙을 따른다 (아래에서 위로, 왼쪽에서 오른쪽으로)', () => {
+    const cells = aggregateToGrid(points, { cellSize: 100, includeEmpty: true });
+    const order = cells.map(cell => [cell.minX, cell.minY]);
+    expect(order).toEqual([[0, 0], [100, 0], [0, 100], [100, 100]]);
+  });
+});

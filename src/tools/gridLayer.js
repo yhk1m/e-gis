@@ -29,11 +29,11 @@ export const GRID_COLORS = ['#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c
  *
  * @param {string} name 레이어 이름
  * @param {Array<{x:number, y:number, props?:Object}>} points 지도 좌표(EPSG:3857)의 점
- * @param {Object} options { cellSize, method, field }
+ * @param {Object} options { cellSize, method, field, includeEmpty }
  * @returns {string} 만들어진 레이어 id
  */
 export function createGridLayer(name, points, options = {}) {
-  const { cellSize, method = 'count', field } = options;
+  const { cellSize, method = 'count', field, includeEmpty = false } = options;
 
   if (!points || points.length === 0) {
     throw new Error('지도에 표시할 수 있는 좌표가 없습니다.');
@@ -47,7 +47,7 @@ export function createGridLayer(name, points, options = {}) {
     );
   }
 
-  const cells = aggregateToGrid(points, { cellSize, method, field });
+  const cells = aggregateToGrid(points, { cellSize, method, field, includeEmpty });
   const features = cells.map(cell => new Feature({
     geometry: new Polygon([[
       [cell.minX, cell.minY], [cell.maxX, cell.minY],
