@@ -48,8 +48,14 @@ const CURATED = [
         options: SIGUNGU_OPTIONS
       }
     ],
-    // 항상 붙는 고정 파라미터
-    fixed: { dataType: 'JSON', pageNo: '1', numOfRows: '9999' },   // 이 API 의 한 번 최대치
+    // 항상 붙는 고정 파라미터. numOfRows 는 아래 maxRows 와 같아야 한다.
+    fixed: { dataType: 'JSON', numOfRows: '5000' },
+    // 한 장에 5,000건씩 나눠 받는다. 큰 시군구(용인 15,110건)는 한 번에 못 받고,
+    // 한 장을 크게 잡으면 Vercel 에서 20초를 넘겨 실패한다.
+    // 첫 장으로 전체 건수를 안 뒤 남은 장을 병렬로 받으므로 장수가 늘어도 느려지지 않는다.
+    pageParam: 'pageNo',
+    maxRows: 5000,
+    maxPages: 5,   // 25,000건까지 — 가장 많은 용인시가 15,110건이다
     // 이 API 는 response 로 감싸지 않고 최상위에 items 를 둔다 (실측, 2026-08-21)
     path: 'items.item',
     lon: 'lng',

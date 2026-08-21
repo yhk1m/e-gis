@@ -50,9 +50,11 @@ const PROVIDERS = {
   'data.go.kr': {
     keyName: 'DATA_GO_KR_KEY',
     label: '공공데이터포털',
+    exactTotal: true,   // totalCount 가 진짜 전체 건수다 — 남은 장을 미리 계산할 수 있다
     /** ?serviceKey=…&조건 (쿼리스트링) */
-    buildUrl(entry, params, key) {
+    buildUrl(entry, params, key, range = {}) {
       const search = new URLSearchParams({ ...(entry.fixed || {}), ...params });
+      if (entry.pageParam) search.set(entry.pageParam, String(range.page || 1));   // 1쪽부터다
       // serviceKey는 포털이 인코딩된 값을 요구해 URLSearchParams와 따로 붙인다
       return `${entry.endpoint}?serviceKey=${encodeURIComponent(decodedKey(key))}&${search.toString()}`;
     },
@@ -74,8 +76,9 @@ const PROVIDERS = {
       const count = body.totalCount !== undefined ? body.totalCount : (raw && raw.totalCount);
       return Number(count) || null;
     },
-    pageSize() { return null; },   // 한 번에 받는다
-    maxPages() { return 1; }
+    /** 쪽 나눔 인자가 정의된 항목만 나눠 받는다 */
+    pageSize(entry) { return entry.pageParam ? (entry.maxRows || 1000) : null; },
+    maxPages(entry) { return entry.pageParam ? (entry.maxPages || 1) : 1; }
   },
 
   incheon: {
@@ -117,6 +120,7 @@ const PROVIDERS = {
   gg: {
     keyName: 'GG_OPENAPI_KEY',
     label: '경기데이터드림',
+    exactTotal: true,   // head 의 list_total_count 가 진짜 전체 건수다
     /** ?KEY=…&Type=json&pIndex=1&pSize=1000 */
     buildUrl(entry, params, key, range = {}) {
       const search = new URLSearchParams({
@@ -332,7 +336,8 @@ export async function handle(query = {}, { fetchFn, keys = {}, catalog = CATALOG
   let total = null;
   let truncated = false;
 
-  for (let page = 0; page < maxPages; page++) {
+  /** 한 장을 받아 파싱까지 한다. 실패하면 {error} 를 돌려준다. */
+  const loadPage = async (page) => {
     const range = pageSize
       ? { start: page * pageSize + 1, end: (page + 1) * pageSize, page: page + 1 }
       : { page: page + 1 };
@@ -347,37 +352,67 @@ export async function handle(query = {}, { fetchFn, keys = {}, catalog = CATALOG
       });
       text = await response.text();
       if (!response.ok) {
-        return fail(`${provider.label}이(가) 응답하지 않았습니다. (${response.status})`);
+        return { error: `${provider.label}이(가) 응답하지 않았습니다. (${response.status})` };
       }
     } catch (e) {
-      return fail(`${provider.label}에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.`);
+      return { error: `${provider.label}에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.` };
     }
 
-    let raw;
     try {
-      raw = JSON.parse(text);
+      return { raw: JSON.parse(text) };
     } catch (e) {
       // 점검 중이거나 오류일 때 HTML·XML이 온다
-      return fail(`${provider.label}이(가) 데이터 대신 오류 안내를 보냈습니다. 서비스 점검 중일 수 있습니다.`);
+      return { error: `${provider.label}이(가) 데이터 대신 오류 안내를 보냈습니다. 서비스 점검 중일 수 있습니다.` };
     }
+  };
 
-    const failure = provider.findError(raw);
-    if (failure) {
-      // 첫 장이 실패하면 실패다. 뒷장에서 '자료 없음'이 오는 건 다 받았다는 뜻이다.
-      if (page === 0) {
-        return fail(stripKey(translateError(failure.code, failure.message), key));
-      }
-      break;
-    }
-
+  const take = (raw) => {
     const result = normalize(raw, entry);
     items.push(...result.items);
     skipped += result.skipped;
-    if (page === 0) total = provider.total(raw);
+    return result.items.length + result.skipped;
+  };
 
-    const received = result.items.length + result.skipped;
-    if (!pageSize || received < pageSize) break;   // 덜 찬 장이면 마지막이다
-    if (page === maxPages - 1) truncated = true;   // 상한까지 받고도 더 남았다
+  // --- 첫 장 ---
+  const first = await loadPage(0);
+  if (first.error) return fail(first.error);
+
+  const firstFailure = provider.findError(first.raw);
+  if (firstFailure) {
+    return fail(stripKey(translateError(firstFailure.code, firstFailure.message), key));
+  }
+
+  total = provider.total(first.raw);
+  const firstReceived = take(first.raw);
+
+  if (pageSize && firstReceived >= pageSize) {
+    if (provider.exactTotal && total) {
+      // 전체 건수를 정확히 아는 제공처만 남은 장을 한꺼번에(병렬) 받는다.
+      // 서울은 list_total_count 가 '요청한 범위의 건수'라 이 계산을 못 쓴다.
+      // 큰 시군구는 한 장에 20초 넘게 걸려, 차례로 받으면 제한 시간을 넘긴다.
+      const needed = Math.ceil(total / pageSize);
+      const last = Math.min(needed, maxPages);
+      if (needed > maxPages) truncated = true;
+
+      const rest = await Promise.all(
+        Array.from({ length: last - 1 }, (unused, index) => loadPage(index + 1))
+      );
+
+      for (const page of rest) {
+        if (page.error) return fail(page.error);
+        if (provider.findError(page.raw)) break;   // 뒷장의 '자료 없음'은 다 받았다는 뜻이다
+        take(page.raw);
+      }
+    } else {
+      // 전체 건수를 못 믿는 제공처(서울)는 꽉 찬 장이 나오는 동안 차례로 받는다
+      for (let page = 1; page < maxPages; page++) {
+        const next = await loadPage(page);
+        if (next.error) return fail(next.error);
+        if (provider.findError(next.raw)) break;
+        if (take(next.raw) < pageSize) break;
+        if (page === maxPages - 1) truncated = true;
+      }
+    }
   }
 
   // 쪽을 나누지 않고 한 번에 받는 제공처는 위 판정을 못 거친다.
