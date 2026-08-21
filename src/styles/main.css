@@ -2511,6 +2511,136 @@ body.exporting .egis-basemap-panel {
 }
 
 /* 단계구분도 범례 (지도 오버레이) */
+/* 선택 피처 속성 카드 — 범례와 같은 지도 오버레이.
+   좌측 상단이 기본 위치다 (우측 상단은 줌·나침반·배경지도, 좌·우 하단은 범례·축척바가 쓴다) */
+.feature-info-card {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  width: 260px;
+  max-width: calc(100% - 20px);
+  max-height: 60%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+}
+
+.feature-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.feature-info-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.feature-info-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+  color: var(--text-secondary);
+}
+
+.feature-info-close:hover {
+  color: var(--text-primary);
+}
+
+.feature-info-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.feature-info-section + .feature-info-section {
+  border-top: 1px solid var(--border-color);
+}
+
+.feature-info-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.feature-info-caret {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.feature-info-name {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feature-info-layer {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0 4px;
+  flex-shrink: 0;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feature-info-attrs {
+  margin: 0;
+  padding: 0 var(--spacing-sm) var(--spacing-xs);
+}
+
+.feature-info-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: 2px 0;
+}
+
+.feature-info-row dt {
+  flex: 0 0 88px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feature-info-row dd {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.feature-info-section.collapsed .feature-info-attrs {
+  display: none;
+}
+
 .choropleth-legend {
   position: absolute;
   bottom: 40px;
