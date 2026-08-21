@@ -57,6 +57,7 @@ describe('regionOf — 어느 지역 자료인가', () => {
   it('제공처로 지역을 정한다', () => {
     expect(regionOf({ provider: 'seoul' })).toBe('서울');
     expect(regionOf({ provider: 'gg' })).toBe('경기');
+    expect(regionOf({ provider: 'incheon' })).toBe('인천');
     expect(regionOf({ provider: 'data.go.kr' })).toBe('전국');
   });
 

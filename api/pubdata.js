@@ -49,6 +49,41 @@ const PROVIDERS = {
     maxPages() { return 1; }
   },
 
+  incheon: {
+    keyName: 'INCHEON_OPENAPI_KEY',
+    label: '인천데이터포털',
+    /**
+     * {엔드포인트}{serviceUri}?apiKey=…&returnType=json&조건…
+     * serviceUri 가 '/openapi/LBRRY/LBRRY' 처럼 앞에 /가 붙은 채로 온다.
+     */
+    buildUrl(entry, params, key, range = {}) {
+      const search = new URLSearchParams({
+        apiKey: key,
+        returnType: 'json',
+        ...(entry.fixed || {}),
+        ...params
+      });
+      // 쪽 나눔 인자는 API마다 이름이 달라 카탈로그가 정해 준다
+      if (entry.pageParam) search.set(entry.pageParam, String(range.page || 1));
+      if (entry.sizeParam) search.set(entry.sizeParam, String(entry.maxRows || 1000));
+      return `${entry.endpoint}${entry.service}?${search.toString()}`;
+    },
+    /** {code, msg, host, result} 봉투를 쓴다. 정상은 code '200' */
+    findError(raw) {
+      if (!raw || raw.code === undefined) return null;
+      const code = String(raw.code);
+      if (code === '200') return null;
+      return { code, message: raw.msg };
+    },
+    total(raw) {
+      const result = raw && raw.result;
+      return result && Number(result.totalCount) ? Number(result.totalCount) : null;
+    },
+    /** 쪽 나눔 인자가 정의된 항목만 나눠 받는다 */
+    pageSize(entry) { return entry.pageParam ? (entry.maxRows || 1000) : null; },
+    maxPages(entry) { return entry.pageParam ? (entry.maxPages || 10) : 1; }
+  },
+
   gg: {
     keyName: 'GG_OPENAPI_KEY',
     label: '경기데이터드림',
@@ -141,6 +176,16 @@ function providerOf(entry) {
   return PROVIDERS[entry.provider] || PROVIDERS['data.go.kr'];
 }
 
+/**
+ * 인천데이터포털 오류코드. 숫자 세 자리라 공공데이터포털의 두 자리와 겹치지 않는다.
+ * 실제 응답으로 확인한 값이다 (2026-08-21).
+ */
+const INCHEON_ERRORS = {
+  '401': '요청에 빠진 항목이 있습니다. 카탈로그 설정을 확인해야 합니다.',
+  '701': '인증키가 확인되지 않습니다. 서버의 인천 인증키 설정을 확인해 주세요.',
+  '707': '인천데이터포털에서 활용신청하지 않은 API입니다. 신청 상태를 확인해 주세요.'
+};
+
 /** 서울·경기 공통 오류코드 (두 포털이 같은 규약을 쓴다) */
 const PORTAL_ERRORS = {
   'INFO-100': '인증키가 잘못되었습니다. 서버의 서울시 인증키 설정을 확인해 주세요.',
@@ -162,6 +207,7 @@ const PORTAL_ERRORS = {
  */
 function translateError(code, message) {
   if (PORTAL_ERRORS[code]) return PORTAL_ERRORS[code];
+  if (INCHEON_ERRORS[code]) return INCHEON_ERRORS[code];
   const table = {
     '01': '공공데이터포털에 일시적인 오류가 있습니다. 잠시 후 다시 시도해 주세요.',
     '12': '요청한 데이터 서비스가 폐기되었습니다. 카탈로그 항목을 수정해야 합니다.',
@@ -327,7 +373,8 @@ export default async function handler(req, res) {
     keys: {
       'data.go.kr': process.env.DATA_GO_KR_KEY || '',
       seoul: process.env.SEOUL_OPENAPI_KEY || '',
-      gg: process.env.GG_OPENAPI_KEY || ''
+      gg: process.env.GG_OPENAPI_KEY || '',
+      incheon: process.env.INCHEON_OPENAPI_KEY || ''
     }
   });
 

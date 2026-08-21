@@ -63,10 +63,11 @@ export function categoryOf(entry) {
 const REGION_BY_PROVIDER = {
   seoul: '서울',
   gg: '경기',
+  incheon: '인천',
   'data.go.kr': '전국'
 };
 
-export const REGIONS = ['서울', '경기', '전국'];
+export const REGIONS = ['서울', '경기', '인천', '전국'];
 
 export function regionOf(entry) {
   return REGION_BY_PROVIDER[entry && entry.provider] || '전국';
