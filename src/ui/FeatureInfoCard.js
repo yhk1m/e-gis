@@ -21,6 +21,7 @@ class FeatureInfoCard {
     this.enabled = false;
     this.collapsed = new Set();   // 접어둔 섹션 key
     this.position = null;         // 드래그로 옮긴 위치 { left, top }
+    this.size = null;             // 손잡이로 조절한 크기 { width, height }
     this.onChange = null;         // 툴바 버튼 상태 동기화 콜백
   }
 
@@ -105,15 +106,24 @@ class FeatureInfoCard {
         <span class="feature-info-title">속성 정보</span>
         <button type="button" class="feature-info-close" title="닫기">&times;</button>
       </div>
-      <div class="feature-info-body"></div>`;
+      <div class="feature-info-body"></div>
+      <div class="feature-info-resize" title="끌어서 카드 크기 조절"></div>`;
 
-    // 마지막으로 옮긴 자리에 다시 띄운다
+    // 마지막으로 옮긴 자리·크기 그대로 다시 띄운다
     if (this.position) {
       el.style.left = this.position.left;
       el.style.top = this.position.top;
       el.style.right = 'auto';
       el.style.bottom = 'auto';
     }
+    if (this.size) {
+      el.style.width = this.size.width;
+      el.style.height = this.size.height;
+      el.style.maxHeight = 'none';
+    }
+
+    el.querySelector('.feature-info-resize')
+      .addEventListener('pointerdown', (event) => this.startResize(event));
 
     el.querySelector('.feature-info-close').addEventListener('click', () => {
       this.setEnabled(false);
@@ -142,11 +152,59 @@ class FeatureInfoCard {
     return el;
   }
 
+  /**
+   * 우하단 손잡이로 카드 크기 조절.
+   * makeDraggable 이 카드 전체의 pointerdown 을 잡으므로 여기서 전파를 끊는다.
+   * (MapImageOverlay 의 크기 조절과 같은 방식)
+   */
+  startResize(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const el = this.el;
+    if (!el) return;
+
+    const mapContainer = document.getElementById('map');
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startWidth = el.offsetWidth;
+    const startHeight = el.offsetHeight;
+
+    // 지도 밖으로 넘어가지 않게 상한을 잡는다
+    const rect = el.getBoundingClientRect();
+    const bounds = mapContainer ? mapContainer.getBoundingClientRect() : null;
+    const maxWidth = bounds ? bounds.right - rect.left - 4 : Infinity;
+    const maxHeight = bounds ? bounds.bottom - rect.top - 4 : Infinity;
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+
+    const onMove = (moveEvent) => {
+      const width = clamp(startWidth + moveEvent.clientX - startX, 180, maxWidth);
+      const height = clamp(startHeight + moveEvent.clientY - startY, 120, maxHeight);
+
+      el.style.width = `${Math.round(width)}px`;
+      el.style.height = `${Math.round(height)}px`;
+      el.style.maxHeight = 'none'; // 손으로 정한 크기가 60% 제한보다 우선한다
+      this.size = { width: el.style.width, height: el.style.height };
+    };
+
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
   remove() {
     if (!this.el) return;
-    // 다시 띄울 때 같은 자리에 오도록 위치를 기억한다
+    // 다시 띄울 때 같은 자리·크기로 오도록 기억한다
     if (this.el.style.left) {
       this.position = { left: this.el.style.left, top: this.el.style.top };
+    }
+    if (this.el.style.height) {
+      this.size = { width: this.el.style.width, height: this.el.style.height };
     }
     this.el.remove();
     this.el = null;

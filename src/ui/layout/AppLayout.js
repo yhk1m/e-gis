@@ -206,10 +206,10 @@ export class AppLayout {
             </svg>
           </button>
           <button class="btn-icon" id="btn-feature-info" title="선택한 피처 속성 보기" style="display:none">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <circle cx="12" cy="12" r="9.6"></circle>
+              <circle cx="12" cy="7" r="1.6" fill="currentColor" stroke="none"></circle>
+              <line x1="12" y1="10.8" x2="12" y2="17.4" stroke-width="3.2"></line>
             </svg>
           </button>
           <button class="btn-icon selection-action" id="btn-clear-selection" title="선택 취소" style="display:none">

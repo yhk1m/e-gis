@@ -2561,8 +2561,38 @@ body.exporting .egis-basemap-panel {
 }
 
 .feature-info-body {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* 우하단 크기 조절 손잡이 */
+.feature-info-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  opacity: 0.45;
+  z-index: 2;
+  touch-action: none;
+}
+
+.feature-info-card:hover .feature-info-resize {
+  opacity: 1;
+}
+
+.feature-info-resize::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
 }
 
 .feature-info-section + .feature-info-section {
