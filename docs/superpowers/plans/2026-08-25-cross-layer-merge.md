@@ -1,5 +1,11 @@
 # 다른 레이어끼리 피처 합치기 Implementation Plan
 
+> **실행 완료 (2026-08-26).** 아래 코드 블록은 **계획 당시의 것**이고, 실제로 들어간 코드와
+> 다르다. 구현 중 검토에서 두 군데를 고쳤다 — 수치 판별(`isNumericValue` → `isSummable`)과
+> 새 레이어 색(자동 색 → 쓰이지 않는 팔레트 색). 이 문서를 그대로 다시 실행하면 고친 버그가
+> 되살아난다. 최종 규칙은 설계 문서의 「수치 판별」·「새 레이어 색」과 실제 코드를 보라.
+> 이 문서는 무엇을 계획했는지의 기록으로 남긴다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 서로 다른 레이어의 폴리곤(·라인)을 함께 선택해 합칠 수 있게 하고, 그 결과는 원본을 그대로 둔 채 새 레이어로 추가한다.
