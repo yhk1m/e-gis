@@ -167,8 +167,11 @@ describe('합치기 되돌리기', () => {
     beforeEach(() => {
       const a = square(0, { 시군구: '강남구', 인구: 530000 });
       const b = square(1000, { 시군구: '서초구', 인구: 410000 });
-      leftId = layerManager.addLayer({ name: '왼쪽', features: [a] });
-      rightId = layerManager.addLayer({ name: '오른쪽', features: [b] });
+      // 색을 명시한다 — 프로젝트를 다시 열면 모든 레이어가 저장된 색으로 복원되므로
+      // (ProjectManager.deserialize) 이것이 이 기능의 주된 흐름이고,
+      // 자동 색에 맡기면 팔레트 순번이 밀려 '흰색이 나오는' 사고를 재현하지 못한다
+      leftId = layerManager.addLayer({ name: '왼쪽', features: [a], color: '#1e88e5' });
+      rightId = layerManager.addLayer({ name: '오른쪽', features: [b], color: '#43a047' });
 
       select([a, b]);
       featureEditTool.mergeSelected();
@@ -281,6 +284,10 @@ describe('합치기 되돌리기', () => {
   it('되돌리기·다시 실행도 합치기 이벤트를 다시 쏜다 (열린 속성 테이블 갱신용)', () => {
     // 되돌리기는 LAYER_ADDED 만 쏘는데 그건 레이어 목록만 갱신한다.
     // 속성 테이블은 FEATURES_MERGED 를 듣고 있으므로 되돌린 뒤에도 한 번 더 알려 줘야 한다.
+    //
+    // 그 알림에는 기록할 피처가 없다. 기록하려 들면 스택이 불어나는 정도가 아니라
+    // serializeFeature(undefined) 에서 터지고, EventBus 는 try/catch 없이 리스너를 도는 탓에
+    // undo() 자체가 죽으면서 뒤에 붙은 리스너까지 함께 못 돈다.
     const seen = [];
     const spy = (payload) => seen.push(payload);
     eventBus.on(Events.FEATURES_MERGED, spy);
@@ -296,16 +303,30 @@ describe('합치기 되돌리기', () => {
       historyManager.redo();
 
       expect(seen).toHaveLength(3); // 합치기 1 + 되돌리기 1 + 다시 실행 1
-      expect(seen[0].fromHistory).toBeUndefined();
-      expect(seen[1].fromHistory).toBe(true);
-      expect(seen[2].fromHistory).toBe(true);
+      expect(seen[0].created).toBeTruthy();  // 합칠 때는 기록할 피처가 실려 있고
+      expect(seen[1].created).toBeUndefined(); // 갱신 알림은 비어 있다
+      expect(seen[2].created).toBeUndefined();
 
-      // 갱신 알림이 다시 기록되면 스택이 불어난다
+      // 기록할 것이 없는 알림을 기록하려 들면 터진다 (여기까지 오지도 못한다)
       expect(historyManager.undoStack).toHaveLength(1);
       expect(historyManager.redoStack).toHaveLength(0);
     } finally {
       eventBus.off(Events.FEATURES_MERGED, spy);
     }
+  });
+
+  it('피처 없는 삭제 알림은 터지지 않고 그냥 넘어간다 (속성 테이블의 행 삭제)', () => {
+    // 속성 테이블은 여러 행을 한 번에 지우면서 {layerId, count, source} 만 실어 보낸다.
+    // 그걸 그대로 기록하려 들면 serializeFeature(undefined) 에서 터지고,
+    // EventBus 가 try/catch 없이 리스너를 도는 탓에 뒤에 붙은 리스너까지 못 돈다.
+    // (되돌릴 수 있게 되는 것은 아니다 — 묶음 액션이 필요한 별개 작업이다)
+    const layerId = layerManager.addLayer({ name: '표', features: [square(0, { 이름: 'A' })] });
+
+    expect(() => {
+      eventBus.emit(Events.FEATURE_DELETED, { layerId, count: 1, source: 'attributeTable' });
+    }).not.toThrow();
+
+    expect(historyManager.undoStack).toHaveLength(0);
   });
 
   it('숨긴 레이어에서 합쳐도 되돌리기는 똑같이 된다', () => {

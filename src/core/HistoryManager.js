@@ -33,6 +33,10 @@ class HistoryManager {
 
     // 피처 삭제 이벤트
     eventBus.on(Events.FEATURE_DELETED, ({ feature, layerId }) => {
+      // 속성 테이블의 행 삭제는 피처를 실어 보내지 않는다 — 기록할 것이 없으면 넘어간다
+      // (여러 행을 한 번에 지우므로, 되돌리기는 병합처럼 묶음 액션이라야 한다 — 별건)
+      if (!feature) return;
+
       this.pushAction({
         type: 'delete',
         layerId,
@@ -66,9 +70,9 @@ class HistoryManager {
     // 피처 합치기 (여러 개 → 하나)
     // 사용자에게는 한 동작이므로 액션도 하나로 쌓는다. 생성 1개 + 삭제 N개로 쪼개면
     // 되돌리는 도중에 합친 도형과 되살아난 원본이 같은 자리에 겹쳐 보인다.
-    eventBus.on(Events.FEATURES_MERGED, ({ layerId, removed, created, createdLayer, fromHistory }) => {
-      // 되돌리기·다시 실행이 화면 갱신용으로 다시 쏜 것은 기록하지 않는다 (스택이 무한히 불어난다)
-      if (fromHistory) return;
+    eventBus.on(Events.FEATURES_MERGED, ({ layerId, removed, created, createdLayer }) => {
+      // 기록할 것이 없으면 화면 갱신용 알림이다 (되돌리기·다시 실행이 다시 쏜다)
+      if (!created) return;
 
       this.pushAction({
         type: 'merge',
@@ -243,7 +247,7 @@ class HistoryManager {
           this.unmergeInLayer(layer, action);
         }
         // 열려 있는 속성 테이블도 되돌린 상태로 다시 그려야 한다 (아래 LAYER_ADDED 는 레이어 목록만 갱신한다)
-        eventBus.emit(Events.FEATURES_MERGED, { layerId: action.layerId, fromHistory: true });
+        eventBus.emit(Events.FEATURES_MERGED, { layerId: action.layerId });
         break;
     }
 
@@ -358,7 +362,7 @@ class HistoryManager {
         if (!action.createdLayer) {
           this.remergeInLayer(layer, action);
         }
-        eventBus.emit(Events.FEATURES_MERGED, { layerId: action.layerId, fromHistory: true });
+        eventBus.emit(Events.FEATURES_MERGED, { layerId: action.layerId });
         break;
     }
 
