@@ -149,6 +149,21 @@ export function lineIntersectsFeature(feature, line) {
   }
 }
 
+/**
+ * 레이어를 넘나들며 합친 결과에 붙일 레이어 이름을 만든다.
+ * 목록에서 무엇을 합친 결과인지 바로 보이게 하는 것이 목적이라 길게 늘어놓지 않는다.
+ *
+ * @param {string[]} layerNames - 합치기에 참여한 레이어 이름 (등장 순서)
+ * @returns {string} 예: '서울 + 경기 병합', '서울 외 2개 병합'
+ */
+export function mergedLayerName(layerNames) {
+  const names = (layerNames || []).filter((n) => n && String(n).trim() !== '');
+  if (names.length === 0) return '병합';
+  if (names.length === 1) return `${names[0]} 병합`;
+  if (names.length === 2) return `${names[0]} + ${names[1]} 병합`;
+  return `${names[0]} 외 ${names.length - 1}개 병합`;
+}
+
 // ==================== 내부 헬퍼 ====================
 
 /** 값이 실제로 들어 있는지 (빈 문자열·null·undefined 는 없는 것으로 본다) */

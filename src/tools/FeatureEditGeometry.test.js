@@ -1,6 +1,6 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
-import { mergeAttributes } from './FeatureEditGeometry.js';
+import { mergeAttributes, mergedLayerName } from './FeatureEditGeometry.js';
 
 describe('mergeAttributes', () => {
   it('숫자 필드는 합계로 모은다', () => {
@@ -116,5 +116,29 @@ describe('mergeAttributes', () => {
     const merged = mergeAttributes([{ 시군구: '강남구' }, { 시군구: '서초구', 비고: undefined }]);
     expect(Object.keys(merged)).toEqual(['시군구', '비고']);
     expect(merged.비고).toBe(undefined);
+  });
+});
+
+describe('mergedLayerName', () => {
+  it('레이어가 2개면 두 이름을 나란히 쓴다', () => {
+    expect(mergedLayerName(['서울 자치구', '경기 시군'])).toBe('서울 자치구 + 경기 시군 병합');
+  });
+
+  it('레이어가 3개 이상이면 첫 이름과 나머지 개수로 줄인다', () => {
+    expect(mergedLayerName(['서울', '경기', '인천'])).toBe('서울 외 2개 병합');
+  });
+
+  it('이름이 하나뿐이면 그 이름만 쓴다', () => {
+    expect(mergedLayerName(['서울'])).toBe('서울 병합');
+  });
+
+  it('쓸 이름이 없으면 기본 이름을 쓴다', () => {
+    expect(mergedLayerName([])).toBe('병합');
+    expect(mergedLayerName(['', null])).toBe('병합');
+  });
+
+  it('공백만 있는 이름은 없는 이름으로 친다', () => {
+    // 레이어 이름을 다듬다 보면 공백만 남는 값이 생길 수 있다 - 빈 문자열과 같은 취급이 맞다
+    expect(mergedLayerName(['   ', '서울'])).toBe('서울 병합');
   });
 });
