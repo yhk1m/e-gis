@@ -3,7 +3,8 @@
  * FeatureEditTool - 피처 편집 도구 (합치기 / 자르기)
  *
  * QGIS 편집 세션의 "피처 합치기(Merge)"와 "피처 자르기(Split)"를 제공한다.
- * 한 레이어 안에서 선택한 피처들을 대상으로 동작하며, 기존 SelectTool/LayerManager 와 연동한다.
+ * 합치기는 여러 레이어에 걸쳐 고른 피처도 대상으로 하며, 그럴 때는 원본을 그대로 두고 결과를 새 레이어로 만든다.
+ * 자르기는 한 레이어 안에서 선택한 피처를 대상으로 동작하며, 기존 SelectTool/LayerManager 와 연동한다.
  * 지오메트리 연산은 OL/DOM 비의존 순수 모듈(FeatureEditGeometry)에 위임한다.
  */
 

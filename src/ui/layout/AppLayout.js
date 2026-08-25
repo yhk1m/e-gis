@@ -226,7 +226,7 @@ export class AppLayout {
               <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
             </svg>
           </button>
-          <button class="btn-icon" id="btn-merge-features" title="피처 합치기 (선택한 피처들을 박음질하듯 하나로)">
+          <button class="btn-icon" id="btn-merge-features" title="피처 합치기 (선택한 피처들을 박음질하듯 하나로. 다른 레이어끼리 합치면 새 레이어가 생깁니다)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="4" width="8.5" height="16" rx="1.5"/>
               <rect x="13.5" y="4" width="8.5" height="16" rx="1.5"/>
