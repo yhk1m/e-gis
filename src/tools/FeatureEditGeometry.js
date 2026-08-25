@@ -1,8 +1,8 @@
 // © 2026 김용현
 /**
- * FeatureEditGeometry - 피처 편집(합치기/자르기) 순수 지오메트리 로직
+ * FeatureEditGeometry - 피처 편집(합치기·자르기)의 순수 로직: 지오메트리 연산과 결과 레이어 이름 규칙
  *
- * OpenLayers / DOM 에 의존하지 않고 GeoJSON(EPSG:4326) in → GeoJSON out 으로만 동작한다.
+ * OpenLayers / DOM 에 의존하지 않는다. 지오메트리는 GeoJSON(EPSG:4326) in → GeoJSON out 으로만 동작하고,
  * 덕분에 Node 환경에서 단위 테스트가 가능하다. 좌표 변환은 호출부(FeatureEditTool)가 담당.
  */
 
@@ -157,7 +157,9 @@ export function lineIntersectsFeature(feature, line) {
  * @returns {string} 예: '서울 + 경기 병합', '서울 외 2개 병합'
  */
 export function mergedLayerName(layerNames) {
-  const names = (layerNames || []).filter((n) => n && String(n).trim() !== '');
+  const names = (layerNames || [])
+    .map((n) => (n === null || n === undefined ? '' : String(n).trim()))
+    .filter((n) => n !== '');
   if (names.length === 0) return '병합';
   if (names.length === 1) return `${names[0]} 병합`;
   if (names.length === 2) return `${names[0]} + ${names[1]} 병합`;

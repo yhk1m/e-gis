@@ -135,10 +135,16 @@ describe('mergedLayerName', () => {
   it('쓸 이름이 없으면 기본 이름을 쓴다', () => {
     expect(mergedLayerName([])).toBe('병합');
     expect(mergedLayerName(['', null])).toBe('병합');
+    expect(mergedLayerName(null)).toBe('병합');
+    expect(mergedLayerName(undefined)).toBe('병합');
   });
 
   it('공백만 있는 이름은 없는 이름으로 친다', () => {
     // 레이어 이름을 다듬다 보면 공백만 남는 값이 생길 수 있다 - 빈 문자열과 같은 취급이 맞다
     expect(mergedLayerName(['   ', '서울'])).toBe('서울 병합');
+  });
+
+  it('이름 앞뒤의 공백은 떼고 쓴다', () => {
+    expect(mergedLayerName(['  서울  ', '경기'])).toBe('서울 + 경기 병합');
   });
 });
