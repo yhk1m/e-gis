@@ -416,10 +416,15 @@ class SelectTool {
   }
 
   /**
-   * 선택된 피처 반환
+   * 선택된 피처 반환 (그 시점의 사본)
+   *
+   * OL Collection 의 getArray() 는 살아 있는 배열이라, 받아 든 쪽이 그걸 들고 있는 동안
+   * 선택이 바뀌면 배열이 발밑에서 변한다. 합치기가 '피처 2개를 1개로' 대신 '1개를 1개로'
+   * 라고 말하던 것도, 선택을 비운 뒤에 개수를 읽어서 생긴 일이었다.
+   * 순회하면서 원본을 지우는 코드도 있어서 사본으로 돌려준다.
    */
   getSelectedFeatures() {
-    return this.selectedFeatures ? this.selectedFeatures.getArray() : [];
+    return this.selectedFeatures ? this.selectedFeatures.getArray().slice() : [];
   }
 
 
