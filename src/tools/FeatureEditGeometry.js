@@ -40,8 +40,8 @@ export function mergeAttributes(propsArray) {
       const v = props[key];
       const known = fields.get(key);
       if (!known) {
-        fields.set(key, { numeric: isSummable(v), decided: hasValue(v), blank: v });
-      } else if (!known.decided && hasValue(v)) {
+        fields.set(key, { numeric: isSummable(v), decided: decidesType(v), blank: v });
+      } else if (!known.decided && decidesType(v)) {
         known.numeric = isSummable(v);
         known.decided = true;
       }
@@ -166,6 +166,17 @@ function hasValue(v) {
  */
 function isSummable(v) {
   return typeof v === 'number' && Number.isFinite(v);
+}
+
+/**
+ * 그 값으로 필드의 타입을 정해도 되는지.
+ *
+ * 빈 칸이 타입의 근거가 못 되는 것과 같은 이유로, NaN·Infinity 도 근거가 못 된다.
+ * 필드 계산기가 '[인구] / [면적]' 을 면적이 빈 피처에 돌리면 Infinity 가 들어앉는데,
+ * 그 한 칸 때문에 나머지 멀쩡한 숫자들이 합계에서 빠지면 안 된다.
+ */
+function decidesType(v) {
+  return hasValue(v) && !(typeof v === 'number' && !Number.isFinite(v));
 }
 
 function polygonizeSplit(polygon, line) {

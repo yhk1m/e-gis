@@ -88,10 +88,22 @@ describe('mergeAttributes', () => {
 
   it('수치 필드에 숫자가 아닌 값이 섞이면 0으로 친다', () => {
     expect(mergeAttributes([{ 인구: 100 }, { 인구: '미상' }]).인구).toBe(100);
+    // 세 번째 피처가 있어야 '수치로 분류돼 0을 더함'과 '첫 값을 그대로 씀'이 갈린다
+    expect(mergeAttributes([{ 인구: 100 }, { 인구: '미상' }, { 인구: 50 }]).인구).toBe(150);
   });
 
   it('NaN 은 합계를 오염시키지 않는다', () => {
     expect(mergeAttributes([{ 인구: 5 }, { 인구: NaN }]).인구).toBe(5);
+  });
+
+  it('맨 앞이 NaN·Infinity 여도 뒤의 숫자를 합계에 넣는다', () => {
+    // 필드 계산기가 0 으로 나누면 Infinity 가 한 칸 들어앉는다. 그 한 칸이 타입을 정하면 안 된다
+    expect(mergeAttributes([{ 인구: NaN }, { 인구: 530000 }, { 인구: 410000 }]).인구).toBe(940000);
+    expect(mergeAttributes([{ 밀도: Infinity }, { 밀도: 100 }]).밀도).toBe(100);
+  });
+
+  it('전부 NaN 인 필드는 NaN 을 그대로 남긴다', () => {
+    expect(Number.isNaN(mergeAttributes([{ 인구: NaN }, { 인구: NaN }]).인구)).toBe(true);
   });
 
   it('필드 이름이 정수꼴이면 순서가 앞으로 당겨진다', () => {
