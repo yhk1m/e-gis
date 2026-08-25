@@ -118,18 +118,24 @@ class FeatureEditTool {
   addMergedLayer(layers, newFeature, featureCount) {
     const name = layerManager.uniqueName(mergedLayerName(layers.map((l) => l.name)));
 
-    // 색을 넘기지 않아 자동 색이 잡힌다.
-    // 원본이 지도에 그대로 남아 있어서, 원본과 같은 색이면 결과를 구분할 수 없다.
+    // 원본이 지도에 그대로 남으니, 원본과 겹치지 않는 색이라야 결과가 보인다.
+    // 자동 색에 맡길 수 없다 — 팔레트를 순서대로 돌 뿐 쓰이는 색을 보지 않고(pickAutoColor),
+    // 색이 저장된 프로젝트를 다시 열면 순번이 0이라 첫 색인 흰색이 나온다.
+    // 흰 면을 불투명하게 맨 위에 얹으면 합친 결과가 보이지 않는다.
+    const used = new Set(layerManager.getAllLayers().map((l) => l.color));
+    const free = layerManager.getColorPalette().find((c) => c !== '#ffffff' && !used.has(c));
+
     layerManager.addLayer({
       name,
       type: 'vector',
-      features: [newFeature]
+      features: [newFeature],
+      ...(free ? { color: free } : {})
     });
 
     // 원본이 남아 있으므로 선택을 풀어 둔다 (합쳐진 것처럼 보이면 헷갈린다)
     if (selectTool.selectedFeatures) selectTool.selectedFeatures.clear();
 
-    this.status(`레이어 ${layers.length}개의 피처 ${featureCount}개를 합쳐 '${name}'을 만들었습니다.`);
+    this.status(`레이어 ${layers.length}개의 피처 ${featureCount}개를 합쳐 '${name}' 레이어를 만들었습니다.`);
   }
 
   // ==================== 자르기 ====================
