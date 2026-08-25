@@ -8,25 +8,49 @@
 
 import * as turf from '@turf/turf';
 
+/** 값이 실제로 들어 있는지 (빈 문자열·null·undefined 는 없는 것으로 본다) */
+function hasValue(v) {
+  return v !== undefined && v !== null && String(v).trim() !== '';
+}
+
 /**
  * 여러 피처의 속성을 하나로 합친다.
- * 수치 필드는 합계, 그 외 필드는 첫 피처 값을 사용한다.
+ * 선택한 모든 피처의 필드를 모으고(합집합), 수치 필드는 합계,
+ * 그 외 필드는 값이 있는 첫 피처의 값을 쓴다.
+ *
+ * 레이어를 넘나들며 합칠 때 한쪽 레이어에만 있는 필드가 사라지지 않게 하기 위한 규칙이다.
+ * 어떤 필드가 수치인지는 그 필드가 처음 등장한 피처의 값으로 정한다
+ * (레이어마다 타입이 다를 수 있어 기준이 필요하다).
+ *
  * @param {Object[]} propsArray - 각 피처의 properties 객체 배열
  * @returns {Object}
  */
 export function mergeAttributes(propsArray) {
-  const first = propsArray[0] || {};
+  const list = (propsArray || []).map((p) => p || {});
+
+  // 처음 등장한 순서를 지키려고 Map 을 쓴다. 값은 '수치 필드인가'
+  const numeric = new Map();
+  list.forEach((props) => {
+    Object.keys(props).forEach((key) => {
+      if (!numeric.has(key)) numeric.set(key, typeof props[key] === 'number');
+    });
+  });
+
   const result = {};
-  for (const key of Object.keys(first)) {
-    if (typeof first[key] === 'number') {
-      result[key] = propsArray.reduce(
+  numeric.forEach((isNumeric, key) => {
+    if (isNumeric) {
+      result[key] = list.reduce(
         (sum, p) => sum + (typeof p[key] === 'number' ? p[key] : 0),
         0
       );
     } else {
-      result[key] = first[key];
+      const filled = list.find((p) => hasValue(p[key]));
+      // 아무 피처에도 값이 없으면 그 필드를 가진 첫 피처의 (빈) 값을 그대로 둔다
+      const fallback = list.find((p) => key in p);
+      result[key] = filled ? filled[key] : fallback[key];
     }
-  }
+  });
+
   return result;
 }
 
