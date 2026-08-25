@@ -42,6 +42,11 @@ class SelectTool {
     // 레이어를 지우면 그 안에 있던 피처는 선택 상태로 남을 수 없다.
     // 선택이 줄면 SELECTION_CHANGED 가 나가므로 툴바 버튼과 속성 카드가 함께 정리된다.
     eventBus.on(Events.LAYER_REMOVED, () => this.dropRemovedFeatures());
+
+    // 합치기를 되돌리면 합쳐졌던 피처가 사라지는데, 선택에 남아 있으면
+    // Select 인터랙션이 제 오버레이에 그대로 그린다 — 되살아난 원본 위에 겹친 유령이 된다.
+    // (합치는 시점에는 결과가 레이어 안에 있으므로 아무 일도 하지 않는다)
+    eventBus.on(Events.FEATURES_MERGED, () => this.dropRemovedFeatures());
   }
 
   /**

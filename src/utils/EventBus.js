@@ -75,8 +75,10 @@ export const Events = {
   FEATURE_CREATED: 'feature:created',
   FEATURE_MODIFIED: 'feature:modified',
   FEATURE_DELETED: 'feature:deleted',
-  FEATURE_CREATED: 'feature:created',
   FEATURE_MODIFY_START: 'feature:modifystart',
+  // 여러 피처가 하나로 합쳐졌다. 되돌리기가 한 번에 되도록 '한 동작'으로 알린다
+  // (생성 1 + 삭제 N 으로 쪼개면 되돌리는 도중 합친 도형과 원본이 지도에서 겹친다)
+  FEATURES_MERGED: 'feature:merged',
   HISTORY_CHANGED: 'history:changed',
 
   // 도구 관련

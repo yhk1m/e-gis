@@ -63,6 +63,28 @@ class HistoryManager {
       }
     });
 
+    // 피처 합치기 (여러 개 → 하나)
+    // 사용자에게는 한 동작이므로 액션도 하나로 쌓는다. 생성 1개 + 삭제 N개로 쪼개면
+    // 되돌리는 도중에 합친 도형과 되살아난 원본이 같은 자리에 겹쳐 보인다.
+    eventBus.on(Events.FEATURES_MERGED, ({ layerId, removed, created, createdLayer, fromHistory }) => {
+      // 되돌리기·다시 실행이 화면 갱신용으로 다시 쏜 것은 기록하지 않는다 (스택이 무한히 불어난다)
+      if (fromHistory) return;
+
+      this.pushAction({
+        type: 'merge',
+        layerId,
+        createdData: this.serializeFeature(created),
+        createdId: created.ol_uid,
+        // 같은 레이어에서 합쳤을 때만 원본이 사라진다. 다른 레이어끼리면 빈 배열이다
+        removedFeatures: (removed || []).map((feature) => ({
+          featureData: this.serializeFeature(feature),
+          featureId: feature.ol_uid
+        })),
+        // 있으면 '결과를 새 레이어로 만든 합치기'라는 뜻이다 (이름·색은 다시 만들 때 쓴다)
+        createdLayer: createdLayer || null
+      });
+    });
+
     console.log('HistoryManager 초기화 완료');
   }
 
@@ -84,6 +106,49 @@ class HistoryManager {
       featureProjection: 'EPSG:3857',
       dataProjection: 'EPSG:4326'
     });
+  }
+
+  /**
+   * 같은 레이어 합치기 되돌리기: 합친 피처를 빼고 원본을 전부 되살린다.
+   *
+   * 여기서 레이어를 지우면 안 된다. 합친 피처를 빼는 순간 피처가 0개가 되지만
+   * 곧바로 원본이 채워지기 때문이다 ('create' 되돌리기는 0개가 되면 레이어를 지운다).
+   */
+  unmergeInLayer(layer, action) {
+    const source = layer.source;
+
+    const merged = source.getFeatures().find(f => f.ol_uid === action.createdId);
+    if (merged) {
+      source.removeFeature(merged);
+    }
+
+    action.removedFeatures.forEach(({ featureData, featureId }) => {
+      const restored = this.deserializeFeature(featureData);
+      restored.ol_uid = featureId; // UID 복원 ('delete' 되돌리기와 같은 방식)
+      source.addFeature(restored);
+    });
+
+    layer.featureCount = source.getFeatures().length;
+  }
+
+  /**
+   * 같은 레이어 합치기 다시 실행: 되살렸던 원본을 다시 빼고 합친 피처를 넣는다.
+   */
+  remergeInLayer(layer, action) {
+    const source = layer.source;
+
+    action.removedFeatures.forEach(({ featureId }) => {
+      const original = source.getFeatures().find(f => f.ol_uid === featureId);
+      if (original) {
+        source.removeFeature(original);
+      }
+    });
+
+    const merged = this.deserializeFeature(action.createdData);
+    merged.ol_uid = action.createdId;
+    source.addFeature(merged);
+
+    layer.featureCount = source.getFeatures().length;
   }
 
   /**
@@ -169,6 +234,17 @@ class HistoryManager {
           featureToRevert.setProperties(beforeFeature.getProperties());
         }
         break;
+
+      case 'merge':
+        if (action.createdLayer) {
+          // 다른 레이어끼리 합친 경우 — 원본은 애초에 손대지 않았으니 새 레이어만 지우면 된다
+          layerManager.removeLayer(action.layerId);
+        } else {
+          this.unmergeInLayer(layer, action);
+        }
+        // 열려 있는 속성 테이블도 되돌린 상태로 다시 그려야 한다 (아래 LAYER_ADDED 는 레이어 목록만 갱신한다)
+        eventBus.emit(Events.FEATURES_MERGED, { layerId: action.layerId, fromHistory: true });
+        break;
     }
 
     // redo 스택에 추가
@@ -218,6 +294,29 @@ class HistoryManager {
       return true;
     }
 
+    // 다른 레이어끼리 합친 결과 레이어는 되돌리기가 통째로 지웠으므로 다시 만들어야 한다.
+    // 색을 넘기지 않으면 자동 색이 잡히는데, 그 첫 색이 흰색이라 지도에서 결과가 사라진다.
+    if (!layer && action.type === 'merge' && action.createdLayer) {
+      const mergedFeature = this.deserializeFeature(action.createdData);
+      mergedFeature.ol_uid = action.createdId;
+
+      // 레이어 ID 는 새로 생기므로 액션에 갱신해 둔다 (다음 되돌리기가 이 레이어를 찾아야 한다)
+      action.layerId = layerManager.addLayer({
+        name: action.createdLayer.name,
+        color: action.createdLayer.color,
+        type: 'vector',
+        features: [mergedFeature]
+      });
+
+      this.undoStack.push(action);
+      eventBus.emit(Events.LAYER_ADDED, {});
+      eventBus.emit(Events.HISTORY_CHANGED, {
+        canUndo: this.canUndo(),
+        canRedo: this.canRedo()
+      });
+      return true;
+    }
+
     if (!layer) {
       console.warn('레이어를 찾을 수 없습니다:', action.layerId);
       return false;
@@ -251,6 +350,15 @@ class HistoryManager {
           featureToModify.setGeometry(afterFeature.getGeometry());
           featureToModify.setProperties(afterFeature.getProperties());
         }
+        break;
+
+      case 'merge':
+        // 새 레이어를 만든 합치기는 위에서 레이어째 되살렸다.
+        // 여기까지 왔다는 건 레이어가 안 지워졌다는 뜻이므로 결과가 이미 그대로 있다.
+        if (!action.createdLayer) {
+          this.remergeInLayer(layer, action);
+        }
+        eventBus.emit(Events.FEATURES_MERGED, { layerId: action.layerId, fromHistory: true });
         break;
     }
 

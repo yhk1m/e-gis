@@ -109,7 +109,12 @@ class FeatureEditTool {
       selectTool.selectedFeatures.push(newFeature);
     }
 
-    eventBus.emit(Events.FEATURE_MODIFIED, { feature: newFeature });
+    // 원본이 사라지는 유일한 경로다 — 되돌릴 수 있도록 지운 것과 만든 것을 함께 알린다
+    eventBus.emit(Events.FEATURES_MERGED, {
+      layerId: layerInfo.id,
+      removed: selected,
+      created: newFeature
+    });
     this.status(`피처 ${selected.length}개를 1개로 합쳤습니다.`);
   }
 
@@ -127,11 +132,20 @@ class FeatureEditTool {
     // 팔레트를 다 쓴 경우에도 자동 색으로 떨어뜨리지 않는다 — 순번이 0이면 다시 흰색이 나온다
     const color = layerManager.getColorPalette().find((c) => c !== '#ffffff' && !used.has(c)) || '#808080';
 
-    layerManager.addLayer({
+    const newLayerId = layerManager.addLayer({
       name,
       type: 'vector',
       features: [newFeature],
       color
+    });
+
+    // 원본은 손대지 않았으므로 되돌릴 것은 이 레이어뿐이다.
+    // 이름·색을 함께 실어 보낸다 — 다시 실행할 때 자동 색에 맡기면 흰색이 나올 수 있다
+    eventBus.emit(Events.FEATURES_MERGED, {
+      layerId: newLayerId,
+      removed: [],
+      created: newFeature,
+      createdLayer: { name, color }
     });
 
     // 원본이 남아 있으므로 선택을 풀어 둔다 (합쳐진 것처럼 보이면 헷갈린다)
