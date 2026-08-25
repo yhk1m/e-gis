@@ -55,6 +55,11 @@ export class AttributeTable {
       if (source === 'attributeTable') return;
       this.refreshAllWindows();
     });
+
+    // 합치기: 여러 행이 한 행이 된다. 되돌리면 다시 여러 행으로 돌아온다
+    eventBus.on(Events.FEATURES_MERGED, () => {
+      this.refreshAllWindows();
+    });
   }
 
   /**

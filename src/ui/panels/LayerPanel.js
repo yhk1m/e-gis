@@ -40,6 +40,9 @@ export class LayerPanel {
     eventBus.on(Events.LAYER_ORDER_CHANGED, () => this.render());
     eventBus.on(Events.LAYER_STYLE_CHANGED, () => this.render());
 
+    // 합치기는 레이어 목록을 건드리지 않지만 피처 개수 배지가 달라진다
+    eventBus.on(Events.FEATURES_MERGED, () => this.render());
+
     // 컨테이너 클릭 이벤트 위임
     this.container.addEventListener('click', (e) => this.handleClick(e));
     this.container.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
