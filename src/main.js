@@ -1346,7 +1346,7 @@ function showUserManual() {
             <li><strong>수정:</strong> 선택 후 꼭짓점 드래그</li>
             <li><strong>삭제:</strong> 선택 후 Delete 키</li>
             <li><strong>복사/붙여넣기:</strong> Ctrl+C / Ctrl+V</li>
-            <li><strong>피처 합치기:</strong> 폴리곤(또는 라인) 2개 이상 선택 → 툴바의 합치기 버튼. 같은 레이어끼리는 그 자리에서 하나가 되고, <strong>다른 레이어끼리 합치면 원본은 그대로 두고 결과가 새 레이어로 추가</strong>됩니다. 속성은 양쪽 필드를 모두 모으고 숫자는 합계로 넣습니다.</li>
+            <li><strong>피처 합치기:</strong> 폴리곤(또는 라인) 2개 이상 선택 → 툴바의 합치기 버튼. 같은 레이어끼리는 그 자리에서 하나가 되고(<strong>원본 피처는 사라지며 되돌리기로 복구되지 않습니다</strong>), <strong>다른 레이어끼리 합치면 원본은 그대로 두고 결과가 새 레이어로 추가</strong>됩니다. 속성은 모든 레이어의 필드를 모으고 숫자는 합계로 넣되, 코드·연도처럼 문자로 저장된 값은 더하지 않고 첫 값을 그대로 둡니다.</li>
           </ul>
 
           <h4 style="margin-top: 24px; color: var(--color-primary);">📊 7. 속성 테이블</h4>

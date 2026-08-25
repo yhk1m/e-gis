@@ -124,13 +124,14 @@ class FeatureEditTool {
     // 색이 저장된 프로젝트를 다시 열면 순번이 0이라 첫 색인 흰색이 나온다.
     // 흰 면을 불투명하게 맨 위에 얹으면 합친 결과가 보이지 않는다.
     const used = new Set(layerManager.getAllLayers().map((l) => l.color));
-    const free = layerManager.getColorPalette().find((c) => c !== '#ffffff' && !used.has(c));
+    // 팔레트를 다 쓴 경우에도 자동 색으로 떨어뜨리지 않는다 — 순번이 0이면 다시 흰색이 나온다
+    const color = layerManager.getColorPalette().find((c) => c !== '#ffffff' && !used.has(c)) || '#808080';
 
     layerManager.addLayer({
       name,
       type: 'vector',
       features: [newFeature],
-      ...(free ? { color: free } : {})
+      color
     });
 
     // 원본이 남아 있으므로 선택을 풀어 둔다 (합쳐진 것처럼 보이면 헷갈린다)
