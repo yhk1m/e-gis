@@ -7,7 +7,6 @@
  */
 
 import * as turf from '@turf/turf';
-import { isNumericValue } from '../utils/layerSelect.js';
 
 /**
  * 여러 피처의 속성을 하나로 합친다.
@@ -17,9 +16,10 @@ import { isNumericValue } from '../utils/layerSelect.js';
  * 레이어를 넘나들며 합칠 때 한쪽 레이어에만 있는 필드가 사라지지 않게 하기 위한 규칙이다.
  * 어떤 필드가 수치인지는 그 필드에 값이 처음 들어 있는 피처의 값으로 정한다 —
  * 빈 칸(흔히 null)이 앞서 나온다고 문자열 필드로 오판해서는 안 된다.
- * 판별은 앱 공통 규칙인 isNumericValue 를 쓴다(숫자 문자열도 숫자로 본다):
- * GeoJSON·셰이프파일 로더가 숫자를 문자열로 남겨두므로, 주제도가 숫자로 보는 필드를
- * 합치기가 못 더하는 일이 없게 하기 위해서다.
+ * 판별은 유한한 number 값만 수치로 본다(isSummable, 아래 헬퍼 참고).
+ * 시군구 코드('11110')·기준연도('2025') 같은 숫자꼴 문자열은 식별자·메타데이터이지,
+ * 더할 대상이 아니다. 합치기는 원본을 지우고 값을 덮어쓰는 되돌릴 수 없는 연산이라
+ * 주제도의 필드 고르기보다 수치 판정을 좁게 잡는다.
  *
  * @param {Object[]} propsArray - 각 피처의 properties 객체 배열
  * @returns {Object}
@@ -34,17 +34,15 @@ export function mergeAttributes(propsArray) {
   //
   // 수치 여부는 '값이 처음 들어 있는' 피처로 정한다. 빈 칸은 타입의 근거가 못 된다 —
   // 공공 GeoJSON 은 빈 칸을 null 로 두는 일이 흔한데, 그것 때문에 합계가 조용히 틀어지면 안 된다.
-  // 판별은 앱 공통 규칙인 isNumericValue 를 쓴다. GeoJSON·셰이프파일 로더는 숫자를 문자열
-  // 그대로 두므로, 주제도가 숫자로 보는 필드를 합치기가 못 더하는 일이 없어야 한다.
   const fields = new Map();   // key -> { numeric, decided, blank }
   list.forEach((props) => {
     Object.keys(props).forEach((key) => {
       const v = props[key];
       const known = fields.get(key);
       if (!known) {
-        fields.set(key, { numeric: isNumericValue(v), decided: hasValue(v), blank: v });
+        fields.set(key, { numeric: isSummable(v), decided: hasValue(v), blank: v });
       } else if (!known.decided && hasValue(v)) {
-        known.numeric = isNumericValue(v);
+        known.numeric = isSummable(v);
         known.decided = true;
       }
     });
@@ -54,7 +52,7 @@ export function mergeAttributes(propsArray) {
   fields.forEach((field, key) => {
     if (field.numeric) {
       result[key] = list.reduce(
-        (sum, p) => sum + (has(p, key) && isNumericValue(p[key]) ? parseFloat(p[key]) : 0),
+        (sum, p) => sum + (has(p, key) && isSummable(p[key]) ? p[key] : 0),
         0
       );
     } else {
@@ -156,6 +154,18 @@ export function lineIntersectsFeature(feature, line) {
 /** 값이 실제로 들어 있는지 (빈 문자열·null·undefined 는 없는 것으로 본다) */
 function hasValue(v) {
   return v !== undefined && v !== null && String(v).trim() !== '';
+}
+
+/**
+ * 합계로 더할 수 있는 값인지.
+ *
+ * 주제도의 필드 고르기(layerSelect 의 isNumericValue)는 '103' 같은 숫자 문자열도 숫자로 보지만,
+ * 합치기는 그보다 좁게 잡는다. 시군구 코드('11110')·시도 코드('11')·기준연도('2025')가
+ * 문자열로 들어오는데, 합치기는 원본을 지우고 값을 덮어쓰는 연산이라 이것들이 더해지면
+ * 되돌릴 수 없다. 고르기가 헛다리를 짚는 건 다시 고르면 그만이지만 합계는 그렇지 않다.
+ */
+function isSummable(v) {
+  return typeof v === 'number' && Number.isFinite(v);
 }
 
 function polygonizeSplit(polygon, line) {
