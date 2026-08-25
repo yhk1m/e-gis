@@ -19,6 +19,7 @@ import { selectTool } from './SelectTool.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import {
   mergeGeoJSON,
+  mergedLayerName,
   splitPolygonByLine,
   splitLineByLine,
   lineIntersectsFeature
@@ -43,6 +44,10 @@ class FeatureEditTool {
 
   /**
    * 선택된 피처들을 하나로 합친다.
+   *
+   * 한 레이어 안에서 골랐으면 그 레이어에서 제자리로 합치고(원본 피처는 사라진다),
+   * 여러 레이어에 걸쳐 골랐으면 원본은 그대로 둔 채 결과만 새 레이어로 만든다.
+   * 어느 레이어에 넣을지 모호한 경우만 새 레이어로 푸는 것이다.
    */
   mergeSelected() {
     const selected = selectTool.getSelectedFeatures();
@@ -51,17 +56,15 @@ class FeatureEditTool {
       return;
     }
 
-    // 모두 같은 레이어인지 확인
-    const layerInfo = this.getLayerOfFeature(selected[0]);
-    if (!layerInfo) {
-      alert('피처가 속한 레이어를 찾을 수 없습니다.');
-      return;
-    }
+    // 선택한 피처가 어느 레이어에 속하는지 등장 순서대로 모은다
+    const layers = [];
     for (const f of selected) {
-      if (this.getLayerOfFeature(f) !== layerInfo) {
-        alert('같은 레이어의 피처만 합칠 수 있습니다.');
+      const layerInfo = this.getLayerOfFeature(f);
+      if (!layerInfo) {
+        alert('피처가 속한 레이어를 찾을 수 없습니다.');
         return;
       }
+      if (!layers.includes(layerInfo)) layers.push(layerInfo);
     }
 
     const gjs = selected.map((f) => this.featureToGeoJSON(f));
@@ -81,21 +84,52 @@ class FeatureEditTool {
       const mergedGj = mergeGeoJSON(gjs);
       const newFeature = this.geoJSONToFeature(mergedGj);
 
-      selected.forEach((f) => layerInfo.source.removeFeature(f));
-      layerInfo.source.addFeature(newFeature);
-      layerInfo.featureCount = layerInfo.source.getFeatures().length;
-
-      // 결과를 다시 선택
-      if (selectTool.selectedFeatures) {
-        selectTool.selectedFeatures.clear();
-        selectTool.selectedFeatures.push(newFeature);
+      if (layers.length === 1) {
+        this.replaceMergedInLayer(layers[0], selected, newFeature);
+      } else {
+        this.addMergedLayer(layers, newFeature, selected.length);
       }
-
-      eventBus.emit(Events.FEATURE_MODIFIED, { feature: newFeature });
-      this.status(`피처 ${selected.length}개를 1개로 합쳤습니다.`);
     } catch (e) {
       alert('합치기 실패: ' + e.message);
     }
+  }
+
+  /**
+   * 한 레이어 안에서 합칠 때: 원본 피처를 빼고 합친 피처를 그 레이어에 넣는다.
+   */
+  replaceMergedInLayer(layerInfo, selected, newFeature) {
+    selected.forEach((f) => layerInfo.source.removeFeature(f));
+    layerInfo.source.addFeature(newFeature);
+    layerInfo.featureCount = layerInfo.source.getFeatures().length;
+
+    // 결과를 다시 선택
+    if (selectTool.selectedFeatures) {
+      selectTool.selectedFeatures.clear();
+      selectTool.selectedFeatures.push(newFeature);
+    }
+
+    eventBus.emit(Events.FEATURE_MODIFIED, { feature: newFeature });
+    this.status(`피처 ${selected.length}개를 1개로 합쳤습니다.`);
+  }
+
+  /**
+   * 여러 레이어에 걸쳐 합칠 때: 원본은 그대로 두고 결과만 새 레이어로 만든다.
+   */
+  addMergedLayer(layers, newFeature, featureCount) {
+    const name = layerManager.uniqueName(mergedLayerName(layers.map((l) => l.name)));
+
+    // 색을 넘기지 않아 자동 색이 잡힌다.
+    // 원본이 지도에 그대로 남아 있어서, 원본과 같은 색이면 결과를 구분할 수 없다.
+    layerManager.addLayer({
+      name,
+      type: 'vector',
+      features: [newFeature]
+    });
+
+    // 원본이 남아 있으므로 선택을 풀어 둔다 (합쳐진 것처럼 보이면 헷갈린다)
+    if (selectTool.selectedFeatures) selectTool.selectedFeatures.clear();
+
+    this.status(`레이어 ${layers.length}개의 피처 ${featureCount}개를 합쳐 '${name}'을 만들었습니다.`);
   }
 
   // ==================== 자르기 ====================
