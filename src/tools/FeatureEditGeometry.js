@@ -7,11 +7,7 @@
  */
 
 import * as turf from '@turf/turf';
-
-/** 값이 실제로 들어 있는지 (빈 문자열·null·undefined 는 없는 것으로 본다) */
-function hasValue(v) {
-  return v !== undefined && v !== null && String(v).trim() !== '';
-}
+import { isNumericValue } from '../utils/layerSelect.js';
 
 /**
  * 여러 피처의 속성을 하나로 합친다.
@@ -19,35 +15,52 @@ function hasValue(v) {
  * 그 외 필드는 값이 있는 첫 피처의 값을 쓴다.
  *
  * 레이어를 넘나들며 합칠 때 한쪽 레이어에만 있는 필드가 사라지지 않게 하기 위한 규칙이다.
- * 어떤 필드가 수치인지는 그 필드가 처음 등장한 피처의 값으로 정한다
- * (레이어마다 타입이 다를 수 있어 기준이 필요하다).
+ * 어떤 필드가 수치인지는 그 필드에 값이 처음 들어 있는 피처의 값으로 정한다 —
+ * 빈 칸(흔히 null)이 앞서 나온다고 문자열 필드로 오판해서는 안 된다.
+ * 판별은 앱 공통 규칙인 isNumericValue 를 쓴다(숫자 문자열도 숫자로 본다):
+ * GeoJSON·셰이프파일 로더가 숫자를 문자열로 남겨두므로, 주제도가 숫자로 보는 필드를
+ * 합치기가 못 더하는 일이 없게 하기 위해서다.
  *
  * @param {Object[]} propsArray - 각 피처의 properties 객체 배열
  * @returns {Object}
  */
 export function mergeAttributes(propsArray) {
-  const list = (propsArray || []).map((p) => p || {});
+  const list = (propsArray || []).map((p) => (p && typeof p === 'object' ? p : {}));
+  const has = (p, key) => Object.prototype.hasOwnProperty.call(p, key);
 
-  // 처음 등장한 순서를 지키려고 Map 을 쓴다. 값은 '수치 필드인가'
-  const numeric = new Map();
+  // 등장 순서를 지키려고 Map 을 쓴다.
+  // (필드명이 '2020' 처럼 정수꼴이면 결과 객체에서 앞으로 당겨진다 — JS 객체의 성질이라 어쩔 수 없다.
+  //  원본 레이어의 속성 테이블도 같은 순서로 보이므로 어긋나 보이지는 않는다)
+  //
+  // 수치 여부는 '값이 처음 들어 있는' 피처로 정한다. 빈 칸은 타입의 근거가 못 된다 —
+  // 공공 GeoJSON 은 빈 칸을 null 로 두는 일이 흔한데, 그것 때문에 합계가 조용히 틀어지면 안 된다.
+  // 판별은 앱 공통 규칙인 isNumericValue 를 쓴다. GeoJSON·셰이프파일 로더는 숫자를 문자열
+  // 그대로 두므로, 주제도가 숫자로 보는 필드를 합치기가 못 더하는 일이 없어야 한다.
+  const fields = new Map();   // key -> { numeric, decided, blank }
   list.forEach((props) => {
     Object.keys(props).forEach((key) => {
-      if (!numeric.has(key)) numeric.set(key, typeof props[key] === 'number');
+      const v = props[key];
+      const known = fields.get(key);
+      if (!known) {
+        fields.set(key, { numeric: isNumericValue(v), decided: hasValue(v), blank: v });
+      } else if (!known.decided && hasValue(v)) {
+        known.numeric = isNumericValue(v);
+        known.decided = true;
+      }
     });
   });
 
   const result = {};
-  numeric.forEach((isNumeric, key) => {
-    if (isNumeric) {
+  fields.forEach((field, key) => {
+    if (field.numeric) {
       result[key] = list.reduce(
-        (sum, p) => sum + (typeof p[key] === 'number' ? p[key] : 0),
+        (sum, p) => sum + (has(p, key) && isNumericValue(p[key]) ? parseFloat(p[key]) : 0),
         0
       );
     } else {
-      const filled = list.find((p) => hasValue(p[key]));
-      // 아무 피처에도 값이 없으면 그 필드를 가진 첫 피처의 (빈) 값을 그대로 둔다
-      const fallback = list.find((p) => key in p);
-      result[key] = filled ? filled[key] : fallback[key];
+      const filled = list.find((p) => has(p, key) && hasValue(p[key]));
+      // 아무 피처에도 값이 없으면 그 필드가 처음 나온 피처의 (빈) 값을 그대로 둔다
+      result[key] = filled ? filled[key] : field.blank;
     }
   });
 
@@ -139,6 +152,11 @@ export function lineIntersectsFeature(feature, line) {
 }
 
 // ==================== 내부 헬퍼 ====================
+
+/** 값이 실제로 들어 있는지 (빈 문자열·null·undefined 는 없는 것으로 본다) */
+function hasValue(v) {
+  return v !== undefined && v !== null && String(v).trim() !== '';
+}
 
 function polygonizeSplit(polygon, line) {
   const boundary = turf.polygonToLine(polygon);

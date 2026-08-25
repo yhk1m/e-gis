@@ -50,4 +50,38 @@ describe('mergeAttributes', () => {
     const merged = mergeAttributes([{ 사용중: false }, { 사용중: true }]);
     expect(merged.사용중).toBe(false);
   });
+
+  it('앞선 피처가 비어 있어도 수치 필드로 본다', () => {
+    // 공공 GeoJSON 은 빈 칸을 null 로 두는 일이 흔하다. 빈 칸이 타입을 정하면 합계가 조용히 틀어진다
+    const merged = mergeAttributes([{ 인구: null }, { 인구: 530000 }, { 인구: 410000 }]);
+    expect(merged.인구).toBe(940000);
+  });
+
+  it('숫자 문자열도 합계에 넣는다', () => {
+    // GeoJSON·셰이프파일 로더는 숫자를 문자열로 둔다. 주제도가 숫자로 보는 기준과 맞춘다
+    expect(mergeAttributes([{ 인구: 530000 }, { 인구: '410000' }]).인구).toBe(940000);
+    expect(mergeAttributes([{ 인구: '530000' }, { 인구: 410000 }]).인구).toBe(940000);
+  });
+
+  it('0 도 값이 있는 것으로 보고 합계에 넣는다', () => {
+    expect(mergeAttributes([{ 인구: 0 }, { 인구: 410000 }]).인구).toBe(410000);
+  });
+
+  it('필드 순서는 처음 등장한 순서를 따른다', () => {
+    const merged = mergeAttributes([{ 시군구: '강남구' }, { 인구: 100, 비고: '가' }]);
+    expect(Object.keys(merged)).toEqual(['시군구', '인구', '비고']);
+  });
+
+  it('프로토타입에 있는 이름이 필드명이어도 값을 잃지 않는다', () => {
+    const merged = mergeAttributes([{ 이름: '가' }, { constructor: '관측소' }]);
+    expect(merged.constructor).toBe('관측소');
+  });
+
+  it('빈 배열이나 망가진 입력에도 죽지 않는다', () => {
+    // 손으로 고친 GeoJSON 은 properties 가 통째로 빠지거나 엉뚱한 값일 수 있다
+    expect(mergeAttributes([])).toEqual({});
+    expect(mergeAttributes(undefined)).toEqual({});
+    expect(mergeAttributes([null, { 이름: '가' }])).toEqual({ 이름: '가' });
+    expect(mergeAttributes([5, { 이름: '가' }])).toEqual({ 이름: '가' });
+  });
 });
