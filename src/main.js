@@ -1396,6 +1396,7 @@ function showUserManual() {
           <h4 style="margin-top: 24px; color: var(--color-primary);">💾 12. 저장 및 내보내기</h4>
           <ul>
             <li><strong>프로젝트 저장:</strong> 메뉴 → 프로젝트 → 저장 (.egis 파일)</li>
+            <li><strong>아이패드에서 구글 드라이브에 저장하려면</strong> 사파리 대신 <strong>크롬</strong>을 쓰세요. 사파리는 다운로드 폴더로만 저장되고, 드라이브로 옮기려면 「파일」앱에서 직접 옮겨야 합니다.</li>
             <li><strong>레이어 내보내기:</strong> 레이어 선택 → 메뉴 → 레이어 → 레이어 내보내기 (GeoJSON, Shapefile)</li>
             <li><strong>지도 이미지 내보내기:</strong> 메뉴 → 프로젝트 → 지도 내보내기</li>
           </ul>
