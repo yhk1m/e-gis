@@ -98,6 +98,18 @@ class SpatialOperationsPanel {
           '</label>' +
           '<small class="spatial-ops-hint" id="mode-hint"></small>' +
         '</div>' +
+        '<div class="form-group spatial-ops-optgroup" id="spatial-ops-side-group">' +
+          '<label>추출할 포인트</label>' +
+          '<label class="spatial-ops-option">' +
+            '<input type="radio" name="spatial-ops-side" value="inside" checked>' +
+            '<span>폴리곤 안</span>' +
+          '</label>' +
+          '<label class="spatial-ops-option">' +
+            '<input type="radio" name="spatial-ops-side" value="outside">' +
+            '<span>폴리곤 밖</span>' +
+          '</label>' +
+          '<small class="spatial-ops-hint" id="side-hint"></small>' +
+        '</div>' +
         '<div class="form-group spatial-ops-optgroup" id="spatial-ops-union-group">' +
           '<label>합집합 방식</label>' +
           '<label class="spatial-ops-option">' +
@@ -185,6 +197,11 @@ class SpatialOperationsPanel {
     // 연산 변경 시 설명 업데이트
     operationSelect.addEventListener('change', () => this.updateDescription());
 
+    // 안/밖을 바꾸면 결과가 달라지므로 안내 문구도 따라간다
+    this.modal.querySelectorAll('input[name="spatial-ops-side"]').forEach((radio) => {
+      radio.addEventListener('change', () => this.updateSideHint());
+    });
+
     // 레이어 선택 변경 시 다른 선택 확인 (폴리곤↔폴리곤 연산에서만 중복 방지)
     layer1Select.addEventListener('change', () => {
       if (operationSelect.value === 'pointsInPolygon') return;
@@ -220,7 +237,7 @@ class SpatialOperationsPanel {
       union: '두 레이어의 영역을 합칩니다.',
       difference: '첫 번째 레이어에서 두 번째 레이어와 겹치는 부분을 제거합니다. 입력 레이어의 속성은 유지됩니다.',
       clip: '입력 레이어를 클립 레이어의 범위로 자릅니다. 양쪽 레이어의 속성이 모두 승계됩니다.',
-      pointsInPolygon: '폴리곤 안에 들어가는 포인트만 남기고, 각 포인트에 포함하는 폴리곤의 속성을 poly_ 접두사로 추가합니다.'
+      pointsInPolygon: '폴리곤을 기준으로 포인트를 안쪽만 또는 바깥쪽만 뽑아 새 레이어로 만듭니다.'
     };
 
     const labels = {
@@ -263,6 +280,12 @@ class SpatialOperationsPanel {
     modeGroup.style.display = hasMode ? '' : 'none';
     unionGroup.style.display = operation === 'union' ? '' : 'none';
 
+    const sideGroup = document.getElementById('spatial-ops-side-group');
+    if (sideGroup) {
+      sideGroup.style.display = operation === 'pointsInPolygon' ? '' : 'none';
+      this.updateSideHint();
+    }
+
     if (!hasMode) return;
 
     if (operation === 'difference') {
@@ -274,10 +297,29 @@ class SpatialOperationsPanel {
     }
   }
 
+  /** 안/밖에 따라 결과가 어떻게 달라지는지 알려 준다 */
+  updateSideHint() {
+    const hint = document.getElementById('side-hint');
+    if (!hint) return;
+    hint.textContent = this.isOutside()
+      ? '어떤 폴리곤에도 들어가지 않는 포인트만 남깁니다. 담고 있는 폴리곤이 없으므로 poly_ 속성은 붙지 않습니다.'
+      : '폴리곤 안에 들어가는 포인트만 남기고, 포함하는 폴리곤의 속성을 poly_ 접두사로 붙입니다.';
+  }
+
+  /** '폴리곤 밖'이 선택되어 있는가 */
+  isOutside() {
+    const checked = document.querySelector('input[name="spatial-ops-side"]:checked');
+    return !!checked && checked.value === 'outside';
+  }
+
   /**
    * 선택된 결과 형태 → 도구 옵션
    */
   readOptions(operation) {
+    if (operation === 'pointsInPolygon') {
+      return { outside: this.isOutside() };
+    }
+
     if (operation === 'union') {
       const dissolve = document.getElementById('spatial-ops-dissolve');
       return { dissolve: dissolve ? dissolve.checked : true };
@@ -324,19 +366,21 @@ class SpatialOperationsPanel {
           result = spatialOperationsTool.clip(layerId1, layerId2, options);
           break;
         case 'pointsInPolygon':
-          result = spatialOperationsTool.pointsInPolygons(layerId1, layerId2);
+          result = spatialOperationsTool.pointsInPolygons(layerId1, layerId2, options);
           break;
         default:
           throw new Error('알 수 없는 연산입니다.');
       }
 
       if (operation === 'pointsInPolygon') {
+        const kept = result.outside ? result.outsidePoints : result.insidePoints;
+        const dropped = result.outside ? result.insidePoints : result.outsidePoints;
+        const where = result.outside ? '폴리곤 밖' : '폴리곤 내';
+        const other = result.outside ? '폴리곤 안' : '폴리곤 밖';
         alert(
           `포인트 추출 완료!\n새 레이어: ${result.layerName}\n` +
-          `폴리곤 내 포인트 ${result.insidePoints}개 / 전체 ${result.totalPoints}개` +
-          (result.insidePoints < result.totalPoints
-            ? `\n(폴리곤 밖 포인트 ${result.totalPoints - result.insidePoints}개 제외)`
-            : '')
+          `${where} 포인트 ${kept}개 / 전체 ${result.totalPoints}개` +
+          (dropped > 0 ? `\n(${other} 포인트 ${dropped}개 제외)` : '')
         );
       } else {
         alert(`연산 완료!\n새 레이어: ${result.layerName}\n피처 수: ${result.featureCount}`);

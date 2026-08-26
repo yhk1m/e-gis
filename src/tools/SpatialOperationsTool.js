@@ -331,13 +331,17 @@ class SpatialOperationsTool {
   }
 
   /**
-   * 폴리곤 내 포인트 추출(공간 결합) - 폴리곤 안에 들어가는 포인트만 남기고,
+   * 폴리곤 안/밖 포인트 추출(공간 결합) - 기본은 폴리곤 안에 들어가는 포인트만 남기고,
    * 각 포인트에 포함하는 폴리곤의 속성을 poly_ 접두사로 태그한다.
    * @param {string} polygonLayerId - 폴리곤 레이어 ID
    * @param {string} pointLayerId - 포인트 레이어 ID
    * @returns {Object} 결과 정보
    */
-  pointsInPolygons(polygonLayerId, pointLayerId) {
+  pointsInPolygons(polygonLayerId, pointLayerId, options = {}) {
+    // 밖 모드는 안 판정을 그대로 뒤집는다. 판정이 한 곳에만 있어야
+    // 경계 위의 점이 양쪽에 겹치거나 어느 쪽에도 빠지지 않는다.
+    const outside = options.outside === true;
+
     const polygonLayer = layerManager.getLayer(polygonLayerId);
     const pointLayer = layerManager.getLayer(pointLayerId);
 
@@ -356,45 +360,55 @@ class SpatialOperationsTool {
     }
 
     const results = [];
+    let insideCount = 0;
+    let outsideCount = 0;
 
     for (const point of pointFeatures) {
       const geom = point.geometry;
-      if (!geom) continue;
+      if (!geom) continue; // 도형이 없으면 안팎을 가릴 수 없다
 
       // 포함하는 첫 번째 폴리곤 찾기 (겹치면 먼저 만나는 폴리곤에 귀속)
       const matchIndex = polygons.findIndex(polygon =>
         this.pointGeomInPolygon(geom, polygon)
       );
+      const isInside = matchIndex !== -1;
+      if (isInside) insideCount++; else outsideCount++;
 
-      if (matchIndex === -1) continue; // 어떤 폴리곤에도 속하지 않으면 제외
+      if (isInside === outside) continue; // 이 모드가 찾는 쪽이 아니다
 
-      // 원본 포인트를 깊은 복제하고 폴리곤 정보 태그
       const clone = JSON.parse(JSON.stringify(point));
       if (!clone.properties) clone.properties = {};
 
-      clone.properties.poly_index = matchIndex;
-      const polyProps = polygons[matchIndex].properties || {};
-      for (const [key, value] of Object.entries(polyProps)) {
-        clone.properties['poly_' + key] = value;
+      // 밖에 있는 점은 담고 있는 폴리곤이 없으니 태그할 것도 없다
+      if (!outside) {
+        clone.properties.poly_index = matchIndex;
+        const polyProps = polygons[matchIndex].properties || {};
+        for (const [key, value] of Object.entries(polyProps)) {
+          clone.properties['poly_' + key] = value;
+        }
       }
 
       results.push(clone);
     }
 
     if (results.length === 0) {
-      throw new Error('어떤 폴리곤에도 포함된 포인트가 없습니다.');
+      throw new Error(outside
+        ? '폴리곤 밖에 있는 포인트가 없습니다. 모든 포인트가 폴리곤 안에 있습니다.'
+        : '어떤 폴리곤에도 포함된 포인트가 없습니다.');
     }
 
     const result = this.createResultLayer(
       results,
-      `${pointLayer.name}_폴리곤내`,
+      `${pointLayer.name}_${outside ? '폴리곤밖' : '폴리곤내'}`,
       '#a855f7'
     );
 
     return {
       ...result,
+      outside,
       totalPoints: pointFeatures.length,
-      insidePoints: results.length
+      insidePoints: insideCount,
+      outsidePoints: outsideCount
     };
   }
 
@@ -484,7 +498,7 @@ class SpatialOperationsTool {
       { value: 'union', label: '합집합 (Union)', description: '두 레이어를 하나로 합침' },
       { value: 'difference', label: '차집합 (Difference)', description: '첫 번째 레이어에서 두 번째 제거' },
       { value: 'clip', label: '클리핑 (Clip)', description: '클립 영역으로 자르기' },
-      { value: 'pointsInPolygon', label: '포인트 추출 (Points in Polygon)', description: '폴리곤 안의 포인트만 남기고 폴리곤 정보를 태그' }
+      { value: 'pointsInPolygon', label: '포인트 추출 (Points in Polygon)', description: '폴리곤 안 또는 밖의 포인트를 뽑습니다' }
     ];
   }
 }

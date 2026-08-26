@@ -9,6 +9,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Feature from 'ol/Feature.js';
 import Polygon from 'ol/geom/Polygon.js';
+import Point from 'ol/geom/Point.js';
 import { layerManager } from '../core/LayerManager.js';
 import { spatialOperationsTool } from './SpatialOperationsTool.js';
 
@@ -18,6 +19,11 @@ function box(x1, y1, x2, y2, props = {}) {
     geometry: new Polygon([[[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]]]),
     ...props
   });
+}
+
+/** 지도 좌표(EPSG:3857) 기준 점 */
+function dot(x, y, props = {}) {
+  return new Feature({ geometry: new Point([x, y]), ...props });
 }
 
 /** 결과 레이어의 피처 속성 목록 (geometry 제외) */
@@ -152,5 +158,72 @@ describe('겹치는 피처가 없을 때', () => {
     });
     expect(() => spatialOperationsTool.intersect(구역, 멀리, { keepFeatures: true }))
       .toThrow(/겹치는/);
+  });
+});
+
+/**
+ * 포인트 추출 — 안과 밖.
+ *
+ * 밖은 안의 여집합이라야 한다. 같은 판정(pointGeomInPolygon)을 뒤집을 뿐이므로
+ * 경계 위의 점이 양쪽에 다 들어가거나 어디에도 안 들어가는 일이 있어서는 안 된다.
+ */
+describe('포인트 추출', () => {
+  let 관측소;
+
+  beforeEach(() => {
+    관측소 = layerManager.addLayer({
+      name: '관측소',
+      features: [
+        dot(50, 50, { 이름: '가', 강수량: 100 }),      // 강남구 안
+        dot(250, 250, { 이름: '나', 강수량: 200 }),    // 서초구 안
+        dot(500, 500, { 이름: '다', 강수량: 300 }),    // 어느 폴리곤에도 안 들어감
+        dot(0, 0, { 이름: '라', 강수량: 400 })         // 강남구 경계 위(꼭짓점)
+      ]
+    });
+  });
+
+  it('밖 모드는 폴리곤에 안 들어간 포인트만 남긴다', () => {
+    const result = spatialOperationsTool.pointsInPolygons(구역, 관측소, { outside: true });
+    const 이름들 = propsOf(result.layerId).map(p => p.이름);
+    expect(이름들).toEqual(['다']);
+  });
+
+  it('밖 결과에는 poly_ 태그가 붙지 않고 원본 속성은 그대로다', () => {
+    const result = spatialOperationsTool.pointsInPolygons(구역, 관측소, { outside: true });
+    expect(propsOf(result.layerId)).toEqual([{ 이름: '다', 강수량: 300 }]);
+  });
+
+  it('안 개수와 밖 개수를 합치면 전체 포인트 수가 된다', () => {
+    // 경계 위의 점이 어느 쪽에도 빠지거나 양쪽에 겹치면 이 합이 깨진다
+    const 안 = spatialOperationsTool.pointsInPolygons(구역, 관측소);
+    const 밖 = spatialOperationsTool.pointsInPolygons(구역, 관측소, { outside: true });
+    expect(안.insidePoints + 밖.outsidePoints).toBe(4);
+    expect(안.totalPoints).toBe(4);
+    expect(밖.totalPoints).toBe(4);
+  });
+
+  it('결과 레이어 이름이 안·밖에 따라 다르다', () => {
+    const 안 = spatialOperationsTool.pointsInPolygons(구역, 관측소);
+    const 밖 = spatialOperationsTool.pointsInPolygons(구역, 관측소, { outside: true });
+    expect(layerManager.getLayer(안.layerId).name).toContain('폴리곤내');
+    expect(layerManager.getLayer(밖.layerId).name).toContain('폴리곤밖');
+  });
+
+  it('전부 폴리곤 안에 있으면 밖 모드는 오류로 알린다', () => {
+    const 안쪽만 = layerManager.addLayer({
+      name: '안쪽만',
+      features: [dot(50, 50, { 이름: '가' }), dot(250, 250, { 이름: '나' })]
+    });
+    expect(() => spatialOperationsTool.pointsInPolygons(구역, 안쪽만, { outside: true }))
+      .toThrow(/밖/);
+  });
+
+  it('안 모드는 예전과 같다 (회귀 방지)', () => {
+    const result = spatialOperationsTool.pointsInPolygons(구역, 관측소);
+    const props = propsOf(result.layerId);
+    expect(props.map(p => p.이름)).toEqual(['가', '나', '라']);
+    expect(props[0].poly_시군구).toBe('강남구');
+    expect(props[0].poly_index).toBe(0);
+    expect(props[1].poly_시군구).toBe('서초구');
   });
 });
