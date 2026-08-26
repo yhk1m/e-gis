@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import Feature from 'ol/Feature.js';
 import Polygon from 'ol/geom/Polygon.js';
 import Point from 'ol/geom/Point.js';
+import LineString from 'ol/geom/LineString.js';
 import { layerManager } from './LayerManager.js';
 
 const square = () => new Feature({
@@ -68,7 +69,6 @@ describe('새 폴리곤 레이어 기본 스타일', () => {
     );
 
     expect(pointInfo.color).toBe('#3b82f6');
-    expect(pointInfo.fillOpacity).toBe(0.3);
   });
 
   it('색을 직접 지정하면 자동 배정을 건너뛴다', () => {
@@ -86,5 +86,42 @@ describe('새 폴리곤 레이어 기본 스타일', () => {
     layerManager.getAllLayers().slice().forEach(l => layerManager.removeLayer(l.id));
 
     expect(addPolygon('새로').fillColor).toBe('#ffffff');
+  });
+});
+
+/**
+ * 기본 스타일은 createStyle이 처음 그리는 모습과 같아야 한다.
+ *
+ * 두 갈래가 어긋나 있으면 스타일 편집기를 한 번 건드리는 순간(updateLayerStyle)
+ * 레이어가 눈에 띄게 달라진다. 점은 흰 테두리가 색으로 바뀌고 반투명해졌고,
+ * 선은 굵기가 3에서 2로 얇아졌다. 레이어 목록의 스와치도 어느 쪽에 맞춰야 할지
+ * 정할 수 없었다.
+ */
+describe('기본 스타일이 처음 그리는 모습과 같다', () => {
+  beforeEach(() => {
+    layerManager.getAllLayers().slice().forEach(l => layerManager.removeLayer(l.id));
+  });
+
+  it('점: 테두리는 흰색, 면은 불투명', () => {
+    const info = layerManager.getLayer(layerManager.addLayer({ name: '점', features: [dot()] }));
+    expect(info.geometryType).toBe('Point');
+    expect(info.strokeColor).toBe('#ffffff');
+    expect(info.fillOpacity).toBe(1.0);
+    expect(info.strokeWidth).toBe(2);
+  });
+
+  it('선: 색은 레이어 색, 굵기는 3', () => {
+    const line = new Feature({ geometry: new LineString([[0, 0], [100, 100]]) });
+    const info = layerManager.getLayer(layerManager.addLayer({ name: '선', features: [line] }));
+    expect(info.geometryType).toBe('LineString');
+    expect(info.strokeColor).toBe(info.color);
+    expect(info.strokeWidth).toBe(3);
+  });
+
+  it('면: 테두리는 면 색에 맞춘 색, 굵기는 2 (예전과 같다)', () => {
+    const info = layerManager.getLayer(layerManager.addLayer({ name: '면', features: [square()] }));
+    expect(info.fillOpacity).toBe(1.0);
+    expect(info.strokeWidth).toBe(2);
+    expect(info.strokeColor).toBe('#000000');
   });
 });

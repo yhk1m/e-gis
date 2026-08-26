@@ -64,6 +64,10 @@
   border-radius: 2px;
   flex-shrink: 0;
   box-sizing: border-box;
+  /* 안에 SVG가 들어간다. line-height를 죽여야 아래에 빈 줄이 생기지 않는다.
+     내보내기 패널도 같은 클래스로 색 네모를 그리므로 border-radius는 남겨 둔다 */
+  display: inline-flex;
+  line-height: 0;
 }
 
 .layer-name {

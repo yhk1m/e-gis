@@ -252,6 +252,8 @@ class LayerManager {
     // 폴리곤: 면은 불투명(100%), 선은 면 색 위에서 보이는 색.
     // 포인트·선은 예전 그대로(색=선색, 면 30%) — 흰 점·검은 점은 배경에 묻힌다.
     const polygonal = isPolygonType(geometryType);
+    const pointish = geometryType === "Point" || geometryType === "MultiPoint";
+    const linear = geometryType === "LineString" || geometryType === "MultiLineString";
 
     const layerInfo = {
       id: layerId,
@@ -261,15 +263,18 @@ class LayerManager {
       source: vectorSource,
       visible: visible,
       color: layerColor,
-      strokeColor: polygonal ? defaultStrokeFor(layerColor) : layerColor,
+      // 아래 기본값은 createStyle이 처음 그리는 모습과 같아야 한다.
+      // 어긋나 있으면 스타일 편집기를 한 번 건드리는 순간(updateLayerStyle) 레이어가
+      // 눈에 띄게 달라진다 — 점의 흰 테두리가 색으로 바뀌고 반투명해지는 식으로.
+      strokeColor: polygonal ? defaultStrokeFor(layerColor) : (pointish ? "#ffffff" : layerColor),
       fillColor: layerColor,
       geometryType: geometryType,
       featureCount: featureCount,
       strokeDash: "solid",
       strokeSyncToFill: true,
-      fillOpacity: polygonal ? 1.0 : 0.3,
+      fillOpacity: linear ? 0.3 : 1.0,
       strokeOpacity: 1.0,
-      strokeWidth: 2,
+      strokeWidth: linear ? 3 : 2,
       pointRadius: 6
     };
 

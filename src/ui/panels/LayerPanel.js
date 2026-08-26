@@ -9,6 +9,7 @@ import { mapManager } from '../../core/MapManager.js';
 import { rasterAnalysisTool } from '../../tools/RasterAnalysisTool.js';
 import { cartogramTool } from '../../tools/CartogramTool.js';
 import { saveTextAs } from '../../utils/saveFile.js';
+import { swatchSpec, swatchHTML } from './layerSwatch.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 export class LayerPanel {
@@ -215,7 +216,7 @@ export class LayerPanel {
                  class="layer-visibility"
                  ${layer.visible ? 'checked' : ''}
                  title="표시/숨김">
-          <span class="layer-color" style="background-color: ${layer.fillColor || layer.color}; border: 2px solid ${layer.strokeColor || layer.color}"></span>
+          <span class="layer-color" title="색·테두리 바꾸기">${this.swatchMarkup(layer)}</span>
           <span class="layer-name" title="${layer.name}">${layer.name}</span>
           <span class="layer-count">(${layer.featureCount})</span>
           <button class="layer-menu-btn" title="메뉴">
@@ -322,7 +323,8 @@ export class LayerPanel {
     }
 
     // 색상 클릭 (색상 변경)
-    if (e.target.classList.contains("layer-color")) {
+    // 스와치 안에 SVG가 들어 있어 e.target이 <circle>·<rect>가 될 수 있다
+    if (e.target.closest('.layer-color')) {
       e.stopPropagation();
       this.showColorPicker(layerId);
       return;
@@ -583,7 +585,32 @@ export class LayerPanel {
   /**
    * 스타일 편집 팝업 표시
    */
+  /**
+   * 레이어 하나의 스와치 SVG.
+   * 점선표는 LayerManager가 갖고 있으므로 여기서 풀어 넘긴다.
+   */
+  swatchMarkup(layerInfo) {
+    const lineDash = layerManager.getLineDash(layerInfo.strokeDash || 'solid');
+    return swatchHTML(swatchSpec(layerInfo, lineDash));
+  }
+
+  /**
+   * 색을 바꾼 뒤 목록의 스와치만 다시 그린다.
+   *
+   * 예전에는 이 자리마다 .layer-color의 backgroundColor나 borderColor를 직접 찔렀다.
+   * 어느 속성을 건드려야 하는지가 일곱 군데에 흩어져 있었고, 그래서 모양이 바뀌면
+   * 전부 어긋났다. 스와치를 만드는 곳은 한 군데여야 한다.
+   */
+  refreshSwatch(layerId) {
+    const layerInfo = layerManager.getLayer(layerId);
+    if (!layerInfo) return;
+    const el = document.querySelector('[data-layer-id="' + layerId + '"] .layer-color');
+    if (el) el.innerHTML = this.swatchMarkup(layerInfo);
+  }
+
   showColorPicker(layerId) {
+    // 아래 팝업 핸들러들은 function(e) 형태라 this가 패널이 아니다
+    const self = this;
     const layer = layerManager.getLayer(layerId);
     if (!layer) return;
 
@@ -782,8 +809,7 @@ export class LayerPanel {
         layerManager.setLayerColor(layerId, colorItem.dataset.color);
         var colorInput = picker.querySelector(".color-input");
         if (colorInput) colorInput.value = colorItem.dataset.color;
-        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
-        if (indicator) indicator.style.backgroundColor = colorItem.dataset.color;
+        self.refreshSwatch(layerId);
       }
 
       var fillColorItem = e.target.closest(".color-item[data-fill-color]");
@@ -793,8 +819,7 @@ export class LayerPanel {
         layerManager.setLayerFillColor(layerId, fillColorItem.dataset.fillColor);
         var fillInput = picker.querySelector(".fill-color-input");
         if (fillInput) fillInput.value = fillColorItem.dataset.fillColor;
-        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
-        if (indicator) indicator.style.backgroundColor = fillColorItem.dataset.fillColor;
+        self.refreshSwatch(layerId);
       }
 
       var strokeColorItem = e.target.closest(".color-item[data-stroke-color]");
@@ -804,8 +829,7 @@ export class LayerPanel {
         layerManager.setLayerStrokeColor(layerId, strokeColorItem.dataset.strokeColor);
         var strokeInput = picker.querySelector(".stroke-color-input");
         if (strokeInput) strokeInput.value = strokeColorItem.dataset.strokeColor;
-        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
-        if (indicator) indicator.style.borderColor = strokeColorItem.dataset.strokeColor;
+        self.refreshSwatch(layerId);
       }
 
       var strokeBtn = e.target.closest(".stroke-btn");
@@ -821,8 +845,7 @@ export class LayerPanel {
       colorInput.addEventListener("input", function(e) {
         picker.querySelectorAll(".color-item[data-color]").forEach(function(i) { i.classList.remove("active"); });
         layerManager.setLayerColor(layerId, e.target.value);
-        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
-        if (indicator) indicator.style.backgroundColor = e.target.value;
+        self.refreshSwatch(layerId);
       });
     }
 
@@ -831,8 +854,7 @@ export class LayerPanel {
       fillColorInput.addEventListener("input", function(e) {
         picker.querySelectorAll(".color-item[data-fill-color]").forEach(function(i) { i.classList.remove("active"); });
         layerManager.setLayerFillColor(layerId, e.target.value);
-        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
-        if (indicator) indicator.style.backgroundColor = e.target.value;
+        self.refreshSwatch(layerId);
       });
     }
 
@@ -857,8 +879,7 @@ export class LayerPanel {
       strokeColorInput.addEventListener("input", function(e) {
         picker.querySelectorAll(".color-item[data-stroke-color]").forEach(function(i) { i.classList.remove("active"); });
         layerManager.setLayerStrokeColor(layerId, e.target.value);
-        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
-        if (indicator) indicator.style.borderColor = e.target.value;
+        self.refreshSwatch(layerId);
       });
     }
 
@@ -927,8 +948,7 @@ export class LayerPanel {
     if (rasterFilterColorInput) {
       rasterFilterColorInput.addEventListener("input", function(e) {
         rasterAnalysisTool.recolorFilter(layerId, e.target.value);
-        var indicator = document.querySelector("[data-layer-id=\"" + layerId + "\"] .layer-color");
-        if (indicator) indicator.style.backgroundColor = e.target.value;
+        self.refreshSwatch(layerId);
       });
     }
 
