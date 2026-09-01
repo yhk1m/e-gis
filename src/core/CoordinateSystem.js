@@ -6,7 +6,9 @@ import proj4 from 'proj4';
 import { register } from 'ol/proj/proj4';
 import { eventBus, Events } from '../utils/EventBus.js';
 
-// 한국에서 자주 사용하는 좌표계 정의
+// 한국에서 자주 쓰는 좌표계. 이 객체가 정의의 유일한 출처다.
+// 로더에서 따로 proj4.defs를 부르지 않는다 — 두 곳에 두면 서로 어긋난다.
+// 순서 = 우선순위. 역검증에서 후보가 여럿일 때 앞의 것이 기본값이 된다.
 const CRS_DEFINITIONS = {
   'EPSG:4326': {
     name: 'WGS 84 (경위도)',
@@ -19,21 +21,8 @@ const CRS_DEFINITIONS = {
     units: 'meters'
   },
   'EPSG:5179': {
-    name: 'Korea 2000 / UTM',
+    name: 'Korea 2000 / UTM-K (통합원점)',
     proj4: '+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs',
-    units: 'meters'
-  },
-  'EPSG:5174': {
-    // 서울시 인허가(LOCALDATA) 자료가 쓰는 옛 좌표계. 병원 79곳을 위경도 자료와
-    // 이름으로 대조해 확인했다 — 5174는 중앙값 21m, 5181은 314m, 2097은 259m였다.
-    name: 'Korean 1985 / 중부원점 (서울 인허가)',
-    proj4: '+proj=tmerc +lat_0=38 +lon_0=127.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
-    units: 'meters'
-  },
-  'EPSG:5181': {
-    // 5186과 원점은 같고 y_0만 다르다(50만/60만). 서울시 공원 등 옛 자료가 이 계열을 쓴다.
-    name: 'Korea 2000 / 중부원점 (y_0=500000)',
-    proj4: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +units=m +no_defs',
     units: 'meters'
   },
   'EPSG:5186': {
@@ -46,9 +35,64 @@ const CRS_DEFINITIONS = {
     proj4: '+proj=tmerc +lat_0=38 +lon_0=129 +k=1 +x_0=200000 +y_0=600000 +ellps=GRS80 +units=m +no_defs',
     units: 'meters'
   },
-  'EPSG:5188': {
+  'EPSG:5185': {
     name: 'Korea 2000 / 서부원점',
     proj4: '+proj=tmerc +lat_0=38 +lon_0=125 +k=1 +x_0=200000 +y_0=600000 +ellps=GRS80 +units=m +no_defs',
+    units: 'meters'
+  },
+  'EPSG:5188': {
+    // 예전에는 이 자리에 lon_0=125(서부원점 값)가 들어 있었다. EPSG:5188은 동해원점이다.
+    name: 'Korea 2000 / 동해원점',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=131 +k=1 +x_0=200000 +y_0=600000 +ellps=GRS80 +units=m +no_defs',
+    units: 'meters'
+  },
+  'EPSG:5181': {
+    // 5186과 원점은 같고 y_0만 다르다(50만/60만). 서울시 공원 등 옛 자료가 이 계열을 쓴다.
+    name: 'Korea 2000 / 중부원점 (y_0=500000)',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +units=m +no_defs',
+    units: 'meters'
+  },
+  'EPSG:5174': {
+    // 서울시 인허가(LOCALDATA) 자료가 쓰는 옛 좌표계. 병원 79곳을 위경도 자료와
+    // 이름으로 대조해 확인했다 — 5174는 중앙값 21m, 5181은 314m, 2097은 259m였다.
+    // towgs84 3파라미터는 그때 검증한 값이다. 7파라미터로 바꾸지 않는다.
+    name: 'Korean 1985 / 중부원점 (서울 인허가)',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=127.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    units: 'meters'
+  },
+  'EPSG:2097': {
+    name: 'Korean 1985 / 중부원점',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    units: 'meters'
+  },
+  'EPSG:5173': {
+    name: 'Korean 1985 / 서부원점',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=125.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    units: 'meters'
+  },
+  'EPSG:5176': {
+    name: 'Korean 1985 / 동부원점',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=129.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    units: 'meters'
+  },
+  'EPSG:5177': {
+    name: 'Korean 1985 / 동해원점',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=131.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    units: 'meters'
+  },
+  'EPSG:5178': {
+    name: 'Korean 1985 / UTM-K (통합원점)',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    units: 'meters'
+  },
+  'EPSG:32652': {
+    name: 'WGS 84 / UTM 52N',
+    proj4: '+proj=utm +zone=52 +datum=WGS84 +units=m +no_defs',
+    units: 'meters'
+  },
+  'EPSG:32651': {
+    name: 'WGS 84 / UTM 51N',
+    proj4: '+proj=utm +zone=51 +datum=WGS84 +units=m +no_defs',
     units: 'meters'
   }
 };
@@ -177,6 +221,15 @@ export class CoordinateSystem {
   getUnits(crs = null) {
     const targetCRS = crs || this.displayCRS;
     return CRS_DEFINITIONS[targetCRS]?.units || 'unknown';
+  }
+
+  /**
+   * 정의에 있는 좌표계인지 확인한다.
+   * 파일이 알려준 EPSG 코드를 근거로 삼아도 되는지 판단하는 데 쓴다 —
+   * 우리가 변환할 수 없는 좌표계라면 근거가 아니다.
+   */
+  isSupported(code) {
+    return Boolean(code && CRS_DEFINITIONS[code]);
   }
 }
 
