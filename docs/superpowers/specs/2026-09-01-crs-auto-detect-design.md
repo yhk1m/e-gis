@@ -82,6 +82,11 @@ detectCrs({ prj, srsId, geojsonCrs, epsgCode, projParams, sampleCoords })
 3. 결과가 한국 영역(경도 124–132, 위도 33–43) 안에 들어오는 후보만 남긴다
 4. 남은 개수로 confidence를 정한다
 
+**단위 온전성 검사를 함께 건다.** 표본이 전부 경위도 범위(|x|≤180, |y|≤90) 안이면
+미터 단위 좌표계를 후보에서 빼고, 하나라도 그 범위를 벗어나면 경위도 좌표계를 뺀다.
+이게 없으면 파리 좌표 `[2.35, 48.85]`가 3857로도 "세계 안"이라 후보가 둘이 되어
+해외 위경도 자료마다 쓸데없이 확인 창이 뜬다.
+
 값의 크기로 짐작하지 않으므로 범위가 겹치는 좌표계도 갈린다.
 표본이 한국 밖일 수 있으므로, 후보가 하나도 안 남으면 영역 조건을
 전 지구(경도 −180–180, 위도 −85–85)로 완화해 한 번 더 거른다.
@@ -109,7 +114,7 @@ ShapefileLoader의 중복 `proj4.defs` 호출은 삭제한다.
 | ShapefileLoader | `detectProjection`·`guessProjectionFromExtent`·중복 `proj4.defs` 삭제 후 위임 (약 90줄 감소) |
 | GeoPackageLoader | `srs_id`를 근거로 넘기되, 미등록 EPSG면 역방향 검증으로 대체 |
 | TableLoader | `createPointLayer`에 `sourceCrs` 인자 추가. 4326이 아니면 `proj4`로 3857 변환하고, 위경도 범위 검사는 4326일 때만 적용 |
-| DEMLoader | 감지만 CrsDetector에 위임. 픽셀 재투영은 하지 않고 bbox 변환만 하는 현행 동작을 유지한다 |
+| DEMLoader | 감지만 CrsDetector에 위임. 픽셀 재투영 없이 bbox만 변환하는 현행 동작은 유지한다. `matchKoreanTM`이 중앙경선 125를 5188로 보내던 오류가 함께 해소된다 — 125는 서부원점(5185)이고 5188은 동해원점이다 |
 | CoordinateImportPanel | 좌표계 선택 드롭다운 추가. 기본값은 감지 결과 |
 
 다이얼로그가 비동기이므로 `GeoJSONLoader.loadFromString`은 `async`가 된다.
