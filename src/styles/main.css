@@ -5061,8 +5061,37 @@ body.exporting .egis-basemap-panel {
 }
 
 /* 좌표계 확인 창 — 후보를 고르면 본 지도에 미리 그린다 */
+/* 이 창은 뒤에 그려진 미리보기를 보면서 고르는 창이다.
+   그래서 배경을 거의 가리지 않고, 창을 왼쪽으로 몰아 지도를 열어 둔다. */
+.crs-confirm-modal {
+  background: rgba(0, 0, 0, 0.15);
+  justify-content: flex-start;
+  padding-left: var(--spacing-lg);
+}
+
 .crs-confirm-content {
   max-width: 460px;
+  /* 다른 모달처럼 판 배경을 직접 지정한다. 이게 없으면 창이 비쳐
+     글씨가 지도 위에 그대로 얹혀 읽을 수 없다. */
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  /* 후보가 10종까지 나올 수 있어 목록만 스크롤시킨다 */
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.crs-confirm-modal .modal-body {
+  overflow-y: auto;
+}
+
+/* 기본 form-group은 라벨과 입력을 가로로 놓고 라벨 폭을 80px로 잡는다.
+   이 창의 라벨은 길어서 그 폭 안에서 글자 중간에 줄바꿈된다 — 세로로 쌓는다. */
+.crs-confirm-modal .form-group {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .crs-confirm-reason {
