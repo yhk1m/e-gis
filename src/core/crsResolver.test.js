@@ -67,3 +67,55 @@ describe('resolveSourceCrs', () => {
     expect(prompt.mock.calls[0][1]).toBe(context);
   });
 });
+
+// CrsConfirmDialog는 창이 하나뿐이라 동시에 열리면 앞선 창이 취소(null)로 닫힌다.
+// 지금은 모든 호출부가 await로 직렬 처리해 겹칠 일이 없지만, 다중 파일 가져오기를
+// Promise.all로 바꾸는 순간 애매한 판정 둘이 동시에 프롬프트를 불러 먼저 들어온
+// 파일이 조용히 취소되는 사고가 난다. resolveSourceCrs가 내부에서 직렬화하는지 검증한다.
+describe('resolveSourceCrs — 프롬프트 직렬화', () => {
+  // "지금 실행 중" 플래그로 겹침을 감지하고, 실제 호출 순서와 반환값도 함께 추적한다
+  function trackingPrompt(resultsByName) {
+    let running = false;
+    const overlaps = [];
+    const order = [];
+    const fn = vi.fn(async (detection, context) => {
+      if (running) overlaps.push(context.name);
+      running = true;
+      order.push(context.name);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      running = false;
+      return resultsByName[context.name];
+    });
+    return { fn, overlaps, order };
+  }
+
+  it('동시에 부른 프롬프트가 겹치지 않고 차례로 뜬다', async () => {
+    const { fn, overlaps, order } = trackingPrompt({ A: 'EPSG:5186', B: 'EPSG:5181' });
+    setCrsPrompt(fn);
+
+    await Promise.all([
+      resolveSourceCrs({ sampleCoords: [SEOUL_5186] }, { name: 'A' }),
+      resolveSourceCrs({ sampleCoords: [SEOUL_5186] }, { name: 'B' })
+    ]);
+
+    // 겹쳤다면 overlaps에 이름이 쌓인다 — 비어 있어야 한 번에 하나만 떴다는 뜻이다
+    expect(overlaps).toEqual([]);
+    // 먼저 resolveSourceCrs를 부른 쪽(A)의 프롬프트가 먼저 끝나야 B가 시작된다
+    expect(order).toEqual(['A', 'B']);
+  });
+
+  it('직렬화되어도 둘 다 각자 고른 값을 제대로 돌려받는다', async () => {
+    const { fn } = trackingPrompt({ A: 'EPSG:5186', B: 'EPSG:5181' });
+    setCrsPrompt(fn);
+
+    const [a, b] = await Promise.all([
+      resolveSourceCrs({ sampleCoords: [SEOUL_5186] }, { name: 'A' }),
+      resolveSourceCrs({ sampleCoords: [SEOUL_5186] }, { name: 'B' })
+    ]);
+
+    expect(a.crs).toBe('EPSG:5186');
+    expect(b.crs).toBe('EPSG:5181');
+    expect(a.cancelled).toBe(false);
+    expect(b.cancelled).toBe(false);
+  });
+});

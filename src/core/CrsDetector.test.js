@@ -177,12 +177,42 @@ function at(code, lonlat) {
 }
 
 describe('detectCrs — 명시적 근거 우선', () => {
-  it('.prj의 EPSG 코드가 좌표보다 우선한다', () => {
-    // 좌표는 5186처럼 생겼지만 .prj는 5179라고 말한다 → .prj를 따른다
+  it('명시적 근거를 우선하되 좌표와 모순되면 사용자에게 묻는다', () => {
+    // .prj는 5179라고 말하지만 좌표는 실제로 5186 값이다 — 메타데이터와 실제
+    // 좌표가 어긋난 파일. 조용히 5179로 확정하면 결과가 한국 밖(대만 남쪽 바다)에
+    // 찍혀도 확인 창 없이 넘어간다. 그래서 ambiguous로 낮추되, 선언된 값(5179)을
+    // 맨 앞에 두어 기본 선택은 유지하고 역검증에서 살아남은 후보(5186 등)를 함께 준다.
     const r = detectCrs({
       prj: 'PROJCS["뭐든",AUTHORITY["EPSG","5179"]]',
       sampleCoords: [at('EPSG:5186', SEOUL)]
     });
+    expect(r.confidence).toBe('ambiguous');
+    expect(r.crs).toBe('EPSG:5179');
+    expect(r.candidates[0].crs).toBe('EPSG:5179');
+    expect(r.candidates.map((c) => c.crs)).toContain('EPSG:5186');
+  });
+
+  it('.prj의 EPSG 코드가 좌표와 맞으면 그대로 확정한다', () => {
+    // 정상 경로 — 선언된 좌표계와 실제 좌표가 일치하면 모순 검사에 걸리지 않는다
+    const r = detectCrs({
+      prj: 'PROJCS["뭐든",AUTHORITY["EPSG","5186"]]',
+      sampleCoords: [at('EPSG:5186', SEOUL)]
+    });
+    expect(r.crs).toBe('EPSG:5186');
+    expect(r.confidence).toBe('certain');
+  });
+
+  it('해외 자료는 명시적 근거와 좌표가 둘 다 한국 밖이라 모순 검사에 걸리지 않는다', () => {
+    // 파리 위경도 자료에 crs 멤버로 EPSG:4326이 선언된 경우 — 어떤 후보도
+    // 한국에 떨어지지 않으므로 그대로 certain이다. 이게 이번 수정의 안전장치다.
+    const crs = { type: 'name', properties: { name: 'EPSG:4326' } };
+    const r = detectCrs({ geojsonCrs: crs, sampleCoords: [PARIS] });
+    expect(r.crs).toBe('EPSG:4326');
+    expect(r.confidence).toBe('certain');
+  });
+
+  it('표본 좌표가 없으면 모순을 검사할 수 없으니 그대로 확정한다', () => {
+    const r = detectCrs({ prj: 'PROJCS["뭐든",AUTHORITY["EPSG","5179"]]' });
     expect(r.crs).toBe('EPSG:5179');
     expect(r.confidence).toBe('certain');
   });

@@ -6,7 +6,10 @@
  * GeoPackage·표·DEM)이 형식마다 가진 근거를 이 한 곳에 넘기고 같은 규칙으로 판정받는다.
  *
  * 판정 순서:
- *   1. 명시적 근거 — .prj의 EPSG 코드, GeoPackage srs_id, GeoJSON crs 멤버
+ *   1. 명시적 근거 — .prj의 EPSG 코드, GeoPackage srs_id, GeoJSON crs 멤버, GeoTIFF EPSG 코드.
+ *      단, 표본 좌표가 있는데 그 좌표계로는 한국 밖에 떨어지고 다른 후보는 한국 안에
+ *      떨어뜨린다면(메타데이터와 실제 좌표가 어긋난 파일) 조용히 확정하지 않고 ambiguous로
+ *      낮춰 사용자에게 되묻는다. 해외 자료는 이 검사에 걸리지 않는다.
  *   2. .prj 투영 파라미터가 알려진 좌표계와 일치
  *   3. 좌표 역검증 — 후보로 4326에 되돌려 한국 영역에 떨어지는지 본다
  */
@@ -251,6 +254,42 @@ function certain(crs, reason) {
 }
 
 /**
+ * 명시적 근거(.prj EPSG 코드·srsId·GeoJSON crs 멤버·GeoTIFF EPSG 코드)로 정한
+ * 좌표계를 확정한다 — 단, 표본 좌표와 모순되면 그대로 확정하지 않는다.
+ *
+ * 모순이란: 선언된 좌표계로 표본을 4326에 되돌리면 한국 밖에 떨어지는데, 다른 후보
+ * 중에는 한국 안에 떨어뜨리는 것이 하나라도 있다는 뜻이다 — 메타데이터가 실제 좌표와
+ * 어긋난 파일에서 벌어진다. 예를 들어 .prj는 5179라는데 좌표는 5186 값인 경우,
+ * 그대로 확정하면 결과가 대만 남쪽 바다에 찍혀도 확인 창 없이 조용히 넘어간다.
+ *
+ * 해외 자료는 어떤 후보도 한국에 안 떨어지므로(alternatives가 비므로) 이 검사가
+ * 손대지 않는다 — 그대로 certain으로 남는다. 표본이 없으면 애초에 검사할 수 없으니
+ * 마찬가지로 certain이다.
+ */
+function certainUnlessContradicted(crs, reason, sampleCoords) {
+  const info = coordinateSystem.getCRSInfo(crs);
+  const declared = { crs, name: info ? info.name : crs, center: null };
+
+  if (Array.isArray(sampleCoords) && sampleCoords.length > 0) {
+    const withinKorea = validateByReprojection(sampleCoords, KOREA_BOUNDS);
+    const declaredOk = withinKorea.some((c) => c.crs === crs);
+    if (!declaredOk) {
+      const alternatives = withinKorea.filter((c) => c.crs !== crs);
+      if (alternatives.length > 0) {
+        return {
+          crs,
+          confidence: 'ambiguous',
+          reason: reason + '라는데 좌표가 한국 밖에 떨어진다',
+          candidates: [declared, ...alternatives]
+        };
+      }
+    }
+  }
+
+  return { crs, confidence: 'certain', reason, candidates: [declared] };
+}
+
+/**
  * 원본 좌표계를 판정한다.
  *
  * @param {Object} input - 형식마다 있는 근거만 넣는다
@@ -266,18 +305,18 @@ function certain(crs, reason) {
 export function detectCrs(input = {}) {
   const { prj, srsId, geojsonCrs, epsgCode, projParams, sampleCoords = [] } = input;
 
-  // 1. 명시적 근거
+  // 1. 명시적 근거 — 표본 좌표와 모순되면 certainUnlessContradicted가 ambiguous로 낮춘다
   const fromPrj = parseEpsgFromPrj(prj);
-  if (fromPrj) return certain(fromPrj, '.prj의 EPSG 코드');
+  if (fromPrj) return certainUnlessContradicted(fromPrj, '.prj의 EPSG 코드', sampleCoords);
 
   const fromSrsId = epsgFromNumber(srsId);
-  if (fromSrsId) return certain(fromSrsId, 'GeoPackage srs_id');
+  if (fromSrsId) return certainUnlessContradicted(fromSrsId, 'GeoPackage srs_id', sampleCoords);
 
   const fromGeoJson = parseEpsgFromGeoJsonCrs(geojsonCrs);
-  if (fromGeoJson) return certain(fromGeoJson, 'GeoJSON crs 멤버');
+  if (fromGeoJson) return certainUnlessContradicted(fromGeoJson, 'GeoJSON crs 멤버', sampleCoords);
 
   const fromEpsgCode = epsgFromNumber(epsgCode);
-  if (fromEpsgCode) return certain(fromEpsgCode, 'GeoTIFF EPSG 코드');
+  if (fromEpsgCode) return certainUnlessContradicted(fromEpsgCode, 'GeoTIFF EPSG 코드', sampleCoords);
 
   // 2. 투영 파라미터
   const byParams = matchByProjParams(parsePrjParams(prj) || projParams || null);
