@@ -90,6 +90,11 @@ class CoordinateImportPanel {
     '</div>';
   }
 
+  /** 좌표계 select의 현재 값. 안 골랐으면 위경도가 기본이다 (createPointLayer 기본값과 같다) */
+  selectedCrs() {
+    return document.getElementById('coord-crs').value || 'EPSG:4326';
+  }
+
   /** 좌표계 드롭다운 항목 */
   crsOptions() {
     return coordinateSystem.getAvailableCRS().map((crs) =>
@@ -129,6 +134,7 @@ class CoordinateImportPanel {
     const fileArea = document.getElementById('coord-file-area');
     const latSelect = document.getElementById('coord-lat-column');
     const lonSelect = document.getElementById('coord-lon-column');
+    const crsSelect = document.getElementById('coord-crs');
 
     closeBtn.addEventListener('click', () => this.close());
     cancelBtn.addEventListener('click', () => this.close());
@@ -167,6 +173,9 @@ class CoordinateImportPanel {
       this.suggestCrs();
       this.updatePreview();
     });
+
+    // 좌표계를 바꾸면 유효 행 기준이 달라지므로 미리보기를 다시 센다
+    crsSelect.addEventListener('change', () => this.updatePreview());
 
     // 레이어 생성
     applyBtn.addEventListener('click', () => this.createLayer());
@@ -260,16 +269,24 @@ class CoordinateImportPanel {
       return;
     }
 
+    // 위경도 범위 검사는 위경도를 골랐을 때만 뜻이 있다. TM 좌표(수십만 m)에
+    // 이 검사를 그대로 걸면 전 행이 "잘못된 좌표"로 잡혀 레이어 생성 버튼이
+    // 계속 잠긴다. createPointLayer가 세는 기준과 맞춰야 미리보기 숫자와
+    // 실제로 만들어지는 피처 수가 어긋나지 않는다.
+    const isLonLat = this.selectedCrs() === 'EPSG:4326';
+
     let validCount = 0;
     let invalidCount = 0;
 
     for (const row of tableLoader.data) {
       const lat = parseFloat(row[latCol]);
       const lon = parseFloat(row[lonCol]);
+      const valid = isLonLat
+        ? (Number.isFinite(lat) && Number.isFinite(lon) &&
+           lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180)
+        : (Number.isFinite(lat) && Number.isFinite(lon));
 
-      if (!isNaN(lat) && !isNaN(lon) &&
-          lat >= -90 && lat <= 90 &&
-          lon >= -180 && lon <= 180) {
+      if (valid) {
         validCount++;
       } else {
         invalidCount++;
@@ -288,7 +305,7 @@ class CoordinateImportPanel {
     const latCol = document.getElementById('coord-lat-column').value;
     const lonCol = document.getElementById('coord-lon-column').value;
     const layerName = document.getElementById('coord-layer-name').value.trim();
-    const sourceCrs = document.getElementById('coord-crs').value || 'EPSG:4326';
+    const sourceCrs = this.selectedCrs();
 
     if (!latCol || !lonCol) {
       alert('위도와 경도 컬럼을 선택해주세요.');
