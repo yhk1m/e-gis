@@ -5065,12 +5065,17 @@ body.exporting .egis-basemap-panel {
    그래서 배경을 거의 가리지 않고, 창을 왼쪽으로 몰아 지도를 열어 둔다. */
 .crs-confirm-modal {
   background: rgba(0, 0, 0, 0.15);
+  /* 오버레이가 화면을 덮고 있어 지도의 확대·이동이 막혔다.
+     후보를 고르려면 미리보기를 들여다봐야 하므로 마우스를 지도로 흘려보낸다.
+     창 자체는 아래에서 다시 받는다. */
+  pointer-events: none;
   justify-content: flex-start;
   padding-left: var(--spacing-lg);
 }
 
 .crs-confirm-content {
   max-width: 460px;
+  pointer-events: auto;
   /* 다른 모달처럼 판 배경을 직접 지정한다. 이게 없으면 창이 비쳐
      글씨가 지도 위에 그대로 얹혀 읽을 수 없다. */
   background: var(--bg-panel);

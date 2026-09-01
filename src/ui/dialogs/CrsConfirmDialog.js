@@ -140,10 +140,10 @@ class CrsConfirmDialog {
     this.modal.querySelector('#crs-confirm-close')
       .addEventListener('click', () => this.finish(null));
 
-    // 오버레이(창 바깥) 클릭
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) this.finish(null);
-    });
+    // 창 바깥을 눌러 닫는 처리는 두지 않는다.
+    // 이 창은 뒤의 미리보기를 확대·이동해 가며 고르는 창이라 지도가 살아 있어야 한다.
+    // 오버레이는 pointer-events: none 으로 마우스를 지도에 흘려보내므로(main.css),
+    // 바깥 클릭은 애초에 이 창에 닿지 않는다. 닫는 길은 취소·닫기 버튼과 ESC다.
 
     this.onKeyDown = (e) => {
       if (e.key === 'Escape') this.finish(null);

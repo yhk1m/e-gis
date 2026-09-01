@@ -97,10 +97,22 @@ describe('CrsConfirmDialog', () => {
     expect(map.layers).toHaveLength(0);
   });
 
-  it('오버레이를 눌러 닫아도 미리보기를 걷는다', async () => {
+  it('창 바깥을 눌러도 닫히지 않는다 — 지도를 만지는 중이기 때문이다', async () => {
+    // 이 창은 뒤의 미리보기를 확대·이동해 가며 고른다. 지도를 누를 때마다
+    // 창이 닫히면 고를 수가 없다. 오버레이는 pointer-events: none 이라
+    // 실제로는 이 클릭이 지도로 흘러간다.
     const promise = crsConfirmDialog.pick(DETECTION, context());
     document.querySelector('.crs-confirm-modal').click();
-    await expect(promise).resolves.toBeNull();
+
+    let settled = false;
+    promise.then(() => { settled = true; });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    expect(document.querySelector('.crs-confirm-modal')).not.toBeNull();
+    expect(map.layers).toHaveLength(1);
+
+    document.getElementById('crs-confirm-cancel').click();
+    await promise;
     expect(map.layers).toHaveLength(0);
   });
 
