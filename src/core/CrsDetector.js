@@ -10,6 +10,7 @@
  *   2. .prj 투영 파라미터가 알려진 좌표계와 일치
  *   3. 좌표 역검증 — 후보로 4326에 되돌려 한국 영역에 떨어지는지 본다
  */
+import proj4 from 'proj4';
 import { coordinateSystem } from './CoordinateSystem.js';
 
 /**
@@ -149,4 +150,179 @@ export function matchByProjParams(params) {
     return code;
   }
   return null;
+}
+
+// 남한과 주변. 한국 자료가 압도적으로 많으므로 이 범위를 먼저 본다.
+const KOREA_BOUNDS = { minLon: 124, maxLon: 132, minLat: 33, maxLat: 43 };
+// 한국 안에서 후보가 하나도 안 남을 때(해외 자료) 쓰는 완화 범위
+const WORLD_BOUNDS = { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 };
+
+/**
+ * 표본 좌표가 경위도처럼 생겼는지 본다.
+ * 미터 좌표계 값은 이 범위를 훌쩍 넘고, 경위도 값은 절대 넘지 않는다.
+ */
+function looksLikeDegrees(coords) {
+  return coords.every(([x, y]) => Math.abs(x) <= 180 && Math.abs(y) <= 90);
+}
+
+/**
+ * 단위가 표본과 맞는 후보인지 본다.
+ * 이 검사가 없으면 파리 좌표 [2.35, 48.85]가 3857로도 "세계 안"이라 후보가 둘이 된다.
+ */
+function unitsPlausible(code, degreeish) {
+  const units = coordinateSystem.getCRSInfo(code)?.units;
+  return degreeish ? units === 'degrees' : units === 'meters';
+}
+
+/**
+ * 후보 좌표계로 표본을 4326에 되돌려, 결과가 주어진 범위 안에 떨어지는지 검증한다.
+ * 좌표 크기로 짐작하는 대신 되돌려 확인하므로 범위가 겹치는 좌표계도 갈린다.
+ *
+ * @returns {Array<{crs:string, name:string, center:number[]}>} 살아남은 후보
+ */
+export function validateByReprojection(sampleCoords, bounds) {
+  if (!Array.isArray(sampleCoords) || sampleCoords.length === 0) return [];
+  const degreeish = looksLikeDegrees(sampleCoords);
+  const survivors = [];
+
+  for (const { code, name } of coordinateSystem.getAvailableCRS()) {
+    if (!unitsPlausible(code, degreeish)) continue;
+
+    let sumLon = 0;
+    let sumLat = 0;
+    let ok = true;
+
+    for (const coord of sampleCoords) {
+      let lon;
+      let lat;
+      try {
+        [lon, lat] = proj4(code, 'EPSG:4326', coord);
+      } catch (error) {
+        ok = false;
+        break;
+      }
+      if (!Number.isFinite(lon) || !Number.isFinite(lat) ||
+          lon < bounds.minLon || lon > bounds.maxLon ||
+          lat < bounds.minLat || lat > bounds.maxLat) {
+        ok = false;
+        break;
+      }
+      sumLon += lon;
+      sumLat += lat;
+    }
+
+    if (ok) {
+      survivors.push({
+        crs: code,
+        name,
+        center: [sumLon / sampleCoords.length, sumLat / sampleCoords.length]
+      });
+    }
+  }
+
+  return survivors;
+}
+
+/** 후보를 하나도 못 좁혔을 때 사용자에게 보여줄 전체 목록 */
+function allCandidates() {
+  return coordinateSystem.getAvailableCRS().map(({ code, name }) => ({
+    crs: code,
+    name,
+    center: null
+  }));
+}
+
+function certain(crs, reason) {
+  const info = coordinateSystem.getCRSInfo(crs);
+  return {
+    crs,
+    confidence: 'certain',
+    reason,
+    candidates: [{ crs, name: info ? info.name : crs, center: null }]
+  };
+}
+
+/**
+ * 원본 좌표계를 판정한다.
+ *
+ * @param {Object} input - 형식마다 있는 근거만 넣는다
+ * @param {string} [input.prj] - Shapefile .prj 내용(WKT)
+ * @param {number} [input.srsId] - GeoPackage gpkg_geometry_columns.srs_id
+ * @param {Object|string} [input.geojsonCrs] - GeoJSON crs 멤버
+ * @param {number} [input.epsgCode] - GeoTIFF GeoKeys의 EPSG 코드
+ * @param {Object} [input.projParams] - {lon0, lat0, x0, y0, k, ellps} (GeoTIFF GeoKeys 등)
+ * @param {number[][]} [input.sampleCoords] - 원본 좌표계 그대로의 표본 좌표
+ * @returns {{crs:string, confidence:'certain'|'ambiguous'|'unknown', reason:string,
+ *            candidates:Array<{crs:string, name:string, center:number[]|null}>}}
+ */
+export function detectCrs(input = {}) {
+  const { prj, srsId, geojsonCrs, epsgCode, projParams, sampleCoords = [] } = input;
+
+  // 1. 명시적 근거
+  const fromPrj = parseEpsgFromPrj(prj);
+  if (fromPrj) return certain(fromPrj, '.prj의 EPSG 코드');
+
+  const fromSrsId = epsgFromNumber(srsId);
+  if (fromSrsId) return certain(fromSrsId, 'GeoPackage srs_id');
+
+  const fromGeoJson = parseEpsgFromGeoJsonCrs(geojsonCrs);
+  if (fromGeoJson) return certain(fromGeoJson, 'GeoJSON crs 멤버');
+
+  const fromEpsgCode = epsgFromNumber(epsgCode);
+  if (fromEpsgCode) return certain(fromEpsgCode, 'GeoTIFF EPSG 코드');
+
+  // 2. 투영 파라미터
+  const byParams = matchByProjParams(parsePrjParams(prj) || projParams || null);
+  if (byParams) return certain(byParams, '투영 파라미터');
+
+  // 3. 좌표 역검증
+  let candidates = validateByReprojection(sampleCoords, KOREA_BOUNDS);
+  let scope = '한국 영역';
+  if (candidates.length === 0) {
+    candidates = validateByReprojection(sampleCoords, WORLD_BOUNDS);
+    scope = '전 지구 영역';
+  }
+
+  if (candidates.length === 1) {
+    return {
+      crs: candidates[0].crs,
+      confidence: 'certain',
+      reason: '좌표 역검증 (' + scope + '에 맞는 후보 하나)',
+      candidates
+    };
+  }
+  if (candidates.length > 1) {
+    return {
+      crs: candidates[0].crs,
+      confidence: 'ambiguous',
+      reason: '좌표 역검증 (' + scope + '에 맞는 후보 ' + candidates.length + '개)',
+      candidates
+    };
+  }
+
+  return {
+    crs: 'EPSG:4326',
+    confidence: 'unknown',
+    reason: '판단할 근거가 없다',
+    candidates: allCandidates()
+  };
+}
+
+/**
+ * GeoJSON에서 판정용 표본 좌표를 뽑는다.
+ * 도형 종류마다 좌표 중첩 깊이가 달라 첫 좌표까지 파고든다.
+ */
+export function sampleCoordsFromGeoJSON(geojson, max = 20) {
+  const features = geojson && geojson.features;
+  if (!Array.isArray(features)) return [];
+  const out = [];
+  for (const feature of features) {
+    let c = feature && feature.geometry && feature.geometry.coordinates;
+    while (Array.isArray(c) && Array.isArray(c[0])) c = c[0];
+    if (Array.isArray(c) && Number.isFinite(c[0]) && Number.isFinite(c[1])) {
+      out.push([c[0], c[1]]);
+    }
+    if (out.length >= max) break;
+  }
+  return out;
 }

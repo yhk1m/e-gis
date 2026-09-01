@@ -6,13 +6,16 @@
  * 이 파일은 그 순서와 각 단계의 경계를 못박는다.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
+import proj4 from 'proj4';
 import { coordinateSystem } from './CoordinateSystem.js';
 import {
   parseEpsgFromPrj,
   parseEpsgFromGeoJsonCrs,
   epsgFromNumber,
   parsePrjParams,
-  matchByProjParams
+  matchByProjParams,
+  detectCrs,
+  sampleCoordsFromGeoJSON
 } from './CrsDetector.js';
 
 beforeAll(() => coordinateSystem.init());
@@ -144,5 +147,120 @@ describe('matchByProjParams', () => {
 
   it('빈 값에 터지지 않는다', () => {
     expect(matchByProjParams(null)).toBeNull();
+  });
+});
+
+const SEOUL = [126.9784, 37.5667];      // 서울시청
+const BUSAN = [129.0756, 35.1796];      // 부산시청
+const PARIS = [2.3522, 48.8566];
+
+// 위경도 지점을 해당 좌표계 값으로 옮긴다
+function at(code, lonlat) {
+  return proj4('EPSG:4326', code, lonlat);
+}
+
+describe('detectCrs — 명시적 근거 우선', () => {
+  it('.prj의 EPSG 코드가 좌표보다 우선한다', () => {
+    // 좌표는 5186처럼 생겼지만 .prj는 5179라고 말한다 → .prj를 따른다
+    const r = detectCrs({
+      prj: 'PROJCS["뭐든",AUTHORITY["EPSG","5179"]]',
+      sampleCoords: [at('EPSG:5186', SEOUL)]
+    });
+    expect(r.crs).toBe('EPSG:5179');
+    expect(r.confidence).toBe('certain');
+  });
+
+  it('GeoPackage srs_id를 따른다', () => {
+    const r = detectCrs({ srsId: 5187, sampleCoords: [at('EPSG:5187', BUSAN)] });
+    expect(r.crs).toBe('EPSG:5187');
+    expect(r.confidence).toBe('certain');
+  });
+
+  it('EPSG 코드가 없으면 투영 파라미터로 정한다', () => {
+    const r = detectCrs({
+      prj: PRJ_5186_NO_AUTHORITY,
+      sampleCoords: [at('EPSG:5186', SEOUL)]
+    });
+    expect(r.crs).toBe('EPSG:5186');
+    expect(r.confidence).toBe('certain');
+  });
+});
+
+describe('detectCrs — 좌표 역검증', () => {
+  it('위경도 자료는 4326 하나로 확정된다', () => {
+    const r = detectCrs({ sampleCoords: [SEOUL, BUSAN] });
+    expect(r.crs).toBe('EPSG:4326');
+    expect(r.confidence).toBe('certain');
+  });
+
+  it('TM 자료는 후보가 여럿이라 애매하다 — 5186과 5181이 함께 남는다', () => {
+    // 5186과 5181은 y_0만 10만 다르다. 둘 다 한국 안에 떨어지므로
+    // 좌표만으로는 갈릴 수 없다. 사용자가 미리보기로 고른다.
+    const r = detectCrs({ sampleCoords: [at('EPSG:5186', SEOUL), at('EPSG:5186', BUSAN)] });
+    expect(r.confidence).toBe('ambiguous');
+    const codes = r.candidates.map((c) => c.crs);
+    expect(codes).toContain('EPSG:5186');
+    expect(codes).toContain('EPSG:5181');
+    // 정의 순서상 5186이 앞이므로 기본 선택이 된다
+    expect(r.crs).toBe('EPSG:5186');
+  });
+
+  it('후보마다 변환 결과 중심을 함께 준다 (미리보기 설명용)', () => {
+    const r = detectCrs({ sampleCoords: [at('EPSG:5186', SEOUL)] });
+    const picked = r.candidates.find((c) => c.crs === 'EPSG:5186');
+    expect(picked.center[0]).toBeCloseTo(SEOUL[0], 3);
+    expect(picked.center[1]).toBeCloseTo(SEOUL[1], 3);
+    expect(picked.name).toContain('중부원점');
+  });
+
+  it('단위가 안 맞는 후보는 뺀다 — 경위도 값에 미터 좌표계를 주지 않는다', () => {
+    const r = detectCrs({ sampleCoords: [PARIS] });
+    expect(r.candidates.map((c) => c.crs)).not.toContain('EPSG:3857');
+  });
+
+  it('한국 밖이면 전 지구 범위로 한 번 더 거른다', () => {
+    const r = detectCrs({ sampleCoords: [PARIS] });
+    expect(r.crs).toBe('EPSG:4326');
+    expect(r.confidence).toBe('certain');
+    expect(r.reason).toContain('전 지구');
+  });
+
+  it('아무 근거도 없으면 unknown이고 기본값은 4326이다', () => {
+    const r = detectCrs({ sampleCoords: [] });
+    expect(r.confidence).toBe('unknown');
+    expect(r.crs).toBe('EPSG:4326');
+    expect(r.candidates.length).toBeGreaterThan(10);
+  });
+
+  it('말이 안 되는 좌표도 터지지 않는다', () => {
+    const r = detectCrs({ sampleCoords: [[1e12, -1e12]] });
+    expect(r.confidence).toBe('unknown');
+  });
+});
+
+describe('sampleCoordsFromGeoJSON', () => {
+  it('도형 종류와 상관없이 첫 좌표를 뽑는다', () => {
+    const gj = {
+      type: 'FeatureCollection',
+      features: [
+        { geometry: { type: 'Point', coordinates: [1, 2] } },
+        { geometry: { type: 'LineString', coordinates: [[3, 4], [5, 6]] } },
+        { geometry: { type: 'Polygon', coordinates: [[[7, 8], [9, 10]]] } },
+        { geometry: { type: 'MultiPolygon', coordinates: [[[[11, 12], [13, 14]]]] } }
+      ]
+    };
+    expect(sampleCoordsFromGeoJSON(gj)).toEqual([[1, 2], [3, 4], [7, 8], [11, 12]]);
+  });
+
+  it('개수 상한을 지킨다', () => {
+    const features = Array.from({ length: 50 }, (_, i) => ({
+      geometry: { type: 'Point', coordinates: [i, i] }
+    }));
+    expect(sampleCoordsFromGeoJSON({ features }, 20)).toHaveLength(20);
+  });
+
+  it('빈 값과 지오메트리 없는 피처를 건너뛴다', () => {
+    expect(sampleCoordsFromGeoJSON(null)).toEqual([]);
+    expect(sampleCoordsFromGeoJSON({ features: [{ geometry: null }, {}] })).toEqual([]);
   });
 });
