@@ -246,7 +246,11 @@ function initApp() {
         for (const file of others) {
           try {
             showStatusMessage('로딩 중: ' + file.name);
-            await loadFileByExtension(file);
+            const loadedId = await loadFileByExtension(file);
+            if (loadedId === null) {
+              showStatusMessage('좌표계 선택을 취소했습니다: ' + file.name);
+              continue;
+            }
             showStatusMessage(file.name + ' 로드 완료');
             // 최근 파일에 추가
             const ext = file.name.split('.').pop().toLowerCase();

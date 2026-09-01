@@ -4,6 +4,8 @@
 
 import GeoJSON from 'ol/format/GeoJSON';
 import { layerManager } from '../core/LayerManager.js';
+import { resolveSourceCrs } from '../core/crsResolver.js';
+import { sampleCoordsFromGeoJSON } from '../core/CrsDetector.js';
 
 export class GeoJSONLoader {
   constructor() {
@@ -19,10 +21,10 @@ export class GeoJSONLoader {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const content = e.target.result;
-          const layerId = this.loadFromString(content, file.name);
+          const layerId = await this.loadFromString(content, file.name);
           resolve(layerId);
         } catch (error) {
           reject(new Error('GeoJSON 파싱 실패: ' + error.message));
@@ -39,19 +41,31 @@ export class GeoJSONLoader {
 
   /**
    * GeoJSON 문자열로부터 로드
-   * @param {string} geojsonStr - GeoJSON 문자열
+   *
+   * 좌표계를 판정해 3857로 변환한다. 애매하면 확인 창이 뜨므로 비동기다.
+   * 호출자는 loadFromFile·loadFromUrl 둘뿐이고 이미 비동기다.
+   *
+   * @param {string|Object} geojsonStr - GeoJSON 문자열 또는 객체
    * @param {string} name - 레이어 이름
-   * @returns {string} 생성된 레이어 ID
+   * @returns {Promise<string|null>} 레이어 ID, 사용자가 좌표계 선택을 취소하면 null
    */
-  loadFromString(geojsonStr, name = '새 레이어') {
-    // GeoJSON 파싱
+  async loadFromString(geojsonStr, name = '새 레이어') {
     const geojsonObj = typeof geojsonStr === 'string'
       ? JSON.parse(geojsonStr)
       : geojsonStr;
 
-    // OpenLayers Feature로 변환
+    const { crs, cancelled } = await resolveSourceCrs(
+      {
+        // crs 멤버는 2016년 규격에서 빠졌지만 국내 공공데이터에는 아직 흔하다
+        geojsonCrs: geojsonObj.crs,
+        sampleCoords: sampleCoordsFromGeoJSON(geojsonObj)
+      },
+      { name, previewGeoJSON: geojsonObj }
+    );
+    if (cancelled) return null;
+
     const features = this.format.readFeatures(geojsonObj, {
-      dataProjection: 'EPSG:4326',
+      dataProjection: crs,
       featureProjection: 'EPSG:3857'
     });
 
@@ -59,17 +73,14 @@ export class GeoJSONLoader {
       throw new Error('GeoJSON에 피처가 없습니다.');
     }
 
-    // 파일명에서 확장자 제거
     const layerName = name.replace(/\.(geojson|json)$/i, '');
 
-    // 레이어 추가
-    const layerId = layerManager.addLayer({
+    return layerManager.addLayer({
       name: layerName,
       type: 'vector',
-      features: features
+      features: features,
+      sourceCrs: crs
     });
-
-    return layerId;
   }
 
   /**
@@ -85,7 +96,7 @@ export class GeoJSONLoader {
     }
 
     const geojsonStr = await response.text();
-    return this.loadFromString(geojsonStr, name);
+    return await this.loadFromString(geojsonStr, name);
   }
 }
 

@@ -151,7 +151,11 @@ export class BrowserPanel {
     // 나머지 파일 개별 로드
     for (const file of others) {
       try {
-        await this.loadFile(file);
+        const loadedId = await this.loadFile(file);
+        if (loadedId === null) {
+          this.showMessage(`좌표계 선택을 취소했습니다: ${file.name}`, 'info');
+          continue;
+        }
         this.showMessage(`${file.name} 로드 완료`, 'success');
       } catch (error) {
         console.error('파일 로드 실패:', error);
