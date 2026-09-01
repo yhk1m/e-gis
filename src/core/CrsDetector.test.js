@@ -148,6 +148,23 @@ describe('matchByProjParams', () => {
   it('빈 값에 터지지 않는다', () => {
     expect(matchByProjParams(null)).toBeNull();
   });
+
+  it('타원체를 모르면 수치가 같은 짝을 확정하지 않는다 — UTM-K는 5179와 5178이 겹친다', () => {
+    // 데이텀이 달라 500m급으로 어긋난다. 조용히 고르느니 역검증에 넘긴다.
+    const utmk = { lon0: 127.5, lat0: 38, x0: 1000000, y0: 2000000, k: 0.9996, ellps: null };
+    expect(matchByProjParams(utmk)).toBeNull();
+  });
+
+  it('타원체를 모르면 중부원점 y_0=500000 짝도 확정하지 않는다 — 5181과 2097이 겹친다', () => {
+    const central = { lon0: 127, lat0: 38, x0: 200000, y0: 500000, k: 1, ellps: null };
+    expect(matchByProjParams(central)).toBeNull();
+  });
+
+  it('타원체를 알면 겹치는 짝도 갈린다', () => {
+    const base = { lon0: 127.5, lat0: 38, x0: 1000000, y0: 2000000, k: 0.9996 };
+    expect(matchByProjParams({ ...base, ellps: 'grs80' })).toBe('EPSG:5179');
+    expect(matchByProjParams({ ...base, ellps: 'bessel' })).toBe('EPSG:5178');
+  });
 });
 
 const SEOUL = [126.9784, 37.5667];      // 서울시청

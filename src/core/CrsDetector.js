@@ -127,29 +127,37 @@ function paramsOfDefinition(code) {
   };
 }
 
-// 중앙경선 허용오차. 5174(127.0028902…)와 2097(127.0)의 차이가 0.00289도라
-// 이보다 촘촘해야 둘이 갈린다.
-const LON_TOLERANCE = 0.0005;
+// 각도 허용오차 — 중앙경선(lon0)뿐 아니라 원점위도(lat0) 비교에도 쓴다.
+// 5174(127.0028902…)와 2097(127.0)의 차이가 0.00289도라 이보다 촘촘해야 둘이 갈린다.
+const ANGLE_TOLERANCE = 0.0005;
 
 /**
  * 투영 파라미터로 좌표계를 맞춘다.
+ *
+ * 조건에 맞는 정의가 **하나일 때만** 확정한다. 5179(GRS80)와 5178(bessel),
+ * 5181과 2097처럼 투영 수치가 똑같고 타원체만 다른 짝이 있어서, 타원체를 모르는
+ * 채로 먼저 오는 것을 고르면 조용히 다른 데이텀으로 확정된다(500m급 오차).
+ * 갈리지 않으면 null을 주어 좌표 역검증에 넘긴다 — 거기서 후보로 남아
+ * 사용자가 미리보기로 고르게 된다.
+ *
  * @param {{lon0:number, lat0:number, x0:number, y0:number, k:number, ellps:string}|null} params
- * @returns {string|null} 'EPSG:5186' 같은 코드, 못 맞추면 null
+ * @returns {string|null} 'EPSG:5186' 같은 코드, 못 맞추거나 갈리지 않으면 null
  */
 export function matchByProjParams(params) {
   if (!params || typeof params.lon0 !== 'number') return null;
+  const matches = [];
   for (const { code } of coordinateSystem.getAvailableCRS()) {
     const def = paramsOfDefinition(code);
     if (!def) continue;
     if (def.ellps && params.ellps && def.ellps !== params.ellps) continue;
-    if (Math.abs(def.lon0 - params.lon0) > LON_TOLERANCE) continue;
-    if (Math.abs(def.lat0 - params.lat0) > LON_TOLERANCE) continue;
+    if (Math.abs(def.lon0 - params.lon0) > ANGLE_TOLERANCE) continue;
+    if (Math.abs(def.lat0 - params.lat0) > ANGLE_TOLERANCE) continue;
     if (Math.abs(def.x0 - params.x0) > 1) continue;
     if (Math.abs(def.y0 - params.y0) > 1) continue;
     if (Math.abs(def.k - params.k) > 1e-6) continue;
-    return code;
+    matches.push(code);
   }
-  return null;
+  return matches.length === 1 ? matches[0] : null;
 }
 
 // 남한과 주변. 한국 자료가 압도적으로 많으므로 이 범위를 먼저 본다.
