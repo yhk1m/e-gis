@@ -49,3 +49,104 @@ export function parseEpsgFromGeoJsonCrs(crs) {
   const m = name.match(/EPSG:{1,2}(\d+)/i);
   return m ? epsgFromNumber(m[1]) : null;
 }
+
+/**
+ * 타원체 이름을 한 낱말로 줄인다.
+ * WKT('GRS_1980')와 proj4('+ellps=GRS80')의 표기가 달라 그대로는 비교되지 않는다.
+ */
+function normalizeEllipsoid(text) {
+  if (!text) return null;
+  const s = String(text).toLowerCase();
+  if (s.includes('bessel')) return 'bessel';
+  if (s.includes('grs')) return 'grs80';
+  if (s.includes('wgs')) return 'wgs84';
+  return null;
+}
+
+function numberFrom(text, pattern) {
+  const m = text.match(pattern);
+  return m ? parseFloat(m[1]) : undefined;
+}
+
+/**
+ * .prj(WKT)에서 투영 파라미터를 뽑는다.
+ * @returns {{lon0:number, lat0:number, x0:number, y0:number, k:number, ellps:string}|null}
+ */
+export function parsePrjParams(prj) {
+  if (!prj || typeof prj !== 'string') return null;
+  const lon0 = numberFrom(prj, /"?central_meridian"?\s*,\s*(-?[\d.]+)/i);
+  const lat0 = numberFrom(prj, /"?latitude_of_origin"?\s*,\s*(-?[\d.]+)/i);
+  const x0 = numberFrom(prj, /"?false_easting"?\s*,\s*(-?[\d.]+)/i);
+  const y0 = numberFrom(prj, /"?false_northing"?\s*,\s*(-?[\d.]+)/i);
+  const k = numberFrom(prj, /"?scale_factor"?\s*,\s*(-?[\d.]+)/i);
+  if (lon0 === undefined || x0 === undefined || y0 === undefined) return null;
+  const spheroid = prj.match(/SPHEROID\s*\[\s*"([^"]+)"/i);
+  return {
+    lon0,
+    lat0: lat0 === undefined ? 0 : lat0,
+    x0,
+    y0,
+    k: k === undefined ? 1 : k,
+    ellps: normalizeEllipsoid(spheroid ? spheroid[1] : prj)
+  };
+}
+
+/**
+ * CRS_DEFINITIONS의 proj4 문자열에서 같은 모양의 파라미터를 뽑는다.
+ * 비교용 표를 따로 두면 정의와 어긋나므로 정의에서 파생시킨다.
+ */
+function paramsOfDefinition(code) {
+  const def = coordinateSystem.getCRSInfo(code);
+  if (!def) return null;
+  const s = def.proj4;
+  const utm = s.match(/\+proj=utm[\s\S]*?\+zone=(\d+)/);
+  if (utm) {
+    return {
+      lon0: 6 * Number(utm[1]) - 183,
+      lat0: 0,
+      x0: 500000,
+      y0: 0,
+      k: 0.9996,
+      ellps: normalizeEllipsoid(s.includes('+datum=WGS84') ? 'wgs84' : s)
+    };
+  }
+  // 경위도·메르카토르는 투영 파라미터로 맞출 대상이 아니다
+  if (!s.includes('+proj=tmerc')) return null;
+  const get = (key) => numberFrom(s, new RegExp('\\+' + key + '=(-?[\\d.]+)'));
+  const ell = s.match(/\+ellps=(\w+)/);
+  const lat0 = get('lat_0');
+  const k = get('k');
+  return {
+    lon0: get('lon_0'),
+    lat0: lat0 === undefined ? 0 : lat0,
+    x0: get('x_0'),
+    y0: get('y_0'),
+    k: k === undefined ? 1 : k,
+    ellps: normalizeEllipsoid(ell ? ell[1] : s)
+  };
+}
+
+// 중앙경선 허용오차. 5174(127.0028902…)와 2097(127.0)의 차이가 0.00289도라
+// 이보다 촘촘해야 둘이 갈린다.
+const LON_TOLERANCE = 0.0005;
+
+/**
+ * 투영 파라미터로 좌표계를 맞춘다.
+ * @param {{lon0:number, lat0:number, x0:number, y0:number, k:number, ellps:string}|null} params
+ * @returns {string|null} 'EPSG:5186' 같은 코드, 못 맞추면 null
+ */
+export function matchByProjParams(params) {
+  if (!params || typeof params.lon0 !== 'number') return null;
+  for (const { code } of coordinateSystem.getAvailableCRS()) {
+    const def = paramsOfDefinition(code);
+    if (!def) continue;
+    if (def.ellps && params.ellps && def.ellps !== params.ellps) continue;
+    if (Math.abs(def.lon0 - params.lon0) > LON_TOLERANCE) continue;
+    if (Math.abs(def.lat0 - params.lat0) > LON_TOLERANCE) continue;
+    if (Math.abs(def.x0 - params.x0) > 1) continue;
+    if (Math.abs(def.y0 - params.y0) > 1) continue;
+    if (Math.abs(def.k - params.k) > 1e-6) continue;
+    return code;
+  }
+  return null;
+}
