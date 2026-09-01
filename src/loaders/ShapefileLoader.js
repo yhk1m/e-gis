@@ -12,6 +12,28 @@ import { layerManager } from '../core/LayerManager.js';
 import { resolveSourceCrs } from '../core/crsResolver.js';
 import { sampleCoordsFromGeoJSON } from '../core/CrsDetector.js';
 
+/**
+ * shpjs에 넘길 zip에서 .prj를 걷어낸다.
+ *
+ * shpjs는 .prj를 받으면 스스로 WGS84로 재투영한다. 그런데 그 변환은 .prj에 적힌 것만
+ * 쓴다. 국내 공공데이터의 .prj에는 TOWGS84가 빠져 있는 일이 흔하고, 그러면 Bessel 계열
+ * (Korean 1985) 데이텀 이동이 통째로 생략돼 한국에서 약 360m 어긋난다.
+ * 제주 LSMD_CONT_UM102_5174 파일로 실측한 값이다.
+ *
+ * 그래서 좌표 변환은 우리가 한다 — 데이텀 파라미터가 들어 있는 CoordinateSystem의
+ * 정의로. shpjs에게는 지오메트리만 읽게 하고, .prj는 판정 근거로만 따로 읽는다.
+ */
+async function stripPrj(zip) {
+  const JSZip = (await import('jszip')).default;
+  const out = new JSZip();
+  await Promise.all(
+    Object.keys(zip.files)
+      .filter((name) => !zip.files[name].dir && !name.toLowerCase().endsWith('.prj'))
+      .map(async (name) => { out.file(name, await zip.files[name].async('arraybuffer')); })
+  );
+  return out.generateAsync({ type: 'arraybuffer' });
+}
+
 class ShapefileLoader {
   constructor() {
     this.format = new GeoJSON();
@@ -149,10 +171,10 @@ class ShapefileLoader {
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
 
+    // .prj는 일부러 넣지 않는다 — 아래 stripPrj 주석 참조.
     if (components.shp) zip.file(baseName + '.shp', components.shp);
     if (components.dbf) zip.file(baseName + '.dbf', components.dbf);
     if (components.shx) zip.file(baseName + '.shx', components.shx);
-    if (components.prj) zip.file(baseName + '.prj', components.prj);
     if (components.cpg) zip.file(baseName + '.cpg', components.cpg);
 
     const zipBlob = await zip.generateAsync({ type: 'arraybuffer' });
@@ -192,7 +214,7 @@ class ShapefileLoader {
             }
           }
 
-          const geojson = await shp(arrayBuffer);
+          const geojson = await shp(await stripPrj(zip));
           const name = file.name.replace('.zip', '');
 
           if (Array.isArray(geojson)) {
