@@ -218,14 +218,25 @@ class ShapefileLoader {
   /**
    * GeoJSON 객체로부터 레이어 생성
    *
-   * @param {Object} geojson - shpjs가 뱉은 GeoJSON (원본 좌표계 그대로)
+   * @param {Object} geojson - shpjs가 뱉은 GeoJSON
    * @param {string} name - 레이어 이름
-   * @param {string|null} prj - .prj 파일 내용(WKT). 없으면 좌표로 판정한다
+   * @param {string|null} prj - .prj 파일 내용(WKT)
    * @returns {Promise<string|null>} 레이어 ID, 취소하면 null
    */
   async createLayerFromGeoJSON(geojson, name, prj = null) {
+    const sampleCoords = sampleCoordsFromGeoJSON(geojson);
+
+    // shpjs는 .prj를 읽으면 스스로 WGS84로 재투영해서 준다.
+    // 그때 .prj는 "원본이 무엇이었나"를 말할 뿐 손에 든 좌표를 설명하지 않는다.
+    // 그걸 근거로 삼으면 이미 경위도인 값을 다시 미터로 읽어 수백 km 밖에 그린다.
+    // 그래서 좌표가 경위도로 보이면 .prj를 근거에서 뺀다.
+    // 반대로 shpjs의 proj4가 그 좌표계를 몰라 재투영하지 못하면 원본 TM이 그대로
+    // 오는데, 그때는 .prj가 맞는 설명이므로 그대로 쓴다.
+    const alreadyLonLat = sampleCoords.length > 0 &&
+      sampleCoords.every(([x, y]) => Math.abs(x) <= 180 && Math.abs(y) <= 90);
+
     const { crs, cancelled } = await resolveSourceCrs(
-      { prj, sampleCoords: sampleCoordsFromGeoJSON(geojson) },
+      { prj: alreadyLonLat ? null : prj, sampleCoords },
       { name, previewGeoJSON: geojson }
     );
     if (cancelled) return null;

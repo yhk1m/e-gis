@@ -83,6 +83,32 @@ describe('ShapefileLoader 좌표계', () => {
     expect(id).toBeNull();
   });
 
+  it('shpjs가 .prj로 이미 변환해 준 좌표를 다시 변환하지 않는다', async () => {
+    // shpjs는 .prj가 있으면 스스로 WGS84로 재투영해서 준다.
+    // 그때 .prj는 "원본이 무엇이었나"를 말할 뿐, 손에 든 좌표를 설명하지 않는다.
+    // 이걸 놓치면 이미 경위도인 값을 5186 미터로 읽어 590km 밖에 그린다.
+    // (서울 LSMD_CONT_UM730 파일로 실측한 값이다.)
+    const gj = pointCollection(SEOUL);
+    const id = await shapefileLoader.createLayerFromGeoJSON(gj, '이중변환', PRJ_5186);
+    const [x, y] = firstCoordOf(id);
+    expect(x).toBeCloseTo(fromLonLat(SEOUL)[0], 0);
+    expect(y).toBeCloseTo(fromLonLat(SEOUL)[1], 0);
+    expect(layerManager.getLayer(id).sourceCrs).toBe('EPSG:4326');
+    layerManager.removeLayer(id);
+  });
+
+  it('shpjs가 변환하지 못해 원본 TM이 그대로 오면 .prj를 근거로 쓴다', async () => {
+    // .prj의 좌표계를 shpjs의 proj4가 모르면 재투영 없이 원본을 준다.
+    // 그때는 .prj가 손에 든 좌표의 설명이 맞다.
+    const gj = pointCollection(proj4('EPSG:4326', 'EPSG:5186', SEOUL));
+    const id = await shapefileLoader.createLayerFromGeoJSON(gj, '원본TM', PRJ_5186);
+    const [x, y] = firstCoordOf(id);
+    expect(x).toBeCloseTo(fromLonLat(SEOUL)[0], 0);
+    expect(y).toBeCloseTo(fromLonLat(SEOUL)[1], 0);
+    expect(layerManager.getLayer(id).sourceCrs).toBe('EPSG:5186');
+    layerManager.removeLayer(id);
+  });
+
   it('판정한 좌표계를 레이어에 기록한다', async () => {
     const gj = pointCollection(proj4('EPSG:4326', 'EPSG:5186', SEOUL));
     const id = await shapefileLoader.createLayerFromGeoJSON(gj, '기록', PRJ_5186);
