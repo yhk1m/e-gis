@@ -2,6 +2,7 @@
  * CoordinateImportPanel - 좌표 데이터를 포인트 레이어로 변환하는 패널
  */
 
+import proj4 from 'proj4';
 import { tableLoader } from '../../loaders/TableLoader.js';
 import { coordinateSystem } from '../../core/CoordinateSystem.js';
 import { detectCrs } from '../../core/CrsDetector.js';
@@ -9,6 +10,9 @@ import { detectCrs } from '../../core/CrsDetector.js';
 class CoordinateImportPanel {
   constructor() {
     this.modal = null;
+    // 사용자가 좌표계 드롭다운을 손으로 바꾼 적이 있으면 자동 추측(suggestCrs)이
+    // 그 선택을 덮어쓰면 안 된다. render()에서 모달을 새로 그릴 때마다 되돌린다.
+    this.crsTouchedByUser = false;
   }
 
   /**
@@ -23,6 +27,7 @@ class CoordinateImportPanel {
    */
   render() {
     this.close();
+    this.crsTouchedByUser = false;
 
     this.modal = document.createElement('div');
     this.modal.className = 'modal-overlay coord-import-modal active';
@@ -95,6 +100,24 @@ class CoordinateImportPanel {
     return document.getElementById('coord-crs').value || 'EPSG:4326';
   }
 
+  /**
+   * 이 (lon, lat) 쌍이 sourceCrs에서 EPSG:3857로 실제 변환되는지 본다.
+   *
+   * TableLoader.createPointLayer가 행을 유효로 치는 기준과 같아야 한다 — 여기서
+   * "숫자니까 유효"라고 세고 정작 만들 때 투영이 발산해 버려지면, 미리보기 숫자와
+   * 생성 후 skippedCount 알림이 어긋나 사용자가 혼란스럽다.
+   */
+  canProject(crs, lon, lat) {
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) return false;
+    if (crs === 'EPSG:4326') return true;
+    try {
+      const [x, y] = proj4(crs, 'EPSG:3857', [lon, lat]);
+      return Number.isFinite(x) && Number.isFinite(y);
+    } catch (error) {
+      return false;
+    }
+  }
+
   /** 좌표계 드롭다운 항목 */
   crsOptions() {
     return coordinateSystem.getAvailableCRS().map((crs) =>
@@ -104,9 +127,16 @@ class CoordinateImportPanel {
 
   /**
    * 고른 컬럼의 값으로 좌표계를 추측해 드롭다운 기본값을 맞춘다.
-   * 확신이 없으면 손대지 않는다 — 사용자가 이미 고른 값을 덮지 않기 위해서다.
+   *
+   * 사용자가 좌표계를 손으로 바꾼 적이 있으면 아무것도 하지 않는다 — 5186과
+   * 5181처럼 좌표만으로는 갈리지 않아 detectCrs가 ambiguous로 내놓는 짝은
+   * 사용자가 고쳐 주는 것이 정상 경로이고, 그 뒤 컬럼을 다시 만졌다고 해서
+   * 자동 추측이 그 선택을 조용히 되돌리면 안 된다.
+   * 손댄 적이 없을 때는 확신이 없으면(unknown) 마찬가지로 손대지 않는다.
    */
   suggestCrs() {
+    if (this.crsTouchedByUser) return;
+
     const latCol = document.getElementById('coord-lat-column').value;
     const lonCol = document.getElementById('coord-lon-column').value;
     if (!latCol || !lonCol || !tableLoader.data) return;
@@ -174,8 +204,12 @@ class CoordinateImportPanel {
       this.updatePreview();
     });
 
-    // 좌표계를 바꾸면 유효 행 기준이 달라지므로 미리보기를 다시 센다
-    crsSelect.addEventListener('change', () => this.updatePreview());
+    // 좌표계를 바꾸면 유효 행 기준이 달라지므로 미리보기를 다시 센다.
+    // 사용자가 직접 바꿨다는 것도 표시해 둔다 — suggestCrs가 이 선택을 덮지 않게.
+    crsSelect.addEventListener('change', () => {
+      this.crsTouchedByUser = true;
+      this.updatePreview();
+    });
 
     // 레이어 생성
     applyBtn.addEventListener('click', () => this.createLayer());
@@ -271,9 +305,11 @@ class CoordinateImportPanel {
 
     // 위경도 범위 검사는 위경도를 골랐을 때만 뜻이 있다. TM 좌표(수십만 m)에
     // 이 검사를 그대로 걸면 전 행이 "잘못된 좌표"로 잡혀 레이어 생성 버튼이
-    // 계속 잠긴다. createPointLayer가 세는 기준과 맞춰야 미리보기 숫자와
-    // 실제로 만들어지는 피처 수가 어긋나지 않는다.
-    const isLonLat = this.selectedCrs() === 'EPSG:4326';
+    // 계속 잠긴다. 그 외 좌표계는 canProject로 실제 변환까지 시도한다 —
+    // createPointLayer가 행을 세는 기준과 여기가 어긋나면, 미리보기에서 유효로
+    // 세어진 행이 정작 만들 때 조용히 버려지는 일이 생긴다.
+    const sourceCrs = this.selectedCrs();
+    const isLonLat = sourceCrs === 'EPSG:4326';
 
     let validCount = 0;
     let invalidCount = 0;
@@ -284,7 +320,7 @@ class CoordinateImportPanel {
       const valid = isLonLat
         ? (Number.isFinite(lat) && Number.isFinite(lon) &&
            lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180)
-        : (Number.isFinite(lat) && Number.isFinite(lon));
+        : this.canProject(sourceCrs, lon, lat);
 
       if (valid) {
         validCount++;
