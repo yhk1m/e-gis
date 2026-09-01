@@ -269,6 +269,9 @@ class LayerManager {
       strokeColor: polygonal ? defaultStrokeFor(layerColor) : (pointish ? "#ffffff" : layerColor),
       fillColor: layerColor,
       geometryType: geometryType,
+      // 가져올 때 판정한 원본 좌표계. 피처는 3857로 저장되므로 나중에
+      // 좌표계를 다시 지정하려면 어디서 왔는지 알아야 한다. 지금은 기록만 한다.
+      sourceCrs: options.sourceCrs || null,
       featureCount: featureCount,
       strokeDash: "solid",
       strokeSyncToFill: true,
