@@ -5113,3 +5113,10 @@ body.exporting .egis-basemap-panel {
   align-items: center;
   gap: 4px;
 }
+
+/* 좌표계가 16종으로 늘면서 상태표시줄 좌표계 메뉴가 화면 위로 넘쳐 잘렸다.
+   스크롤 가능하게 높이를 제한한다. (Task 13 실기 검증에서 발견) */
+.crs-dropdown-menu {
+  max-height: 70vh;
+  overflow-y: auto;
+}
