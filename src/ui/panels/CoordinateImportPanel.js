@@ -3,6 +3,8 @@
  */
 
 import { tableLoader } from '../../loaders/TableLoader.js';
+import { coordinateSystem } from '../../core/CoordinateSystem.js';
+import { detectCrs } from '../../core/CrsDetector.js';
 
 class CoordinateImportPanel {
   constructor() {
@@ -65,6 +67,10 @@ class CoordinateImportPanel {
             '<select id="coord-lon-column"><option value="">컬럼 선택</option></select>' +
           '</div>' +
           '<div class="form-group">' +
+            '<label for="coord-crs">좌표계</label>' +
+            '<select id="coord-crs">' + this.crsOptions() + '</select>' +
+          '</div>' +
+          '<div class="form-group">' +
             '<label for="coord-layer-name">레이어 이름</label>' +
             '<input type="text" id="coord-layer-name" placeholder="레이어 이름">' +
           '</div>' +
@@ -82,6 +88,34 @@ class CoordinateImportPanel {
         '<button class="btn btn-primary" id="coord-import-apply" disabled>레이어 생성</button>' +
       '</div>' +
     '</div>';
+  }
+
+  /** 좌표계 드롭다운 항목 */
+  crsOptions() {
+    return coordinateSystem.getAvailableCRS().map((crs) =>
+      '<option value="' + crs.code + '">' + crs.name + ' (' + crs.code + ')</option>'
+    ).join('');
+  }
+
+  /**
+   * 고른 컬럼의 값으로 좌표계를 추측해 드롭다운 기본값을 맞춘다.
+   * 확신이 없으면 손대지 않는다 — 사용자가 이미 고른 값을 덮지 않기 위해서다.
+   */
+  suggestCrs() {
+    const latCol = document.getElementById('coord-lat-column').value;
+    const lonCol = document.getElementById('coord-lon-column').value;
+    if (!latCol || !lonCol || !tableLoader.data) return;
+
+    const sampleCoords = [];
+    for (const row of tableLoader.data.slice(0, 20)) {
+      const x = parseFloat(row[lonCol]);
+      const y = parseFloat(row[latCol]);
+      if (Number.isFinite(x) && Number.isFinite(y)) sampleCoords.push([x, y]);
+    }
+
+    const detection = detectCrs({ sampleCoords });
+    if (detection.confidence === 'unknown') return;
+    document.getElementById('coord-crs').value = detection.crs;
   }
 
   /**
@@ -124,9 +158,15 @@ class CoordinateImportPanel {
       if (file) this.handleFile(file);
     });
 
-    // 컬럼 선택 변경 시 미리보기 업데이트
-    latSelect.addEventListener('change', () => this.updatePreview());
-    lonSelect.addEventListener('change', () => this.updatePreview());
+    // 컬럼 선택 변경 시 미리보기 업데이트 + 좌표계 추측
+    latSelect.addEventListener('change', () => {
+      this.suggestCrs();
+      this.updatePreview();
+    });
+    lonSelect.addEventListener('change', () => {
+      this.suggestCrs();
+      this.updatePreview();
+    });
 
     // 레이어 생성
     applyBtn.addEventListener('click', () => this.createLayer());
@@ -248,6 +288,7 @@ class CoordinateImportPanel {
     const latCol = document.getElementById('coord-lat-column').value;
     const lonCol = document.getElementById('coord-lon-column').value;
     const layerName = document.getElementById('coord-layer-name').value.trim();
+    const sourceCrs = document.getElementById('coord-crs').value || 'EPSG:4326';
 
     if (!latCol || !lonCol) {
       alert('위도와 경도 컬럼을 선택해주세요.');
@@ -259,7 +300,7 @@ class CoordinateImportPanel {
     applyBtn.textContent = '생성 중...';
 
     try {
-      const result = tableLoader.createPointLayer(latCol, lonCol, layerName);
+      const result = tableLoader.createPointLayer(latCol, lonCol, layerName, sourceCrs);
 
       alert(`레이어 생성 완료!\n- 레이어: ${result.layerName}\n- 포인트 수: ${result.featureCount}\n- 제외된 행: ${result.skippedCount}`);
 

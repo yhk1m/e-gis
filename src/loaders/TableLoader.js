@@ -4,6 +4,7 @@
  */
 
 import * as XLSX from 'xlsx';
+import proj4 from 'proj4';
 import { layerManager } from '../core/LayerManager.js';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
@@ -201,13 +202,19 @@ class TableLoader {
   }
 
   /**
-   * 포인트 레이어 생성
+   * 좌표 컬럼으로 포인트 레이어를 만든다.
+   *
+   * @param {string} latColumn - 위도(Y) 컬럼
+   * @param {string} lonColumn - 경도(X) 컬럼
+   * @param {string} layerName - 레이어 이름
+   * @param {string} sourceCrs - 좌표 컬럼의 좌표계. 기본은 위경도
    */
-  createPointLayer(latColumn, lonColumn, layerName = null) {
+  createPointLayer(latColumn, lonColumn, layerName = null, sourceCrs = 'EPSG:4326') {
     if (!this.data || !latColumn || !lonColumn) {
       throw new Error("데이터와 좌표 컬럼을 지정해주세요.");
     }
 
+    const isLonLat = sourceCrs === 'EPSG:4326';
     const features = [];
     let skippedCount = 0;
 
@@ -220,13 +227,27 @@ class TableLoader {
         continue;
       }
 
-      // 위도/경도 범위 확인
-      if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      // 위경도 범위 검사는 위경도일 때만 뜻이 있다.
+      // TM 좌표(수십만 m)에 이 검사를 걸면 전 행이 버려진다.
+      if (isLonLat && (lat < -90 || lat > 90 || lon < -180 || lon > 180)) {
         skippedCount++;
         continue;
       }
 
-      const coords = fromLonLat([lon, lat]);
+      let coords;
+      try {
+        coords = isLonLat
+          ? fromLonLat([lon, lat])
+          : proj4(sourceCrs, 'EPSG:3857', [lon, lat]);
+      } catch (error) {
+        skippedCount++;
+        continue;
+      }
+      if (!Number.isFinite(coords[0]) || !Number.isFinite(coords[1])) {
+        skippedCount++;
+        continue;
+      }
+
       const point = new Point(coords);
 
       const feature = new Feature({
@@ -255,7 +276,8 @@ class TableLoader {
     const layerId = layerManager.addLayer({
       name: name,
       features: features,
-      geometryType: 'Point'
+      geometryType: 'Point',
+      sourceCrs: sourceCrs
     });
 
     return {
