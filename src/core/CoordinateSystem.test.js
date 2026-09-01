@@ -62,7 +62,7 @@ describe('좌표계 정의', () => {
   // 그러면 편이가 걸렸다가 그대로 되돌아와 순수 투영 역산만 남는다.
   // (5181은 GRS80이라 편이가 없어 EPSG:4326 그대로 써도 된다.)
   it('Korean 1985/Korea 2000 나머지 원점도 중앙경선이 EPSG 정의와 같다', () => {
-    const BESSEL_SAME_DATUM = '+proj=longlat +ellps=bessel +no_defs +towgs84=-115.8,474.99,674.11';
+    const BESSEL_SAME_DATUM = '+proj=longlat +ellps=bessel +no_defs +towgs84=-115.8,474.99,674.11,1.16,-2.31,-1.63,6.43';
     const besselOriginOf = (code, x0, y0) => proj4(code, BESSEL_SAME_DATUM, [x0, y0]);
 
     expect(originOf('EPSG:5181', 200000, 500000)[0]).toBeCloseTo(127, 6);

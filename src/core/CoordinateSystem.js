@@ -6,15 +6,15 @@ import proj4 from 'proj4';
 import { register } from 'ol/proj/proj4';
 import { eventBus, Events } from '../utils/EventBus.js';
 
-// 한국에서 자주 쓰는 좌표계. 이 객체가 정의의 유일한 출처여야 한다.
-// 다만 아직은 아니다 — src/loaders/ShapefileLoader.js가 모듈 최상위에서
-// proj4.defs를 직접 부른다(5179·5186·5187·5188·2097·5174). 그 파일이
-// main.js에서 이 파일의 init()보다 먼저 평가되고, init()은
-// `if (!proj4.defs(code))` 가드로 이미 등록된 코드를 건너뛰므로
-// 실제 앱에서는 먼저 로드되는 로더 쪽 정의가 이긴다. 특히 EPSG:2097은
-// 로더가 7파라미터 towgs84를 써서 여기 정의와 결과가 달라진다.
-// 로더의 중복 등록은 Task 8에서 지운다 — 그때까지는 이 파일이 유일한
-// 출처라는 말은 목표이지 현재 사실이 아니다.
+// 한국에서 자주 쓰는 좌표계. 이 객체가 정의의 유일한 출처다.
+// 로더에서 따로 proj4.defs를 부르지 않는다 — 예전에 ShapefileLoader가 같은 코드를
+// 다른 towgs84로 중복 등록했고, init()의 `if (!proj4.defs(code))` 가드 때문에
+// 먼저 평가되는 로더 쪽이 이겨서 이 파일의 정의가 조용히 묻혔다.
+//
+// 파싱 라이브러리에도 좌표계를 넘기지 않는다. shpjs는 .prj를 받으면 스스로
+// 재투영하는데, .prj에 적힌 것만 쓰므로 TOWGS84가 빠진 국내 자료에서 데이텀 이동이
+// 통째로 생략된다(제주 지적도 기준 약 360m). 변환은 여기 정의로 우리가 한다.
+//
 // 순서 = 우선순위. 역검증에서 후보가 여럿일 때 앞의 것이 기본값이 된다.
 const CRS_DEFINITIONS = {
   'EPSG:4326': {
@@ -62,37 +62,43 @@ const CRS_DEFINITIONS = {
   'EPSG:5174': {
     // 서울시 인허가(LOCALDATA) 자료가 쓰는 옛 좌표계. 병원 79곳을 위경도 자료와
     // 이름으로 대조해 확인했다 — 5174는 중앙값 21m, 5181은 314m, 2097은 259m였다.
-    // towgs84 3파라미터는 그때 검증한 값이다. 7파라미터로 바꾸지 않는다.
+    //
+    // towgs84는 국내 공공데이터 .prj가 선언하는 7파라미터 그대로 쓴다.
+    // 예전에는 앞 세 개(평행이동)만 썼는데, 7파라미터는 회전·축척까지 함께 맞춰진
+    // 한 벌이라 일부만 떼어 쓰면 어긋난다. 제주 지적도로 확인하니 14m 차이였고,
+    // 7파라미터 쪽이 위성영상과 맞았다. 위 21m 중앙값도 그 3파라미터 시절 값이다.
+    // 이 값으로 맞추면 같은 .prj를 읽는 QGIS 등과 결과가 같아진다.
     name: 'Korean 1985 / 중부원점 (서울 인허가)',
-    proj4: '+proj=tmerc +lat_0=38 +lon_0=127.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=127.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11,1.16,-2.31,-1.63,6.43',
     units: 'meters'
   },
   'EPSG:2097': {
     // 아래 5173·5176·5177·5178도 이 좌표계와 같은 Bessel/Korean 1985 데이텀이고
-    // 원점(lon_0)만 다르다. towgs84 3파라미터는 전부 5174에서 검증한 값을
-    // 그대로 쓴다 — EPSG 공식 7파라미터로 바꾸지 않는다.
+    // 원점(lon_0)만 다르다. 그래서 towgs84는 전부 5174와 같은 값을 쓴다.
+    // EPSG 공식값(-145.907, 505.034, 685.756, …)은 이것과 다른 한 벌이다.
+    // 섞어 쓰지 말 것 — 한 벌 안에서만 뜻이 있다.
     name: 'Korean 1985 / 중부원점',
-    proj4: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11,1.16,-2.31,-1.63,6.43',
     units: 'meters'
   },
   'EPSG:5173': {
     name: 'Korean 1985 / 서부원점',
-    proj4: '+proj=tmerc +lat_0=38 +lon_0=125.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=125.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11,1.16,-2.31,-1.63,6.43',
     units: 'meters'
   },
   'EPSG:5176': {
     name: 'Korean 1985 / 동부원점',
-    proj4: '+proj=tmerc +lat_0=38 +lon_0=129.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=129.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11,1.16,-2.31,-1.63,6.43',
     units: 'meters'
   },
   'EPSG:5177': {
     name: 'Korean 1985 / 동해원점',
-    proj4: '+proj=tmerc +lat_0=38 +lon_0=131.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=131.0028902777778 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11,1.16,-2.31,-1.63,6.43',
     units: 'meters'
   },
   'EPSG:5178': {
     name: 'Korean 1985 / UTM-K (통합원점)',
-    proj4: '+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
+    proj4: '+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11,1.16,-2.31,-1.63,6.43',
     units: 'meters'
   },
   'EPSG:32652': {
