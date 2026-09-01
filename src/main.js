@@ -62,6 +62,8 @@ import { demLoader } from './loaders/DEMLoader.js';
 import { isShapefileComponent } from './utils/fileCollector.js';
 import { visitorTracker } from './core/VisitorTracker.js';
 import { builtinDataDialog } from './ui/dialogs/BuiltinDataDialog.js';
+import { setCrsPrompt } from './core/crsResolver.js';
+import { crsConfirmDialog } from './ui/dialogs/CrsConfirmDialog.js';
 
 /**
  * 앱 초기화
@@ -74,6 +76,10 @@ function initApp() {
 
   // 1. 좌표계 시스템 초기화
   coordinateSystem.init();
+
+  // 좌표계가 애매할 때 물어볼 창을 등록한다.
+  // core/는 ui/를 모르므로 여기서 이어 붙인다.
+  setCrsPrompt((detection, context) => crsConfirmDialog.pick(detection, context));
 
   // 2. 테마 초기화
   themeManager.init();

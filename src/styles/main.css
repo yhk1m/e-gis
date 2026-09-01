@@ -5059,3 +5059,57 @@ body.exporting .egis-basemap-panel {
   color: #fff;
   font-weight: 600;
 }
+
+/* 좌표계 확인 창 — 후보를 고르면 본 지도에 미리 그린다 */
+.crs-confirm-content {
+  max-width: 460px;
+}
+
+.crs-confirm-reason {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.crs-candidate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.crs-candidate {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.crs-candidate:hover {
+  border-color: var(--color-primary);
+}
+
+.crs-candidate-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crs-candidate-name {
+  font-weight: 600;
+}
+
+.crs-candidate-code,
+.crs-candidate-place {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.crs-candidate-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
