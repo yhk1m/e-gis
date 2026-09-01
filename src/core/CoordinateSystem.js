@@ -6,8 +6,15 @@ import proj4 from 'proj4';
 import { register } from 'ol/proj/proj4';
 import { eventBus, Events } from '../utils/EventBus.js';
 
-// 한국에서 자주 쓰는 좌표계. 이 객체가 정의의 유일한 출처다.
-// 로더에서 따로 proj4.defs를 부르지 않는다 — 두 곳에 두면 서로 어긋난다.
+// 한국에서 자주 쓰는 좌표계. 이 객체가 정의의 유일한 출처여야 한다.
+// 다만 아직은 아니다 — src/loaders/ShapefileLoader.js가 모듈 최상위에서
+// proj4.defs를 직접 부른다(5179·5186·5187·5188·2097·5174). 그 파일이
+// main.js에서 이 파일의 init()보다 먼저 평가되고, init()은
+// `if (!proj4.defs(code))` 가드로 이미 등록된 코드를 건너뛰므로
+// 실제 앱에서는 먼저 로드되는 로더 쪽 정의가 이긴다. 특히 EPSG:2097은
+// 로더가 7파라미터 towgs84를 써서 여기 정의와 결과가 달라진다.
+// 로더의 중복 등록은 Task 8에서 지운다 — 그때까지는 이 파일이 유일한
+// 출처라는 말은 목표이지 현재 사실이 아니다.
 // 순서 = 우선순위. 역검증에서 후보가 여럿일 때 앞의 것이 기본값이 된다.
 const CRS_DEFINITIONS = {
   'EPSG:4326': {
@@ -61,6 +68,9 @@ const CRS_DEFINITIONS = {
     units: 'meters'
   },
   'EPSG:2097': {
+    // 아래 5173·5176·5177·5178도 이 좌표계와 같은 Bessel/Korean 1985 데이텀이고
+    // 원점(lon_0)만 다르다. towgs84 3파라미터는 전부 5174에서 검증한 값을
+    // 그대로 쓴다 — EPSG 공식 7파라미터로 바꾸지 않는다.
     name: 'Korean 1985 / 중부원점',
     proj4: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs +towgs84=-115.8,474.99,674.11',
     units: 'meters'
@@ -229,7 +239,7 @@ export class CoordinateSystem {
    * 우리가 변환할 수 없는 좌표계라면 근거가 아니다.
    */
   isSupported(code) {
-    return Boolean(code && CRS_DEFINITIONS[code]);
+    return Boolean(this.getCRSInfo(code));
   }
 }
 
