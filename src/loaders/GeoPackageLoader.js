@@ -7,6 +7,8 @@ import initSqlJs from 'sql.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import WKB from 'ol/format/WKB';
 import { layerManager } from '../core/LayerManager.js';
+import { resolveSourceCrs } from '../core/crsResolver.js';
+import { sampleCoordsFromGeoJSON } from '../core/CrsDetector.js';
 
 class GeoPackageLoader {
   constructor() {
@@ -129,9 +131,9 @@ class GeoPackageLoader {
    * @param {Object} db - SQL.js 데이터베이스
    * @param {Object} tableInfo - 테이블 정보
    * @param {string} baseName - 기본 레이어 이름
-   * @returns {string} 생성된 레이어 ID
+   * @returns {Promise<string>} 생성된 레이어 ID
    */
-  loadTable(db, tableInfo, baseName) {
+  async loadTable(db, tableInfo, baseName) {
     const { table_name, column_name, srs_id } = tableInfo;
 
     // 테이블 데이터 조회
@@ -183,26 +185,40 @@ class GeoPackageLoader {
       return null;
     }
 
-    const geojson = {
-      type: 'FeatureCollection',
-      features: features
-    };
+    return await this.createLayerFromFeatures(features, baseName + ' - ' + table_name, srs_id);
+  }
 
-    // OpenLayers Feature로 변환
+  /**
+   * GeoJSON 피처 배열로부터 레이어를 만든다.
+   *
+   * srs_id는 근거로 쓰되 우리가 모르는 코드면 좌표 역검증으로 넘어간다.
+   * 예전에는 'EPSG:' + srs_id 를 그대로 써서 변환이 실패했다.
+   *
+   * @param {Array} features - GeoJSON Feature 배열 (원본 좌표계 그대로)
+   * @param {string} layerName - 레이어 이름
+   * @param {number} srsId - gpkg_geometry_columns.srs_id
+   * @returns {Promise<string|null>} 레이어 ID, 취소하면 null
+   */
+  async createLayerFromFeatures(features, layerName, srsId) {
+    const geojson = { type: 'FeatureCollection', features: features };
+
+    const { crs, cancelled } = await resolveSourceCrs(
+      { srsId, sampleCoords: sampleCoordsFromGeoJSON(geojson) },
+      { name: layerName, previewGeoJSON: geojson }
+    );
+    if (cancelled) return null;
+
     const olFeatures = this.format.readFeatures(geojson, {
-      dataProjection: srs_id === 4326 ? 'EPSG:4326' : 'EPSG:' + srs_id,
+      dataProjection: crs,
       featureProjection: 'EPSG:3857'
     });
 
-    // 레이어 추가
-    const layerName = baseName + ' - ' + table_name;
-    const layerId = layerManager.addLayer({
+    return layerManager.addLayer({
       name: layerName,
       type: 'vector',
-      features: olFeatures
+      features: olFeatures,
+      sourceCrs: crs
     });
-
-    return layerId;
   }
 
   /**
