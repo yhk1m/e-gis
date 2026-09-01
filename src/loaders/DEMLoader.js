@@ -9,6 +9,7 @@ import ImageCanvasSource from 'ol/source/ImageCanvas';
 import { transformExtent } from 'ol/proj';
 import { layerManager } from '../core/LayerManager.js';
 import { mapManager } from '../core/MapManager.js';
+import { detectCrs } from '../core/CrsDetector.js';
 import { escapeHtml } from '../utils/escapeHtml.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { makeDraggable } from '../utils/DraggableElement.js';
@@ -90,36 +91,6 @@ class DEMLoader {
   }
 
   /**
-   * 한국 Transverse Mercator 좌표계 추론 (EPSG 코드가 user-defined일 때)
-   * - 5186 중부원점: lon=127, lat=38, FE=200k, FN=600k, k=1
-   * - 5187 동부원점: lon=129, lat=38, FE=200k, FN=600k, k=1
-   * - 5188 서부원점: lon=125, lat=38, FE=200k, FN=600k, k=1
-   * - 5179 UTM-K:    lon=127.5, lat=38, FE=1M, FN=2M, k=0.9996
-   */
-  matchKoreanTM(geoKeys) {
-    // GRS80 타원체 (한국 좌표계의 공통)
-    const a = geoKeys.GeogSemiMajorAxisGeoKey;
-    if (a && Math.abs(a - 6378137) > 0.1) return null;
-
-    const lon = geoKeys.ProjNatOriginLongGeoKey;
-    const lat = geoKeys.ProjNatOriginLatGeoKey;
-    const fe = geoKeys.ProjFalseEastingGeoKey;
-    const fn = geoKeys.ProjFalseNorthingGeoKey;
-    const k = geoKeys.ProjScaleAtNatOriginGeoKey ?? 1;
-    const near = (x, target, tol = 0.001) => x !== undefined && Math.abs(x - target) < tol;
-
-    if (near(lat, 38) && near(fe, 200000) && near(fn, 600000) && near(k, 1)) {
-      if (near(lon, 127)) return 'EPSG:5186';
-      if (near(lon, 129)) return 'EPSG:5187';
-      if (near(lon, 125)) return 'EPSG:5188';
-    }
-    if (near(lat, 38) && near(lon, 127.5) && near(fe, 1000000) && near(fn, 2000000) && near(k, 0.9996)) {
-      return 'EPSG:5179';
-    }
-    return null;
-  }
-
-  /**
    * GeoTIFF 이미지로부터 DEM 레이어 생성
    * @param {Object} image - GeoTIFF 이미지
    * @param {string} name - 레이어 이름
@@ -139,29 +110,17 @@ class DEMLoader {
 
     // 좌표계 확인
     let extent = bbox;
-    let sourceProj = null;
 
-    // GeoKeys에서 투영 정보 확인
-    if (geoKeys && geoKeys.ProjectedCSTypeGeoKey) {
-      const epsgCode = geoKeys.ProjectedCSTypeGeoKey;
-      // 32767은 "사용자 정의" 또는 "정의되지 않음"을 의미
-      if (epsgCode !== 32767) {
-        sourceProj = `EPSG:${epsgCode}`;
-      }
-    } else if (geoKeys && geoKeys.GeographicTypeGeoKey) {
-      const epsgCode = geoKeys.GeographicTypeGeoKey;
-      if (epsgCode !== 32767) {
-        sourceProj = `EPSG:${epsgCode}`;
-      }
-    }
+    // 좌표계 판정은 CrsDetector가 한다 — 다른 로더와 같은 규칙을 쓴다.
+    // GeoTIFF는 EPSG 코드를 비워 두고 파라미터만 채워 오는 일이 흔하다.
+    const detection = detectCrs({
+      epsgCode: geoKeys && (geoKeys.ProjectedCSTypeGeoKey || geoKeys.GeographicTypeGeoKey),
+      projParams: geoKeysToParams(geoKeys),
+      sampleCoords: [[bbox[0], bbox[1]], [bbox[2], bbox[3]]]
+    });
+    const sourceProj = detection.confidence === 'unknown' ? null : detection.crs;
 
-    // EPSG 코드가 user-defined(32767)면 TM 파라미터로 한국 좌표계 추론
-    // (정부 GeoTIFF에서 흔히 EPSG 코드를 비워두고 파라미터만 채우는 경우)
-    if (!sourceProj && geoKeys && geoKeys.ProjCoordTransGeoKey === 1) {
-      sourceProj = this.matchKoreanTM(geoKeys);
-    }
-
-    console.log('DEM 좌표계:', sourceProj || '정의되지 않음', 'bbox:', bbox);
+    console.log('DEM 좌표계:', sourceProj || '정의되지 않음', detection.reason, 'bbox:', bbox);
 
     // bbox 값을 분석하여 좌표계 추측
     const guessProjection = (bbox) => {
@@ -485,6 +444,37 @@ class DEMLoader {
       { value: 0.66, color: [255, 200, 0] },
       { value: 1, color: [255, 255, 255] }
     ]
+  };
+}
+
+/**
+ * GeoTIFF GeoKeys를 CrsDetector가 읽는 파라미터 모양으로 바꾼다.
+ * 정부 GeoTIFF는 EPSG 코드를 비워 두고 파라미터만 채워 오는 일이 흔하다.
+ *
+ * @returns {{lon0:number, lat0:number, x0:number, y0:number, k:number, ellps:string}|null}
+ */
+export function geoKeysToParams(geoKeys) {
+  // ProjCoordTransGeoKey 1 = 횡축 메르카토르. 한국 좌표계는 모두 여기 해당한다.
+  if (!geoKeys || geoKeys.ProjCoordTransGeoKey !== 1) return null;
+
+  const a = geoKeys.GeogSemiMajorAxisGeoKey;
+  let ellps = null;
+  if (a === undefined) ellps = null;
+  else if (Math.abs(a - 6378137) < 0.1) ellps = 'grs80';
+  else if (Math.abs(a - 6377397.155) < 0.1) ellps = 'bessel';
+
+  const lon0 = geoKeys.ProjNatOriginLongGeoKey;
+  const x0 = geoKeys.ProjFalseEastingGeoKey;
+  const y0 = geoKeys.ProjFalseNorthingGeoKey;
+  if (lon0 === undefined || x0 === undefined || y0 === undefined) return null;
+
+  return {
+    lon0,
+    lat0: geoKeys.ProjNatOriginLatGeoKey === undefined ? 0 : geoKeys.ProjNatOriginLatGeoKey,
+    x0,
+    y0,
+    k: geoKeys.ProjScaleAtNatOriginGeoKey === undefined ? 1 : geoKeys.ProjScaleAtNatOriginGeoKey,
+    ellps
   };
 }
 
