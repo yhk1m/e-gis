@@ -122,6 +122,18 @@ class DEMLoader {
 
     console.log('DEM 좌표계:', sourceProj || '정의되지 않음', detection.reason, 'bbox:', bbox);
 
+    // 판정이 애매하면 첫 후보를 조용히 쓴다 — DEM은 픽셀을 재투영하지 않고 bbox만 변환하는
+    // 구조라 확인 창에 그릴 미리보기가 없어(다른 로더의 resolveSourceCrs를 거치지 않음),
+    // 사용자에게 선택을 묻지 못한다. 그래도 아무 흔적이 없으면 안 되니 콘솔에는 남긴다.
+    // 상태 표시줄 등 UI로 알리는 건 여기서 하지 않는다 — 로더는 UI를 모르는 경계를 지킨다.
+    if (detection.confidence === 'ambiguous') {
+      const otherCandidates = (detection.candidates || [])
+        .slice(1)
+        .map((c) => c.crs)
+        .join(', ') || '없음';
+      console.warn(`DEM 좌표계 판정 애매함 — "${detection.crs}"를 선택함 (다른 후보: ${otherCandidates})`);
+    }
+
     // bbox 값을 분석하여 좌표계 추측
     const guessProjection = (bbox) => {
       const [minX, minY, maxX, maxY] = bbox;

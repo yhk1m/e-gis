@@ -139,6 +139,9 @@ export class BrowserPanel {
         const ids = await shapefileLoader.loadFromFiles(shpComponents);
         if (ids && ids.length > 0) {
           this.showMessage(`Shapefile ${ids.length}개 레이어 로드 완료`, 'success');
+        } else if (shpComponents.some((f) => /\.shp$/i.test(f.name))) {
+          // .shp는 있었지만 결과가 0개 — 좌표계 선택을 취소한 것이지 파일을 못 찾은 게 아니다
+          this.showMessage('좌표계 선택을 취소했습니다: Shapefile', 'info');
         } else {
           this.showMessage('.shp 파일을 찾지 못했습니다. (.dbf/.shx만으로는 로드 불가)', 'error');
         }

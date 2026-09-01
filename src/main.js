@@ -233,10 +233,20 @@ function initApp() {
         if (shpComponents.length > 0) {
           try {
             showStatusMessage('Shapefile 로딩 중...');
+            const attemptedSets = countShapefileSets(shpComponents);
             const ids = await shapefileLoader.loadFromFiles(shpComponents);
-            showStatusMessage(`Shapefile ${ids.length}개 레이어 로드 완료`);
-            const shpFile = shpComponents.find((f) => /\.shp$/i.test(f.name));
-            if (shpFile) addRecentFile(shpFile.name, 'shp');
+            if (ids.length === 0) {
+              // 좌표계 선택을 전부 취소한 경우: "로드 완료"로 보고하지 않고 최근 파일에도 남기지 않는다
+              showStatusMessage('좌표계 선택을 취소했습니다: Shapefile');
+            } else {
+              // 일부만 만들어진 경우(다른 shapefile 세트의 좌표계 선택을 취소한 경우) 알려준다.
+              // ShapefileLoader는 만들어진 layerId만 돌려주므로 정확한 스킵 개수는 알 수 없다 —
+              // 시도한 세트 수(attemptedSets)보다 결과가 적을 때만 안내 문구를 덧붙인다.
+              const partialNotice = ids.length < attemptedSets ? ' (일부 좌표계 선택 취소됨)' : '';
+              showStatusMessage(`Shapefile ${ids.length}개 레이어 로드 완료${partialNotice}`);
+              const shpFile = shpComponents.find((f) => /\.shp$/i.test(f.name));
+              if (shpFile) addRecentFile(shpFile.name, 'shp');
+            }
           } catch (error) {
             console.error('Shapefile 로드 실패:', error);
             showStatusMessage('Shapefile 로드 실패: ' + error.message);
@@ -837,6 +847,23 @@ function handleMenuAction(action) {
     default:
       console.log('메뉴 액션:', action);
   }
+}
+
+/**
+ * shapefile 구성 파일 목록에서 실제로 시도되는 shapefile 세트 개수를 센다.
+ * ShapefileLoader.loadFromFiles는 .shp가 없는 묶음은 건너뛰므로, 여기서도
+ * .shp 파일 기준으로 basename을 세어 "몇 개를 시도했는지"에 맞춘다.
+ * (반환값은 만들어진 layerId 배열뿐이라 취소로 일부가 빠졌는지 직접 알 수 없어
+ *  main.js에서 이렇게 별도로 센다 — ShapefileLoader의 반환 형태는 바꾸지 않는다)
+ */
+function countShapefileSets(files) {
+  const basenames = new Set();
+  for (const f of files) {
+    if (/\.shp$/i.test(f.name)) {
+      basenames.add(f.name.replace(/\.shp$/i, '').toLowerCase());
+    }
+  }
+  return basenames.size;
 }
 
 /**
