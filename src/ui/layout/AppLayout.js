@@ -133,7 +133,13 @@ export class AppLayout {
             <div class="menu-item" data-menu="builtin-data">
               <button class="menu-button" data-action="builtin-data" title="데이터 불러오기" style="color: var(--color-primary); font-weight: 600;"><span class="menu-btn-icon">📂</span><span class="menu-btn-label">📂 데이터 불러오기</span></button>
             </div>
-            <button class="btn-help" id="btn-help" title="사용 설명서">❓</button>
+            <a href="/guide" class="btn-community btn-guide" id="btn-guide" target="_blank" rel="noopener" title="e-GIS 사용 설명서">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+              GUIDE
+            </a>
             <a href="https://cafe.naver.com/egiskr" class="btn-community" target="_blank" title="e-GIS 커뮤니티">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -409,20 +415,7 @@ export class AppLayout {
     this.initTabs();
     this.initSidebarToggle();
     this.initToolbarCollapse();
-    this.initMobileHelpPosition();
     this.setFavicon();
-  }
-
-  /**
-   * 모바일: 도움말(❓) 버튼을 로그인 줄(menu-right) 맨 왼쪽으로 이동
-   */
-  initMobileHelpPosition() {
-    if (!window.matchMedia('(max-width: 768px)').matches) return;
-    const helpBtn = document.getElementById('btn-help');
-    const menuRight = document.querySelector('#menubar .menu-right');
-    if (helpBtn && menuRight) {
-      menuRight.insertBefore(helpBtn, menuRight.firstChild);
-    }
   }
 
   /**

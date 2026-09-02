@@ -50,24 +50,6 @@
   letter-spacing: -0.5px;
 }
 
-.btn-help {
-  background: transparent;
-  border: none;
-  font-size: 13px;
-  cursor: pointer;
-  margin-left: 8px;
-  padding: 4px 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s;
-  line-height: 1;
-}
-
-.btn-help:hover {
-  transform: scale(1.15);
-}
-
 .btn-community {
   display: flex;
   align-items: center;
@@ -643,7 +625,6 @@
   /* 메뉴바 로고/버튼 크기 확대 */
   .app-logo .logo-image { height: 32px !important; }
   .logo-text { font-size: 22px; }
-  .btn-help { font-size: 18px; padding: 6px 10px; }
   .btn-community { font-size: 13px; padding: 6px 10px; }
   .btn-community svg { width: 18px; height: 18px; }
   .header-privacy-link { font-size: 13px; padding: 6px 10px; }
@@ -761,13 +742,7 @@
     width: 100%;
   }
 
-  /* 도움말(❓) 버튼: 로그인 줄 맨 왼쪽 (JS에서 menu-right로 이동됨) */
-  .menu-right .btn-help {
-    margin-left: 0;
-    margin-right: auto;
-  }
-
-  /* 로그인/마이페이지/로그아웃: 줄바꿈 방지를 위해 영문 라벨 사용 */
+/* 로그인/마이페이지/로그아웃: 줄바꿈 방지를 위해 영문 라벨 사용 */
   .auth-label-ko {
     display: none;
   }
