@@ -6,7 +6,7 @@
   "scripts": {
     "catalog": "node scripts/generate-catalog.cjs",
     "dev": "vite",
-    "build": "npm run catalog && node scripts/build.cjs && node scripts/prerender-privacy.js",
+    "build": "npm run catalog && node scripts/build.cjs && node scripts/prerender-privacy.js && node scripts/prerender-guide.js",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist",
     "test": "vitest run"
@@ -46,6 +46,7 @@
   "devDependencies": {
     "gh-pages": "^6.3.0",
     "jsdom": "^29.1.1",
+    "marked": "^18.0.11",
     "vite": "^5.0.0",
     "vitest": "^4.1.10"
   }
