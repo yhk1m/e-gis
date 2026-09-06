@@ -82,10 +82,19 @@ style.textContent = `
   }
 
   .privacy-page-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-size: 20px;
     font-weight: 800;
     color: var(--pp-primary);
     text-decoration: none;
+  }
+
+  .privacy-page-logo img {
+    width: 26px;
+    height: 26px;
+    display: block;
   }
 
   .privacy-page-logo:hover {

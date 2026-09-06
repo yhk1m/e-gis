@@ -17,7 +17,7 @@ export function privacyPageHTML(baseUrl = '/') {
   return `
     <div class="privacy-page">
       <header class="privacy-page-header">
-        <a href="/" class="privacy-page-logo">e-GIS</a>
+        <a href="/" class="privacy-page-logo"><img src="${baseUrl}favicon.svg" alt=""><span>e-GIS</span></a>
         <span class="privacy-page-title">개인정보 처리방침</span>
       </header>
       <main class="privacy-page-main">
