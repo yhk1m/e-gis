@@ -317,11 +317,16 @@ export class AppLayout {
               <polyline points="21 15 16 10 5 21"/>
             </svg>
           </button>
-          <button class="btn-icon" id="view3d-toggle" data-tool="view3d" title="3D로 보기" aria-pressed="false">
+        </div>
+
+        <div class="toolbar-group" data-group="view3d">
+          <button class="btn btn-tool-labeled" id="view3d-toggle" data-tool="view3d"
+                  title="3D로 보기" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
               <path d="M12 2 22 7.5v9L12 22 2 16.5v-9L12 2z"/>
               <path d="M2 7.5 12 13l10-5.5M12 13v9"/>
             </svg>
+            <span class="btn-tool-label">3D</span>
           </button>
         </div>
 

@@ -89,6 +89,33 @@ input:focus, select:focus, textarea:focus {
   color: var(--color-primary);
 }
 
+/* 글자를 붙인 툴바 버튼 — 아이콘만으로는 무슨 기능인지 덜 분명한 것에 쓴다 */
+.btn-tool-labeled {
+  height: 28px;
+  padding: 0 var(--spacing-sm);
+  gap: 5px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-tool-label {
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.02em;
+}
+
+.btn-tool-labeled:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-tool-labeled.active {
+  background: var(--bg-selected);
+  color: var(--color-primary);
+}
+
 .btn-primary {
   background: var(--color-primary);
   color: var(--text-inverse);
@@ -5317,6 +5344,16 @@ body.exporting .egis-basemap-panel {
   #toolbar .btn-icon svg {
     width: 22px;
     height: 22px;
+  }
+
+  #toolbar .btn-tool-labeled {
+    height: 40px;
+    padding: 0 var(--spacing-md);
+  }
+
+  #toolbar .btn-tool-labeled svg {
+    width: 20px;
+    height: 20px;
   }
 }
 
