@@ -130,7 +130,9 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 0 var(--spacing-xs);
+  /* 구분선 좌우가 같은 간격이 되도록 그룹이 양쪽을 나눠 갖는다.
+     #toolbar의 gap은 0이다 — 합계는 구분선당 16px로 전과 같다. */
+  padding: 0 var(--spacing-sm);
   border-right: 1px solid var(--border-color);
 }
 
@@ -5354,6 +5356,13 @@ body.exporting .egis-basemap-panel {
   #toolbar .btn-tool-labeled svg {
     width: 20px;
     height: 20px;
+  }
+
+  /* 태블릿에서는 그룹 간격을 조금 더 준다.
+     layout.css에 같은 규칙이 있지만 @import가 앞서 기본값에 덮여 죽는다. */
+  #toolbar .toolbar-group {
+    padding: 0 var(--spacing-md);
+    gap: 4px;
   }
 }
 

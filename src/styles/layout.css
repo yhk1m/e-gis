@@ -107,7 +107,10 @@
   display: flex;
   align-items: center;
   padding: 0 var(--spacing-md);
-  gap: var(--spacing-sm);
+  /* 그룹 사이 간격은 그룹의 좌우 padding이 맡는다.
+     여기에 gap을 주면 구분선(= 앞 그룹의 border-right)이 한쪽으로 붙어
+     구분선 왼쪽 4px·오른쪽 12px처럼 어긋난다. */
+  gap: 0;
   z-index: var(--z-toolbar);
   flex-shrink: 0;
 }
