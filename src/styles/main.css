@@ -5251,7 +5251,10 @@ body.exporting .egis-basemap-panel {
 }
 
 #view3d-compass-needle {
-  transform-origin: 24px 24px;
+  /* 원의 중심(viewBox 36의 절반)에서 돌아야 한다.
+     viewBox를 바꾸면 이 값도 함께 고쳐야 한다 — 안 그러면 축이 어긋나 바늘이 흔들린다. */
+  transform-box: view-box;
+  transform-origin: 18px 18px;
 }
 
 /* three 캔버스가 지도를 덮는다 */
