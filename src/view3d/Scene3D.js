@@ -151,7 +151,11 @@ export class Scene3D {
   resize() {
     const width = this.container.clientWidth || 1;
     const height = this.container.clientHeight || 1;
-    this.renderer.setSize(width, height, false);
+    // 세 번째 인자를 false로 두면 three가 캔버스 CSS 크기를 정하지 않는다.
+    // 그러면 캔버스는 픽셀비가 곱해진 속성 크기(예: 1122 × 1.5 = 1683)를 그대로
+    // 레이아웃 크기로 써서 지도 밖으로 넘치고, 화면은 왼쪽 위만 잘려 보인다.
+    // 고DPI 화면에서만 드러나므로 반드시 스타일까지 맡겨야 한다.
+    this.renderer.setSize(width, height);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
   }
