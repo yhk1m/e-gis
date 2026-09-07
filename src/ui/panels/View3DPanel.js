@@ -96,8 +96,7 @@ export class View3DPanel {
       // 코드 잘못이 아니라 새로고침이 필요한 상황이라 따로 안내한다.
       if (isStaleModuleError(error)) {
         this.onMessage('새 버전이 배포되어 3D 모듈을 불러오지 못했습니다. 새로고침이 필요합니다.');
-        if (window.confirm('새 버전이 배포되었습니다.
-지금 새로고침할까요?')) {
+        if (window.confirm('새 버전이 배포되었습니다. 지금 새로고침할까요?')) {
           window.location.reload();
         }
       } else {
