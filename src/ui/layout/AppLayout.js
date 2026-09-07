@@ -391,7 +391,10 @@ export class AppLayout {
               <label class="view3d-row">
                 세로 과장
                 <input type="range" id="view3d-exaggeration" min="1" max="10" step="0.5" value="2">
-                <output id="view3d-exaggeration-value">2배</output>
+                <span class="view3d-num-wrap">
+                  <input type="number" id="view3d-exaggeration-value" min="0.1" max="100" step="0.1" value="2"
+                         aria-label="세로 과장 배율">배
+                </span>
               </label>
               <label class="view3d-row">
                 지형

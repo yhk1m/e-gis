@@ -15,34 +15,41 @@ export const MAX_TEXTURE_SIZE = 2048;
 /**
  * 무엇을 어떻게 그릴지 계산한다. 캔버스 API를 쓰지 않아 단독으로 테스트된다.
  *
- * 출력 크기는 **지도 뷰포트 크기**다. 레이어 캔버스 크기가 아니다 —
+ * 출력 크기는 **지도 뷰포트 크기 × 기기 픽셀비**다. 레이어 캔버스 크기가 아니다 —
  * OpenLayers는 뷰포트보다 큰 캔버스를 잡아 두고 transform으로 위치를 맞춘다.
  * 캔버스 크기를 그대로 쓰면 텍스처에 빈 여백이 생기고, 그 여백이 3D 지형에
- * 검은 띠로 나타난다.
+ * 검은 띠로 나타난다. 반대로 CSS 픽셀 크기로 뽑으면 OL이 이미 그려 둔 해상도를
+ * 버리게 된다(예: 1683px를 1122px로 줄여 씀).
  *
  * @param {Array} canvases OL 레이어 캔버스들 (DOM 순서)
  * @param {number[]} viewportSize 지도 크기 [너비, 높이] (CSS 픽셀)
- * @param {number} maxSize 한 변 최대 픽셀
+ * @param {{pixelRatio?: number, maxSize?: number}} options
  * @returns {{width:number, height:number, scale:number,
  *            layers: Array<{canvas:Object, matrix:number[], alpha:number}>} | null}
  */
-export function planComposition(canvases, viewportSize, maxSize = MAX_TEXTURE_SIZE) {
+export function planComposition(canvases, viewportSize, { pixelRatio = 1, maxSize = MAX_TEXTURE_SIZE } = {}) {
   const drawable = Array.from(canvases).filter((c) => c.width > 0 && c.height > 0);
   if (drawable.length === 0) return null;
 
   const [viewportWidth, viewportHeight] = viewportSize || [];
   if (!(viewportWidth > 0) || !(viewportHeight > 0)) return null;
 
-  const scale = Math.min(1, maxSize / Math.max(viewportWidth, viewportHeight));
+  const targetWidth = viewportWidth * pixelRatio;
+  const targetHeight = viewportHeight * pixelRatio;
+  const scale = Math.min(1, maxSize / Math.max(targetWidth, targetHeight));
+
+  const width = Math.round(targetWidth * scale);
+  const height = Math.round(targetHeight * scale);
+
+  // 레이어의 transform은 CSS 픽셀 기준이라 픽셀비와 상한 배율을 함께 곱한다
+  const k = pixelRatio * scale;
 
   const layers = drawable.map((canvas) => {
     const match = /^matrix\(([^)]+)\)$/.exec((canvas.style.transform || '').trim());
-    // transform이 없으면 캔버스를 뷰포트 크기에 맞춰 줄인다(고해상도 화면에서 필요)
-    const base = match
-      ? match[1].split(',').map(Number)
-      : [canvas.width / viewportWidth, 0, 0, canvas.height / viewportHeight, 0, 0];
-    // 전체 배율을 앞에 곱한다 — 행렬 각 항에 그대로 곱하면 된다
-    const matrix = base.map((v) => v * scale);
+    const matrix = match
+      ? match[1].split(',').map(Number).map((v) => v * k)
+      // transform이 없으면 캔버스를 출력 크기에 맞춰 늘리거나 줄인다
+      : [width / canvas.width, 0, 0, height / canvas.height, 0, 0];
 
     const raw = canvas.parentNode?.style?.opacity ?? canvas.style.opacity ?? '';
     const alpha = raw === '' ? 1 : Number(raw);
@@ -50,12 +57,7 @@ export function planComposition(canvases, viewportSize, maxSize = MAX_TEXTURE_SI
     return { canvas, matrix, alpha: Number.isFinite(alpha) ? alpha : 1 };
   });
 
-  return {
-    width: Math.round(viewportWidth * scale),
-    height: Math.round(viewportHeight * scale),
-    scale,
-    layers
-  };
+  return { width, height, scale, layers };
 }
 
 /**
@@ -63,15 +65,18 @@ export function planComposition(canvases, viewportSize, maxSize = MAX_TEXTURE_SI
  * 그릴 것이 없으면 null.
  *
  * @param {HTMLElement} mapElement `#map`
- * @param {{size?: number[], maxSize?: number, target?: HTMLCanvasElement}} options
+ * @param {{size?: number[], pixelRatio?: number, maxSize?: number, target?: HTMLCanvasElement}} options
  *        size는 지도 크기(map.getSize()). 없으면 요소 크기로 대신한다.
+ *        pixelRatio는 OL이 그린 해상도(기본 기기 픽셀비).
  *        target을 주면 새로 만들지 않고 다시 쓴다(갱신마다 캔버스를 새로 만들지 않기 위함)
  * @returns {HTMLCanvasElement|null}
  */
-export function composeMapCanvas(mapElement, { size, maxSize = MAX_TEXTURE_SIZE, target } = {}) {
+export function composeMapCanvas(mapElement, {
+  size, pixelRatio = window.devicePixelRatio || 1, maxSize = MAX_TEXTURE_SIZE, target
+} = {}) {
   const viewportSize = size || [mapElement.clientWidth, mapElement.clientHeight];
   const canvases = mapElement.querySelectorAll('.ol-layer canvas, canvas.ol-layer');
-  const plan = planComposition(canvases, viewportSize, maxSize);
+  const plan = planComposition(canvases, viewportSize, { pixelRatio, maxSize });
   if (!plan) return null;
 
   const output = target || document.createElement('canvas');

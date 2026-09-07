@@ -34,9 +34,11 @@ export class View3DPanel {
 
     // 토글 클릭은 main.js의 툴바 [data-tool] 스위치가 부른다 — 여기서 또 듣지 않는다
     this.slider.addEventListener('input', () => {
-      const value = Number(this.slider.value);
-      this.sliderValue.textContent = `${value}배`;
-      this.controller?.setExaggeration(value);
+      this.applyExaggeration(Number(this.slider.value), { from: 'slider' });
+    });
+    // 슬라이더 범위(1~10)를 넘는 값도 숫자로 직접 넣을 수 있다
+    this.sliderValue.addEventListener('change', () => {
+      this.applyExaggeration(Number(this.sliderValue.value), { from: 'number' });
     });
     this.saveButton.addEventListener('click', () => this.savePng());
     this.terrainSelect.addEventListener('change', () => {
@@ -66,7 +68,8 @@ export class View3DPanel {
         layerManager: this.layerManager,
         container: document.getElementById('map-container')
       });
-      this.controller.exaggeration = Number(this.slider.value);
+      this.controller.exaggeration = Number(this.sliderValue.value) || 2;
+      this.controller.onLayersChanged = () => this.fillTerrainOptions();
       this.controller.enter();
       this.fillTerrainOptions();
       this.basemapSelect.value = this.mapManager.getBasemap?.() || 'OSM';
@@ -88,16 +91,39 @@ export class View3DPanel {
     }
   }
 
+  /**
+   * 세로 과장 배율을 적용하고 슬라이더·숫자칸을 맞춘다.
+   * 숫자칸은 슬라이더 범위를 넘어설 수 있다 — 슬라이더는 끝에 붙여 둔다.
+   */
+  applyExaggeration(raw, { from }) {
+    const min = Number(this.sliderValue.min) || 0.1;
+    const max = Number(this.sliderValue.max) || 100;
+    const value = Number.isFinite(raw) ? Math.min(max, Math.max(min, raw)) : 2;
+
+    if (from !== 'number') this.sliderValue.value = String(value);
+    if (from !== 'slider') {
+      const sliderMin = Number(this.slider.min);
+      const sliderMax = Number(this.slider.max);
+      this.slider.value = String(Math.min(sliderMax, Math.max(sliderMin, value)));
+    }
+    if (raw !== value) this.sliderValue.value = String(value);
+
+    this.controller?.setExaggeration(value);
+  }
+
   /** 지형 드롭다운을 지금 있는 DEM 레이어로 채운다 */
   fillTerrainOptions() {
     const sources = this.controller.listTerrainSources();
+    const previous = this.terrainSelect.value;
     const options = sources.map(
       (s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`
     );
     this.terrainSelect.innerHTML = `<option value="${FLAT}">평면 (고도 없음)</option>${options.join('')}`;
-    // 자동 선택된 DEM을 골라 둔다 — 무엇이 지형이 됐는지 보이게
+
+    // 고른 값이 아직 살아 있으면 지킨다. 없으면 자동으로 고른 DEM을 보여 준다.
+    const stillThere = previous && [...this.terrainSelect.options].some((o) => o.value === previous);
     const picked = sources[sources.length - 1];
-    this.terrainSelect.value = picked ? picked.id : FLAT;
+    this.terrainSelect.value = stillThere ? previous : (picked ? picked.id : FLAT);
     this.terrainSelect.disabled = sources.length === 0;
   }
 

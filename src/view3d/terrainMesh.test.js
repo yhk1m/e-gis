@@ -30,6 +30,22 @@ describe('sampleElevation', () => {
     expect(sampleElevation(tinyDem(), 50, 101)).toBe(null);
   });
 
+  it('픽셀 사이는 이어서 읽는다 — 최근접이면 사면이 계단이 된다', () => {
+    const dem = tinyDem();
+    // 왼쪽 위(0m)와 오른쪽 위(10m) 픽셀 중심의 정확히 중간
+    expect(sampleElevation(dem, 50, 75)).toBeCloseTo(5, 6);
+    // 위(0m)와 아래(20m) 픽셀 중심의 중간
+    expect(sampleElevation(dem, 25, 50)).toBeCloseTo(10, 6);
+    // 네 픽셀의 한가운데 = 0·10·20·30의 평균
+    expect(sampleElevation(dem, 50, 50)).toBeCloseTo(15, 6);
+  });
+
+  it('가장자리 밖은 가장자리 값을 쓴다 — 튀지 않게', () => {
+    const dem = tinyDem();
+    expect(sampleElevation(dem, 0, 100)).toBe(0);
+    expect(sampleElevation(dem, 100, 0)).toBe(30);
+  });
+
   it('noDataValue와 같은 값은 null로 본다', () => {
     const dem = tinyDem({ data: Float32Array.from([0, 10, 20, -9999]), noDataValue: -9999 });
     expect(sampleElevation(dem, 90, 10)).toBe(null);

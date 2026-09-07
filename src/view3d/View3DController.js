@@ -24,6 +24,15 @@ const DRAG_REFRESH_MS = 300;
 /** 타깃이 화면 크기의 이만큼을 넘게 이동하면 조작 중에도 갱신한다 */
 const DRIFT_RATIO = 0.25;
 
+/**
+ * 지형을 화면 범위보다 이만큼 넓게 만든다.
+ *
+ * 카메라를 45°로 기울이면 화면에 들어오는 땅이 2D 화면 사각형보다 두 배쯤 넓다.
+ * 화면 범위에 딱 맞추면 지형 조각이 섬처럼 떠 보이고, 확대할 때마다 조각이
+ * 작아지는 것처럼 느껴진다. 텍스처도 같은 범위로 함께 넓혀 굽는다.
+ */
+const SURFACE_PAD = 2;
+
 /** 2D에서 레이어가 바뀐 뒤 표면을 다시 굽기까지 기다리는 시간 */
 const LAYER_SETTLE_MS = 120;
 
@@ -56,6 +65,7 @@ export class View3DController {
     this.lastRefreshAt = 0;
     this.terrainLayerId = null;   // null이면 가장 위 DEM을 자동으로 쓴다. FLAT이면 평면
     this.layerTimer = null;
+    this.onLayersChanged = null;  // 지형 목록을 다시 채우라고 패널에 알린다
   }
 
   /** 지형으로 쓸 수 있는 DEM 목록 (가시성과 무관) */
@@ -125,7 +135,10 @@ export class View3DController {
     if (!this.active) return;
     clearTimeout(this.layerTimer);
     this.layerTimer = setTimeout(() => {
-      if (this.active) this.refresh({ frame: false });
+      if (!this.active) return;
+      this.refresh({ frame: false });
+      // 지형으로 쓸 수 있는 DEM 목록도 달라졌을 수 있다
+      if (this.onLayersChanged) this.onLayersChanged();
     }, LAYER_SETTLE_MS);
   }
 
@@ -208,12 +221,25 @@ export class View3DController {
     const size = map.getSize();
     if (!size) return;
 
-    // 표면은 2D 화면에 보이는 그대로다 — 무엇을 보일지는 레이어 패널이 정한다
-    map.renderSync();
-    const textureCanvas = composeMapCanvas(map.getTargetElement(), { size });
+    const viewExtent = view.calculateExtent(size);
+
+    // 표면은 2D 화면에 보이는 그대로다 — 무엇을 보일지는 레이어 패널이 정한다.
+    // 다만 화면 사각형보다 넓게 굽는다. 잠시 축척을 낮춰 넓은 화면을 받아 온 뒤 되돌린다.
+    // 실제로 적용된 범위를 다시 읽는 이유: 최소 축척에 걸리면 요청한 만큼 안 넓어진다.
+    const baseResolution = view.getResolution();
+    let extent;
+    let textureCanvas;
+    try {
+      view.setResolution(baseResolution * SURFACE_PAD);
+      map.renderSync();
+      extent = view.calculateExtent(size);
+      textureCanvas = composeMapCanvas(map.getTargetElement(), { size });
+    } finally {
+      view.setResolution(baseResolution);
+      map.renderSync();
+    }
     if (!textureCanvas) return;
 
-    const extent = view.calculateExtent(size);
     const latitude = toLonLat(view.getCenter())[1];
     const demData = this.findDemData();
 
@@ -235,7 +261,7 @@ export class View3DController {
     this.scene.setTerrain(geometry, textureCanvas);
 
     if (frame) {
-      this.scene.frameExtent(extent[2] - extent[0], extent[3] - extent[1]);
+      this.scene.frameExtent(viewExtent[2] - viewExtent[0], viewExtent[3] - viewExtent[1]);
     } else {
       const { dx, dz } = rebaseOffset(previousCenter, this.center);
       this.scene.shift(dx, dz);

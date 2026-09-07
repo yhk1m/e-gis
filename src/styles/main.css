@@ -5191,6 +5191,16 @@ body.exporting .egis-basemap-panel {
   min-width: 120px;
 }
 
+.view3d-num-wrap {
+  white-space: nowrap;
+}
+
+.view3d-num-wrap input {
+  width: 52px;
+  margin-right: 2px;
+  text-align: right;
+}
+
 .view3d-hint {
   margin: 10px 0 0;
   max-width: 240px;

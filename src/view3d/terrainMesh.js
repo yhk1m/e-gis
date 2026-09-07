@@ -10,8 +10,13 @@
 export const MAX_GRID = 512;
 
 /**
- * 지도 좌표(EPSG:3857)의 고도를 읽는다.
- * DEM 범위 밖이거나 결측이면 null.
+ * 지도 좌표(EPSG:3857)의 고도를 읽는다. **네 이웃을 섞는 양선형 보간**이다.
+ *
+ * 최근접으로 읽으면 메시 격자가 DEM 픽셀보다 촘촘할 때 한 픽셀 값이 여러 정점에
+ * 그대로 복사돼 사면이 계단(사각형)으로 보인다.
+ * 가장자리 밖은 가장자리 픽셀을 그대로 써서 값이 튀지 않게 한다.
+ *
+ * DEM 범위 밖이거나, 섞을 이웃 중 하나라도 결측이면 null.
  */
 export function sampleElevation(demData, x, y) {
   const { data, width, height, extent, noDataValue } = demData;
@@ -19,14 +24,34 @@ export function sampleElevation(demData, x, y) {
 
   if (x < minX || x > maxX || y < minY || y > maxY) return null;
 
-  // 행 0이 북쪽(maxY)이다
-  const col = Math.min(width - 1, Math.floor(((x - minX) / (maxX - minX)) * width));
-  const row = Math.min(height - 1, Math.floor(((maxY - y) / (maxY - minY)) * height));
+  // 픽셀 중심 기준 좌표 — 행 0이 북쪽(maxY)이다
+  const fx = ((x - minX) / (maxX - minX)) * width - 0.5;
+  const fy = ((maxY - y) / (maxY - minY)) * height - 0.5;
 
-  const value = data[row * width + col];
-  if (!Number.isFinite(value)) return null;
-  if (noDataValue !== null && noDataValue !== undefined && value === noDataValue) return null;
-  return value;
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const tx = fx - x0;
+  const ty = fy - y0;
+
+  const clamp = (v, max) => (v < 0 ? 0 : v > max ? max : v);
+  const c0 = clamp(x0, width - 1);
+  const c1 = clamp(x0 + 1, width - 1);
+  const r0 = clamp(y0, height - 1);
+  const r1 = clamp(y0 + 1, height - 1);
+
+  const valid = (v) =>
+    Number.isFinite(v) &&
+    !(noDataValue !== null && noDataValue !== undefined && v === noDataValue);
+
+  const v00 = data[r0 * width + c0];
+  const v10 = data[r0 * width + c1];
+  const v01 = data[r1 * width + c0];
+  const v11 = data[r1 * width + c1];
+  if (!valid(v00) || !valid(v10) || !valid(v01) || !valid(v11)) return null;
+
+  const top = v00 + (v10 - v00) * tx;
+  const bottom = v01 + (v11 - v01) * tx;
+  return top + (bottom - top) * ty;
 }
 
 /**
