@@ -380,6 +380,17 @@ export class AppLayout {
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
           </button>
+          <div id="view3d-controls" class="view3d-controls">
+            <button id="view3d-toggle" class="view3d-toggle" title="3D로 보기" aria-pressed="false">3D</button>
+            <div id="view3d-panel" class="view3d-panel" hidden>
+              <label class="view3d-row">
+                세로 과장
+                <input type="range" id="view3d-exaggeration" min="1" max="10" step="0.5" value="2">
+                <output id="view3d-exaggeration-value">2배</output>
+              </label>
+              <button id="view3d-save" class="view3d-save">PNG로 저장</button>
+            </div>
+          </div>
         </main>
       </div>
 
