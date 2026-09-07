@@ -5182,13 +5182,19 @@ body.exporting .egis-basemap-panel {
   white-space: nowrap;
 }
 
-.view3d-check {
+.view3d-row + .view3d-row {
   margin-top: 8px;
-  cursor: pointer;
+}
+
+.view3d-row select {
+  flex: 1;
+  min-width: 120px;
 }
 
 .view3d-hint {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
+  max-width: 240px;
+  line-height: 1.5;
   color: var(--text-secondary);
   font-size: var(--font-size-xs);
 }

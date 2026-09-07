@@ -393,11 +393,23 @@ export class AppLayout {
                 <input type="range" id="view3d-exaggeration" min="1" max="10" step="0.5" value="2">
                 <output id="view3d-exaggeration-value">2배</output>
               </label>
-              <label class="view3d-row view3d-check">
-                <input type="checkbox" id="view3d-drape">
-                DEM 색상 대신 웹지도 입히기
+              <label class="view3d-row">
+                지형
+                <select id="view3d-terrain"></select>
               </label>
-              <p class="view3d-hint">더블클릭한 곳이 회전 중심(빨간 점)이 됩니다.</p>
+              <label class="view3d-row">
+                배경지도
+                <select id="view3d-basemap">
+                  <option value="OSM">일반지도</option>
+                  <option value="SATELLITE">위성</option>
+                  <option value="SATELLITE_LABELS">위성 + 라벨</option>
+                  <option value="NONE">없음</option>
+                </select>
+              </label>
+              <p class="view3d-hint">
+                표면에 무엇을 올릴지는 레이어 목록에서 켜고 끄면 됩니다.
+                더블클릭한 곳이 회전 중심(빨간 점)이 됩니다.
+              </p>
               <button id="view3d-save" class="view3d-save">PNG로 저장</button>
             </div>
           </div>

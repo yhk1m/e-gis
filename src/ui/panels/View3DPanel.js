@@ -6,6 +6,8 @@
  * 3D를 쓰지 않는 사용자는 한 바이트도 받지 않는다.
  */
 
+import { FLAT } from '../../view3d/terrainSource.js';
+
 export class View3DPanel {
   constructor({ mapManager, layerManager, onMessage }) {
     this.mapManager = mapManager;
@@ -20,7 +22,8 @@ export class View3DPanel {
     this.slider = document.getElementById('view3d-exaggeration');
     this.sliderValue = document.getElementById('view3d-exaggeration-value');
     this.saveButton = document.getElementById('view3d-save');
-    this.drapeCheckbox = document.getElementById('view3d-drape');
+    this.terrainSelect = document.getElementById('view3d-terrain');
+    this.basemapSelect = document.getElementById('view3d-basemap');
     if (!this.toggleButton) return;
 
     if (!supportsWebGL()) {
@@ -36,8 +39,11 @@ export class View3DPanel {
       this.controller?.setExaggeration(value);
     });
     this.saveButton.addEventListener('click', () => this.savePng());
-    this.drapeCheckbox.addEventListener('change', () => {
-      this.controller?.setDrapeWebMap(this.drapeCheckbox.checked);
+    this.terrainSelect.addEventListener('change', () => {
+      this.controller?.setTerrainSource(this.terrainSelect.value || null);
+    });
+    this.basemapSelect.addEventListener('change', () => {
+      this.controller?.setBasemap(this.basemapSelect.value);
     });
   }
 
@@ -61,8 +67,9 @@ export class View3DPanel {
         container: document.getElementById('map-container')
       });
       this.controller.exaggeration = Number(this.slider.value);
-      this.controller.drapeWebMap = this.drapeCheckbox.checked;
       this.controller.enter();
+      this.fillTerrainOptions();
+      this.basemapSelect.value = this.mapManager.getBasemap?.() || 'OSM';
 
       this.panel.hidden = false;
       this.toggleButton.classList.add('active');
@@ -81,6 +88,19 @@ export class View3DPanel {
     }
   }
 
+  /** 지형 드롭다운을 지금 있는 DEM 레이어로 채운다 */
+  fillTerrainOptions() {
+    const sources = this.controller.listTerrainSources();
+    const options = sources.map(
+      (s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`
+    );
+    this.terrainSelect.innerHTML = `<option value="${FLAT}">평면 (고도 없음)</option>${options.join('')}`;
+    // 자동 선택된 DEM을 골라 둔다 — 무엇이 지형이 됐는지 보이게
+    const picked = sources[sources.length - 1];
+    this.terrainSelect.value = picked ? picked.id : FLAT;
+    this.terrainSelect.disabled = sources.length === 0;
+  }
+
   savePng() {
     const dataUrl = this.controller?.toDataURL();
     if (!dataUrl) return;
@@ -89,6 +109,13 @@ export class View3DPanel {
     link.download = `egis-3d-${Date.now()}.png`;
     link.click();
   }
+}
+
+/** 레이어 이름은 사용자가 지은 것이라 그대로 심지 않는다 */
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
 }
 
 /** WebGL을 쓸 수 있는가 */

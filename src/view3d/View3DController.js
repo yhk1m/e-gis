@@ -6,6 +6,8 @@
  */
 
 import { toLonLat } from 'ol/proj';
+import { eventBus, Events } from '../utils/EventBus.js';
+import { pickDemLayer, listDemLayers, FLAT } from './terrainSource.js';
 import { buildTerrainGeometry, MAX_GRID } from './terrainMesh.js';
 import { composeMapCanvas } from './mapTexture.js';
 import {
@@ -21,6 +23,18 @@ const DRAG_REFRESH_MS = 300;
 
 /** 타깃이 화면 크기의 이만큼을 넘게 이동하면 조작 중에도 갱신한다 */
 const DRIFT_RATIO = 0.25;
+
+/** 2D에서 레이어가 바뀐 뒤 표면을 다시 굽기까지 기다리는 시간 */
+const LAYER_SETTLE_MS = 120;
+
+/** 표면을 다시 구워야 하는 2D 쪽 변화들 */
+const SURFACE_EVENTS = [
+  Events.LAYER_ADDED,
+  Events.LAYER_REMOVED,
+  Events.LAYER_VISIBILITY_CHANGED,
+  Events.LAYER_ORDER_CHANGED,
+  Events.LAYER_STYLE_CHANGED
+];
 
 export class View3DController {
   /**
@@ -40,16 +54,19 @@ export class View3DController {
     this.syncing = false;     // 우리가 뷰를 바꿔 생긴 변화에 다시 반응하지 않게 한다
     this.span = 0;            // 지금 메시가 덮는 크기(미터) — 이동량 판단에 쓴다
     this.lastRefreshAt = 0;
-    this.drapeWebMap = false; // 지형에 DEM 색상 대신 웹지도를 입힐 것인가
+    this.terrainLayerId = null;   // null이면 가장 위 DEM을 자동으로 쓴다. FLAT이면 평면
+    this.layerTimer = null;
   }
 
-  /** 보이는 DEM 레이어들 — 텍스처를 뽑을 때 잠시 숨기려고 모은다 */
-  findDemLayers() {
-    const found = [];
-    for (const layerInfo of this.layerManager.layers.values()) {
-      if (layerInfo.demData && layerInfo.olLayer?.getVisible?.()) found.push(layerInfo.olLayer);
-    }
-    return found;
+  /** 지형으로 쓸 수 있는 DEM 목록 (가시성과 무관) */
+  listTerrainSources() {
+    return listDemLayers(this.layerManager.layers);
+  }
+
+  /** 지형 원본을 바꾼다 — FLAT이면 평면 */
+  setTerrainSource(layerId) {
+    this.terrainLayerId = layerId;
+    if (this.active) this.refresh({ frame: false });
   }
 
   /** 지금 올라와 있는 레이어들의 가운데 — 고정점 기본 위치 */
@@ -61,25 +78,21 @@ export class View3DController {
         extents.push(layerInfo.demData.extent);
         continue;
       }
+
       const extent = layerInfo.olLayer.getSource?.()?.getExtent?.();
       if (extent) extents.push(extent);
     }
     return combinedExtentCenter(extents);
   }
 
-  /** 지형 표면을 웹지도로 할지 바꾼다 */
-  setDrapeWebMap(value) {
-    this.drapeWebMap = value;
-    if (this.active) this.refresh({ frame: false });
-  }
-
-  /** 보이는 DEM 레이어의 demData — 없으면 null */
+  /**
+   * 고도를 가져올 DEM — 없으면 null(평면).
+   *
+   * **레이어의 2D 가시성은 보지 않는다.** 고도 원본과 표면은 별개이기 때문이다.
+   * DEM 레이어를 레이어 패널에서 끄면 지형은 그대로 서 있고 표면만 그 아래로 바뀐다.
+   */
   findDemData() {
-    let found = null;
-    for (const layerInfo of this.layerManager.layers.values()) {
-      if (layerInfo.demData && layerInfo.olLayer?.getVisible()) found = layerInfo.demData;
-    }
-    return found;
+    return pickDemLayer(this.layerManager.layers, this.terrainLayerId)?.demData ?? null;
   }
 
   /** 3D를 켠다 */
@@ -100,12 +113,34 @@ export class View3DController {
 
     this.resizeHandler = () => this.scene?.resize();
     window.addEventListener('resize', this.resizeHandler);
+
+    // 2D에서 레이어를 켜고 끄면 지형 표면도 곧바로 따라야 한다.
+    // 이게 없으면 레이어를 토글해도 카메라를 움직이기 전까지 3D가 그대로다.
+    this.surfaceHandler = () => this.scheduleSurfaceRefresh();
+    SURFACE_EVENTS.forEach((name) => eventBus.on(name, this.surfaceHandler));
+  }
+
+  /** 표면만 다시 굽는다 — 레이어 변화가 잦아 살짝 모아서 처리한다 */
+  scheduleSurfaceRefresh() {
+    if (!this.active) return;
+    clearTimeout(this.layerTimer);
+    this.layerTimer = setTimeout(() => {
+      if (this.active) this.refresh({ frame: false });
+    }, LAYER_SETTLE_MS);
+  }
+
+  /** 배경지도를 바꾼다 — 3D 중에는 지도 위 드롭다운이 가려져 여기서 고른다 */
+  setBasemap(key) {
+    this.mapManager.setBasemap(key);
+    if (this.active) this.scheduleSurfaceRefresh();
   }
 
   /** 3D를 끈다 */
   exit() {
     if (!this.active) return;
     clearTimeout(this.settleTimer);
+    clearTimeout(this.layerTimer);
+    SURFACE_EVENTS.forEach((name) => eventBus.off(name, this.surfaceHandler));
     window.removeEventListener('resize', this.resizeHandler);
     this.scene.dispose();
     this.scene = null;
@@ -173,18 +208,9 @@ export class View3DController {
     const size = map.getSize();
     if (!size) return;
 
-    // 웹지도를 입힐 때는 DEM 색상 레이어를 잠시 숨겨 밑의 지도가 드러나게 한다.
-    // 화면에 보이는 것을 그대로 굽는 규칙은 유지하되, 무엇을 보이게 할지만 잠깐 바꾼다.
-    const hidden = this.drapeWebMap ? this.findDemLayers() : [];
-    hidden.forEach((layer) => layer.setVisible(false));
-    let textureCanvas;
-    try {
-      map.renderSync();
-      textureCanvas = composeMapCanvas(map.getTargetElement(), { size });
-    } finally {
-      hidden.forEach((layer) => layer.setVisible(true));
-      if (hidden.length) map.renderSync();
-    }
+    // 표면은 2D 화면에 보이는 그대로다 — 무엇을 보일지는 레이어 패널이 정한다
+    map.renderSync();
+    const textureCanvas = composeMapCanvas(map.getTargetElement(), { size });
     if (!textureCanvas) return;
 
     const extent = view.calculateExtent(size);
