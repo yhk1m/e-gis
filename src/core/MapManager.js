@@ -223,12 +223,38 @@ class GeolocateControl extends Control {
     this.getMap().addLayer(this.locationLayer);
   }
 
+  /** 지금 내 위치 표시가 지도에 있는가 */
+  isShowingLocation() {
+    return Boolean(this.locationLayer);
+  }
+
+  /**
+   * 내 위치 표시를 지운다.
+   *
+   * 레이어를 통째로 걷어낸다 — 도형만 비우면 빈 시스템 레이어가 지도에 남는다.
+   */
+  clearLocation() {
+    if (!this.locationLayer) return;
+    this.getMap()?.removeLayer(this.locationLayer);
+    this.locationLayer = null;
+    this.locationFeature = null;
+    this.button.classList.remove('active');
+    this.button.title = '내 위치로 이동';
+  }
+
   handleClick() {
+    // 한 번 더 누르면 표시를 지운다 — 새로고침해야 사라지던 것을 고친다
+    if (this.isShowingLocation()) {
+      this.clearLocation();
+      return;
+    }
+
     if (!navigator.geolocation) {
       alert('이 브라우저에서는 위치 서비스를 지원하지 않습니다.');
       return;
     }
 
+    if (this.button.classList.contains('loading')) return;   // 연타 방지
     this.button.classList.add('loading');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -237,6 +263,8 @@ class GeolocateControl extends Control {
         this.ensureLayer();
         const coord = fromLonLat([longitude, latitude]);
         this.locationFeature.setGeometry(new Point(coord));
+        this.button.classList.add('active');
+        this.button.title = '내 위치 표시 지우기';
         this.getMap().getView().animate({
           center: coord,
           zoom: Math.max(this.getMap().getView().getZoom(), 14),

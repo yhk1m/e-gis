@@ -287,6 +287,13 @@ input:focus, select:focus, textarea:focus {
   transform-origin: center;
 }
 
+/* 내 위치: 표시 중일 때 강조 — 한 번 더 누르면 지워진다는 신호 */
+.egis-geolocate button.active {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+
 /* 배경지도 선택: 위성 활성 시 강조 */
 .egis-basemap > button.active {
   background: var(--color-primary) !important;
