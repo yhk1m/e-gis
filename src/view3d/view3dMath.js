@@ -61,3 +61,20 @@ export function combinedExtentCenter(extents) {
   if (!Number.isFinite(minX) || !Number.isFinite(minY)) return null;
   return [(minX + maxX) / 2, (minY + maxY) / 2];
 }
+
+/**
+ * 카메라가 바라보는 방위각(라디안). 북쪽 기준 시계 방향.
+ *
+ * 씬 좌표에서 북쪽은 -Z다(sceneZ = -(mapY - cy)). 방위표시는 이 값의 반대로
+ * 돌리면 된다 — 카메라가 동쪽을 보면 북쪽은 화면 왼쪽에 있다.
+ *
+ * @param {{x:number, z:number}} camera 카메라 위치
+ * @param {{x:number, z:number}} target 바라보는 점
+ * @returns {number} 라디안 (-π, π]. 수직으로 내려다보면 0
+ */
+export function viewBearing(camera, target) {
+  const fx = target.x - camera.x;
+  const fz = target.z - camera.z;
+  if (fx === 0 && fz === 0) return 0;
+  return Math.atan2(fx, -fz);
+}

@@ -8,7 +8,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { distanceForExtent } from './view3dMath.js';
+import { distanceForExtent, viewBearing } from './view3dMath.js';
 
 export const FOV = 50;
 
@@ -84,6 +84,11 @@ export class Scene3D {
     this.controls.target.copy(hit.point);
     this.controls.update();
     if (this.onPivotMoved) this.onPivotMoved();
+  }
+
+  /** 카메라가 바라보는 방위각(라디안) — 방위표시를 돌리는 데 쓴다 */
+  getBearing() {
+    return viewBearing(this.camera.position, this.controls.target);
   }
 
   /** 고정점 표시를 카메라 거리에 맞춰 키운다 — 멀어져도 보이게 */

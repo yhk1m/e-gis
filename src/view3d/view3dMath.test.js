@@ -1,7 +1,7 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
 import {
-  distanceForExtent, resolutionForDistance, sceneToMap, rebaseOffset, combinedExtentCenter
+  distanceForExtent, resolutionForDistance, sceneToMap, rebaseOffset, combinedExtentCenter, viewBearing
 } from './view3dMath.js';
 
 describe('distanceForExtent · resolutionForDistance', () => {
@@ -52,5 +52,31 @@ describe('combinedExtentCenter', () => {
 
   it('넓이가 0인 범위(점 하나)도 가운데를 준다', () => {
     expect(combinedExtentCenter([[50, 50, 50, 50]])).toEqual([50, 50]);
+  });
+});
+
+describe('viewBearing', () => {
+  const deg = (rad) => Math.round((rad * 180) / Math.PI);
+  const target = { x: 0, z: 0 };
+
+  it('남쪽에서 북쪽을 보면 0도다', () => {
+    // 씬 좌표에서 북쪽은 -Z다 (sceneZ = -(mapY - cy))
+    expect(deg(viewBearing({ x: 0, z: 100 }, target))).toBe(0);
+  });
+
+  it('서쪽에서 동쪽을 보면 90도다', () => {
+    expect(deg(viewBearing({ x: -100, z: 0 }, target))).toBe(90);
+  });
+
+  it('북쪽에서 남쪽을 보면 180도다', () => {
+    expect(Math.abs(deg(viewBearing({ x: 0, z: -100 }, target)))).toBe(180);
+  });
+
+  it('동쪽에서 서쪽을 보면 -90도다', () => {
+    expect(deg(viewBearing({ x: 100, z: 0 }, target))).toBe(-90);
+  });
+
+  it('바로 위에서 내려다보면 0도로 둔다', () => {
+    expect(deg(viewBearing({ x: 0, z: 0 }, target))).toBe(0);
   });
 });

@@ -66,6 +66,7 @@ export class View3DController {
     this.terrainLayerId = ALL;    // ALL이면 불러온 DEM을 모두 잇는다. FLAT이면 평면
     this.layerTimer = null;
     this.onLayersChanged = null;  // 지형 목록을 다시 채우라고 패널에 알린다
+    this.onCameraMoved = null;    // 방위표시를 돌리라고 패널에 알린다
   }
 
   /** 지형으로 쓸 수 있는 DEM 목록 (가시성과 무관) */
@@ -117,11 +118,15 @@ export class View3DController {
     if (layersCenter) this.mapManager.getMap().getView().setCenter(layersCenter);
 
     this.scene = new Scene3D(this.container);
-    this.scene.onCameraChange = () => this.scheduleRefresh();
+    this.scene.onCameraChange = () => {
+      this.scheduleRefresh();
+      if (this.onCameraMoved) this.onCameraMoved(this.scene.getBearing());
+    };
     this.scene.onPivotMoved = () => this.scheduleRefresh();
     this.active = true;
 
     this.refresh({ frame: true });
+    if (this.onCameraMoved) this.onCameraMoved(this.scene.getBearing());
     this.scene.start();
 
     this.resizeHandler = () => this.scene?.resize();

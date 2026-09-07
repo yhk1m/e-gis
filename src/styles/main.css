@@ -5209,11 +5209,49 @@ body.exporting .egis-basemap-panel {
   font-size: var(--font-size-xs);
 }
 
+.view3d-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .view3d-save {
-  margin-top: 8px;
-  width: 100%;
-  padding: 4px;
   cursor: pointer;
+  padding: var(--spacing-xs) var(--spacing-md);
+}
+
+/* 3D 방위표시 — 지도 위 나침반이 3D 캔버스에 가려지므로 따로 띄운다 */
+.view3d-compass {
+  align-self: flex-end;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--map-overlay-bg);
+  line-height: 0;
+}
+
+.view3d-compass-face {
+  fill: none;
+  stroke: var(--border-color-strong);
+  stroke-width: 1;
+}
+
+.view3d-compass-north { fill: #e60012; }
+.view3d-compass-south { fill: var(--text-secondary); }
+
+.view3d-compass-label {
+  fill: var(--text-primary);
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  /* 지도 위에 떠 있어 배경이 어떤 색일지 모른다 — 흰 테두리로 항상 읽히게 한다 */
+  paint-order: stroke;
+  stroke: var(--map-overlay-bg);
+  stroke-width: 2px;
+}
+
+#view3d-compass-needle {
+  transform-origin: 24px 24px;
 }
 
 /* three 캔버스가 지도를 덮는다 */

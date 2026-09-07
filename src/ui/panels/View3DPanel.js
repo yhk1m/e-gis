@@ -24,6 +24,8 @@ export class View3DPanel {
     this.saveButton = document.getElementById('view3d-save');
     this.terrainSelect = document.getElementById('view3d-terrain');
     this.basemapSelect = document.getElementById('view3d-basemap');
+    this.compass = document.getElementById('view3d-compass');
+    this.compassNeedle = document.getElementById('view3d-compass-needle');
     if (!this.toggleButton) return;
 
     if (!supportsWebGL()) {
@@ -54,6 +56,7 @@ export class View3DPanel {
       this.controller.exit();
       this.controller = null;
       this.panel.hidden = true;
+      this.compass.hidden = true;
       this.toggleButton.classList.remove('active');
       this.toggleButton.setAttribute('aria-pressed', 'false');
       this.toggleButton.title = '3D로 보기';
@@ -70,11 +73,13 @@ export class View3DPanel {
       });
       this.controller.exaggeration = Number(this.sliderValue.value) || 2;
       this.controller.onLayersChanged = () => this.fillTerrainOptions();
+      this.controller.onCameraMoved = (bearing) => this.setCompass(bearing);
       this.controller.enter();
       this.fillTerrainOptions();
       this.basemapSelect.value = this.mapManager.getBasemap?.() || 'OSM';
 
       this.panel.hidden = false;
+      this.compass.hidden = false;
       this.toggleButton.classList.add('active');
       this.toggleButton.setAttribute('aria-pressed', 'true');
       this.toggleButton.title = '2D로 돌아가기';
@@ -109,6 +114,16 @@ export class View3DPanel {
     if (raw !== value) this.sliderValue.value = String(value);
 
     this.controller?.setExaggeration(value);
+  }
+
+  /**
+   * 방위표시를 돌린다. 카메라가 보는 방위의 **반대로** 돌려야
+   * 화면에서 북쪽이 어디인지 가리킨다 — 동쪽을 보면 북쪽은 왼쪽이다.
+   */
+  setCompass(bearing) {
+    if (!this.compassNeedle) return;
+    const degrees = (-bearing * 180) / Math.PI;
+    this.compassNeedle.style.transform = `rotate(${degrees.toFixed(1)}deg)`;
   }
 
   /** 지형 드롭다운을 지금 있는 DEM 레이어로 채운다 */

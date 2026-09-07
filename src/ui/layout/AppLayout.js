@@ -413,7 +413,19 @@ export class AppLayout {
                 표면에 무엇을 올릴지는 레이어 목록에서 켜고 끄면 됩니다.
                 더블클릭한 곳이 회전 중심(빨간 점)이 됩니다.
               </p>
-              <button id="view3d-save" class="view3d-save">PNG로 저장</button>
+              <div class="view3d-actions">
+                <button id="view3d-save" class="btn btn-primary view3d-save">PNG로 저장</button>
+              </div>
+            </div>
+            <div id="view3d-compass" class="view3d-compass" hidden aria-label="방위">
+              <svg viewBox="0 0 36 36" width="36" height="36">
+                <circle cx="18" cy="18" r="16" class="view3d-compass-face"/>
+                <g id="view3d-compass-needle">
+                  <text x="18" y="11" class="view3d-compass-label">N</text>
+                  <polygon points="18,13 14.5,22 18,19.5 21.5,22" class="view3d-compass-north"/>
+                  <polygon points="18,28 14.5,19 18,21.5 21.5,19" class="view3d-compass-south"/>
+                </g>
+              </svg>
             </div>
           </div>
         </main>
