@@ -7,6 +7,7 @@
  */
 
 import { FLAT, ALL } from '../../view3d/terrainSource.js';
+import { isStaleModuleError } from '../../view3d/staleModule.js';
 
 export class View3DPanel {
   constructor({ mapManager, layerManager, onMessage }) {
@@ -89,8 +90,19 @@ export class View3DPanel {
       }
     } catch (error) {
       console.error('3D 보기를 열지 못했습니다', error);
-      this.onMessage('3D 보기를 열지 못했습니다.');
       this.controller = null;
+
+      // 탭을 열어 둔 사이에 새 버전이 배포되면 옛 청크를 부르다 실패한다.
+      // 코드 잘못이 아니라 새로고침이 필요한 상황이라 따로 안내한다.
+      if (isStaleModuleError(error)) {
+        this.onMessage('새 버전이 배포되어 3D 모듈을 불러오지 못했습니다. 새로고침이 필요합니다.');
+        if (window.confirm('새 버전이 배포되었습니다.
+지금 새로고침할까요?')) {
+          window.location.reload();
+        }
+      } else {
+        this.onMessage('3D 보기를 열지 못했습니다.');
+      }
     } finally {
       this.toggleButton.disabled = false;
     }
