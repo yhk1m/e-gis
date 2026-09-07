@@ -12,20 +12,32 @@ import { distanceForExtent, viewBearing } from './view3dMath.js';
 
 export const FOV = 50;
 
+/** 하늘색 — 배경과 안개가 같아야 가장자리가 자연스럽게 사라진다 */
+const BACKGROUND = 0xdfe8f3;
+
+/** 두 번 탭으로 볼 시간·거리 — 손가락은 마우스보다 흔들린다 */
+const DOUBLE_TAP_MS = 320;
+const DOUBLE_TAP_PX = 32;
+
 export class Scene3D {
-  /** @param {HTMLElement} container 캔버스를 담을 요소 */
-  constructor(container) {
+  /**
+   * @param {HTMLElement} container 캔버스를 담을 요소
+   * @param {{pixelRatio?: number}} options 태블릿·휴대폰에서는 픽셀비를 낮춰 받는다
+   */
+  constructor(container, { pixelRatio } = {}) {
     this.container = container;
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       preserveDrawingBuffer: true   // PNG 저장에 필요하다
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(pixelRatio || Math.min(window.devicePixelRatio || 1, 2));
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xdfe8f3);   // 옅은 하늘색
+    this.scene.background = new THREE.Color(BACKGROUND);   // 옅은 하늘색
+    // 지형 가장자리를 배경색으로 풀어 잘린 선이 드러나지 않게 한다
+    this.scene.fog = new THREE.Fog(BACKGROUND, 1, 2);
 
     this.camera = new THREE.PerspectiveCamera(FOV, 1, 1, 5000000);
 
@@ -61,9 +73,26 @@ export class Scene3D {
       if (this.onCameraChange) this.onCameraChange();
     });
 
-    // 더블클릭한 지점으로 고정점을 옮긴다
+    // 더블클릭(마우스)한 지점으로 고정점을 옮긴다
     this.dblclickHandler = (event) => this.pickPivot(event);
     this.renderer.domElement.addEventListener('dblclick', this.dblclickHandler);
+
+    // 터치에서는 dblclick을 기대할 수 없다 — 두 번 탭을 직접 센다
+    this.lastTap = null;
+    this.tapHandler = (event) => {
+      if (event.pointerType !== 'touch') return;
+      const now = Date.now();
+      const previous = this.lastTap;
+      this.lastTap = { time: now, x: event.clientX, y: event.clientY };
+      if (!previous) return;
+      const quick = now - previous.time < DOUBLE_TAP_MS;
+      const near = Math.hypot(event.clientX - previous.x, event.clientY - previous.y) < DOUBLE_TAP_PX;
+      if (quick && near) {
+        this.lastTap = null;
+        this.pickPivot(event);
+      }
+    };
+    this.renderer.domElement.addEventListener('pointerdown', this.tapHandler);
 
     this.resize();
   }
@@ -84,6 +113,20 @@ export class Scene3D {
     this.controls.target.copy(hit.point);
     this.controls.update();
     if (this.onPivotMoved) this.onPivotMoved();
+  }
+
+  /**
+   * 지형 크기에 맞춰 안개 범위를 잡는다.
+   *
+   * 기본 시야에서 눈에 보이는 가장 먼 땅은 카메라로부터 메시 폭의 0.48배쯤이고
+   * 메시 끝은 0.52배쯤이다. 그 사이에서 서서히 풀어 잘린 선을 가린다.
+   *
+   * @param {number} span 메시가 덮는 폭(미터)
+   */
+  setFog(span) {
+    if (!this.scene.fog || !(span > 0)) return;
+    this.scene.fog.near = span * 0.35;
+    this.scene.fog.far = span * 0.52;
   }
 
   /** 카메라가 바라보는 방위각(라디안) — 방위표시를 돌리는 데 쓴다 */
@@ -112,7 +155,7 @@ export class Scene3D {
     this.texture = new THREE.CanvasTexture(textureCanvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
 
-    const material = new THREE.MeshLambertMaterial({ map: this.texture, side: THREE.DoubleSide });
+    const material = new THREE.MeshLambertMaterial({ map: this.texture, side: THREE.DoubleSide, fog: true });
     this.terrain = new THREE.Mesh(geometry, material);
     this.scene.add(this.terrain);
   }
@@ -198,6 +241,7 @@ export class Scene3D {
   dispose() {
     this.stop();
     this.renderer.domElement.removeEventListener('dblclick', this.dblclickHandler);
+    this.renderer.domElement.removeEventListener('pointerdown', this.tapHandler);
     this.scene.remove(this.pivotMarker);
     this.pivotMarker.geometry.dispose();
     this.pivotMarker.material.dispose();

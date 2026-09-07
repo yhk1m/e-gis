@@ -8,12 +8,13 @@
 import { toLonLat } from 'ol/proj';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { pickDemLayers, listDemLayers, ALL } from './terrainSource.js';
-import { buildTerrainGeometry, MAX_GRID } from './terrainMesh.js';
+import { buildTerrainGeometry } from './terrainMesh.js';
 import { composeMapCanvas } from './mapTexture.js';
 import {
   sceneToMap, rebaseOffset, resolutionForDistance, combinedExtentCenter
 } from './view3dMath.js';
 import { Scene3D, FOV } from './Scene3D.js';
+import { currentQuality } from './quality.js';
 
 /** 카메라가 멈춘 뒤 이만큼 지나면 갱신한다 */
 const SETTLE_MS = 150;
@@ -27,11 +28,16 @@ const DRIFT_RATIO = 0.25;
 /**
  * 지형을 화면 범위보다 이만큼 넓게 만든다.
  *
- * 카메라를 45°로 기울이면 화면에 들어오는 땅이 2D 화면 사각형보다 두 배쯤 넓다.
- * 화면 범위에 딱 맞추면 지형 조각이 섬처럼 떠 보이고, 확대할 때마다 조각이
- * 작아지는 것처럼 느껴진다. 텍스처도 같은 범위로 함께 넓혀 굽는다.
+ * 45°로 기운 카메라가 보는 땅은 시선 방향으로 화면 범위의 약 0.87배까지 뻗는데,
+ * 메시는 그 방향으로 (화면 세로 ÷ 2 × 배율)만큼만 있다. 배율 2로는 0.66배라 모자라
+ * far 쪽이 잘린다. 3이면 0.99배가 되어 기본 시야를 덮는다.
+ *
+ * 지평선 가까이 눕히면 어떤 배율로도 못 덮으므로, 가장자리는 안개로 풀어
+ * 잘린 선이 드러나지 않게 한다(Scene3D.setFog).
+ *
+ * 텍스처도 같은 범위로 함께 넓혀 굽는다 — 넓힐수록 표면은 그만큼 무뎌진다.
  */
-const SURFACE_PAD = 2;
+const SURFACE_PAD = 3;
 
 /** 2D에서 레이어가 바뀐 뒤 표면을 다시 굽기까지 기다리는 시간 */
 const LAYER_SETTLE_MS = 120;
@@ -64,6 +70,7 @@ export class View3DController {
     this.span = 0;            // 지금 메시가 덮는 크기(미터) — 이동량 판단에 쓴다
     this.lastRefreshAt = 0;
     this.terrainLayerId = ALL;    // ALL이면 불러온 DEM을 모두 잇는다. FLAT이면 평면
+    this.quality = currentQuality();   // 태블릿·휴대폰에서는 격자와 텍스처를 낮춘다
     this.layerTimer = null;
     this.onLayersChanged = null;  // 지형 목록을 다시 채우라고 패널에 알린다
     this.onCameraMoved = null;    // 방위표시를 돌리라고 패널에 알린다
@@ -117,7 +124,8 @@ export class View3DController {
     const layersCenter = this.visibleLayersCenter();
     if (layersCenter) this.mapManager.getMap().getView().setCenter(layersCenter);
 
-    this.scene = new Scene3D(this.container);
+    this.quality = currentQuality();
+    this.scene = new Scene3D(this.container, { pixelRatio: this.quality.pixelRatio });
     this.scene.onCameraChange = () => {
       this.scheduleRefresh();
       if (this.onCameraMoved) this.onCameraMoved(this.scene.getBearing());
@@ -241,7 +249,11 @@ export class View3DController {
       view.setResolution(baseResolution * SURFACE_PAD);
       map.renderSync();
       extent = view.calculateExtent(size);
-      textureCanvas = composeMapCanvas(map.getTargetElement(), { size });
+      textureCanvas = composeMapCanvas(map.getTargetElement(), {
+        size,
+        pixelRatio: this.quality.pixelRatio,
+        maxSize: this.quality.maxTexture
+      });
     } finally {
       view.setResolution(baseResolution);
       map.renderSync();
@@ -255,7 +267,7 @@ export class View3DController {
       ? buildTerrainGeometry({
           dems,
           extent,
-          maxGrid: MAX_GRID,
+          maxGrid: this.quality.maxGrid,
           exaggeration: this.exaggeration,
           latitude
         })
@@ -267,6 +279,7 @@ export class View3DController {
     this.lastRefreshAt = Date.now();
 
     this.scene.setTerrain(geometry, textureCanvas);
+    this.scene.setFog(this.span);
 
     if (frame) {
       this.scene.frameExtent(viewExtent[2] - viewExtent[0], viewExtent[3] - viewExtent[1]);

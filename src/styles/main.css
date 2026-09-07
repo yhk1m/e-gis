@@ -5263,3 +5263,101 @@ body.exporting .egis-basemap-panel {
   inset: 0;
   z-index: 20;
 }
+
+/* ===== 3D 보기: 태블릿 최적화 ===== */
+/* 손가락으로 잡을 수 있게 키운다. 기준은 이 저장소의 다른 태블릿 규칙과 같다. */
+@media (pointer: coarse) and (max-width: 1366px),
+       (max-width: 1024px) {
+  .view3d-panel {
+    padding: 12px 14px;
+    font-size: var(--font-size-sm);
+  }
+
+  .view3d-row + .view3d-row {
+    margin-top: 12px;
+  }
+
+  .view3d-row select,
+  .view3d-num-wrap input {
+    min-height: 40px;
+  }
+
+  .view3d-num-wrap input {
+    width: 64px;
+  }
+
+  /* 슬라이더는 얇으면 손가락으로 못 잡는다 */
+  #view3d-exaggeration {
+    height: 28px;
+  }
+
+  .view3d-save {
+    min-height: 44px;
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .view3d-compass {
+    padding: 4px;
+  }
+
+  .view3d-compass svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* 툴바 아이콘 버튼을 손가락 크기로.
+     layout.css에 같은 규칙(40px)이 있지만 @import가 앞서는 탓에
+     이 파일 73줄의 기본값(28px)에 덮여 죽어 있다. 여기서 다시 살린다.
+     3D 버튼만이 아니라 툴바 전체가 대상이다. */
+  #toolbar .btn-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  #toolbar .btn-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ===== 3D 보기: 휴대폰 ===== */
+/* 세로 화면에서 오른쪽 위 패널은 지도를 너무 가린다 — 아래로 눕힌다. */
+@media (max-width: 768px) {
+  .view3d-controls {
+    top: auto;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .view3d-panel {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  /* 좁은 화면에서는 안내문을 접는다 — 조작 자체는 그대로 된다 */
+  .view3d-hint {
+    display: none;
+  }
+
+  .view3d-row {
+    gap: 6px;
+  }
+
+  .view3d-num-wrap input {
+    width: 56px;
+  }
+
+  .view3d-actions {
+    margin-top: 8px;
+  }
+
+  .view3d-compass {
+    flex: none;
+    align-self: flex-end;
+  }
+}
