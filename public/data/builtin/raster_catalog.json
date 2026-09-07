@@ -1,5 +1,16 @@
 [
   {
+    "id": "강원특별자치도",
+    "name": "강원특별자치도",
+    "description": "GeoTIFF (16.6 MB)",
+    "file": "raster/강원특별자치도.tif",
+    "fileSize": 17369690,
+    "source": "",
+    "tags": [
+      "강원특별자치도"
+    ]
+  },
+  {
     "id": "경기도-가평군",
     "name": "경기도 가평군",
     "description": "GeoTIFF (525 KB)",
