@@ -20,6 +20,7 @@ export class View3DPanel {
     this.slider = document.getElementById('view3d-exaggeration');
     this.sliderValue = document.getElementById('view3d-exaggeration-value');
     this.saveButton = document.getElementById('view3d-save');
+    this.drapeCheckbox = document.getElementById('view3d-drape');
     if (!this.toggleButton) return;
 
     if (!supportsWebGL()) {
@@ -28,13 +29,16 @@ export class View3DPanel {
       return;
     }
 
-    this.toggleButton.addEventListener('click', () => this.toggle());
+    // 토글 클릭은 main.js의 툴바 [data-tool] 스위치가 부른다 — 여기서 또 듣지 않는다
     this.slider.addEventListener('input', () => {
       const value = Number(this.slider.value);
       this.sliderValue.textContent = `${value}배`;
       this.controller?.setExaggeration(value);
     });
     this.saveButton.addEventListener('click', () => this.savePng());
+    this.drapeCheckbox.addEventListener('change', () => {
+      this.controller?.setDrapeWebMap(this.drapeCheckbox.checked);
+    });
   }
 
   async toggle() {
@@ -42,6 +46,7 @@ export class View3DPanel {
       this.controller.exit();
       this.controller = null;
       this.panel.hidden = true;
+      this.toggleButton.classList.remove('active');
       this.toggleButton.setAttribute('aria-pressed', 'false');
       this.toggleButton.title = '3D로 보기';
       return;
@@ -56,9 +61,11 @@ export class View3DPanel {
         container: document.getElementById('map-container')
       });
       this.controller.exaggeration = Number(this.slider.value);
+      this.controller.drapeWebMap = this.drapeCheckbox.checked;
       this.controller.enter();
 
       this.panel.hidden = false;
+      this.toggleButton.classList.add('active');
       this.toggleButton.setAttribute('aria-pressed', 'true');
       this.toggleButton.title = '2D로 돌아가기';
 

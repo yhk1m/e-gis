@@ -45,12 +45,53 @@ export class Scene3D {
     this.running = false;
     this.frameId = null;
     this.onCameraChange = null;
+    this.onPivotMoved = null;
+
+    // 회전 중심(고정점) 표시 — 어디를 축으로 도는지 보이지 않으면 조작이 어렵다
+    this.pivotMarker = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0xff3b30, depthTest: false, transparent: true, opacity: 0.9 })
+    );
+    this.pivotMarker.renderOrder = 999;
+    this.scene.add(this.pivotMarker);
+
+    this.raycaster = new THREE.Raycaster();
 
     this.controls.addEventListener('change', () => {
       if (this.onCameraChange) this.onCameraChange();
     });
 
+    // 더블클릭한 지점으로 고정점을 옮긴다
+    this.dblclickHandler = (event) => this.pickPivot(event);
+    this.renderer.domElement.addEventListener('dblclick', this.dblclickHandler);
+
     this.resize();
+  }
+
+  /** 더블클릭 지점의 지형을 찾아 고정점으로 삼는다 */
+  pickPivot(event) {
+    if (!this.terrain) return;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const pointer = new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    this.raycaster.setFromCamera(pointer, this.camera);
+    const hit = this.raycaster.intersectObject(this.terrain, false)[0];
+    if (!hit) return;
+
+    // 카메라는 그대로 두고 바라보는 점만 옮긴다 — 화면이 그 점을 중심으로 다시 잡힌다
+    this.controls.target.copy(hit.point);
+    this.controls.update();
+    if (this.onPivotMoved) this.onPivotMoved();
+  }
+
+  /** 고정점 표시를 카메라 거리에 맞춰 키운다 — 멀어져도 보이게 */
+  updatePivotMarker() {
+    const distance = this.camera.position.distanceTo(this.controls.target);
+    const size = Math.max(distance / 150, 1e-3);
+    this.pivotMarker.position.copy(this.controls.target);
+    this.pivotMarker.scale.setScalar(size);
   }
 
   /** 지형 메시를 갈아 끼운다. 이전 것은 반드시 버린다(GPU 메모리 누수 방지) */
@@ -84,6 +125,20 @@ export class Scene3D {
     this.controls.update();
   }
 
+  /** 고정점을 옮기고 카메라도 같은 만큼 따라 옮긴다(보는 방향·거리 유지) */
+  moveTargetTo(x, y, z) {
+    const dx = x - this.controls.target.x;
+    const dy = y - this.controls.target.y;
+    const dz = z - this.controls.target.z;
+    this.camera.position.set(
+      this.camera.position.x + dx,
+      this.camera.position.y + dy,
+      this.camera.position.z + dz
+    );
+    this.controls.target.set(x, y, z);
+    this.controls.update();
+  }
+
   /** 메시 원점이 옮겨간 만큼 카메라와 타깃을 민다 */
   shift(dx, dz) {
     this.camera.position.x += dx;
@@ -108,6 +163,7 @@ export class Scene3D {
       if (!this.running) return;
       this.frameId = requestAnimationFrame(tick);
       this.controls.update();
+      this.updatePivotMarker();
       this.renderer.render(this.scene, this.camera);
     };
     tick();
@@ -132,6 +188,10 @@ export class Scene3D {
 
   dispose() {
     this.stop();
+    this.renderer.domElement.removeEventListener('dblclick', this.dblclickHandler);
+    this.scene.remove(this.pivotMarker);
+    this.pivotMarker.geometry.dispose();
+    this.pivotMarker.material.dispose();
     this.disposeTerrain();
     this.controls.dispose();
     this.renderer.dispose();

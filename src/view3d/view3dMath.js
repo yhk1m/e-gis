@@ -33,3 +33,31 @@ export function sceneToMap({ x, z }, [cx, cy]) {
 export function rebaseOffset([oldCx, oldCy], [newCx, newCy]) {
   return { dx: oldCx - newCx, dz: newCy - oldCy };
 }
+
+/**
+ * 여러 범위를 합친 가운데 좌표. 쓸 만한 범위가 하나도 없으면 null.
+ *
+ * 3D를 켤 때 회전 중심(고정점)을 화면 한가운데가 아니라
+ * **지금 올라와 있는 레이어의 가운데**에 두려고 쓴다.
+ *
+ * @param {Array<number[]|null|undefined>} extents [minX, minY, maxX, maxY] 목록
+ * @returns {number[]|null} [x, y]
+ */
+export function combinedExtentCenter(extents) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const extent of extents || []) {
+    if (!extent || extent.length < 4) continue;
+    if (!extent.every(Number.isFinite)) continue;   // OL은 빈 소스에 무한대 범위를 준다
+    minX = Math.min(minX, extent[0]);
+    minY = Math.min(minY, extent[1]);
+    maxX = Math.max(maxX, extent[2]);
+    maxY = Math.max(maxY, extent[3]);
+  }
+
+  if (!Number.isFinite(minX) || !Number.isFinite(minY)) return null;
+  return [(minX + maxX) / 2, (minY + maxY) / 2];
+}

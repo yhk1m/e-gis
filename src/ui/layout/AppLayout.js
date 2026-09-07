@@ -317,6 +317,12 @@ export class AppLayout {
               <polyline points="21 15 16 10 5 21"/>
             </svg>
           </button>
+          <button class="btn-icon" id="view3d-toggle" data-tool="view3d" title="3D로 보기" aria-pressed="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+              <path d="M12 2 22 7.5v9L12 22 2 16.5v-9L12 2z"/>
+              <path d="M2 7.5 12 13l10-5.5M12 13v9"/>
+            </svg>
+          </button>
         </div>
 
         <div class="toolbar-spacer"></div>
@@ -381,13 +387,17 @@ export class AppLayout {
             </svg>
           </button>
           <div id="view3d-controls" class="view3d-controls">
-            <button id="view3d-toggle" class="view3d-toggle" title="3D로 보기" aria-pressed="false">3D</button>
             <div id="view3d-panel" class="view3d-panel" hidden>
               <label class="view3d-row">
                 세로 과장
                 <input type="range" id="view3d-exaggeration" min="1" max="10" step="0.5" value="2">
                 <output id="view3d-exaggeration-value">2배</output>
               </label>
+              <label class="view3d-row view3d-check">
+                <input type="checkbox" id="view3d-drape">
+                DEM 색상 대신 웹지도 입히기
+              </label>
+              <p class="view3d-hint">더블클릭한 곳이 회전 중심(빨간 점)이 됩니다.</p>
               <button id="view3d-save" class="view3d-save">PNG로 저장</button>
             </div>
           </div>

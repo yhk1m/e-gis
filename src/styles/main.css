@@ -5167,27 +5167,6 @@ body.exporting .egis-basemap-panel {
   gap: 6px;
 }
 
-.view3d-toggle {
-  width: 40px;
-  height: 32px;
-  font-weight: 700;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--map-overlay-bg);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.view3d-toggle[aria-pressed="true"] {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.view3d-toggle:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .view3d-panel {
   padding: 10px 12px;
   border: 1px solid var(--border-color);
@@ -5201,6 +5180,17 @@ body.exporting .egis-basemap-panel {
   align-items: center;
   gap: 8px;
   white-space: nowrap;
+}
+
+.view3d-check {
+  margin-top: 8px;
+  cursor: pointer;
+}
+
+.view3d-hint {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
 }
 
 .view3d-save {

@@ -8,7 +8,9 @@
 import { toLonLat } from 'ol/proj';
 import { buildTerrainGeometry, MAX_GRID } from './terrainMesh.js';
 import { composeMapCanvas } from './mapTexture.js';
-import { sceneToMap, rebaseOffset, resolutionForDistance } from './view3dMath.js';
+import {
+  sceneToMap, rebaseOffset, resolutionForDistance, combinedExtentCenter
+} from './view3dMath.js';
 import { Scene3D, FOV } from './Scene3D.js';
 
 /** 카메라가 멈춘 뒤 이만큼 지나면 갱신한다 */
@@ -38,6 +40,37 @@ export class View3DController {
     this.syncing = false;     // 우리가 뷰를 바꿔 생긴 변화에 다시 반응하지 않게 한다
     this.span = 0;            // 지금 메시가 덮는 크기(미터) — 이동량 판단에 쓴다
     this.lastRefreshAt = 0;
+    this.drapeWebMap = false; // 지형에 DEM 색상 대신 웹지도를 입힐 것인가
+  }
+
+  /** 보이는 DEM 레이어들 — 텍스처를 뽑을 때 잠시 숨기려고 모은다 */
+  findDemLayers() {
+    const found = [];
+    for (const layerInfo of this.layerManager.layers.values()) {
+      if (layerInfo.demData && layerInfo.olLayer?.getVisible?.()) found.push(layerInfo.olLayer);
+    }
+    return found;
+  }
+
+  /** 지금 올라와 있는 레이어들의 가운데 — 고정점 기본 위치 */
+  visibleLayersCenter() {
+    const extents = [];
+    for (const layerInfo of this.layerManager.layers.values()) {
+      if (!layerInfo.olLayer?.getVisible?.()) continue;
+      if (layerInfo.demData) {
+        extents.push(layerInfo.demData.extent);
+        continue;
+      }
+      const extent = layerInfo.olLayer.getSource?.()?.getExtent?.();
+      if (extent) extents.push(extent);
+    }
+    return combinedExtentCenter(extents);
+  }
+
+  /** 지형 표면을 웹지도로 할지 바꾼다 */
+  setDrapeWebMap(value) {
+    this.drapeWebMap = value;
+    if (this.active) this.refresh({ frame: false });
   }
 
   /** 보이는 DEM 레이어의 demData — 없으면 null */
@@ -52,8 +85,14 @@ export class View3DController {
   /** 3D를 켠다 */
   enter() {
     if (this.active) return;
+    // 고정점(회전 중심)을 레이어 가운데에 둔다. OrbitControls의 타깃은 늘 화면 한가운데라
+    // 지도 중심을 옮기는 것이 곧 고정점을 옮기는 것이다.
+    const layersCenter = this.visibleLayersCenter();
+    if (layersCenter) this.mapManager.getMap().getView().setCenter(layersCenter);
+
     this.scene = new Scene3D(this.container);
     this.scene.onCameraChange = () => this.scheduleRefresh();
+    this.scene.onPivotMoved = () => this.scheduleRefresh();
     this.active = true;
 
     this.refresh({ frame: true });
@@ -134,8 +173,18 @@ export class View3DController {
     const size = map.getSize();
     if (!size) return;
 
-    map.renderSync();
-    const textureCanvas = composeMapCanvas(map.getTargetElement(), { size });
+    // 웹지도를 입힐 때는 DEM 색상 레이어를 잠시 숨겨 밑의 지도가 드러나게 한다.
+    // 화면에 보이는 것을 그대로 굽는 규칙은 유지하되, 무엇을 보이게 할지만 잠깐 바꾼다.
+    const hidden = this.drapeWebMap ? this.findDemLayers() : [];
+    hidden.forEach((layer) => layer.setVisible(false));
+    let textureCanvas;
+    try {
+      map.renderSync();
+      textureCanvas = composeMapCanvas(map.getTargetElement(), { size });
+    } finally {
+      hidden.forEach((layer) => layer.setVisible(true));
+      if (hidden.length) map.renderSync();
+    }
     if (!textureCanvas) return;
 
     const extent = view.calculateExtent(size);

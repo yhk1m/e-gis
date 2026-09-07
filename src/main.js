@@ -456,6 +456,9 @@ function initToolbar() {
       case 'zoom-extent':
         view.animate({ center: view.getCenter(), zoom: 7, duration: 500 });
         return;
+      case 'view3d':
+        view3dPanel?.toggle();
+        return;
       case 'upload-image': {
         import('./ui/MapImageOverlay.js').then(({ triggerImageUpload }) => {
           triggerImageUpload(document.getElementById('map'));
