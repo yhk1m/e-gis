@@ -7,7 +7,7 @@
 
 import { toLonLat } from 'ol/proj';
 import { eventBus, Events } from '../utils/EventBus.js';
-import { pickDemLayer, listDemLayers, FLAT } from './terrainSource.js';
+import { pickDemLayers, listDemLayers, ALL } from './terrainSource.js';
 import { buildTerrainGeometry, MAX_GRID } from './terrainMesh.js';
 import { composeMapCanvas } from './mapTexture.js';
 import {
@@ -63,7 +63,7 @@ export class View3DController {
     this.syncing = false;     // 우리가 뷰를 바꿔 생긴 변화에 다시 반응하지 않게 한다
     this.span = 0;            // 지금 메시가 덮는 크기(미터) — 이동량 판단에 쓴다
     this.lastRefreshAt = 0;
-    this.terrainLayerId = null;   // null이면 가장 위 DEM을 자동으로 쓴다. FLAT이면 평면
+    this.terrainLayerId = ALL;    // ALL이면 불러온 DEM을 모두 잇는다. FLAT이면 평면
     this.layerTimer = null;
     this.onLayersChanged = null;  // 지형 목록을 다시 채우라고 패널에 알린다
   }
@@ -96,13 +96,16 @@ export class View3DController {
   }
 
   /**
-   * 고도를 가져올 DEM — 없으면 null(평면).
+   * 고도를 가져올 DEM 목록 — 비어 있으면 평면.
+   *
+   * 기본은 **불러온 DEM 전부**다. 시군구처럼 나뉜 DEM을 여러 장 불러오면
+   * 하나의 지형으로 이어 붙는다. 겹치는 곳은 위 레이어가 이긴다.
    *
    * **레이어의 2D 가시성은 보지 않는다.** 고도 원본과 표면은 별개이기 때문이다.
    * DEM 레이어를 레이어 패널에서 끄면 지형은 그대로 서 있고 표면만 그 아래로 바뀐다.
    */
-  findDemData() {
-    return pickDemLayer(this.layerManager.layers, this.terrainLayerId)?.demData ?? null;
+  findDems() {
+    return pickDemLayers(this.layerManager.layers, this.terrainLayerId).map((e) => e.demData);
   }
 
   /** 3D를 켠다 */
@@ -241,11 +244,11 @@ export class View3DController {
     if (!textureCanvas) return;
 
     const latitude = toLonLat(view.getCenter())[1];
-    const demData = this.findDemData();
+    const dems = this.findDems();
 
-    const geometry = demData
+    const geometry = dems.length
       ? buildTerrainGeometry({
-          demData,
+          dems,
           extent,
           maxGrid: MAX_GRID,
           exaggeration: this.exaggeration,

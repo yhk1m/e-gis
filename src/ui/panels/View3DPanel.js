@@ -6,7 +6,7 @@
  * 3D를 쓰지 않는 사용자는 한 바이트도 받지 않는다.
  */
 
-import { FLAT } from '../../view3d/terrainSource.js';
+import { FLAT, ALL } from '../../view3d/terrainSource.js';
 
 export class View3DPanel {
   constructor({ mapManager, layerManager, onMessage }) {
@@ -42,7 +42,7 @@ export class View3DPanel {
     });
     this.saveButton.addEventListener('click', () => this.savePng());
     this.terrainSelect.addEventListener('change', () => {
-      this.controller?.setTerrainSource(this.terrainSelect.value || null);
+      this.controller?.setTerrainSource(this.terrainSelect.value || ALL);
     });
     this.basemapSelect.addEventListener('change', () => {
       this.controller?.setBasemap(this.basemapSelect.value);
@@ -79,7 +79,7 @@ export class View3DPanel {
       this.toggleButton.setAttribute('aria-pressed', 'true');
       this.toggleButton.title = '2D로 돌아가기';
 
-      if (!this.controller.findDemData()) {
+      if (!this.controller.findDems().length) {
         this.onMessage('DEM(수치표고모델) 레이어가 없어 평평한 바닥에 지도를 얹었습니다.');
       }
     } catch (error) {
@@ -118,12 +118,16 @@ export class View3DPanel {
     const options = sources.map(
       (s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`
     );
-    this.terrainSelect.innerHTML = `<option value="${FLAT}">평면 (고도 없음)</option>${options.join('')}`;
+    // 기본은 전체 — 시군구처럼 나뉜 DEM을 여러 장 불러오면 하나로 이어 붙는다
+    const allOption = sources.length > 1
+      ? `<option value="${ALL}">전체 (${sources.length}개 이어 붙이기)</option>`
+      : `<option value="${ALL}">전체</option>`;
+    this.terrainSelect.innerHTML =
+      `${allOption}<option value="${FLAT}">평면 (고도 없음)</option>${options.join('')}`;
 
     // 고른 값이 아직 살아 있으면 지킨다. 없으면 자동으로 고른 DEM을 보여 준다.
     const stillThere = previous && [...this.terrainSelect.options].some((o) => o.value === previous);
-    const picked = sources[sources.length - 1];
-    this.terrainSelect.value = stillThere ? previous : (picked ? picked.id : FLAT);
+    this.terrainSelect.value = stillThere ? previous : ALL;
     this.terrainSelect.disabled = sources.length === 0;
   }
 

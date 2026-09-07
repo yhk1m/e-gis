@@ -11,6 +11,9 @@
 /** '평면'을 뜻하는 지형 원본 값 — 고도를 쓰지 않는다 */
 export const FLAT = 'flat';
 
+/** '전체'를 뜻하는 지형 원본 값 — 불러온 DEM을 모두 이어 붙인다 */
+export const ALL = 'all';
+
 /**
  * 지형으로 쓸 수 있는 DEM 레이어 목록.
  * 가시성은 보지 않는다 — 꺼 둔 DEM도 고도 원본으로 쓸 수 있어야 한다.
@@ -27,24 +30,27 @@ export function listDemLayers(layers) {
 }
 
 /**
- * 쓸 DEM을 고른다.
+ * 쓸 DEM들을 고른다. **위에 있는 것이 앞**에 온다 — 겹치는 곳은 위가 이긴다.
+ *
+ * 시군구 단위로 나뉜 DEM을 여러 장 불러와 하나의 지형으로 잇는 것이 기본 동작이다.
  *
  * @param {Map} layers layerManager.layers
- * @param {string|null} preferredId 사용자가 고른 레이어 id, FLAT, 또는 null(자동)
- * @returns {{id: string, demData: Object}|null} 평면이거나 DEM이 없으면 null
+ * @param {string|null} preferred 레이어 id, FLAT, ALL, 또는 null(=ALL)
+ * @returns {Array<{id: string, demData: Object}>} 평면이거나 DEM이 없으면 빈 배열
  */
-export function pickDemLayer(layers, preferredId = null) {
-  if (preferredId === FLAT) return null;
+export function pickDemLayers(layers, preferred = ALL) {
+  if (preferred === FLAT) return [];
 
-  if (preferredId) {
-    const info = layers.get(preferredId);
-    if (info && info.demData) return { id: preferredId, demData: info.demData };
-    // 고른 레이어가 사라졌으면 자동 선택으로 돌아간다
-  }
-
-  let last = null;
+  const all = [];
   for (const [id, info] of layers) {
-    if (info && info.demData) last = { id, demData: info.demData };
+    if (info && info.demData) all.push({ id, demData: info.demData });
   }
-  return last;
+  all.reverse();   // 나중에 담긴 것이 위 레이어다
+
+  if (preferred && preferred !== ALL) {
+    const one = all.find((entry) => entry.id === preferred);
+    if (one) return [one];
+    // 고른 레이어가 사라졌으면 전체로 돌아간다
+  }
+  return all;
 }

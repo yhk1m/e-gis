@@ -55,9 +55,26 @@ export function sampleElevation(demData, x, y) {
 }
 
 /**
+ * 여러 DEM에서 고도를 읽는다. **앞에 있는 것이 이긴다**(위 레이어 우선).
+ *
+ * 시군구처럼 나뉜 DEM을 여러 장 불러와도 하나의 지형으로 이어 붙기 위한 것이다.
+ * 앞 DEM의 범위 밖이거나 결측이면 다음 DEM으로 넘어간다.
+ *
+ * @param {Array<Object>} dems demData 목록 (위 레이어가 앞)
+ * @returns {number|null} 어느 DEM에도 값이 없으면 null
+ */
+export function sampleFromDems(dems, x, y) {
+  for (const dem of dems) {
+    const value = sampleElevation(dem, x, y);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
+/**
  * 화면 범위에 맞는 지형 격자를 만든다.
  *
- * @param {Object} demData DEMLoader가 만든 { data, width, height, extent, noDataValue }
+ * @param {Array<Object>} dems demData 목록 (위 레이어가 앞). 비어 있으면 전부 구멍이다
  * @param {number[]} extent 화면 범위 [minX, minY, maxX, maxY] (EPSG:3857)
  * @param {number} maxGrid 한 변 최대 정점 수
  * @param {number} exaggeration 세로 과장 배수
@@ -66,7 +83,7 @@ export function sampleElevation(demData, x, y) {
  *            gridWidth: number, gridHeight: number, holes: number}}
  */
 export function buildTerrainGeometry({
-  demData, extent, maxGrid = MAX_GRID, exaggeration = 2, latitude = 0
+  dems = [], extent, maxGrid = MAX_GRID, exaggeration = 2, latitude = 0
 }) {
   const [minX, minY, maxX, maxY] = extent;
   const spanX = maxX - minX;
@@ -101,7 +118,7 @@ export function buildTerrainGeometry({
       const mapX = minX + tx * spanX;
       const idx = j * gridWidth + i;
 
-      const elevation = sampleElevation(demData, mapX, mapY);
+      const elevation = sampleFromDems(dems, mapX, mapY);
       if (elevation === null) holes++;
       else valid[idx] = 1;
 

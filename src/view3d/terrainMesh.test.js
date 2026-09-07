@@ -1,6 +1,6 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
-import { sampleElevation, buildTerrainGeometry } from './terrainMesh.js';
+import { sampleElevation, sampleFromDems, buildTerrainGeometry } from './terrainMesh.js';
 
 /** 2×2 DEM — 왼쪽 위 0m, 오른쪽 위 10m, 왼쪽 아래 20m, 오른쪽 아래 30m */
 function tinyDem(overrides = {}) {
@@ -52,10 +52,49 @@ describe('sampleElevation', () => {
   });
 });
 
+describe('sampleFromDems', () => {
+  /** 서로 붙어 있는 두 DEM — 왼쪽 100m, 오른쪽 200m */
+  const left = {
+    data: Float32Array.from([100, 100, 100, 100]), width: 2, height: 2,
+    extent: [0, 0, 100, 100], noDataValue: null
+  };
+  const right = {
+    data: Float32Array.from([200, 200, 200, 200]), width: 2, height: 2,
+    extent: [100, 0, 200, 100], noDataValue: null
+  };
+
+  it('여러 DEM을 이어 붙여 읽는다', () => {
+    expect(sampleFromDems([left, right], 50, 50)).toBeCloseTo(100, 5);
+    expect(sampleFromDems([left, right], 150, 50)).toBeCloseTo(200, 5);
+  });
+
+  it('앞에 있는 DEM이 이긴다 — 위 레이어 우선', () => {
+    const overlap = {
+      data: Float32Array.from([900, 900, 900, 900]), width: 2, height: 2,
+      extent: [0, 0, 100, 100], noDataValue: null
+    };
+    expect(sampleFromDems([overlap, left], 50, 50)).toBeCloseTo(900, 5);
+    expect(sampleFromDems([left, overlap], 50, 50)).toBeCloseTo(100, 5);
+  });
+
+  it('앞 DEM이 결측이면 다음 DEM으로 넘어간다', () => {
+    const holed = {
+      data: Float32Array.from([-9999, -9999, -9999, -9999]), width: 2, height: 2,
+      extent: [0, 0, 100, 100], noDataValue: -9999
+    };
+    expect(sampleFromDems([holed, left], 50, 50)).toBeCloseTo(100, 5);
+  });
+
+  it('어느 DEM에도 없으면 null이다', () => {
+    expect(sampleFromDems([left, right], 500, 50)).toBe(null);
+    expect(sampleFromDems([], 50, 50)).toBe(null);
+  });
+});
+
 describe('buildTerrainGeometry', () => {
   it('고도에 과장을 곱해 높이로 쓴다', () => {
     const geo = buildTerrainGeometry({
-      demData: tinyDem(), extent: [0, 0, 100, 100], maxGrid: 2, exaggeration: 2, latitude: 0
+      dems: [tinyDem()], extent: [0, 0, 100, 100], maxGrid: 2, exaggeration: 2, latitude: 0
     });
     // 정점 3 = (i=1, j=1) = 오른쪽 아래 = 30m → 30 × 1 × 2 = 60
     expect(geo.positions[3 * 3 + 1]).toBeCloseTo(60, 5);
@@ -63,7 +102,7 @@ describe('buildTerrainGeometry', () => {
 
   it('위도가 높을수록 고도를 더 키운다 (웹 메르카토르 보정)', () => {
     const geo = buildTerrainGeometry({
-      demData: tinyDem(), extent: [0, 0, 100, 100], maxGrid: 2, exaggeration: 1, latitude: 60
+      dems: [tinyDem()], extent: [0, 0, 100, 100], maxGrid: 2, exaggeration: 1, latitude: 60
     });
     // cos 60° = 0.5 → 1/cos = 2 → 30m × 2 × 1 = 60
     expect(geo.positions[3 * 3 + 1]).toBeCloseTo(60, 5);
@@ -71,7 +110,7 @@ describe('buildTerrainGeometry', () => {
 
   it('화면 범위 중심을 원점으로 삼는다', () => {
     const geo = buildTerrainGeometry({
-      demData: tinyDem(), extent: [0, 0, 50, 50], maxGrid: 2, exaggeration: 1, latitude: 0
+      dems: [tinyDem()], extent: [0, 0, 50, 50], maxGrid: 2, exaggeration: 1, latitude: 0
     });
     // 첫 정점 = 왼쪽 위 = (0, 50) → 중심 (25,25) 기준 x=-25, z=-25
     expect(geo.positions[0]).toBeCloseTo(-25, 5);
@@ -85,7 +124,7 @@ describe('buildTerrainGeometry', () => {
       minVal: 0, maxVal: 0, noDataValue: null
     };
     const geo = buildTerrainGeometry({
-      demData: dem, extent: [0, 0, 1000, 1000], maxGrid: 64, exaggeration: 1, latitude: 0
+      dems: [dem], extent: [0, 0, 1000, 1000], maxGrid: 64, exaggeration: 1, latitude: 0
     });
     expect(geo.gridWidth).toBe(64);
     expect(geo.gridHeight).toBe(64);
@@ -95,16 +134,33 @@ describe('buildTerrainGeometry', () => {
   it('고도가 없는 정점에 닿는 삼각형을 뺀다', () => {
     const dem = tinyDem({ data: Float32Array.from([0, 10, 20, -9999]), noDataValue: -9999 });
     const geo = buildTerrainGeometry({
-      demData: dem, extent: [0, 0, 100, 100], maxGrid: 2, exaggeration: 1, latitude: 0
+      dems: [dem], extent: [0, 0, 100, 100], maxGrid: 2, exaggeration: 1, latitude: 0
     });
     // 2×2 격자 = 삼각형 2개. 오른쪽 아래 정점을 쓰는 삼각형 1개만 빠진다
     expect(geo.indices.length).toBe(3);
     expect(geo.holes).toBe(1);
   });
 
+  it('여러 DEM에 걸친 격자를 한 지형으로 만든다', () => {
+    const left = {
+      data: Float32Array.from([100, 100, 100, 100]), width: 2, height: 2,
+      extent: [0, 0, 100, 100], noDataValue: null
+    };
+    const right = {
+      data: Float32Array.from([200, 200, 200, 200]), width: 2, height: 2,
+      extent: [100, 0, 200, 100], noDataValue: null
+    };
+    const geo = buildTerrainGeometry({
+      dems: [left, right], extent: [0, 0, 200, 100], maxGrid: 2, exaggeration: 1, latitude: 0
+    });
+    expect(geo.holes).toBe(0);
+    expect(geo.positions[1]).toBeCloseTo(100, 5);        // 왼쪽 위 정점
+    expect(geo.positions[1 * 3 + 1]).toBeCloseTo(200, 5); // 오른쪽 위 정점
+  });
+
   it('UV는 텍스처 위쪽이 북쪽이 되게 뒤집는다', () => {
     const geo = buildTerrainGeometry({
-      demData: tinyDem(), extent: [0, 0, 100, 100], maxGrid: 2, exaggeration: 1, latitude: 0
+      dems: [tinyDem()], extent: [0, 0, 100, 100], maxGrid: 2, exaggeration: 1, latitude: 0
     });
     expect(geo.uvs[0]).toBeCloseTo(0, 5);  // 첫 정점(북서) u
     expect(geo.uvs[1]).toBeCloseTo(1, 5);  // 첫 정점(북서) v — 텍스처 위쪽

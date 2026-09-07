@@ -1,6 +1,6 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
-import { listDemLayers, pickDemLayer, FLAT } from './terrainSource.js';
+import { listDemLayers, pickDemLayers, FLAT, ALL } from './terrainSource.js';
 
 /** layerManager.layers 대역 */
 function layerMap(entries) {
@@ -26,32 +26,37 @@ describe('listDemLayers', () => {
   });
 });
 
-describe('pickDemLayer', () => {
-  it('고르지 않으면 가장 위(마지막) DEM을 쓴다', () => {
-    expect(pickDemLayer(layerMap([['a', demA], ['b', demB]])))
-      .toEqual({ id: 'b', demData: { id: 'B' } });
+describe('pickDemLayers', () => {
+  it('기본은 전체 — 위에 있는 것이 앞에 온다', () => {
+    expect(pickDemLayers(layerMap([['a', demA], ['b', demB]])))
+      .toEqual([{ id: 'b', demData: { id: 'B' } }, { id: 'a', demData: { id: 'A' } }]);
   });
 
   it('꺼 둔 DEM도 고도 원본으로 쓴다', () => {
-    expect(pickDemLayer(layerMap([['b', demB]])))
-      .toEqual({ id: 'b', demData: { id: 'B' } });
+    expect(pickDemLayers(layerMap([['b', demB]])))
+      .toEqual([{ id: 'b', demData: { id: 'B' } }]);
   });
 
-  it('고른 레이어가 있으면 그것을 쓴다', () => {
-    expect(pickDemLayer(layerMap([['a', demA], ['b', demB]]), 'a'))
-      .toEqual({ id: 'a', demData: { id: 'A' } });
+  it('하나를 고르면 그것만 쓴다', () => {
+    expect(pickDemLayers(layerMap([['a', demA], ['b', demB]]), 'a'))
+      .toEqual([{ id: 'a', demData: { id: 'A' } }]);
   });
 
-  it('평면을 고르면 아무것도 주지 않는다', () => {
-    expect(pickDemLayer(layerMap([['a', demA]]), FLAT)).toBe(null);
+  it('평면을 고르면 빈 배열이다', () => {
+    expect(pickDemLayers(layerMap([['a', demA]]), FLAT)).toEqual([]);
   });
 
-  it('고른 레이어가 사라졌으면 자동 선택으로 돌아간다', () => {
-    expect(pickDemLayer(layerMap([['a', demA]]), '없는id'))
-      .toEqual({ id: 'a', demData: { id: 'A' } });
+  it('ALL을 명시해도 전체다', () => {
+    expect(pickDemLayers(layerMap([['a', demA]]), ALL))
+      .toEqual([{ id: 'a', demData: { id: 'A' } }]);
   });
 
-  it('DEM이 하나도 없으면 null이다', () => {
-    expect(pickDemLayer(layerMap([['v', vector]]))).toBe(null);
+  it('고른 레이어가 사라졌으면 전체로 돌아간다', () => {
+    expect(pickDemLayers(layerMap([['a', demA]]), '없는id'))
+      .toEqual([{ id: 'a', demData: { id: 'A' } }]);
+  });
+
+  it('DEM이 하나도 없으면 빈 배열이다', () => {
+    expect(pickDemLayers(layerMap([['v', vector]]))).toEqual([]);
   });
 });
