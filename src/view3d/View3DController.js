@@ -135,7 +135,7 @@ export class View3DController {
     if (!size) return;
 
     map.renderSync();
-    const textureCanvas = composeMapCanvas(map.getTargetElement());
+    const textureCanvas = composeMapCanvas(map.getTargetElement(), { size });
     if (!textureCanvas) return;
 
     const extent = view.calculateExtent(size);

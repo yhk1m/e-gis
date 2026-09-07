@@ -5174,12 +5174,12 @@ body.exporting .egis-basemap-panel {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--map-overlay-bg);
-  color: var(--text-color);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
 .view3d-toggle[aria-pressed="true"] {
-  background: var(--primary-color);
+  background: var(--color-primary);
   color: #fff;
 }
 
