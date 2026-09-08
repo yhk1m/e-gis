@@ -9,7 +9,7 @@ import { toLonLat } from 'ol/proj';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { pickDemLayers, listDemLayers, ALL } from './terrainSource.js';
 import { buildTerrainGeometry } from './terrainMesh.js';
-import { composeMapCanvas } from './mapTexture.js';
+import { composeMapCanvas, hasVisibleContent } from './mapTexture.js';
 import {
   sceneToMap, rebaseOffset, resolutionForDistance, combinedExtentCenter
 } from './view3dMath.js';
@@ -38,6 +38,9 @@ const DRIFT_RATIO = 0.25;
  * 텍스처도 같은 범위로 함께 넓혀 굽는다 — 넓힐수록 표면은 그만큼 무뎌진다.
  */
 const SURFACE_PAD = 3;
+
+/** 빈 그림이 나올 때 다시 시도할 최대 횟수 — 무한히 붙들지 않는다 */
+const MAX_EMPTY_RETRIES = 12;
 
 /** 2D에서 레이어가 바뀐 뒤 표면을 다시 굽기까지 기다리는 시간 */
 const LAYER_SETTLE_MS = 120;
@@ -71,6 +74,7 @@ export class View3DController {
     this.lastRefreshAt = 0;
     this.terrainLayerId = ALL;    // ALL이면 불러온 DEM을 모두 잇는다. FLAT이면 평면
     this.quality = currentQuality();   // 태블릿·휴대폰에서는 격자와 텍스처를 낮춘다
+    this.emptyRetries = 0;             // 타일이 안 와 빈 그림이 나온 횟수
     this.layerTimer = null;
     this.onLayersChanged = null;  // 지형 목록을 다시 채우라고 패널에 알린다
     this.onCameraMoved = null;    // 방위표시를 돌리라고 패널에 알린다
@@ -158,10 +162,22 @@ export class View3DController {
     }, LAYER_SETTLE_MS);
   }
 
-  /** 배경지도를 바꾼다 — 3D 중에는 지도 위 드롭다운이 가려져 여기서 고른다 */
+  /**
+   * 배경지도를 바꾼다 — 3D 중에는 지도 위 드롭다운이 가려져 여기서 고른다.
+   *
+   * 바꾼 직후에는 새 타일이 아직 안 왔다. 그 상태로 표면을 구우면 빈 그림이
+   * 입혀져 지형이 검게 보이고, 카메라를 움직이기 전까지 그대로 남는다.
+   * 그래서 타일이 다 들어온 뒤(rendercomplete) 한 번 더 굽는다.
+   * 일회성 구독이라 우리가 굽는 렌더가 다시 굽기를 부르는 되먹임은 없다.
+   */
   setBasemap(key) {
     this.mapManager.setBasemap(key);
-    if (this.active) this.scheduleSurfaceRefresh();
+    if (!this.active) return;
+
+    this.scheduleSurfaceRefresh();
+    this.mapManager.getMap().once('rendercomplete', () => {
+      if (this.active) this.scheduleSurfaceRefresh();
+    });
   }
 
   /** 3D를 끈다 */
@@ -277,6 +293,19 @@ export class View3DController {
     }
     if (!textureCanvas) return;
 
+    // 타일이 아직 안 온 순간에는 합성 결과가 거의 비어 있다. 그대로 입히면
+    // 지형이 검게 보이고 카메라를 움직이기 전까지 그대로 남는다.
+    // 이미 입혀 둔 그림이 있으면 그것을 지키고, 조금 뒤 다시 시도한다.
+    if (this.scene.terrain && !hasVisibleContent(textureCanvas)) {
+      if (this.emptyRetries < MAX_EMPTY_RETRIES) {
+        this.emptyRetries++;
+        this.scheduleSurfaceRefresh();
+        return;
+      }
+      // 계속 비어 있으면 더 붙들지 않는다 — 배경지도를 '없음'으로 둔 경우도 있다
+    }
+    this.emptyRetries = 0;
+
     const latitude = toLonLat(view.getCenter())[1];
     const dems = this.findDems();
 
@@ -308,9 +337,21 @@ export class View3DController {
 
   /** 3D 화면을 PNG 데이터 URL로 돌려준다 */
   toDataURL() {
+    const canvas = this.renderFrame();
+    return canvas ? canvas.toDataURL('image/png') : null;
+  }
+
+  /**
+   * 한 프레임을 그려 캔버스를 그대로 돌려준다.
+   *
+   * 저장할 때 방위·축척·범례를 이 위에 합성해야 해서 데이터 URL이 아니라
+   * 캔버스 자체가 필요하다.
+   */
+  renderFrame() {
     if (!this.active) return null;
+    this.scene.controls.update();
     this.scene.renderer.render(this.scene.scene, this.scene.camera);
-    return this.scene.renderer.domElement.toDataURL('image/png');
+    return this.scene.renderer.domElement;
   }
 }
 

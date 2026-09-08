@@ -157,15 +157,80 @@ export class View3DPanel {
     this.terrainSelect.disabled = sources.length === 0;
   }
 
-  savePng() {
-    const dataUrl = this.controller?.toDataURL();
-    if (!dataUrl) return;
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = `egis-3d-${Date.now()}.png`;
-    link.click();
+  /**
+   * 3D 화면을 PNG로 저장한다. 화면에 떠 있는 방위·축척·범례도 함께 담는다.
+   *
+   * 이 요소들은 DOM이라 WebGL 캔버스에는 들어 있지 않다. 각각을 그림으로 떠서
+   * 화면에 놓인 자리 그대로 얹는다 — 보이는 대로 저장된다.
+   */
+  async savePng() {
+    const canvas = this.controller?.renderFrame();
+    if (!canvas) return;
+
+    this.saveButton.disabled = true;
+    try {
+      const composed = await this.composeWithOverlays(canvas);
+      const link = document.createElement('a');
+      link.href = composed.toDataURL('image/png');
+      link.download = `egis-3d-${Date.now()}.png`;
+      link.click();
+    } catch (error) {
+      console.error('3D 화면을 저장하지 못했습니다', error);
+      this.onMessage('3D 화면을 저장하지 못했습니다.');
+    } finally {
+      this.saveButton.disabled = false;
+    }
+  }
+
+  /** 3D 캔버스 위에 화면의 오버레이를 합성한 캔버스를 만든다 */
+  async composeWithOverlays(canvas) {
+    const output = document.createElement('canvas');
+    output.width = canvas.width;
+    output.height = canvas.height;
+    const ctx = output.getContext('2d');
+    ctx.drawImage(canvas, 0, 0);
+
+    const container = document.getElementById('map-container');
+    if (!container) return output;
+    const bounds = container.getBoundingClientRect();
+    if (!(bounds.width > 0)) return output;
+
+    // 캔버스는 기기 픽셀, 요소 위치는 CSS 픽셀이라 배율을 맞춰 얹는다
+    const ratio = canvas.width / bounds.width;
+    const targets = [...document.querySelectorAll(OVERLAY_SELECTOR)]
+      .filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+    if (targets.length === 0) return output;
+
+    const { default: html2canvas } = await import('html2canvas');
+    for (const el of targets) {
+      const r = el.getBoundingClientRect();
+      const shot = await html2canvas(el, {
+        backgroundColor: null,
+        scale: ratio,
+        logging: false,
+        useCORS: true
+      });
+      ctx.drawImage(shot, (r.left - bounds.left) * ratio, (r.top - bounds.top) * ratio);
+    }
+    return output;
   }
 }
+
+/** 저장에 함께 담을 화면 요소들 — 3D 캔버스 위에 떠 있는 것들이다 */
+const OVERLAY_SELECTOR = [
+  '#view3d-compass',
+  '.map-scale-bar',
+  '.ol-scale-line',
+  '.dem-legend',
+  '.raster-analysis-legend',
+  '.choropleth-legend',
+  '.chart-map-legend',
+  '.heatmap-legend',
+  '.cartogram-legend'
+].join(', ');
 
 /** 레이어 이름은 사용자가 지은 것이라 그대로 심지 않는다 */
 function escapeHtml(text) {

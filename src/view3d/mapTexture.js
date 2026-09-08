@@ -97,3 +97,44 @@ export function composeMapCanvas(mapElement, {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   return output;
 }
+
+/**
+ * 픽셀 배열에서 불투명한 비율을 센다.
+ *
+ * @param {Uint8ClampedArray} pixels RGBA 4개씩
+ * @returns {number} 0~1
+ */
+export function opaqueRatio(pixels) {
+  if (!pixels || pixels.length < 4) return 0;
+  let opaque = 0;
+  let total = 0;
+  for (let i = 3; i < pixels.length; i += 4) {
+    total++;
+    if (pixels[i] > 8) opaque++;
+  }
+  return total === 0 ? 0 : opaque / total;
+}
+
+/**
+ * 표면에 입힐 만한 그림이 들어 있는가.
+ *
+ * 배경지도를 막 바꾼 직후처럼 타일이 아직 안 온 순간에는 합성 결과가 거의 비어 있다.
+ * 그대로 입히면 지형이 검게 보이고 카메라를 움직이기 전까지 그대로 남는다.
+ * 작게 줄여 훑어보므로 비용은 무시할 수준이다.
+ *
+ * @param {HTMLCanvasElement} canvas
+ * @param {{sampleSize?: number, minRatio?: number}} options
+ */
+export function hasVisibleContent(canvas, { sampleSize = 24, minRatio = 0.02 } = {}) {
+  if (!canvas || !canvas.width || !canvas.height) return false;
+  try {
+    const small = document.createElement('canvas');
+    small.width = sampleSize;
+    small.height = sampleSize;
+    const ctx = small.getContext('2d');
+    ctx.drawImage(canvas, 0, 0, sampleSize, sampleSize);
+    return opaqueRatio(ctx.getImageData(0, 0, sampleSize, sampleSize).data) >= minRatio;
+  } catch {
+    return true;   // 확인이 안 되면 막지 않는다
+  }
+}

@@ -1,6 +1,6 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
-import { planComposition } from './mapTexture.js';
+import { planComposition, opaqueRatio } from './mapTexture.js';
 
 /** OL 레이어 캔버스 대역 */
 function fakeCanvas(width, height, transform = '', opacity = '') {
@@ -75,5 +75,30 @@ describe('planComposition', () => {
   it('지도 크기를 모르면 null이다', () => {
     expect(planComposition([fakeCanvas(800, 600)], undefined, { maxSize: 2048 })).toBe(null);
     expect(planComposition([fakeCanvas(800, 600)], [0, 600], { maxSize: 2048 })).toBe(null);
+  });
+});
+
+describe('opaqueRatio', () => {
+  const rgba = (list) => Uint8ClampedArray.from(list.flat());
+
+  it('전부 불투명하면 1이다', () => {
+    expect(opaqueRatio(rgba([[0, 0, 0, 255], [1, 2, 3, 255]]))).toBe(1);
+  });
+
+  it('전부 투명하면 0이다 — 타일이 안 온 순간이 이 모습이다', () => {
+    expect(opaqueRatio(rgba([[0, 0, 0, 0], [0, 0, 0, 0]]))).toBe(0);
+  });
+
+  it('절반이면 0.5다', () => {
+    expect(opaqueRatio(rgba([[0, 0, 0, 255], [0, 0, 0, 0]]))).toBe(0.5);
+  });
+
+  it('거의 투명한 픽셀은 안 친다', () => {
+    expect(opaqueRatio(rgba([[0, 0, 0, 5], [0, 0, 0, 5]]))).toBe(0);
+  });
+
+  it('빈 배열은 0이다', () => {
+    expect(opaqueRatio(new Uint8ClampedArray(0))).toBe(0);
+    expect(opaqueRatio(null)).toBe(0);
   });
 });
