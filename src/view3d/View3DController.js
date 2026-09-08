@@ -192,6 +192,10 @@ export class View3DController {
   scheduleRefresh() {
     if (!this.active || this.syncing) return;
 
+    // 축척바가 계단처럼 뛰지 않도록 뷰는 즉시 맞춘다.
+    // OpenLayers는 프레임 단위로 그리므로 한 프레임에 여러 번 불러도 한 번만 그린다.
+    this.syncView();
+
     const target = this.scene.controls.target;
     const drift = Math.hypot(target.x, target.z);
     const now = Date.now();
@@ -205,22 +209,35 @@ export class View3DController {
     this.settleTimer = setTimeout(() => this.syncAndRefresh(), SETTLE_MS);
   }
 
-  /** 카메라 위치를 2D 지도에 반영한 뒤 갱신한다 (연동) */
-  syncAndRefresh() {
-    if (!this.active) return;
+  /**
+   * 카메라 위치를 2D 지도 뷰에 반영한다. **가볍다** — 중심과 해상도만 옮긴다.
+   *
+   * 축척바는 2D 뷰의 해상도를 읽으므로, 이걸 카메라가 움직일 때마다 해 줘야
+   * 막대가 실시간으로 늘고 준다. 갱신(텍스처·메시)까지 같이 하면 무거워서
+   * 조작이 끊기므로 여기서는 하지 않는다.
+   */
+  syncView() {
+    if (!this.active) return false;
     const map = this.mapManager.getMap();
     const view = map.getView();
     const size = map.getSize();
-    if (!size) return;
+    if (!size) return false;
+
+    const target = this.scene.controls.target;
+    view.setCenter(sceneToMap(target, this.center));
+
+    const distance = this.scene.camera.position.distanceTo(target);
+    view.setResolution(resolutionForDistance(distance, FOV, size[1]));
+    return true;
+  }
+
+  /** 카메라 위치를 2D 지도에 반영한 뒤 갱신한다 (연동) */
+  syncAndRefresh() {
+    if (!this.active) return;
 
     this.syncing = true;
     try {
-      const target = this.scene.controls.target;
-      view.setCenter(sceneToMap(target, this.center));
-
-      const distance = this.scene.camera.position.distanceTo(target);
-      view.setResolution(resolutionForDistance(distance, FOV, size[1]));
-
+      if (!this.syncView()) return;
       this.refresh({ frame: false });
     } finally {
       this.syncing = false;
