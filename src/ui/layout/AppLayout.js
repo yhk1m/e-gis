@@ -415,8 +415,8 @@ export class AppLayout {
                 </select>
               </label>
               <p class="view3d-hint">
-                표면에 무엇을 올릴지는 레이어 목록에서 켜고 끄면 됩니다.
-                더블클릭한 곳이 회전 중심(빨간 점)이 됩니다.
+                <span class="view3d-hint-line">표면에 무엇을 올릴지는 레이어 목록에서 켜고 끄면 됩니다.</span>
+                <span class="view3d-hint-line">더블클릭한 곳이 회전 중심(빨간 점)이 됩니다.</span>
               </p>
               <div class="view3d-actions">
                 <button id="view3d-save" class="btn btn-primary view3d-save">PNG로 저장</button>

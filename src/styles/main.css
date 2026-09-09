@@ -5239,10 +5239,16 @@ body.exporting .egis-basemap-panel {
 
 .view3d-hint {
   margin: 10px 0 0;
-  max-width: 240px;
   line-height: 1.5;
   color: var(--text-secondary);
   font-size: var(--font-size-xs);
+}
+
+/* 한 줄에 한 문장. 폭을 고정하면 글꼴이 다른 기기에서 문장 끝의 '다.'만
+   다음 줄로 넘어가 보기 나쁘다. 문장 중간에서 끊지 않고 패널이 늘어나게 둔다. */
+.view3d-hint-line {
+  display: block;
+  white-space: nowrap;
 }
 
 .view3d-actions {
