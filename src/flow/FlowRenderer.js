@@ -62,6 +62,7 @@ export class FlowRenderer extends Layer {
     this._frozen = false;
 
     this.on('change:visible', () => this._syncAnimation());
+    this.on('change:map', () => this._syncAnimation());
   }
 
   // ---- 공개 API ------------------------------------------------------------
@@ -120,10 +121,15 @@ export class FlowRenderer extends Layer {
     const { flowPaths, locPaths } = this._paths;
     if (id <= flowPaths.length) {
       const fp = flowPaths[id - 1];
+      // 안티앨리어싱 혼색이 엉뚱한 id 를 줄 수 있어, 실제로 그 선 위인지 기하로 다시 확인한다
+      this.hitCtx.lineWidth = Math.max(fp.width, 8);
+      if (!this.hitCtx.isPointInStroke(fp.center, pixel[0] * pr, pixel[1] * pr)) return null;
       return { type: 'flow', key: 'f:' + fp.index, flow: fp.flow };
     }
     const lp = locPaths[id - flowPaths.length - 1];
-    return lp ? { type: 'location', key: 'l:' + lp.index, location: lp.loc, totals: lp.total } : null;
+    if (!lp) return null;
+    if (Math.hypot(pixel[0] - lp.p[0], pixel[1] - lp.p[1]) > Math.max(lp.r, 8)) return null;
+    return { type: 'location', key: 'l:' + lp.index, location: lp.loc, totals: lp.total };
   }
 
   // ---- OL Layer ------------------------------------------------------------
@@ -155,14 +161,15 @@ export class FlowRenderer extends Layer {
   _derive() {
     const ds = this.dataset;
     if (!ds) { this._derived = null; this._paths = null; return; }
-    const flows = visibleFlows(ds, this.style);
+    const locById = new Map(ds.locations.map((l) => [l.id, l]));
+    // locations 에 없는 위치를 가리키는 흐름(불일치 데이터)은 render() 를 죽이지 않도록 여기서 걸러낸다
+    const flows = visibleFlows(ds, this.style).filter((f) => locById.has(f.origin) && locById.has(f.dest));
     const totals = aggregateTotals(ds, this.style);
     const maxCount = flows.reduce((m, f) => Math.max(m, f.count), 0);
     let maxTotal = 0;
     for (const t of totals.values()) maxTotal = Math.max(maxTotal, t.inflow + t.outflow);
-    const locById = new Map(ds.locations.map((l) => [l.id, l]));
     const stops = COLOR_RAMPS[this.style.ramp] || COLOR_RAMPS.teal;
-    this._derived = { flows, totals, maxCount, maxTotal, locById, stops };
+    this._derived = { flows, totals, maxCount, maxTotal, locById, locations: ds.locations, stops };
   }
 
   _resize(w, h, pr) {
@@ -177,10 +184,10 @@ export class FlowRenderer extends Layer {
 
   /** 뷰가 바뀌었을 때만: 위치 → 픽셀, 흐름 → Path2D, 히트 캔버스 */
   _project(frameState) {
-    const { flows, maxCount, totals, maxTotal, stops } = this._derived;
+    const { flows, maxCount, totals, maxTotal, stops, locations } = this._derived;
     const s = this.style;
     const px = new Map();
-    for (const loc of this.dataset.locations) {
+    for (const loc of locations) {
       px.set(loc.id, applyTransform(frameState.coordinateToPixelTransform, fromLonLat([loc.lon, loc.lat])));
     }
 
@@ -202,7 +209,7 @@ export class FlowRenderer extends Layer {
       return { flow: f, index: i, outline, center, width: w1, color: rampColor(stops, flowStrength(f.count, maxCount)) };
     });
 
-    const locPaths = this.dataset.locations.map((loc, j) => {
+    const locPaths = locations.map((loc, j) => {
       const t = totals.get(loc.id) || { inflow: 0, outflow: 0, net: 0 };
       return { loc, index: j, p: px.get(loc.id), r: locationRadius(t.inflow + t.outflow, maxTotal, s.locationMaxRadius), total: t };
     });
@@ -255,17 +262,14 @@ export class FlowRenderer extends Layer {
     ctx.setTransform(pr, 0, 0, pr, 0, 0);
     ctx.clearRect(0, 0, this.canvas.width / pr, this.canvas.height / pr);
 
+    let hoveredFp = null;
     for (const fp of paths.flowPaths) {
       const touched = !dimming || hl.has(fp.flow.origin) || hl.has(fp.flow.dest);
       const hovered = this.hoverKey === 'f:' + fp.index;
-      ctx.globalAlpha = touched ? (hovered ? 1 : s.opacity) : DIM_ALPHA;
+      if (hovered && touched) hoveredFp = fp;
+      ctx.globalAlpha = touched ? s.opacity : DIM_ALPHA;
       ctx.fillStyle = fp.color;
       ctx.fill(fp.outline);
-      if (hovered) {
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = '#ffffff';
-        ctx.stroke(fp.outline);
-      }
       if (animate && touched) {
         ctx.save();
         ctx.setLineDash([10, 14]);
@@ -280,8 +284,19 @@ export class FlowRenderer extends Layer {
     }
     ctx.setLineDash([]);
 
+    // 호버한 흐름은 나중에 그려진 더 큰 흐름에 덮이지 않도록 맨 위에 한 번 더 그린다
+    if (hoveredFp) {
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = hoveredFp.color;
+      ctx.fill(hoveredFp.outline);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke(hoveredFp.outline);
+    }
+
     if (s.showLocations) {
       ctx.font = '600 11px Pretendard, sans-serif';
+      ctx.lineJoin = 'round';
       ctx.textBaseline = 'middle';
       for (const lp of paths.locPaths) {
         const active = hl.has(lp.loc.id) || this.hoverKey === 'l:' + lp.index;
@@ -310,7 +325,8 @@ export class FlowRenderer extends Layer {
   _redraw() { if (this._paths) this._draw(); }
 
   _syncAnimation() {
-    const want = !!(this._derived && this.style.animate && !this._frozen && this.getVisible());
+    // 지도에서 떨어져 나간 레이어(map === null)는 rAF 를 계속 돌릴 이유가 없다
+    const want = !!(this._derived && this.style.animate && !this._frozen && this.getVisible() && this.getMapInternal());
     if (want && !this._raf) this._tick();
     if (!want && this._raf) { cancelAnimationFrame(this._raf); this._raf = null; }
   }
