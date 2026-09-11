@@ -366,8 +366,9 @@ class BasemapControl extends Control {
     this.panel.querySelectorAll('.egis-basemap-option').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.key === current);
     });
-    const isSatellite = current === 'SATELLITE' || current === 'SATELLITE_LABELS';
-    this.button.classList.toggle('active', isSatellite);
+    // 기본(일반지도)이 아닌 배경을 쓰는 동안 버튼을 강조한다
+    const highlighted = current === 'SATELLITE' || current === 'SATELLITE_LABELS' || current === 'ESRI_DARK';
+    this.button.classList.toggle('active', highlighted);
   }
 }
 
@@ -480,6 +481,9 @@ export class MapManager {
       }
     });
 
+    // 배경지도 선택 버튼 — setBasemap() 이 코드로 불릴 때도 활성 표시를 맞추려고 참조를 들고 있는다
+    this.basemapControl = new BasemapControl(this);
+
     // 지도 생성
     this.map = new Map({
       target: targetId,
@@ -501,7 +505,7 @@ export class MapManager {
         }),
         new CompassControl(),
         new GeolocateControl(),
-        new BasemapControl(this)
+        this.basemapControl
       ])
     });
 
@@ -658,6 +662,7 @@ export class MapManager {
     }
 
     this.currentBasemap = basemapKey;
+    if (this.basemapControl) this.basemapControl.updateActive();
   }
 
   /**
