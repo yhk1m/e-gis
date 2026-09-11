@@ -5,6 +5,8 @@
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
+import { createEmpty, extendCoordinate } from 'ol/extent';
+import { fromLonLat } from 'ol/proj';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { mapManager } from './MapManager.js';
 import { strokeWidthOf, makeStroke } from '../utils/strokeStyle.js';
@@ -692,6 +694,9 @@ class LayerManager {
     // — 색/두께 재계산으로 덮어쓰면 차트가 사라진다
     if (layerInfo.type === 'chartmap') return;
 
+    // 흐름 레이어: 캔버스 렌더러라 벡터 스타일이 없다 (스타일은 FlowPanel → flowTool.updateStyle)
+    if (layerInfo.type === 'flow') return;
+
     // 단계구분도: 분류별 색상 유지, 투명도/테두리만 반영
     if (layerInfo.type === 'choropleth' && layerInfo._choroplethConfig) {
       const cfg = layerInfo._choroplethConfig;
@@ -864,7 +869,14 @@ class LayerManager {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
 
-    const extent = layerInfo.source.getExtent();
+    let extent = null;
+    if (layerInfo.type === 'flow' && layerInfo._flowConfig) {
+      // 흐름 레이어: 피처가 없으니 위치 좌표로 범위를 만든다
+      extent = createEmpty();
+      for (const loc of layerInfo._flowConfig.dataset.locations) extendCoordinate(extent, fromLonLat([loc.lon, loc.lat]));
+    } else if (layerInfo.source && typeof layerInfo.source.getExtent === 'function') {
+      extent = layerInfo.source.getExtent();
+    }
     if (extent && extent[0] !== Infinity) {
       mapManager.fitExtent(extent, { padding: [50, 50, 50, 50] });
     }

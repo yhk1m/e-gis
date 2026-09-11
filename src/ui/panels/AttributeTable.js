@@ -68,6 +68,10 @@ export class AttributeTable {
   open(layerId) {
     const layerInfo = layerManager.getLayer(layerId);
     if (!layerInfo) return;
+    if (!layerInfo.source) {
+      alert('이 레이어에는 속성 테이블이 없습니다. (흐름·래스터 레이어)');
+      return;
+    }
 
     // 모바일/태블릿(터치 기기): 팝업 창이 차단되므로 전체 화면 오버레이로 표시
     // (태블릿 판별은 기존 태블릿 최적화 미디어쿼리와 동일 기준)

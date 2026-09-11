@@ -7,6 +7,7 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { mapManager } from '../core/MapManager.js';
+import { flowTool } from './FlowTool.js';
 
 class ExportTool {
   constructor() {
@@ -82,6 +83,7 @@ class ExportTool {
       throw error;
     } finally {
       document.body.classList.remove('exporting');
+      flowTool.thawAnimations();
       if (restoreBasemap) {
         baseLayer.setVisible(true);
         if (map) map.renderSync();
@@ -298,6 +300,7 @@ class ExportTool {
       });
     } finally {
       document.body.classList.remove('exporting');
+      flowTool.thawAnimations();
       if (restoreBasemap) {
         baseLayer.setVisible(true);
         if (map) map.renderSync();
@@ -864,6 +867,8 @@ class ExportTool {
     } catch (error) {
       hiddenLayers.forEach(layer => layer.setVisible(true));
       throw error;
+    } finally {
+      flowTool.thawAnimations(); // waitForMapRender 가 멈춘 흐름 애니메이션을 여기서도 되살린다
     }
   }
 
@@ -873,6 +878,7 @@ class ExportTool {
   waitForMapRender() {
     return new Promise((resolve) => {
       const map = mapManager.getMap();
+      flowTool.freezeAnimations(); // 흐름 점선을 실선으로 멈춰 PNG 에 조각이 찍히지 않게
       if (map) {
         map.once('rendercomplete', resolve);
         map.renderSync();
