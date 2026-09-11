@@ -1,9 +1,8 @@
 // © 2026 김용현
 /**
  * BuiltinDataManager - 내장 데이터 카탈로그 및 로딩
- * 공간정보(GeoJSON) + 속성정보(XLSX) 모두 JSON 카탈로그에서 자동 로드
- *
- * 파일 추가 후 npm run catalog 실행하면 카탈로그 자동 생성
+ *  - practice_catalog.json: 점·선·면·속성 실습 데이터 (직접 등록)
+ *  - raster_catalog.json: 래스터 GeoTIFF (npm run catalog 로 자동 생성)
  */
 
 import { geojsonLoader } from '../loaders/GeoJSONLoader.js';
@@ -14,32 +13,22 @@ const BUILTIN_BASE = './data/builtin/';
 
 class BuiltinDataManager {
   constructor() {
-    this.spatialCatalog = [];
-    this.attributeCatalog = [];
     this.rasterCatalog = [];
     this.practiceCatalog = [];
     this._loaded = false;
   }
 
   /**
-   * 카탈로그 로드 (공간+속성+래스터+실습)
+   * 카탈로그 로드 (래스터+실습)
    */
   async loadCatalogs() {
     if (this._loaded) return;
 
-    const [spatialResp, attrResp, rasterResp, practiceResp] = await Promise.allSettled([
-      fetch(BUILTIN_BASE + 'spatial_catalog.json'),
-      fetch(BUILTIN_BASE + 'attribute_catalog.json'),
+    const [rasterResp, practiceResp] = await Promise.allSettled([
       fetch(BUILTIN_BASE + 'raster_catalog.json'),
       fetch(BUILTIN_BASE + 'practice_catalog.json')
     ]);
 
-    if (spatialResp.status === 'fulfilled' && spatialResp.value.ok) {
-      this.spatialCatalog = await spatialResp.value.json();
-    }
-    if (attrResp.status === 'fulfilled' && attrResp.value.ok) {
-      this.attributeCatalog = await attrResp.value.json();
-    }
     if (rasterResp.status === 'fulfilled' && rasterResp.value.ok) {
       this.rasterCatalog = await rasterResp.value.json();
     }
@@ -50,21 +39,15 @@ class BuiltinDataManager {
     this._loaded = true;
   }
 
-  getSpatialCatalog() {
-    return this.spatialCatalog;
-  }
-
-  getAttributeCatalog() {
-    return this.attributeCatalog;
-  }
-
   getRasterCatalog() {
     return this.rasterCatalog;
   }
 
   /**
-   * 실습 데이터 카탈로그 (실습 유형별 그룹)
-   * 형식: [{ id, name, description, datasets: [{ id, name, description, type, file, ... }] }]
+   * 실습 데이터 카탈로그 (데이터 형태별 그룹, 화면에 이 순서대로 섹션이 놓인다)
+   * 형식: [{ id, name, icon, description, datasets: [{ id, name, description, type, file, folder?, ... }] }]
+   *   - 그룹에 type: 'raster' 가 있으면 datasets 대신 rasterCatalog 를 그 자리에 보여준다
+   *   - 데이터셋의 folder 는 섹션 안에서 같은 이름끼리 접이식 폴더로 묶인다 (예: 행정경계)
    * type: 'spatial' | 'attribute' | 'coordinate' | 'raster'
    *   coordinate 데이터셋은 latColumn/lonColumn 힌트로 위경도 포인트 레이어를 만듭니다.
    */
@@ -191,21 +174,18 @@ class BuiltinDataManager {
   }
 
   /**
-   * 키워드 검색 (공간+속성+래스터)
+   * 키워드 검색 (실습 데이터셋 + 래스터)
    */
   search(keyword) {
     const kw = keyword.toLowerCase();
-    const matchSpatial = this.spatialCatalog.filter(d =>
-      d.name.toLowerCase().includes(kw) ||
-      d.description.toLowerCase().includes(kw) ||
-      (d.tags || []).some(t => t.toLowerCase().includes(kw))
-    ).map(d => ({ ...d, dataType: 'spatial' }));
-
-    const matchAttr = this.attributeCatalog.filter(d =>
-      d.name.toLowerCase().includes(kw) ||
-      d.description.toLowerCase().includes(kw) ||
-      (d.columns || []).some(c => c.toLowerCase().includes(kw))
-    ).map(d => ({ ...d, dataType: 'attribute' }));
+    const matchPractice = this.practiceCatalog.flatMap(g => (g.datasets || [])
+      .filter(d =>
+        d.name.toLowerCase().includes(kw) ||
+        (d.description || '').toLowerCase().includes(kw) ||
+        (d.folder || '').toLowerCase().includes(kw)
+      )
+      .map(d => ({ ...d, dataType: d.type, groupId: g.id }))
+    );
 
     const matchRaster = this.rasterCatalog.filter(d =>
       d.name.toLowerCase().includes(kw) ||
@@ -213,17 +193,7 @@ class BuiltinDataManager {
       (d.tags || []).some(t => t.toLowerCase().includes(kw))
     ).map(d => ({ ...d, dataType: 'raster' }));
 
-    return [...matchSpatial, ...matchAttr, ...matchRaster];
-  }
-
-  /**
-   * 공간정보 로드 → 레이어로 추가
-   */
-  async loadSpatial(datasetId) {
-    const dataset = this.spatialCatalog.find(d => d.id === datasetId);
-    if (!dataset) throw new Error('데이터셋을 찾을 수 없습니다: ' + datasetId);
-    const url = BUILTIN_BASE + dataset.file;
-    return await geojsonLoader.loadFromUrl(url, dataset.name);
+    return [...matchPractice, ...matchRaster];
   }
 
   /**
@@ -236,22 +206,6 @@ class BuiltinDataManager {
     if (!dataset) throw new Error('래스터 데이터셋을 찾을 수 없습니다: ' + datasetId);
     const url = BUILTIN_BASE + dataset.file;
     return await demLoader.loadFromUrl(url, dataset.name, options);
-  }
-
-  /**
-   * 속성정보 XLSX 로드 → 파싱된 데이터 반환
-   */
-  async loadAttribute(datasetId) {
-    const dataset = this.attributeCatalog.find(d => d.id === datasetId);
-    if (!dataset) throw new Error('속성 데이터를 찾을 수 없습니다: ' + datasetId);
-
-    const url = BUILTIN_BASE + dataset.file;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('파일을 찾을 수 없습니다: ' + dataset.file);
-
-    const arrayBuffer = await resp.arrayBuffer();
-    const { headers, data } = this._parseXlsxBuffer(arrayBuffer);
-    return { headers, data, fileName: dataset.name, dataset };
   }
 }
 

@@ -2,9 +2,11 @@
 /**
  * BuiltinDataDialog - 데이터 불러오기 다이얼로그
  * 탭 구성:
- *  - 공간 데이터: 공간정보(GeoJSON→레이어) / 래스터(GeoTIFF) / 속성정보(XLSX→테이블 결합, 보통 비어 있음)
+ *  - 실습 데이터: practice_catalog.json 의 그룹 순서대로 섹션을 놓는다
+ *      Point(점) / Line(선) / Area(면, 행정경계 폴더) / Raster(래스터, raster_catalog.json) / Attribute(속성정보)
+ *      spatial→레이어, coordinate→좌표 가져오기, attribute→미리보기→테이블 결합, raster→다중선택 일괄 로드
+ *  - 공공데이터: 공공데이터포털 검색 → 레이어
  *  - 스프레드시트: 공개 구글 시트 링크 → 속성 데이터(테이블 결합) 또는 좌표 데이터(포인트 레이어)
- *  - 실습 데이터: 실습 유형별 데이터셋 (practice_catalog.json)
  */
 
 import { builtinDataManager } from '../../core/BuiltinDataManager.js';
@@ -16,10 +18,9 @@ import { googleSheetLoader } from '../../loaders/GoogleSheetLoader.js';
 import { publicDataTab } from './publicDataTab.js';
 
 const TAB_FOOTER_TEXT = {
-  basic: '공간정보는 벡터 레이어로, 래스터는 DEM 레이어로 추가됩니다',
-  sheets: '공개된 구글 스프레드시트 링크로 속성·좌표 데이터를 가져옵니다',
-  practice: '수업 실습 유형별 데이터셋을 불러옵니다',
-  public: '공공데이터포털의 데이터를 실시간으로 불러옵니다'
+  basic: '점·선·면·속성 자료는 클릭으로, 래스터는 골라서 한꺼번에 불러옵니다',
+  public: '공공데이터포털의 데이터를 실시간으로 불러옵니다',
+  sheets: '공개된 구글 스프레드시트 링크로 속성·좌표 데이터를 가져옵니다'
 };
 
 const PRACTICE_TYPE_META = {
@@ -68,22 +69,18 @@ class BuiltinDataDialog {
           <div class="modal-body" style="padding: 0;">
             <!-- 탭 -->
             <div class="builtin-tabs">
-              <button class="builtin-tab" data-tab="basic">📂 공간 데이터</button>
-              <button class="builtin-tab" data-tab="sheets">📋 스프레드시트</button>
-              <button class="builtin-tab" data-tab="practice">🎓 실습 데이터</button>
+              <button class="builtin-tab" data-tab="basic">📂 실습 데이터</button>
               <button class="builtin-tab" data-tab="public">🌐 공공데이터</button>
+              <button class="builtin-tab" data-tab="sheets">📋 스프레드시트</button>
             </div>
             <div class="builtin-tab-content" data-tab-content="basic">
               ${this._renderBasicTab()}
             </div>
-            <div class="builtin-tab-content" data-tab-content="sheets" style="display:none;">
-              ${this._renderSheetsTab()}
-            </div>
-            <div class="builtin-tab-content" data-tab-content="practice" style="display:none;">
-              ${this._renderPracticeTab()}
-            </div>
             <div class="builtin-tab-content" data-tab-content="public" style="display:none;">
               ${publicDataTab.render()}
+            </div>
+            <div class="builtin-tab-content" data-tab-content="sheets" style="display:none;">
+              ${this._renderSheetsTab()}
             </div>
           </div>
           <div class="modal-footer" style="font-size: 11px; color: var(--text-muted); justify-content: center;">
@@ -118,12 +115,22 @@ class BuiltinDataDialog {
   }
 
   // ============================
-  //  탭 1: 공간 데이터
+  //  탭 1: 실습 데이터
   // ============================
   _renderBasicTab() {
-    const spatialList = builtinDataManager.getSpatialCatalog();
-    const attrList = builtinDataManager.getAttributeCatalog();
+    const groups = builtinDataManager.getPracticeCatalog();
     const rasterList = builtinDataManager.getRasterCatalog();
+
+    if (!groups || groups.length === 0) {
+      return `
+        <div style="padding: 36px 24px; text-align: center; color: var(--text-muted); font-size: 12px; line-height: 1.9;">
+          <div style="font-size: 30px; margin-bottom: 10px;">📂</div>
+          아직 등록된 실습 데이터가 없습니다.<br>
+          <code>public/data/builtin/practice_catalog.json</code>에<br>
+          데이터 형태별 그룹과 데이터셋을 추가하면 여기에 표시됩니다.
+        </div>
+      `;
+    }
 
     return `
       <!-- 검색 -->
@@ -133,46 +140,87 @@ class BuiltinDataDialog {
       </div>
       <!-- 데이터 목록 -->
       <div id="builtin-data-list" style="overflow-y: auto; max-height: calc(82vh - 210px);">
-        ${this._renderSpatialSection(spatialList)}
-        ${this._renderRasterSection(rasterList)}
-        ${this._renderAttributeSection(attrList)}
+        ${groups.map(g => g.type === 'raster'
+          ? this._renderRasterSection(rasterList, g)
+          : this._renderPracticeSection(g)
+        ).join('')}
       </div>
     `;
   }
 
-  _renderSpatialSection(list) {
+  /** 섹션 헤더 (아코디언) — 실습 그룹과 래스터 그룹이 같은 모양을 쓴다 */
+  _renderSectionHeader(group, count) {
     return `
-      <div class="builtin-category" data-category="spatial">
-        <div class="builtin-category-header" data-toggle="spatial">
-          <span>🗺️ 공간정보 (SHP)</span>
-          <span class="builtin-badge" style="margin-left:auto; margin-right:8px;">${list.length}개</span>
-          <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      <div class="builtin-category-header" data-toggle="${group.id}">
+        <span>${group.icon || '📂'} ${group.name}</span>
+        <span class="builtin-badge" style="margin-left:auto; margin-right:8px;">${count}개</span>
+        <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    `;
+  }
+
+  /**
+   * 실습 데이터 섹션 (점/선/면/속성)
+   * 데이터셋의 folder 가 같은 것끼리 접이식 폴더로 묶고(예: 행정경계), 폴더가 없는 것은 그 아래에 그대로 놓는다
+   */
+  _renderPracticeSection(g) {
+    const datasets = g.datasets || [];
+    const folders = new Map();
+    const loose = [];
+    for (const d of datasets) {
+      if (!d.folder) { loose.push(d); continue; }
+      if (!folders.has(d.folder)) folders.set(d.folder, []);
+      folders.get(d.folder).push(d);
+    }
+
+    const folderHTML = [...folders].map(([name, items]) => `
+      <div class="builtin-folder" data-group="${name}">
+        <div class="builtin-folder-header">
+          <button type="button" class="builtin-folder-name" data-toggle-group="${name}">
+            <svg class="builtin-folder-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            📁 ${name}
+            <span class="builtin-badge">${items.length}</span>
+          </button>
         </div>
+        <div class="builtin-folder-body">
+          ${items.map(d => this._renderPracticeCard(g, d)).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="builtin-category" data-category="${g.id}">
+        ${this._renderSectionHeader(g, datasets.length)}
         <div class="builtin-category-body">
-          ${list.map(d => `
-            <div class="builtin-dataset-card" data-id="${d.id}" data-type="spatial">
-              <div class="builtin-dataset-main">
-                <div class="builtin-dataset-name">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                  ${d.name}
-                </div>
-                <div class="builtin-dataset-desc">${d.description}</div>
-              </div>
-              <div class="builtin-dataset-meta">
-                <span class="builtin-badge">${d.featureCount}개 피처</span>
-                <span class="builtin-badge">${d.source}</span>
-              </div>
-              <div class="builtin-dataset-loading" style="display:none;">
-                <span class="builtin-spinner"></span> 불러오는 중...
-              </div>
-            </div>
-          `).join('')}
+          ${g.description ? `<div style="padding: 8px 16px; font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color);">${g.description}</div>` : ''}
+          ${datasets.length === 0 ? '<div style="padding: 14px 16px; font-size: 12px; color: var(--text-muted); text-align: center;">아직 등록된 데이터가 없습니다.</div>' : ''}
+          ${folderHTML}
+          ${loose.map(d => this._renderPracticeCard(g, d)).join('')}
         </div>
       </div>
     `;
   }
 
-  _renderRasterSection(list) {
+  _renderPracticeCard(g, d) {
+    const meta = PRACTICE_TYPE_META[d.type] || { icon: '📄', label: d.type };
+    return `
+      <div class="builtin-dataset-card" data-practice-type="${g.id}" data-id="${d.id}">
+        <div class="builtin-dataset-main">
+          <div class="builtin-dataset-name">${meta.icon} ${d.name}</div>
+          <div class="builtin-dataset-desc">${d.description || ''}</div>
+        </div>
+        <div class="builtin-dataset-meta">
+          <span class="builtin-badge">${meta.label}</span>
+          ${d.source ? `<span class="builtin-badge">${d.source}</span>` : ''}
+        </div>
+        <div class="builtin-dataset-loading" style="display:none;">
+          <span class="builtin-spinner"></span> 불러오는 중...
+        </div>
+      </div>
+    `;
+  }
+
+  _renderRasterSection(list, group) {
     const groups = builtinDataManager.getRasterCatalogGrouped();
     const totalCount = list.length;
 
@@ -181,16 +229,16 @@ class BuiltinDataDialog {
       : '';
 
     const groupsHTML = groups.map(g => `
-      <div class="raster-group" data-group="${g.name}">
-        <div class="raster-group-header">
-          <input type="checkbox" class="raster-group-all" data-group="${g.name}" aria-label="${g.name} 전체 선택">
-          <button type="button" class="raster-group-name" data-toggle-group="${g.name}">
-            <svg class="raster-group-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <div class="builtin-folder" data-group="${g.name}">
+        <div class="builtin-folder-header">
+          <input type="checkbox" class="builtin-folder-all" data-group="${g.name}" aria-label="${g.name} 전체 선택">
+          <button type="button" class="builtin-folder-name" data-toggle-group="${g.name}">
+            <svg class="builtin-folder-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             📁 ${g.name}
             <span class="builtin-badge">${g.items.length}</span>
           </button>
         </div>
-        <div class="raster-group-body">
+        <div class="builtin-folder-body">
           ${g.items.map(d => `
             <label class="raster-card" data-id="${d.id}" data-group="${g.name}">
               <input type="checkbox" class="raster-item-check" data-id="${d.id}" data-group="${g.name}">
@@ -209,12 +257,9 @@ class BuiltinDataDialog {
 
     return `
       <div class="builtin-category" data-category="raster">
-        <div class="builtin-category-header" data-toggle="raster">
-          <span>🏔 래스터 (GeoTIFF)</span>
-          <span class="builtin-badge" style="margin-left:auto; margin-right:8px;">${totalCount}개</span>
-          <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
+        ${this._renderSectionHeader(group, totalCount)}
         <div class="builtin-category-body">
+          ${group.description ? `<div style="padding: 8px 16px; font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color);">${group.description}</div>` : ''}
           ${emptyMsg}
           ${totalCount > 0 ? `
             <div class="raster-toolbar">
@@ -227,41 +272,6 @@ class BuiltinDataDialog {
             </div>
             ${groupsHTML}
           ` : ''}
-        </div>
-      </div>
-    `;
-  }
-
-  _renderAttributeSection(list) {
-    // 내장 속성정보는 실습 데이터(Attribute Data)로 옮겨져 보통 비어 있다 → 비어 있으면 섹션 자체를 숨긴다
-    if (list.length === 0) return '';
-    return `
-      <div class="builtin-category" data-category="attribute">
-        <div class="builtin-category-header" data-toggle="attribute">
-          <span>📊 속성정보 (XLSX)</span>
-          <span class="builtin-badge" style="margin-left:auto; margin-right:8px;">${list.length}개</span>
-          <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="builtin-category-body">
-          ${list.map(d => `
-            <div class="builtin-dataset-card" data-id="${d.id}" data-type="attribute">
-              <div class="builtin-dataset-main">
-                <div class="builtin-dataset-name">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  ${d.name}
-                </div>
-                <div class="builtin-dataset-desc">${d.description}</div>
-              </div>
-              <div class="builtin-dataset-meta">
-                <span class="builtin-badge">${d.rowCount}행</span>
-                <span class="builtin-badge">${(d.columns || []).length}열</span>
-                <span class="builtin-badge">${d.source}</span>
-              </div>
-              <div class="builtin-dataset-loading" style="display:none;">
-                <span class="builtin-spinner"></span> 불러오는 중...
-              </div>
-            </div>
-          `).join('')}
         </div>
       </div>
     `;
@@ -502,60 +512,6 @@ class BuiltinDataDialog {
     }
   }
 
-  // ============================
-  //  탭 3: 실습 데이터
-  // ============================
-  _renderPracticeTab() {
-    const groups = builtinDataManager.getPracticeCatalog();
-
-    if (!groups || groups.length === 0) {
-      return `
-        <div style="padding: 36px 24px; text-align: center; color: var(--text-muted); font-size: 12px; line-height: 1.9;">
-          <div style="font-size: 30px; margin-bottom: 10px;">🎓</div>
-          아직 등록된 실습 데이터가 없습니다.<br>
-          <code>public/data/builtin/practice_catalog.json</code>에<br>
-          실습 유형과 데이터셋을 추가하면 여기에 표시됩니다.
-        </div>
-      `;
-    }
-
-    return `
-      <div id="practice-data-list" style="overflow-y: auto; max-height: calc(82vh - 170px);">
-        ${groups.map(g => `
-          <div class="builtin-category" data-category="practice-${g.id}">
-            <div class="builtin-category-header">
-              <span>${g.icon || '🎓'} ${g.name}</span>
-              <span class="builtin-badge" style="margin-left:auto; margin-right:8px;">${(g.datasets || []).length}개</span>
-              <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-            <div class="builtin-category-body">
-              ${g.description ? `<div style="padding: 8px 16px; font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color);">${g.description}</div>` : ''}
-              ${(g.datasets || []).length === 0 ? '<div style="padding: 14px 16px; font-size: 12px; color: var(--text-muted); text-align: center;">아직 등록된 데이터가 없습니다.</div>' : ''}
-              ${(g.datasets || []).map(d => {
-                const meta = PRACTICE_TYPE_META[d.type] || { icon: '📄', label: d.type };
-                return `
-                  <div class="builtin-dataset-card" data-practice-type="${g.id}" data-id="${d.id}">
-                    <div class="builtin-dataset-main">
-                      <div class="builtin-dataset-name">${meta.icon} ${d.name}</div>
-                      <div class="builtin-dataset-desc">${d.description || ''}</div>
-                    </div>
-                    <div class="builtin-dataset-meta">
-                      <span class="builtin-badge">${meta.label}</span>
-                      ${d.source ? `<span class="builtin-badge">${d.source}</span>` : ''}
-                    </div>
-                    <div class="builtin-dataset-loading" style="display:none;">
-                      <span class="builtin-spinner"></span> 불러오는 중...
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
   async _loadPracticeDataset(typeId, datasetId, cardEl) {
     this.loadingId = datasetId;
     const loadingEl = cardEl.querySelector('.builtin-dataset-loading');
@@ -620,10 +576,10 @@ class BuiltinDataDialog {
 
     // 카테고리 / 래스터 그룹 아코디언 + 카드 클릭
     listEl.addEventListener('click', (e) => {
-      // 래스터 그룹 폴더 토글
-      const groupNameBtn = e.target.closest('.raster-group-name');
+      // 폴더 토글 (래스터 광역자치단체 폴더, 실습 데이터의 하위 폴더)
+      const groupNameBtn = e.target.closest('.builtin-folder-name');
       if (groupNameBtn) {
-        const grp = groupNameBtn.closest('.raster-group');
+        const grp = groupNameBtn.closest('.builtin-folder');
         grp.classList.toggle('open');
         return;
       }
@@ -646,13 +602,10 @@ class BuiltinDataDialog {
         return;
       }
 
-      // 비-래스터 카드 단일 로드 (spatial, attribute)
+      // 비-래스터 카드 단일 로드 (spatial / coordinate / attribute)
       const card = e.target.closest('.builtin-dataset-card');
       if (!card || this.loadingId) return;
-      const type = card.dataset.type;
-      const id = card.dataset.id;
-      if (type === 'spatial') this._loadSpatial(id, card);
-      else if (type === 'attribute') this._loadAttribute(id, card);
+      this._loadPracticeDataset(card.dataset.practiceType, card.dataset.id, card);
     });
 
     // 래스터 체크박스 변경 (이벤트 위임)
@@ -661,7 +614,7 @@ class BuiltinDataDialog {
         this._toggleRasterItem(e.target.dataset.id, e.target.checked);
         this._syncGroupCheckbox(e.target.dataset.group);
         this._updateRasterBulkUI();
-      } else if (e.target.classList.contains('raster-group-all')) {
+      } else if (e.target.classList.contains('builtin-folder-all')) {
         this._toggleRasterGroup(e.target.dataset.group, e.target.checked);
         this._updateRasterBulkUI();
       }
@@ -679,50 +632,6 @@ class BuiltinDataDialog {
       document.getElementById('sheet-url-input').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') this._loadSheet();
       });
-    }
-
-    // 실습 데이터 탭 (아코디언 + 카드 클릭)
-    const practiceList = document.getElementById('practice-data-list');
-    if (practiceList) {
-      practiceList.addEventListener('click', (e) => {
-        const header = e.target.closest('.builtin-category-header');
-        if (header) {
-          header.closest('.builtin-category').classList.toggle('open');
-          return;
-        }
-        const card = e.target.closest('.builtin-dataset-card');
-        if (!card || this.loadingId) return;
-        this._loadPracticeDataset(card.dataset.practiceType, card.dataset.id, card);
-      });
-    }
-  }
-
-  // ============================
-  //  공간정보 로드
-  // ============================
-  async _loadSpatial(id, cardEl) {
-    this.loadingId = id;
-    const loadingEl = cardEl.querySelector('.builtin-dataset-loading');
-    const mainEl = cardEl.querySelector('.builtin-dataset-main');
-    const metaEl = cardEl.querySelector('.builtin-dataset-meta');
-    loadingEl.style.display = 'flex';
-    mainEl.style.opacity = '0.5';
-    metaEl.style.display = 'none';
-
-    try {
-      await builtinDataManager.loadSpatial(id);
-      loadingEl.innerHTML = '<span style="color: var(--success-color, #10b981);">✓ 레이어 추가 완료!</span>';
-      setTimeout(() => this.close(), 600);
-    } catch (error) {
-      loadingEl.innerHTML = `<span style="color: var(--danger-color, #ef4444);">✕ ${error.message}</span>`;
-      mainEl.style.opacity = '1';
-      metaEl.style.display = 'flex';
-      setTimeout(() => {
-        loadingEl.style.display = 'none';
-        loadingEl.innerHTML = '<span class="builtin-spinner"></span> 불러오는 중...';
-      }, 2000);
-    } finally {
-      this.loadingId = null;
     }
   }
 
@@ -747,7 +656,7 @@ class BuiltinDataDialog {
   _syncGroupCheckbox(group) {
     const items = this.overlay.querySelectorAll(`.raster-item-check[data-group="${group}"]`);
     const checked = [...items].filter(cb => cb.checked).length;
-    const groupCb = this.overlay.querySelector(`.raster-group-all[data-group="${group}"]`);
+    const groupCb = this.overlay.querySelector(`.builtin-folder-all[data-group="${group}"]`);
     if (!groupCb) return;
     if (checked === 0) {
       groupCb.checked = false;
@@ -775,7 +684,7 @@ class BuiltinDataDialog {
   _clearRasterSelection() {
     this._selectedRasterIds.clear();
     this.overlay.querySelectorAll('.raster-item-check').forEach(cb => { cb.checked = false; });
-    this.overlay.querySelectorAll('.raster-group-all').forEach(cb => {
+    this.overlay.querySelectorAll('.builtin-folder-all').forEach(cb => {
       cb.checked = false;
       cb.indeterminate = false;
     });
@@ -833,35 +742,6 @@ class BuiltinDataDialog {
   // ============================
   //  속성정보 로드 → 미리보기
   // ============================
-  async _loadAttribute(id, cardEl) {
-    this.loadingId = id;
-    const loadingEl = cardEl.querySelector('.builtin-dataset-loading');
-    const mainEl = cardEl.querySelector('.builtin-dataset-main');
-    const metaEl = cardEl.querySelector('.builtin-dataset-meta');
-    loadingEl.style.display = 'flex';
-    mainEl.style.opacity = '0.5';
-    metaEl.style.display = 'none';
-
-    try {
-      const result = await builtinDataManager.loadAttribute(id);
-      this._attrData = result.data;
-      this._attrHeaders = result.headers;
-      this._attrDataset = result.dataset;
-      // 미리보기 화면으로 전환
-      this._showAttributePreview(result);
-    } catch (error) {
-      loadingEl.innerHTML = `<span style="color: var(--danger-color, #ef4444);">✕ ${error.message}</span>`;
-      mainEl.style.opacity = '1';
-      metaEl.style.display = 'flex';
-      setTimeout(() => {
-        loadingEl.style.display = 'none';
-        loadingEl.innerHTML = '<span class="builtin-spinner"></span> 불러오는 중...';
-      }, 2000);
-    } finally {
-      this.loadingId = null;
-    }
-  }
-
   // ============================
   //  속성정보 미리보기 화면
   // ============================
@@ -1002,13 +882,13 @@ class BuiltinDataDialog {
     const listEl = document.getElementById('builtin-data-list');
     const cards = listEl.querySelectorAll('.builtin-dataset-card, .raster-card');
     const categories = listEl.querySelectorAll('.builtin-category');
-    const rasterGroups = listEl.querySelectorAll('.raster-group');
+    const folders = listEl.querySelectorAll('.builtin-folder');
     const kw = keyword.toLowerCase().trim();
 
     if (!kw) {
       cards.forEach(c => c.style.display = '');
       categories.forEach(c => { c.style.display = ''; c.classList.remove('open'); });
-      rasterGroups.forEach(g => { g.style.display = ''; g.classList.remove('open'); });
+      folders.forEach(g => { g.style.display = ''; g.classList.remove('open'); });
       return;
     }
 
@@ -1019,9 +899,9 @@ class BuiltinDataDialog {
       card.style.display = matchedIds.has(card.dataset.id) ? '' : 'none';
     });
 
-    // 래스터 그룹: 안에 매치된 카드가 있으면 펼치고 보이게
-    rasterGroups.forEach(grp => {
-      const visible = grp.querySelectorAll('.raster-card:not([style*="display: none"])');
+    // 폴더(래스터 광역자치단체·실습 하위 폴더): 안에 매치된 카드가 있으면 펼치고 보이게
+    folders.forEach(grp => {
+      const visible = grp.querySelectorAll('.raster-card:not([style*="display: none"]), .builtin-dataset-card:not([style*="display: none"])');
       if (visible.length > 0) {
         grp.style.display = '';
         grp.classList.add('open');

@@ -1290,11 +1290,11 @@ body.exporting .egis-basemap-panel {
   z-index: 2;
 }
 
-.raster-group {
+.builtin-folder {
   border-bottom: 1px solid var(--border-color);
 }
 
-.raster-group-header {
+.builtin-folder-header {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1302,13 +1302,13 @@ body.exporting .egis-basemap-panel {
   background: var(--bg-hover, rgba(0,0,0,0.02));
 }
 
-.raster-group-header .raster-group-all {
+.builtin-folder-header .builtin-folder-all {
   cursor: pointer;
   margin: 0;
   flex-shrink: 0;
 }
 
-.raster-group-name {
+.builtin-folder-name {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1323,20 +1323,20 @@ body.exporting .egis-basemap-panel {
   padding: 0;
 }
 
-.raster-group-chevron {
+.builtin-folder-chevron {
   transition: transform var(--transition-fast);
   flex-shrink: 0;
 }
 
-.raster-group.open .raster-group-chevron {
+.builtin-folder.open .builtin-folder-chevron {
   transform: rotate(90deg);
 }
 
-.raster-group-body {
+.builtin-folder-body {
   display: none;
 }
 
-.raster-group.open .raster-group-body {
+.builtin-folder.open .builtin-folder-body {
   display: block;
 }
 

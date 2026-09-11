@@ -28,14 +28,67 @@
     "id": "area-data",
     "name": "Area Data(면)",
     "icon": "🟩",
-    "description": "면(폴리곤) 형태의 실습 데이터",
-    "datasets": []
+    "description": "면(폴리곤) 형태의 실습 데이터 — 행정경계는 속성정보를 결합하는 바탕이 됩니다",
+    "datasets": [
+      {
+        "id": "korea-sigungu",
+        "name": "대한민국 시군구",
+        "description": "252개 시군구 경계 (2025)",
+        "type": "spatial",
+        "folder": "행정경계",
+        "file": "practice/Area Data/행정경계/대한민국 시군구.geojson",
+        "source": "KOSTAT (통계청)"
+      },
+      {
+        "id": "korea-sido-20260701",
+        "name": "대한민국 시도(2026.07.01.~)",
+        "description": "16개 시도 경계 — 전남·광주 통합 이후",
+        "type": "spatial",
+        "folder": "행정경계",
+        "file": "practice/Area Data/행정경계/대한민국 시도(2026.07.01.~).geojson",
+        "source": "KOSTAT (통계청)"
+      },
+      {
+        "id": "korea-sido-20260630",
+        "name": "대한민국 시도(~2026.06.30.)",
+        "description": "17개 시도 경계 — 전남·광주 통합 이전",
+        "type": "spatial",
+        "folder": "행정경계",
+        "file": "practice/Area Data/행정경계/대한민국 시도(~2026.06.30.).geojson",
+        "source": "KOSTAT (통계청)"
+      },
+      {
+        "id": "seoul-gu",
+        "name": "서울 자치구",
+        "description": "서울특별시 25개 자치구 경계 (2025)",
+        "type": "spatial",
+        "folder": "행정경계",
+        "file": "practice/Area Data/행정경계/서울 자치구.geojson",
+        "source": "KOSTAT (통계청)"
+      },
+      {
+        "id": "world-countries",
+        "name": "세계 국가",
+        "description": "177개 국가 경계 (인구·GDP 추정치 포함)",
+        "type": "spatial",
+        "folder": "행정경계",
+        "file": "practice/Area Data/행정경계/세계 국가.geojson",
+        "source": "Natural Earth"
+      }
+    ]
+  },
+  {
+    "id": "raster-data",
+    "name": "Raster Data(래스터)",
+    "icon": "🏔",
+    "type": "raster",
+    "description": "광역자치단체별 DEM GeoTIFF — 폴더를 열어 여러 개를 골라 한꺼번에 불러옵니다"
   },
   {
     "id": "attribute-data",
     "name": "Attribute Data(속성정보)",
     "icon": "📊",
-    "description": "레이어에 테이블 결합으로 붙이는 속성 데이터 — 공간 데이터의 시도·시군구·서울 자치구 경계와 함께 쓰세요",
+    "description": "레이어에 테이블 결합으로 붙이는 속성 데이터 — Area Data의 행정경계와 함께 쓰세요",
     "datasets": [
       {
         "id": "seoul-elderly-ratio",
