@@ -45,11 +45,14 @@ describe('parseLongTable', () => {
     expect(r.pairs).toEqual([{ origin: '서울', dest: '경기', count: 10 }, { origin: '서울', dest: '인천', count: 1200 }]);
     expect(r.skipped).toBe(3);
   });
-  it("'Infinity' 는 숫자로 보지 않고 건너뛴다", () => {
-    const data = [{ 출발: '서울', 도착: '경기', 양: 'Infinity' }];
+  it("'Infinity' 는 문자열이든 숫자든 숫자로 보지 않고 건너뛴다", () => {
+    const data = [
+      { 출발: '서울', 도착: '경기', 양: 'Infinity' },
+      { 출발: '서울', 도착: '인천', 양: Infinity }
+    ];
     const r = parseLongTable({ headers: ['출발', '도착', '양'], data }, { origin: '출발', dest: '도착', count: '양' });
     expect(r.pairs).toEqual([]);
-    expect(r.skipped).toBe(1);
+    expect(r.skipped).toBe(2);
   });
 });
 
@@ -199,6 +202,15 @@ describe('buildDataset — 후보 중복·모호 매칭', () => {
     expect(ds.flows).toEqual([]);
     expect(ds.meta.matched).toBe(0);
     expect(ds.meta.unmatched).toEqual([{ name: '세종', count: 7 }]);
+  });
+  it('manualMap 이 후보에 없는 id 를 가리키면 무시하고 unmatched 로 남긴다', () => {
+    const ds = buildDataset({
+      pairs: [{ origin: '없는곳', dest: '경기', count: 4 }],
+      candidates,
+      manualMap: { 없는곳: '99' } // candidates 에 없는 id
+    });
+    expect(ds.flows).toEqual([]);
+    expect(ds.meta.unmatched).toEqual([{ name: '없는곳', count: 4 }]);
   });
 });
 

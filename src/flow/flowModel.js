@@ -7,6 +7,7 @@
  *   locations: [{ id, name, lon, lat }],
  *   flows:     [{ origin, dest, count }],   // origin/dest 는 locations 의 id
  *   meta:      { title, unit, source, matched, unmatched: [{ name, count }], skipped }
+ *              // matched 는 병합하기 전, 양쪽 다 위치를 찾은 입력 쌍(행)의 개수
  * }
  */
 
@@ -46,7 +47,7 @@ export function detectTableShape({ headers, data }) {
 /** 셀 → 양. 숫자가 아니면 NaN, 빈 칸('-' 포함)은 0. Infinity 는 숫자로 치지 않는다 */
 function readCount(v) {
   if (isBlankCell(v)) return 0;
-  if (typeof v === 'number') return v;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : NaN;
   const n = Number(String(v).replace(/,/g, '').trim());
   return Number.isFinite(n) ? n : NaN;
 }
@@ -121,7 +122,9 @@ function dedupeCandidates(candidates) {
 function buildIndex(candidates) {
   const byCode = new Map();
   const byNameIds = new Map(); // 정규화한 이름 → 그 이름을 쓰는 서로 다른 id 의 집합
+  const ids = new Set();       // 실제로 존재하는 후보 id (manualMap 검증용)
   for (const c of candidates) {
+    ids.add(c.id);
     if (c.code != null && String(c.code).trim() !== '') {
       const codeKey = String(c.code).trim();
       if (!byCode.has(codeKey)) byCode.set(codeKey, c.id);
@@ -134,15 +137,19 @@ function buildIndex(candidates) {
   // 이름 하나가 서로 다른 id 여럿을 가리키면(예: 고성군 → 강원/경남) 모호하므로 이름 매칭에서 뺀다.
   // 손 매칭(manualMap)이나 코드 매칭으로 풀도록 unmatched 에 남긴다.
   const byName = new Map();
-  for (const [key, ids] of byNameIds) {
-    if (ids.size === 1) byName.set(key, [...ids][0]);
+  for (const [key, idSet] of byNameIds) {
+    if (idSet.size === 1) byName.set(key, [...idSet][0]);
   }
-  return { byCode, byName };
+  return { byCode, byName, ids };
 }
 
 function resolveId(rawName, index, manualMap) {
-  // hasOwn 으로만 확인해야 'constructor' 같은 이름이 프로토타입 속성으로 오인되지 않는다
-  if (Object.hasOwn(manualMap, rawName) && manualMap[rawName]) return manualMap[rawName];
+  // hasOwn 으로만 확인해야 'constructor' 같은 이름이 프로토타입 속성으로 오인되지 않는다.
+  // 후보에 실제로 없는 id 를 가리키면(오타·삭제된 위치) 무시하고 자동 매칭으로 넘어간다 —
+  // 그래야 locations 에 없는 id 가 flows 에 매달리는(dangling) 일이 없다.
+  if (Object.hasOwn(manualMap, rawName) && manualMap[rawName] && index.ids.has(manualMap[rawName])) {
+    return manualMap[rawName];
+  }
   const trimmed = String(rawName).trim();
   if (index.byCode.has(trimmed)) return index.byCode.get(trimmed);
   const id = index.byName.get(normalizeName(trimmed));
