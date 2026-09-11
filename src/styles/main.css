@@ -1112,13 +1112,28 @@ body.exporting .egis-basemap-panel {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
+  /* 상위 항목(점·선·면·래스터·속성)은 늘 음영을 깔아 아래 폴더·카드와 층이 다름을 보인다 */
+  background: var(--bg-hover);
   cursor: pointer;
   user-select: none;
   transition: background var(--transition-fast);
 }
 
 .builtin-category-header:hover {
-  background: var(--bg-hover);
+  background: var(--bg-active);
+}
+
+/* 펼친 섹션은 주조색 띠로 — 지금 어느 항목을 보고 있는지 바로 보인다 (공공데이터 탭과 같은 모양) */
+.builtin-category.open > .builtin-category-header {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.builtin-category.open > .builtin-category-header .builtin-badge {
+  background: var(--color-primary);
+  color: #fff;
 }
 
 .builtin-chevron {
@@ -1298,8 +1313,13 @@ body.exporting .egis-basemap-panel {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  background: var(--bg-hover, rgba(0,0,0,0.02));
+  padding: 8px 12px 8px 24px;
+  background: var(--bg-app);
+}
+
+/* 폴더 안 실습 카드는 폴더 이름선에 맞춰 들여쓴다 (래스터 카드의 28px 과 같은 자리) */
+.builtin-folder-body > .builtin-dataset-card {
+  padding-left: 40px;
 }
 
 .builtin-folder-header .builtin-folder-all {
@@ -5073,19 +5093,6 @@ body.exporting .egis-basemap-panel {
   border-color: var(--color-primary);
   color: #fff;
   font-weight: 600;
-}
-
-/* 공공데이터 — 펼친 갈래를 눈에 띄게 (뭘 보고 있는지 바로 알아야 한다) */
-.public-data-tab .builtin-category.open > .builtin-category-header {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  font-weight: 700;
-  box-shadow: inset 3px 0 0 var(--color-primary);
-}
-
-.public-data-tab .builtin-category.open > .builtin-category-header .builtin-badge {
-  background: var(--color-primary);
-  color: #fff;
 }
 
 /* 선택한 지역 단추 — 변수 이름이 틀려 흰 글자만 남아 '사라져' 보였다 */
