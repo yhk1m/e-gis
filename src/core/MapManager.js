@@ -303,6 +303,7 @@ class BasemapControl extends Control {
 
     const options = [
       { key: 'OSM', label: '일반지도' },
+      { key: 'ESRI_DARK', label: '어두운 지도' },
       { key: 'SATELLITE', label: '위성' },
       { key: 'SATELLITE_LABELS', label: '위성 + 라벨' }
     ];
@@ -396,6 +397,16 @@ export const BASEMAPS = {
       url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
       crossOrigin: TILE_CROSS_ORIGIN,
       attributions: '&copy; <a href="https://carto.com/">CARTO</a>'
+    })
+  },
+  // CARTO 무료 타일은 이제 "API KEY REQUIRED" 워터마크가 찍혀, 어두운 배경은 Esri 다크 그레이를 쓴다 (흐름도 등)
+  ESRI_DARK: {
+    name: '어두운 지도 (Esri)',
+    source: () => new XYZ({
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      maxZoom: 16,
+      crossOrigin: TILE_CROSS_ORIGIN,
+      attributions: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors'
     })
   },
   SATELLITE: {
