@@ -35,14 +35,21 @@ class FlowTool {
    * @returns {string} layerId
    */
   createFlowLayer({ name, dataset, style = {}, id, selectedIds = [], visible = true }) {
-    const renderer = new FlowRenderer({ zIndex: 600 });
+    // 같은 id 로 다시 만드는 경우(복원 재시도 등) 이전 렌더러가 새지 않도록 먼저 정리한다
+    if (id && this.renderers.has(id)) layerManager.removeLayer(id);
+
+    // zIndex 는 지정하지 않는다 — addLayer 가 레이어 목록 순서로 쌓기 순서를 정하므로 여기서 줘도 덮인다
+    const renderer = new FlowRenderer();
     const fullStyle = {
       ...DEFAULT_FLOW_STYLE,
-      animate: dataset.flows.length <= FLOW_ANIMATE_LIMIT,
-      ...style
+      ...style,
+      // 명시적으로 animate:false 를 준 경우는 그대로 두고, 아니면 흐름 수가 상한을 넘을 때만 끈다
+      animate: (style.animate ?? true) && dataset.flows.length <= FLOW_ANIMATE_LIMIT
     };
     renderer.setStyle(fullStyle);
     renderer.setData(dataset);
+    // addLayer 의 기존-olLayer 분기는 visible 을 올려주지 않으므로 직접 반영해 둔다
+    renderer.setVisible(visible);
 
     const layerId = layerManager.addLayer({
       id, name, type: 'flow', olLayer: renderer, geometryType: 'Flow', visible
@@ -52,7 +59,10 @@ class FlowTool {
     this.renderers.set(layerId, renderer);
 
     this._ensureInteraction();
-    if (selectedIds.length) this.interaction.setSelection(renderer, selectedIds);
+    if (selectedIds.length) {
+      if (this.interaction) this.interaction.setSelection(renderer, selectedIds);
+      else renderer.setHighlight(selectedIds);
+    }
     return layerId;
   }
 
@@ -86,7 +96,8 @@ class FlowTool {
     renderer.setData(dataset);
     info._flowConfig.dataset = dataset;
     info._flowConfig.selectedIds = [];
-    this.interaction.setSelection(renderer, []);
+    if (this.interaction) this.interaction.setSelection(renderer, []);
+    else renderer.setHighlight([]);
   }
 
   getRenderer(layerId) { return this.renderers.get(layerId) || null; }
@@ -95,7 +106,7 @@ class FlowTool {
     return layerManager.getAllLayers().filter((l) => l.type === 'flow');
   }
 
-  freezeAnimations() { for (const r of this.renderers.values()) r.freeze(true); if (this.interaction) this.interaction.hideTooltip(); }
+  freezeAnimations() { for (const r of this.renderers.values()) r.freeze(true); if (this.interaction) this.interaction.clearHover(); }
   thawAnimations() { for (const r of this.renderers.values()) r.freeze(false); }
 
   // ---- 내부 -----------------------------------------------------------------

@@ -285,6 +285,23 @@ describe('FlowInteraction — lifecycle', () => {
     expect(map.target.style.cursor).toBe('');
   });
 
+  it('clearHover() clears hover/tooltip but leaves selection untouched (used before export capture)', () => {
+    const map = fakeMap();
+    const r = fakeRenderer({ '10,20': locHit });
+    const fi = new FlowInteraction({ map, getRenderers: () => [r] });
+    fi.attach();
+    map.fire('click', { pixel: [10, 20] }); // 선택 상태를 만든다
+    map.fire('pointermove', { pixel: [10, 20], dragging: false });
+    const tip = map.target.querySelector('.flow-tooltip');
+    expect(tip.hidden).toBe(false);
+    r.setHover.mockClear();
+
+    fi.clearHover();
+    expect(r.setHover).toHaveBeenCalledWith(null);
+    expect(tip.hidden).toBe(true);
+    expect(fi.selected.has(r)).toBe(true); // 선택은 그대로
+  });
+
   it('forget() drops a renderer’s selection so a later empty click no longer reports it', () => {
     const map = fakeMap();
     const r = fakeRenderer({ '10,20': locHit });

@@ -69,6 +69,9 @@ export class FlowInteraction {
 
   hideTooltip() { if (this.tooltip) this.tooltip.hidden = true; }
 
+  /** 호버 강조와 툴팁만 정리한다 (예: 내보내기 캡처 직전) — 선택 상태는 건드리지 않는다 */
+  clearHover() { this._clearHover(); }
+
   /**
    * 호버 강조·툴팁을 정리한다 (다른 도구 활성화, 포인터가 지도를 벗어남, detach 시 사용).
    * 커서는 FlowInteraction 이 이전에 pointer 로 바꿔 둔 경우에만 되돌린다 —
