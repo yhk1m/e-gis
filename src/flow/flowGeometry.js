@@ -9,9 +9,12 @@
  * 진행 방향의 오른쪽으로 굽혀 A→B 와 B→A 가 서로 반대편으로 갈라진다.
  * @param {[number,number]} p0
  * @param {[number,number]} p1
- * @param {{ bend?: number, samples?: number }} [o]  bend = 현 길이 대비 굽힘 비율
+ * @param {{ bend?: number, samples?: number }} [o]  bend = 제어점 오프셋 비율(현 길이 대비).
+ *   실제 곡선이 드러내는 정점 처짐(sag)은 이 값의 절반이다 — 예: bend=0.2, len=100 → sag ≈ 10.
  */
 export function curvePoints(p0, p1, { bend = 0.2, samples = 24 } = {}) {
+  // samples 는 정수 ≥1 로 고정 — 0/음수는 NaN(0으로 나눔)을, 소수는 p1 못 미쳐 끝나는 것을 막는다
+  const n = Math.max(1, Math.round(samples));
   const dx = p1[0] - p0[0];
   const dy = p1[1] - p0[1];
   const len = Math.hypot(dx, dy);
@@ -20,8 +23,8 @@ export function curvePoints(p0, p1, { bend = 0.2, samples = 24 } = {}) {
   const cx = (p0[0] + p1[0]) / 2 + (-dy / len) * bend * len;
   const cy = (p0[1] + p1[1]) / 2 + (dx / len) * bend * len;
   const pts = [];
-  for (let i = 0; i <= samples; i++) {
-    const t = i / samples;
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
     const u = 1 - t;
     pts.push([
       u * u * p0[0] + 2 * u * t * cx + t * t * p1[0],
@@ -33,13 +36,13 @@ export function curvePoints(p0, p1, { bend = 0.2, samples = 24 } = {}) {
 
 /**
  * 폴리라인을 따라 폭이 w0(출발) → w1(도착) 로 변하는 닫힌 다각형.
- * 왼쪽 변을 앞으로, 오른쪽 변을 뒤로 이어 fill 한 번으로 그린다.
+ * 바깥쪽(진행 방향의 오른쪽) 변을 앞으로, 안쪽(왼쪽) 변을 뒤로 이어 fill 한 번으로 그린다.
  */
 export function taperOutline(points, w0, w1) {
   const n = points.length;
   if (n < 2) return [];
-  const left = [];
-  const right = [];
+  const outer = [];
+  const inner = [];
   for (let i = 0; i < n; i++) {
     const prev = points[Math.max(0, i - 1)];
     const next = points[Math.min(n - 1, i + 1)];
@@ -48,10 +51,10 @@ export function taperOutline(points, w0, w1) {
     const l = Math.hypot(nx, ny) || 1;
     nx /= l; ny /= l;
     const half = (w0 + (w1 - w0) * (i / (n - 1))) / 2;
-    left.push([points[i][0] + nx * half, points[i][1] + ny * half]);
-    right.push([points[i][0] - nx * half, points[i][1] - ny * half]);
+    outer.push([points[i][0] + nx * half, points[i][1] + ny * half]);
+    inner.push([points[i][0] - nx * half, points[i][1] - ny * half]);
   }
-  return left.concat(right.reverse());
+  return outer.concat(inner.reverse());
 }
 
 /** 점에서 폴리라인까지의 최단 거리 (테스트·검증용) */
