@@ -19,7 +19,7 @@ import { publicDataTab } from './publicDataTab.js';
 import { flowPanel } from '../panels/FlowPanel.js';
 
 const TAB_FOOTER_TEXT = {
-  basic: '점·선·면·속성 자료는 클릭으로, 래스터는 골라서 한꺼번에 불러옵니다',
+  basic: '점·선·면·흐름·속성 자료는 클릭으로, 래스터는 골라서 한꺼번에 불러옵니다',
   public: '공공데이터포털의 데이터를 실시간으로 불러옵니다',
   sheets: '공개된 구글 스프레드시트 링크로 속성·좌표 데이터를 가져옵니다'
 };
@@ -543,7 +543,10 @@ class BuiltinDataDialog {
       } else if (result.type === 'flow') {
         // 흐름 데이터 → 흐름도 패널로 (위치 매칭·스타일은 거기서)
         this.close();
-        flowPanel.showWithTable({ headers: result.headers, data: result.data, fileName: result.fileName, dataset: result.dataset });
+        flowPanel.showWithTable({
+          headers: result.headers, data: result.data, fileName: result.fileName, dataset: result.dataset,
+          practiceKey: `${typeId}|${datasetId}` // 패널의 실습 데이터 드롭다운이 고른 자료를 보여 주도록
+        });
       } else {
         loadingEl.innerHTML = '<span style="color: var(--success-color, #10b981);">✓ 레이어 추가 완료!</span>';
         setTimeout(() => this.close(), 600);

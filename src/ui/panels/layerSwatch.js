@@ -52,7 +52,7 @@ function shapeOf(geometryType) {
 export function swatchSpec(layerInfo, lineDash) {
   const color = layerInfo.color || '#808080';
   if (layerInfo.type === 'flow') {
-    // 흐름 레이어: 캔버스 렌더러라 fillColor 등이 없다. 램프 색 사각형에 얇은 테두리만
+    // 흐름 레이어: 캔버스 렌더러라 fillColor 등이 없다. 램프 색으로 꽉 채운 사각형, 테두리 없음
     const fill = flowRampColor(layerInfo);
     return { shape: 'square', fill, stroke: fill, fillOpacity: 1, strokeOpacity: 1, strokeWidth: 0, dash: null, radius: 6 };
   }

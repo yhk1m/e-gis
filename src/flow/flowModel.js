@@ -227,6 +227,11 @@ export function aggregateTotals(dataset, { includeSelf = false } = {}) {
   return totals;
 }
 
+/** 그릴 수 있는 흐름 수 — 자기 흐름(출발 = 도착)은 선으로 그리지 않으므로 뺀다 (패널의 흐름 수 표시·만들기 가능 판정) */
+export function drawableFlowCount(dataset) {
+  return dataset.flows.filter((f) => f.origin !== f.dest).length;
+}
+
 /** 그릴 흐름: 자기 흐름 제외, 작은 것부터(큰 것이 위에 그려지도록), 상위 N개 옵션 */
 export function visibleFlows(dataset, { topN = 0 } = {}) {
   let flows = dataset.flows.filter((f) => f.origin !== f.dest).sort((a, b) => a.count - b.count);

@@ -92,24 +92,6 @@ class FlowTool {
     eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
   }
 
-  /** 데이터·이름을 바꿔 다시 만들 때 (패널의 "적용") */
-  replaceData(layerId, dataset) {
-    const renderer = this.renderers.get(layerId);
-    const info = layerManager.getLayer(layerId);
-    if (!renderer || !info) return;
-    renderer.setData(dataset);
-    info._flowConfig.dataset = dataset;
-    info._flowConfig.selectedIds = [];
-    if (this.interaction) this.interaction.setSelection(renderer, []);
-    else renderer.setHighlight([]);
-  }
-
-  getRenderer(layerId) { return this.renderers.get(layerId) || null; }
-
-  getFlowLayers() {
-    return layerManager.getAllLayers().filter((l) => l.type === 'flow');
-  }
-
   /** 내보내기 캡처 동안 점선을 실선으로 멈춘다. 중첩 호출은 깊이로 세어 안쪽 thaw 가 먼저 풀지 않게 한다 */
   freezeAnimations() {
     this._freezeDepth++;

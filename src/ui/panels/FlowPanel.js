@@ -14,7 +14,7 @@ import { builtinDataManager } from '../../core/BuiltinDataManager.js';
 import { readFlowFile, locationsFromTable } from '../../loaders/FlowLoader.js';
 import { listCandidateLayers, layerFieldNames, guessNameField, layerLocations } from '../../flow/layerLocations.js';
 import {
-  guessColumns, detectTableShape, parseLongTable, parseMatrixTable, buildDataset, COLOR_RAMPS
+  guessColumns, detectTableShape, parseLongTable, parseMatrixTable, buildDataset, drawableFlowCount, COLOR_RAMPS
 } from '../../flow/flowModel.js';
 import { DEFAULT_FLOW_STYLE } from '../../flow/FlowRenderer.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
@@ -40,18 +40,27 @@ class FlowPanel {
     this.nameField = '';
     this.codeField = '';
     this.locationTable = null;  // 위치 표 후보
-    this.candidates = [];       // 마지막 _rebuild 에서 구한 위치 후보 (대표점 계산을 되풀이하지 않도록)
+    this.candidates = [];       // 마지막 _rebuild 에서 쓴 위치 후보 (손 매칭 드롭다운·제외 수 표시용)
+    this._candidateCache = null; // { key, list } — 기준 레이어·열이 같으면 대표점을 다시 계산하지 않는다
     this.manualMap = {};
     this.dataset = null;
     this.style = { ...DEFAULT_FLOW_STYLE };
     this.editingLayerId = null;
     this._styleBefore = null;   // 편집 모드에서 취소하면 되돌릴 스타일
-    this._basemapBefore = null; // 어두운 배경을 켜기 전 배경지도
+    this._basemapBefore = null; // 어두운 배경을 켜기 전 배경지도 (끄면 여기로 돌아간다)
+    this._basemapAtOpen = null; // 편집 모드를 연 시점의 배경지도 (취소하면 여기로 돌아간다)
+    this._basemapToggled = false;
     this.title = '';
+  }
+
+  /** 만들기 모드: 지금 배경지도가 어두우면 어두운 램프로 시작한다 (체크박스와 스타일이 어긋나지 않도록) */
+  _syncDarkModeToBasemap() {
+    this.style.darkMode = mapManager.getBasemap() === 'ESRI_DARK';
   }
 
   show() {
     this._reset();
+    this._syncDarkModeToBasemap();
     this.render();
     // 실습 데이터 카탈로그는 내장 데이터 대화상자를 열어야 읽히므로, 여기서도 미리 읽어 드롭다운을 채운다
     // (한 번 읽은 뒤에는 바로 끝난다)
@@ -60,16 +69,18 @@ class FlowPanel {
       .catch(() => {});
   }
 
-  /** 실습 데이터 탭에서: 표를 바로 채워 연다 */
-  showWithTable({ headers, data, fileName, dataset }) {
+  /** 실습 데이터 탭에서: 표를 바로 채워 연다. practiceKey('groupId|id')가 오면 드롭다운에도 그 선택을 보여 준다 */
+  showWithTable({ headers, data, fileName, dataset, practiceKey = '' }) {
     this._reset();
+    this._syncDarkModeToBasemap();
     this.table = { headers, data, fileName: (dataset && dataset.name) || fileName };
+    this.practiceKey = practiceKey;
     this.title = this.table.fileName;
     this._parseTable();
     this.render();
   }
 
-  /** 레이어 목록의 스타일 편집에서: 기존 레이어 스타일만 고친다 (취소하면 열기 전 스타일로 되돌린다) */
+  /** 레이어 목록의 스타일 편집에서: 기존 레이어 스타일만 고친다 (취소하면 열기 전 스타일·배경지도로 되돌린다) */
   showForLayer(layerId) {
     const info = layerManager.getLayer(layerId);
     if (!info || !info._flowConfig) return;
@@ -78,6 +89,7 @@ class FlowPanel {
     this.dataset = info._flowConfig.dataset;
     this.style = { ...info._flowConfig.style };
     this._styleBefore = { ...info._flowConfig.style };
+    this._basemapAtOpen = mapManager.getBasemap();
     this.title = info.name;
     this.render();
   }
@@ -90,10 +102,13 @@ class FlowPanel {
     }
   }
 
-  /** 취소·닫기·Esc·바깥 클릭: 편집 중이면 스타일을 열기 전으로 되돌리고 닫는다 */
+  /** 취소·닫기·Esc·바깥 클릭: 편집 중이면 스타일(과 여기서 바꾼 배경지도)을 열기 전으로 되돌리고 닫는다 */
   _cancel() {
     if (this.editingLayerId && this._styleBefore) {
       flowTool.updateStyle(this.editingLayerId, this._styleBefore);
+      if (this._basemapToggled && this._basemapAtOpen && mapManager.getBasemap() !== this._basemapAtOpen) {
+        mapManager.setBasemap(this._basemapAtOpen);
+      }
     }
     this.close();
   }
@@ -148,7 +163,7 @@ class FlowPanel {
         </div>
         <div class="form-group">
           <label for="flow-file">또는 파일 (CSV / XLSX)</label>
-          <input type="file" id="flow-file" accept=".csv,.txt,.xlsx,.xls">
+          <input type="file" id="flow-file" accept=".csv,.txt,.xlsx,.xlsm,.xls">
         </div>
         ${t ? `
           <div class="flow-loaded">불러온 표: ${escapeHtml(t.fileName)} — ${t.data.length}행 × ${t.headers.length}열</div>
@@ -203,7 +218,7 @@ class FlowPanel {
         ` : `
           <div class="form-group">
             <label for="flow-loc-file">위치 표</label>
-            <input type="file" id="flow-loc-file" accept=".csv,.txt,.xlsx,.xls">
+            <input type="file" id="flow-loc-file" accept=".csv,.txt,.xlsx,.xlsm,.xls">
             ${this.locationTable ? `<div class="flow-loaded">위치 ${this.locationTable.length}개</div>` : ''}
           </div>
         `}
@@ -216,7 +231,8 @@ class FlowPanel {
     if (!ds) return editing ? '' : '<div class="flow-section flow-muted">데이터와 위치를 고르면 매칭 결과가 여기에 나옵니다.</div>';
     const unmatched = ds.meta.unmatched || [];
     const options = this.candidates.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
-    const selfCount = ds.flows.filter((f) => f.origin === f.dest).length;
+    const drawable = drawableFlowCount(ds);
+    const selfCount = ds.flows.length - drawable;
     const shown = unmatched.slice(0, 30);
     // 스타일 편집 모드에는 원본 흐름 쌍이 없어 다시 매칭할 수 없다 — 이름만 보여 준다
     const unmatchedRows = shown.map((u) => `
@@ -227,8 +243,8 @@ class FlowPanel {
     return `
       <div class="flow-section">
         <div class="flow-section-title">3. 매칭 결과</div>
-        <div>위치 <b>${ds.locations.length}</b>개 · 흐름 <b>${ds.flows.length - selfCount}</b>개${selfCount ? ` (자기 흐름 ${selfCount}개 별도)` : ''}${ds.meta.skipped ? ` · 건너뛴 행 ${ds.meta.skipped}` : ''}</div>
-        ${ds.locations.length < 2 || ds.flows.length - selfCount === 0 ? '<div class="flow-warn">흐름을 그릴 수 없습니다 — 위치가 2개 이상, 흐름이 1개 이상 필요합니다.</div>' : ''}
+        <div>위치 <b>${ds.locations.length}</b>개 · 흐름 <b>${drawable}</b>개${selfCount ? ` (자기 흐름 ${selfCount}개 별도)` : ''}${ds.meta.skipped ? ` · 건너뛴 행 ${ds.meta.skipped}` : ''}</div>
+        ${ds.locations.length < 2 || drawable === 0 ? '<div class="flow-warn">흐름을 그릴 수 없습니다 — 위치가 2개 이상, 흐름이 1개 이상 필요합니다.</div>' : ''}
         ${unmatched.length ? `
           <div class="flow-warn">매칭 안 됨 ${unmatched.length}건${editing ? '' : ' — 아래에서 손으로 짝지을 수 있습니다'}</div>
           <div class="flow-unmatched">
@@ -265,7 +281,7 @@ class FlowPanel {
           <label><input type="checkbox" id="flow-labels" ${s.showLabels ? 'checked' : ''}> 라벨</label>
           <label><input type="checkbox" id="flow-self" ${s.includeSelf ? 'checked' : ''}> 자기 흐름을 집계에 포함</label>
           <label>상위 <input type="number" id="flow-topn" min="0" value="${s.topN}" style="width:60px"> 개만 (0 = 전부)</label>
-          <label><input type="checkbox" id="flow-dark" ${(s.darkMode || mapManager.getBasemap() === 'ESRI_DARK') ? 'checked' : ''}> 어두운 배경지도</label>
+          <label><input type="checkbox" id="flow-dark" ${s.darkMode ? 'checked' : ''}> 어두운 배경지도</label>
         </div>
         ${tooMany ? `<div class="flow-muted">흐름이 ${FLOW_ANIMATE_LIMIT.toLocaleString('ko-KR')}개를 넘어 애니메이션은 꺼진 채 시작합니다 (스타일에서 켜면 돕니다)</div>` : ''}
       </div>`;
@@ -380,6 +396,7 @@ class FlowPanel {
     // CARTO 타일은 API 키 없이는 워터마크가 찍히므로 어두운 배경은 Esri 다크 그레이(ESRI_DARK)를 쓴다.
     // 끄면 켜기 전에 쓰던 배경지도로 돌아간다.
     $('flow-dark').addEventListener('change', (e) => {
+      this._basemapToggled = true;
       if (e.target.checked) {
         const current = mapManager.getBasemap();
         if (current !== 'ESRI_DARK') this._basemapBefore = current;
@@ -412,7 +429,13 @@ class FlowPanel {
     if (this.locationSource === 'table') return this.locationTable || [];
     const info = this.baseLayerId ? layerManager.getLayer(this.baseLayerId) : null;
     if (!info || !this.nameField) return [];
-    return layerLocations(info, this.nameField, this.codeField || null);
+    // 대표점 계산은 피처마다 turf 를 돌려 시군구·읍면동 레이어에서 무겁다 — 손 매칭·열 변경으로
+    // _rebuild 가 거듭 불려도 기준 레이어·이름 열·코드 열이 같으면 지난 결과를 그대로 쓴다
+    const key = JSON.stringify([this.baseLayerId, this.nameField, this.codeField]);
+    if (!this._candidateCache || this._candidateCache.key !== key) {
+      this._candidateCache = { key, list: layerLocations(info, this.nameField, this.codeField || null) };
+    }
+    return this._candidateCache.list;
   }
 
   /** 상태에서 데이터셋을 다시 만들고 화면을 다시 그린다 */
@@ -431,8 +454,7 @@ class FlowPanel {
     if (this.editingLayerId) return true;
     const ds = this.dataset;
     if (!ds) return false;
-    const drawable = ds.flows.filter((f) => f.origin !== f.dest).length;
-    return ds.locations.length >= 2 && drawable > 0;
+    return ds.locations.length >= 2 && drawableFlowCount(ds) > 0;
   }
 
   _create() {
@@ -440,9 +462,8 @@ class FlowPanel {
     if (!this._canCreate()) return;
     const name = (this.title || '흐름도').trim() || '흐름도';
     this.dataset.meta.title = name;
-    const style = { ...this.style };
-    if (this._tooManyToAnimate()) style.animate = false;
-    flowTool.createFlowLayer({ name, dataset: this.dataset, style });
+    // 흐름이 FLOW_ANIMATE_LIMIT 을 넘으면 createFlowLayer 가 애니메이션을 끈다 — 여기서 겹쳐 끄지 않는다
+    flowTool.createFlowLayer({ name, dataset: this.dataset, style: { ...this.style } });
     this.close();
   }
 }

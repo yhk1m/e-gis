@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   guessColumns, detectTableShape, parseLongTable, parseMatrixTable,
-  normalizeName, buildDataset, aggregateTotals, visibleFlows,
+  normalizeName, buildDataset, aggregateTotals, visibleFlows, drawableFlowCount,
   rampColor, flowStrength, flowWidth, locationRadius, COLOR_RAMPS, lightenHex, darkModeStops
 } from './flowModel.js';
 
@@ -214,7 +214,7 @@ describe('buildDataset — 후보 중복·모호 매칭', () => {
   });
 });
 
-describe('aggregateTotals / visibleFlows', () => {
+describe('aggregateTotals / visibleFlows / drawableFlowCount', () => {
   const ds = {
     locations: candidates.map(({ id, name, lon, lat }) => ({ id, name, lon, lat })),
     flows: [
@@ -235,6 +235,11 @@ describe('aggregateTotals / visibleFlows', () => {
   it('표시용 흐름은 자기 흐름을 빼고 작은 것부터, 상위 N개 옵션', () => {
     expect(visibleFlows(ds).map((f) => f.count)).toEqual([3, 4, 15]);
     expect(visibleFlows(ds, { topN: 2 }).map((f) => f.count)).toEqual([4, 15]);
+  });
+  it('그릴 수 있는 흐름 수는 자기 흐름을 뺀 값', () => {
+    expect(drawableFlowCount(ds)).toBe(3);
+    expect(drawableFlowCount({ locations: [], flows: [], meta: {} })).toBe(0);
+    expect(drawableFlowCount({ locations: [], flows: [{ origin: '11', dest: '11', count: 9 }], meta: {} })).toBe(0);
   });
 });
 

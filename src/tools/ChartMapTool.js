@@ -174,7 +174,12 @@ class ChartMapTool {
       throw new Error('레이어를 찾을 수 없습니다.');
     }
 
-    const features = layerInfo.olLayer.getSource().getFeatures();
+    // 흐름·래스터처럼 벡터 소스가 없는 레이어는 도형표현도를 만들 수 없다
+    const sourceOfLayer = layerInfo.source || (layerInfo.olLayer.getSource && layerInfo.olLayer.getSource());
+    if (!sourceOfLayer || typeof sourceOfLayer.getFeatures !== 'function') {
+      throw new Error('벡터 레이어가 아닙니다.');
+    }
+    const features = sourceOfLayer.getFeatures();
     if (features.length === 0) {
       throw new Error('레이어에 피처가 없습니다.');
     }
@@ -247,7 +252,9 @@ class ChartMapTool {
     const derivedInfo = layerManager.getLayer(derivedLayerId);
     if (!derivedInfo || !derivedInfo.source) return 0;
 
-    const features = sourceInfo.olLayer.getSource().getFeatures();
+    const sourceOfLayer = sourceInfo.source || (sourceInfo.olLayer.getSource && sourceInfo.olLayer.getSource());
+    if (!sourceOfLayer || typeof sourceOfLayer.getFeatures !== 'function') return 0;
+    const features = sourceOfLayer.getFeatures();
 
     // 기존 범례 정리 (재렌더 대비 — 차트 피처는 아래에서 source.clear로 교체)
     this.cleanupOverlays(derivedLayerId);
@@ -812,11 +819,11 @@ class ChartMapTool {
   }
 
   /**
-   * 폴리곤/포인트 레이어 목록 가져오기
+   * 폴리곤/포인트 레이어 목록 가져오기 — 벡터 소스가 있는 레이어만 (흐름·래스터 제외)
    */
   getCompatibleLayers() {
     return layerManager.getAllLayers().filter(layer => {
-      return layer.geometryType && layer.type !== 'heatmap' && layer.type !== 'chartmap';
+      return layer.geometryType && layer.source && layer.type !== 'heatmap' && layer.type !== 'chartmap';
     });
   }
 
