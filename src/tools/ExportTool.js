@@ -45,19 +45,17 @@ class ExportTool {
       if (map) map.renderSync();
     }
 
-    // 지도 렌더링 완료 대기
-    await this.waitForMapRender();
     document.body.classList.add('exporting');
 
     try {
-      // html2canvas로 지도 캡처
-      const mapCanvas = await html2canvas(mapElement, {
+      // html2canvas로 지도 캡처 (흐름 애니메이션은 캡처 동안 실선으로 멈춘다)
+      const mapCanvas = await this.withFrozenFlows(() => html2canvas(mapElement, {
         useCORS: true,
         allowTaint: true,
         scale: scale,
         logging: false,
         backgroundColor: includeBasemap ? '#ffffff' : null
-      });
+      }));
 
       // 오버레이 그리기
       const finalCanvas = this.drawOverlays(mapCanvas, overlays, scale);
@@ -83,7 +81,6 @@ class ExportTool {
       throw error;
     } finally {
       document.body.classList.remove('exporting');
-      flowTool.thawAnimations();
       if (restoreBasemap) {
         baseLayer.setVisible(true);
         if (map) map.renderSync();
@@ -287,20 +284,18 @@ class ExportTool {
       if (map) map.renderSync();
     }
 
-    await this.waitForMapRender();
     document.body.classList.add('exporting');
 
     try {
-      return await html2canvas(mapElement, {
+      return await this.withFrozenFlows(() => html2canvas(mapElement, {
         useCORS: true,
         allowTaint: true,
         scale,
         logging: false,
         backgroundColor: includeBasemap ? '#ffffff' : null
-      });
+      }));
     } finally {
       document.body.classList.remove('exporting');
-      flowTool.thawAnimations();
       if (restoreBasemap) {
         baseLayer.setVisible(true);
         if (map) map.renderSync();
@@ -833,16 +828,14 @@ class ExportTool {
       map.renderSync();
     }
 
-    await this.waitForMapRender();
-
     try {
-      const canvas = await html2canvas(mapElement, {
+      const canvas = await this.withFrozenFlows(() => html2canvas(mapElement, {
         useCORS: true,
         allowTaint: true,
         scale: scale,
         logging: false,
         backgroundColor: noBasemap ? null : '#ffffff'
-      });
+      }));
 
       hiddenLayers.forEach(layer => layer.setVisible(true));
       if (hiddenLayers.length > 0 && map) {
@@ -867,8 +860,6 @@ class ExportTool {
     } catch (error) {
       hiddenLayers.forEach(layer => layer.setVisible(true));
       throw error;
-    } finally {
-      flowTool.thawAnimations(); // waitForMapRender 가 멈춘 흐름 애니메이션을 여기서도 되살린다
     }
   }
 
@@ -878,7 +869,6 @@ class ExportTool {
   waitForMapRender() {
     return new Promise((resolve) => {
       const map = mapManager.getMap();
-      flowTool.freezeAnimations(); // 흐름 점선을 실선으로 멈춰 PNG 에 조각이 찍히지 않게
       if (map) {
         map.once('rendercomplete', resolve);
         map.renderSync();
@@ -886,6 +876,17 @@ class ExportTool {
         resolve();
       }
     });
+  }
+
+  /**
+   * 흐름 애니메이션을 실선으로 멈추고 한 프레임 그린 뒤 fn(캡처)을 실행한다.
+   * 점선 조각이 PNG 에 찍히지 않게 하려는 것이고, fn 이 던져도 finally 로 반드시 되살린다.
+   * @param {() => Promise<any>} fn
+   */
+  async withFrozenFlows(fn) {
+    flowTool.freezeAnimations();
+    try { await this.waitForMapRender(); return await fn(); }
+    finally { flowTool.thawAnimations(); }
   }
 
   /**

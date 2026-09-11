@@ -99,6 +99,38 @@ describe('swatchSpec — 주제도·래스터는 단색 사각형', () => {
   });
 });
 
+describe('swatchSpec — 흐름 레이어는 램프 가운데 색 사각형', () => {
+  /** FlowTool.createFlowLayer가 만드는 layerInfo 모양 (벡터 스타일 필드가 없다) */
+  const flowLayer = (ramp) => ({
+    type: 'flow', geometryType: 'Flow', color: '#e53935',
+    _flowConfig: ramp ? { style: { ramp } } : undefined
+  });
+
+  it('사각형이고 채움은 램프 가운데 색이다 (레이어 color 가 아니다)', () => {
+    const spec = swatchSpec(flowLayer('blue'));
+    expect(spec.shape).toBe('square');
+    expect(spec.fill).toBe('#2563eb'); // COLOR_RAMPS.blue[2]
+    expect(spec.fill).not.toBe('#e53935');
+  });
+
+  it('램프를 바꾸면 색이 따라간다', () => {
+    expect(swatchSpec(flowLayer('orange')).fill).toBe('#ea580c');
+    expect(swatchSpec(flowLayer('purple')).fill).toBe('#9333ea');
+  });
+
+  it('설정이 아직 없거나 램프 이름이 낯설면 teal 로 그린다', () => {
+    expect(swatchSpec(flowLayer(null)).fill).toBe('#2c9c92'); // COLOR_RAMPS.teal[2]
+    expect(swatchSpec(flowLayer('nope')).fill).toBe('#2c9c92');
+  });
+
+  it('SVG 는 면 하나이고 테두리 선을 그리지 않는다', () => {
+    const html = swatchHTML(swatchSpec(flowLayer('teal')));
+    expect(html).toContain('<rect');
+    expect(html).toContain('fill="#2c9c92"');
+    expect(html).not.toContain('stroke=');
+  });
+});
+
 describe('swatchHTML', () => {
   it('포인트는 원을 그린다', () => {
     const html = swatchHTML(swatchSpec(layer('Point')));

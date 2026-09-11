@@ -205,6 +205,10 @@ describe('buildLegendModel — 범례로 요약할 수 없는 레이어', () => 
     expect(buildLegendModel(makeLayer({ type: 'chartmap', _chartMapConfig: {} }))).toBeNull();
   });
 
+  it('흐름도는 제외한다 (램프 색이라 기호 하나로 요약할 수 없다)', () => {
+    expect(buildLegendModel(makeLayer({ type: 'flow', geometryType: 'Flow', _flowConfig: { style: { ramp: 'teal' } } }))).toBeNull();
+  });
+
   it('레이어가 없으면 null을 낸다', () => {
     expect(buildLegendModel(null)).toBeNull();
   });

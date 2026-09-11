@@ -138,6 +138,7 @@ class SelectTool {
         if (!olLayer) return;
         if (olLayer.getProperties().type === 'base') return;
         if (!olLayer.getVisible()) return;
+        if (!layerInfo.source) return; // 흐름·래스터 레이어는 벡터 source 가 없다
         layerInfo.source.forEachFeatureIntersectingExtent(extent, (feature) => {
           if (!existing.includes(feature)) {
             this.selectedFeatures.push(feature);
@@ -256,6 +257,7 @@ class SelectTool {
       // 수정할 피처가 속한 레이어 찾기
       const layers = layerManager.getAllLayers();
       for (const layerInfo of layers) {
+        if (!layerInfo.source) continue; // 흐름·래스터 레이어는 벡터 source 가 없다
         if (layerInfo.source.hasFeature(feature)) {
           eventBus.emit(Events.FEATURE_MODIFY_START, {
             feature,
@@ -319,6 +321,7 @@ class SelectTool {
 
       for (const layerInfo of layers) {
         const source = layerInfo.source;
+        if (!source) continue; // 흐름·래스터 레이어는 벡터 source 가 없다
         if (source.hasFeature(feature)) {
           source.removeFeature(feature);
 
@@ -451,7 +454,7 @@ class SelectTool {
     }
 
     const layerInfo = layerManager.getLayer(selectedLayerId);
-    if (!layerInfo) return;
+    if (!layerInfo || !layerInfo.source) return; // 흐름·래스터 레이어는 선택할 피처가 없다
 
     // 선택 도구 활성화
     if (!this.isActive) {

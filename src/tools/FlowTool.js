@@ -18,6 +18,7 @@ class FlowTool {
   constructor() {
     this.renderers = new Map(); // layerId → FlowRenderer
     this.interaction = null;
+    this._freezeDepth = 0; // freeze/thaw 짝이 겹쳐도 마지막 thaw 에서만 되살린다
     eventBus.on(Events.LAYER_REMOVED, ({ layerId, layer }) => {
       const id = layerId || (layer && layer.id);
       if (id) this._forget(id);
@@ -57,6 +58,9 @@ class FlowTool {
     const info = layerManager.getLayer(layerId);
     info._flowConfig = { dataset, style: fullStyle, selectedIds: [...selectedIds] };
     this.renderers.set(layerId, renderer);
+    // addLayer 가 LAYER_ADDED 를 이미 쏜 뒤라 그때 그려진 레이어 목록에는 _flowConfig 가 없었다
+    // (스와치 램프 색 등) — 설정을 심고 나서 한 번 더 알린다. 자동 저장은 디바운스라 겹치지 않는다
+    eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
 
     this._ensureInteraction();
     if (selectedIds.length) {
@@ -106,8 +110,17 @@ class FlowTool {
     return layerManager.getAllLayers().filter((l) => l.type === 'flow');
   }
 
-  freezeAnimations() { for (const r of this.renderers.values()) r.freeze(true); if (this.interaction) this.interaction.clearHover(); }
-  thawAnimations() { for (const r of this.renderers.values()) r.freeze(false); }
+  /** 내보내기 캡처 동안 점선을 실선으로 멈춘다. 중첩 호출은 깊이로 세어 안쪽 thaw 가 먼저 풀지 않게 한다 */
+  freezeAnimations() {
+    this._freezeDepth++;
+    for (const r of this.renderers.values()) r.freeze(true);
+    if (this.interaction) this.interaction.clearHover();
+  }
+  thawAnimations() {
+    this._freezeDepth = Math.max(0, this._freezeDepth - 1);
+    if (this._freezeDepth > 0) return;
+    for (const r of this.renderers.values()) r.freeze(false);
+  }
 
   // ---- 내부 -----------------------------------------------------------------
 

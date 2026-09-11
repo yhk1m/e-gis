@@ -260,8 +260,13 @@ export class ProjectManager {
           continue;
         }
 
-        // 흐름 레이어 복원 — 피처 없이 flowConfig 로 렌더러를 다시 만든다
-        if (layerData.type === 'flow' && layerData.flowConfig) {
+        // 흐름 레이어 복원 — 피처 없이 flowConfig 로 렌더러를 다시 만든다.
+        // 설정이 빠진 기록은 벡터 경로로 흘러들지 않게 여기서 건너뛴다
+        if (layerData.type === 'flow') {
+          if (!layerData.flowConfig) {
+            console.warn(`흐름 레이어 "${layerData.name}"에 flowConfig 가 없어 건너뜁니다.`);
+            continue;
+          }
           flowTool.restoreFlow(layerData);
           console.log(`흐름 레이어 "${layerData.name}" 복원됨`);
           continue;

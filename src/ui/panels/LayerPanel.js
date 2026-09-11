@@ -10,6 +10,7 @@ import { rasterAnalysisTool } from '../../tools/RasterAnalysisTool.js';
 import { cartogramTool } from '../../tools/CartogramTool.js';
 import { saveTextAs } from '../../utils/saveFile.js';
 import { swatchSpec, swatchHTML } from './layerSwatch.js';
+import { flowPanel } from './FlowPanel.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 export class LayerPanel {
@@ -179,14 +180,11 @@ export class LayerPanel {
 
   /**
    * 목록에 괄호로 붙는 개수. 흐름 레이어는 피처가 없어 featureCount 가 0 이라
-   * 실제로 그려지는 흐름(출발지≠도착지) 수를 센다.
+   * 렌더러가 실제로 그리는 흐름 수(FlowRenderer.getFlowCount)를 쓴다.
    */
   layerCount(layer) {
     if (layer.type !== 'flow') return layer.featureCount;
-    // _flowConfig 는 addLayer(→LAYER_ADDED→render) 다음에 심기므로 첫 렌더에서는
-    // 아직 없다 — 그때는 렌더러(olLayer)가 이미 들고 있는 dataset 을 읽는다
-    const ds = (layer._flowConfig && layer._flowConfig.dataset) || (layer.olLayer && layer.olLayer.dataset);
-    return ds ? ds.flows.filter(f => f.origin !== f.dest).length : 0;
+    return typeof layer.olLayer?.getFlowCount === 'function' ? layer.olLayer.getFlowCount() : 0;
   }
 
   /**
@@ -405,7 +403,7 @@ export class LayerPanel {
         <div class="context-menu-item" data-action="rename">이름 변경</div>
         ${isVector ? '<div class="context-menu-item" data-action="duplicate">레이어 복사</div>' : ''}
         ${isVector ? '<div class="context-menu-item" data-action="export">내보내기 (GeoJSON)</div>' : ''}
-        <div class="context-menu-item" data-action="table">속성 테이블</div>
+        ${info && info.source ? '<div class="context-menu-item" data-action="table">속성 테이블</div>' : ''}
         <div class="context-menu-item" data-action="color">${styleLabel}</div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item danger" data-action="remove">삭제</div>
@@ -631,7 +629,7 @@ export class LayerPanel {
 
     // 흐름 레이어는 색상 팝업이 아니라 흐름도 패널에서 스타일을 고친다
     if (layer.type === 'flow') {
-      import('./FlowPanel.js').then(({ flowPanel }) => flowPanel.showForLayer(layerId));
+      flowPanel.showForLayer(layerId);
       return;
     }
 
