@@ -116,6 +116,11 @@ describe('FlowRenderer', () => {
     r.setData(datasetWithDangling);
     expect(() => r.render(frameState())).not.toThrow();
     expect(r.getFlowCount()).toBe(2); // a→z(존재하지 않는 위치)는 제외
+    const totals = r.getTotals();
+    expect(totals.has('z')).toBe(false); // 유령 위치가 집계에 섞이지 않는다
+    // a→z(99) 는 outflow 에 더해지지 않는다: a 는 a→b(10) 만, b 는 b→a(4) 만 반영
+    expect(totals.get('a')).toMatchObject({ outflow: 10, inflow: 4 });
+    expect(totals.get('b')).toMatchObject({ outflow: 4, inflow: 10 });
   });
 
   it('히트 id 는 24비트 전체를 쓴다 (255 를 넘는 id 도 정확히 복원)', async () => {

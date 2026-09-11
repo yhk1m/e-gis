@@ -162,9 +162,11 @@ export class FlowRenderer extends Layer {
     const ds = this.dataset;
     if (!ds) { this._derived = null; this._paths = null; return; }
     const locById = new Map(ds.locations.map((l) => [l.id, l]));
-    // locations 에 없는 위치를 가리키는 흐름(불일치 데이터)은 render() 를 죽이지 않도록 여기서 걸러낸다
-    const flows = visibleFlows(ds, this.style).filter((f) => locById.has(f.origin) && locById.has(f.dest));
-    const totals = aggregateTotals(ds, this.style);
+    // locations 에 없는 위치를 가리키는 흐름(불일치 데이터)은 render() 를 죽이지 않도록,
+    // 또 집계에 유령 위치가 섞이지 않도록 한 번만 걸러내 흐름 선별·집계 모두에 먹인다
+    const consistent = ds.flows.filter((f) => locById.has(f.origin) && locById.has(f.dest));
+    const flows = visibleFlows({ ...ds, flows: consistent }, this.style);
+    const totals = aggregateTotals({ ...ds, flows: consistent }, this.style);
     const maxCount = flows.reduce((m, f) => Math.max(m, f.count), 0);
     let maxTotal = 0;
     for (const t of totals.values()) maxTotal = Math.max(maxTotal, t.inflow + t.outflow);
@@ -325,7 +327,9 @@ export class FlowRenderer extends Layer {
   _redraw() { if (this._paths) this._draw(); }
 
   _syncAnimation() {
-    // 지도에서 떨어져 나간 레이어(map === null)는 rAF 를 계속 돌릴 이유가 없다
+    // 지도에서 떨어져 나간 레이어(map === null)는 rAF 를 계속 돌릴 이유가 없다.
+    // getMapInternal() 은 map.addLayer 로 붙은 관리 레이어만 채워진다 — layer.setMap(map) 로 붙인
+    // 비관리(unmanaged) 레이어는 렌더링은 되지만 이 루프 조건에서 걸러져 애니메이션은 돌지 않는다.
     const want = !!(this._derived && this.style.animate && !this._frozen && this.getVisible() && this.getMapInternal());
     if (want && !this._raf) this._tick();
     if (!want && this._raf) { cancelAnimationFrame(this._raf); this._raf = null; }
