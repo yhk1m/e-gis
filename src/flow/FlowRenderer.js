@@ -10,7 +10,7 @@
 import Layer from 'ol/layer/Layer';
 import { fromLonLat } from 'ol/proj';
 import { apply as applyTransform } from 'ol/transform';
-import { curvePoints, taperOutline, offsetSegment } from './flowGeometry.js';
+import { curvePoints, taperOutline, offsetSegment, cumulativeLengths, pointAlong } from './flowGeometry.js';
 import {
   COLOR_RAMPS, rampColor, darkModeStops, flowStrength, flowWidth, locationRadius, aggregateTotals, visibleFlows
 } from './flowModel.js';
@@ -23,6 +23,8 @@ export const DEFAULT_FLOW_STYLE = {
   animate: true,
   animSpeed: 1,          // 1 = 초당 약 20px (기본), 슬라이더로 0.3~3배
   curved: false,         // false: 직선(왕복 흐름은 나란히 붙음, flowmap.blue), true: 호
+  arrowHeads: true,      // 선 위에 진행 방향 화살표(＞)를 늘어놓는다 (끄면 점선). 애니메이션이 켜져 있으면 흐른다
+  circleMode: 'net',     // 'net': 순이동 색 원 하나 / 'inout': 유입(초록)·유출(빨강) 비율 파이
   showLocations: true,
   showLabels: true,
   includeSelf: false,    // 자기 흐름을 유입·유출 집계에 넣을지
@@ -34,6 +36,8 @@ export const DEFAULT_FLOW_STYLE = {
 const INFLOW_COLOR = '#22c55e';
 const OUTFLOW_COLOR = '#ef4444';
 const DIM_ALPHA = 0.08;
+const ARROW_SPACING = 26;      // 화살표 간격(px)
+const DASH_COLOR = 'rgba(15,23,42,0.55)'; // 어두운 점선·화살표: 밝은 배경(리본이 중간 톤)에서도 어두운 배경(리본이 밝음)에서도 리본 위에서 읽힌다
 const LABEL_ALL_BELOW_RESOLUTION = 500; // 이보다 확대하면 라벨을 전부 보인다
 const LABEL_TOP_N = 12;
 
@@ -220,12 +224,16 @@ export class FlowRenderer extends Layer {
       outline.closePath();
       const center = new Path2D();
       pts.forEach(([x, y], k) => (k === 0 ? center.moveTo(x, y) : center.lineTo(x, y)));
-      return { flow: f, index: i, outline, center, width: w1, color: rampColor(stops, flowStrength(f.count, maxCount)) };
+      const cum = cumulativeLengths(pts);
+      return { flow: f, index: i, outline, center, pts, cum, width: w1, color: rampColor(stops, flowStrength(f.count, maxCount)) };
     });
 
     const locPaths = locations.map((loc, j) => {
       const t = totals.get(loc.id) || { inflow: 0, outflow: 0, net: 0 };
-      return { loc, index: j, p: px.get(loc.id), r: locationRadius(t.inflow + t.outflow, maxTotal, s.locationMaxRadius), total: t };
+      return {
+        loc, index: j, p: px.get(loc.id), total: t,
+        r: locationRadius(t.inflow + t.outflow, maxTotal, s.locationMaxRadius)
+      };
     });
 
     // 라벨은 총량 상위만 (겹침 방지). 충분히 확대하면 전부
@@ -284,14 +292,17 @@ export class FlowRenderer extends Layer {
       ctx.globalAlpha = touched ? s.opacity : DIM_ALPHA;
       ctx.fillStyle = fp.color;
       ctx.fill(fp.outline);
-      if (animate && touched) {
+      if (!touched) continue;
+      if (s.arrowHeads) {
+        // 화살표(＞)를 간격마다 늘어놓는다. 애니메이션이 켜져 있으면 위상이 밀려 출발→도착으로 흐른다
+        this._drawArrows(ctx, fp, animate ? this._dashOffset : 0, Math.min(1, s.opacity + 0.1));
+      } else if (animate) {
         ctx.save();
         ctx.setLineDash([10, 14]);
         ctx.lineDashOffset = this._dashOffset;
         ctx.lineCap = 'round';
         ctx.lineWidth = Math.max(1, fp.width * 0.45);
-        // 어두운 점선: 밝은 배경(리본이 중간 톤)에서도, 어두운 배경(리본이 밝음)에서도 리본 위에서 읽힌다
-        ctx.strokeStyle = 'rgba(15,23,42,0.45)';
+        ctx.strokeStyle = DASH_COLOR;
         ctx.globalAlpha = Math.min(1, s.opacity + 0.1);
         ctx.stroke(fp.center);
         ctx.restore();
@@ -316,13 +327,41 @@ export class FlowRenderer extends Layer {
       for (const lp of paths.locPaths) {
         const active = hl.has(lp.loc.id) || this.hoverKey === 'l:' + lp.index;
         ctx.globalAlpha = dimming && !hl.has(lp.loc.id) ? 0.35 : 1;
-        ctx.beginPath();
-        ctx.arc(lp.p[0], lp.p[1], lp.r, 0, Math.PI * 2);
-        ctx.fillStyle = lp.total.net >= 0 ? INFLOW_COLOR : OUTFLOW_COLOR;
-        ctx.fill();
         ctx.lineWidth = active ? 3 : 1.5;
         ctx.strokeStyle = '#ffffff';
-        ctx.stroke();
+        if (s.circleMode === 'inout') {
+          // 유입·유출 파이: 원 크기는 유입+유출, 초록 조각의 비율이 유입 비율(12시에서 시계 방향).
+          // (큰 쪽 바깥·작은 쪽 안쪽의 두 원은 두 값이 비슷하면 테가 너무 얇아 읽히지 않았다)
+          const sum = lp.total.inflow + lp.total.outflow;
+          const share = sum > 0 ? lp.total.inflow / sum : 0.5;
+          const a0 = -Math.PI / 2;
+          const a1 = a0 + Math.PI * 2 * share;
+          if (share > 0) {
+            ctx.beginPath();
+            if (share < 1) ctx.moveTo(lp.p[0], lp.p[1]);
+            ctx.arc(lp.p[0], lp.p[1], lp.r, a0, a1);
+            ctx.closePath();
+            ctx.fillStyle = INFLOW_COLOR;
+            ctx.fill();
+          }
+          if (share < 1) {
+            ctx.beginPath();
+            if (share > 0) ctx.moveTo(lp.p[0], lp.p[1]);
+            ctx.arc(lp.p[0], lp.p[1], lp.r, a1, a0 + Math.PI * 2);
+            ctx.closePath();
+            ctx.fillStyle = OUTFLOW_COLOR;
+            ctx.fill();
+          }
+          ctx.beginPath();
+          ctx.arc(lp.p[0], lp.p[1], lp.r, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.arc(lp.p[0], lp.p[1], lp.r, 0, Math.PI * 2);
+          ctx.fillStyle = lp.total.net >= 0 ? INFLOW_COLOR : OUTFLOW_COLOR;
+          ctx.fill();
+          ctx.stroke();
+        }
         if (s.showLabels && paths.labelIds.has(lp.loc.id)) {
           const x = lp.p[0] + lp.r + 4;
           const y = lp.p[1];
@@ -335,6 +374,36 @@ export class FlowRenderer extends Layer {
       }
     }
     ctx.globalAlpha = 1;
+  }
+
+  /**
+   * 흐름 선 위에 진행 방향 화살표(＞)를 간격마다 그린다.
+   * phase 가 줄어들면(애니메이션) 화살표가 출발→도착으로 흐른다. 선이 짧으면 하나만, 아주 짧으면 안 그린다.
+   */
+  _drawArrows(ctx, fp, phase, alpha) {
+    const total = fp.cum[fp.cum.length - 1];
+    const size = Math.min(8, Math.max(3.5, fp.width * 0.6));
+    if (total < size * 3) return;
+    const margin = Math.max(size * 1.5, fp.width);              // 머리 끝·꼬리 끝에서 띄우는 여백
+    const start = ((-phase % ARROW_SPACING) + ARROW_SPACING) % ARROW_SPACING;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = DASH_COLOR;
+    ctx.lineWidth = Math.max(1, Math.min(2.5, fp.width * 0.18));
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let d = start + margin; d < total - margin; d += ARROW_SPACING) {
+      const { x, y, tx, ty } = pointAlong(fp.pts, fp.cum, d);
+      const nx = -ty;
+      const ny = tx;
+      // 꼭짓점이 앞(진행 방향), 두 날개가 뒤로 벌어진 ＞ 모양
+      ctx.moveTo(x - tx * size + nx * size * 0.6, y - ty * size + ny * size * 0.6);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x - tx * size - nx * size * 0.6, y - ty * size - ny * size * 0.6);
+    }
+    ctx.stroke();
+    ctx.restore();
   }
 
   _redraw() { if (this._paths) this._draw(); }

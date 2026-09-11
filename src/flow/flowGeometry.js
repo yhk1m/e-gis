@@ -75,6 +75,34 @@ export function taperOutline(points, w0, w1) {
   return outer.concat(inner.reverse());
 }
 
+/** 폴리라인의 누적 길이 배열 (cum[0] = 0, cum[n-1] = 전체 길이) */
+export function cumulativeLengths(points) {
+  const cum = [0];
+  for (let i = 1; i < points.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]));
+  }
+  return cum;
+}
+
+/**
+ * 폴리라인을 따라 거리 d 만큼 간 지점과 그곳의 진행 방향 단위 벡터.
+ * d 가 범위를 벗어나면 양 끝으로 고정한다. 화살표를 선 위에 늘어놓을 때 쓴다.
+ * @returns {{ x, y, tx, ty }}
+ */
+export function pointAlong(points, cum, d) {
+  const n = points.length;
+  if (n === 1) return { x: points[0][0], y: points[0][1], tx: 1, ty: 0 };
+  const total = cum[n - 1];
+  const dd = Math.min(total, Math.max(0, d));
+  let i = 1;
+  while (i < n - 1 && cum[i] < dd) i++;
+  const segLen = cum[i] - cum[i - 1] || 1;
+  const t = (dd - cum[i - 1]) / segLen;
+  const [ax, ay] = points[i - 1];
+  const [bx, by] = points[i];
+  return { x: ax + (bx - ax) * t, y: ay + (by - ay) * t, tx: (bx - ax) / segLen, ty: (by - ay) / segLen };
+}
+
 /** 점에서 폴리라인까지의 최단 거리 (테스트·검증용) */
 export function distanceToPolyline(pt, points) {
   if (points.length === 1) return Math.hypot(pt[0] - points[0][0], pt[1] - points[0][1]);

@@ -21,11 +21,13 @@
     <div class="row"><label>상위 N개 (0=전부)</label><input type="number" id="topn" min="0" value="0" style="width:60px"></div>
     <div class="row"><label>위치 원</label><input type="checkbox" id="locs" checked></div>
     <div class="row"><label>곡선으로 그리기</label><input type="checkbox" id="curved"></div>
+    <div class="row"><label>화살표 표시</label><input type="checkbox" id="arrows" checked></div>
+    <div class="row"><label>위치 원</label><select id="circle-mode"><option value="net">순이동</option><option value="inout">유입·유출 비율</option></select></div>
     <div class="hint">지역 원을 클릭하면 그 지역과 이어진 흐름만 남습니다 (여러 개 선택 가능, 빈 곳 클릭으로 해제).<br>선 위에 마우스를 올리면 출발 → 도착과 양이 보입니다.</div>
   </div>
   <div class="legend">
-    <div><span class="dot" style="background:#22c55e"></span>순유입 지역</div>
-    <div><span class="dot" style="background:#ef4444"></span>순유출 지역</div>
+    <div id="legend-net"><span class="dot" style="background:#22c55e"></span>순유입 지역 &nbsp; <span class="dot" style="background:#ef4444"></span>순유출 지역</div>
+    <div id="legend-inout" hidden><span class="dot" style="background:#22c55e"></span>유입 &nbsp; <span class="dot" style="background:#ef4444"></span>유출 — 조각 크기 = 비율, 원 크기 = 합계</div>
     <div style="margin-top:4px;color:#94a3b8">선 굵기·색 = 이동량 (출발 가늘게 → 도착 굵게)</div>
   </div>
   <script type="module" src="/src/demo/flowmap-demo.js"></script>

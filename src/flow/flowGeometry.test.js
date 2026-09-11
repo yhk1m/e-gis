@@ -1,6 +1,6 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
-import { curvePoints, taperOutline, distanceToPolyline, offsetSegment } from './flowGeometry.js';
+import { curvePoints, taperOutline, distanceToPolyline, offsetSegment, cumulativeLengths, pointAlong } from './flowGeometry.js';
 
 describe('curvePoints', () => {
   it('양 끝은 입력점이고 samples+1 개를 돌려준다', () => {
@@ -103,5 +103,22 @@ describe('offsetSegment', () => {
   });
   it('같은 점 둘이면 그대로', () => {
     expect(offsetSegment([3, 3], [3, 3], 5)).toEqual([[3, 3], [3, 3]]);
+  });
+});
+
+describe('cumulativeLengths / pointAlong', () => {
+  const pts = [[0, 0], [100, 0], [100, 50]];
+  it('누적 길이는 0 에서 시작해 전체 길이로 끝난다', () => {
+    expect(cumulativeLengths(pts)).toEqual([0, 100, 150]);
+  });
+  it('거리 d 지점과 진행 방향을 준다', () => {
+    const cum = cumulativeLengths(pts);
+    expect(pointAlong(pts, cum, 50)).toEqual({ x: 50, y: 0, tx: 1, ty: 0 });
+    expect(pointAlong(pts, cum, 125)).toEqual({ x: 100, y: 25, tx: 0, ty: 1 });
+    expect(pointAlong(pts, cum, 999).y).toBe(50);   // 끝으로 고정
+    expect(pointAlong(pts, cum, -5).x).toBe(0);     // 시작으로 고정
+  });
+  it('점이 하나면 그 점', () => {
+    expect(pointAlong([[3, 4]], [0], 10)).toEqual({ x: 3, y: 4, tx: 1, ty: 0 });
   });
 });

@@ -44,6 +44,12 @@ $('width').addEventListener('input', (e) => renderer.setStyle({ widthScale: Numb
 $('topn').addEventListener('change', (e) => renderer.setStyle({ topN: Math.max(0, Number(e.target.value) || 0) }));
 $('locs').addEventListener('change', (e) => renderer.setStyle({ showLocations: e.target.checked }));
 $('curved').addEventListener('change', (e) => renderer.setStyle({ curved: e.target.checked }));
+$('arrows').addEventListener('change', (e) => renderer.setStyle({ arrowHeads: e.target.checked }));
+$('circle-mode').addEventListener('change', (e) => {
+  renderer.setStyle({ circleMode: e.target.value });
+  $('legend-net').hidden = e.target.value === 'inout';
+  $('legend-inout').hidden = e.target.value !== 'inout';
+});
 
 // 실측용
 window.__flowDemo = { map, renderer, interaction };

@@ -280,6 +280,13 @@ class FlowPanel {
           <label><input type="checkbox" id="flow-locs" ${s.showLocations ? 'checked' : ''}> 위치 원</label>
           <label><input type="checkbox" id="flow-labels" ${s.showLabels ? 'checked' : ''}> 라벨</label>
           <label><input type="checkbox" id="flow-curved" ${s.curved ? 'checked' : ''}> 곡선으로 그리기</label>
+          <label><input type="checkbox" id="flow-arrows" ${s.arrowHeads ? 'checked' : ''}> 화살표 표시</label>
+          <label for="flow-circle-mode">위치 원
+            <select id="flow-circle-mode">
+              <option value="net" ${s.circleMode !== 'inout' ? 'selected' : ''}>순이동 (초록 유입 · 빨강 유출)</option>
+              <option value="inout" ${s.circleMode === 'inout' ? 'selected' : ''}>유입·유출 비율 (초록 유입 · 빨강 유출 파이)</option>
+            </select>
+          </label>
           <label><input type="checkbox" id="flow-self" ${s.includeSelf ? 'checked' : ''}> 자기 흐름을 집계에 포함</label>
           <label>상위 <input type="number" id="flow-topn" min="0" value="${s.topN}" style="width:60px"> 개만 (0 = 전부)</label>
           <label><input type="checkbox" id="flow-dark" ${s.darkMode ? 'checked' : ''}> 어두운 배경지도</label>
@@ -393,6 +400,8 @@ class FlowPanel {
     $('flow-locs').addEventListener('change', (e) => live({ showLocations: e.target.checked }));
     $('flow-labels').addEventListener('change', (e) => live({ showLabels: e.target.checked }));
     $('flow-curved').addEventListener('change', (e) => live({ curved: e.target.checked }));
+    $('flow-arrows').addEventListener('change', (e) => live({ arrowHeads: e.target.checked }));
+    $('flow-circle-mode').addEventListener('change', (e) => live({ circleMode: e.target.value }));
     $('flow-self').addEventListener('change', (e) => live({ includeSelf: e.target.checked }));
     $('flow-topn').addEventListener('change', (e) => live({ topN: Math.max(0, Number(e.target.value) || 0) }));
     // CARTO 타일은 API 키 없이는 워터마크가 찍히므로 어두운 배경은 Esri 다크 그레이(ESRI_DARK)를 쓴다.

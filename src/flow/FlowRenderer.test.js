@@ -9,7 +9,7 @@ class FakePath2D { constructor() { path2dCount++; } moveTo() {} lineTo() {} clos
 class FakeCtx {
   constructor() { this.pixel = [0, 0, 0, 0]; this.lastGetImageData = null; }
   setTransform() {} clearRect() {} fill() {} stroke() {} beginPath() {} arc() {} save() {} restore() {}
-  setLineDash() {} fillText() {} strokeText() {} measureText() { return { width: 10 }; }
+  setLineDash() {} moveTo() {} lineTo() {} fillText() {} strokeText() {} measureText() { return { width: 10 }; }
   isPointInStroke() { return true; }
   getImageData(x, y, w, h) { this.lastGetImageData = [x, y, w, h]; return { data: Uint8ClampedArray.from(this.pixel) }; }
 }
