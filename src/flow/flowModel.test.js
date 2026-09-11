@@ -45,6 +45,12 @@ describe('parseLongTable', () => {
     expect(r.pairs).toEqual([{ origin: '서울', dest: '경기', count: 10 }, { origin: '서울', dest: '인천', count: 1200 }]);
     expect(r.skipped).toBe(3);
   });
+  it("'Infinity' 는 숫자로 보지 않고 건너뛴다", () => {
+    const data = [{ 출발: '서울', 도착: '경기', 양: 'Infinity' }];
+    const r = parseLongTable({ headers: ['출발', '도착', '양'], data }, { origin: '출발', dest: '도착', count: '양' });
+    expect(r.pairs).toEqual([]);
+    expect(r.skipped).toBe(1);
+  });
 });
 
 describe('parseMatrixTable', () => {
@@ -62,6 +68,18 @@ describe('parseMatrixTable', () => {
   it('숫자가 아닌 셀은 건너뛰고 센다', () => {
     const headers = ['전출지', '서울', '경기'];
     const data = [{ 전출지: '서울', 서울: 0, 경기: 'x' }];
+    expect(parseMatrixTable({ headers, data }).skipped).toBe(1);
+  });
+  it("'-' 는 빈 칸과 똑같이 조용히 버려진다(스킵 카운트 없음)", () => {
+    const headers = ['전출지', '서울', '경기'];
+    const data = [{ 전출지: '서울', 서울: 0, 경기: '-' }];
+    const r = parseMatrixTable({ headers, data });
+    expect(r.pairs).toEqual([]);
+    expect(r.skipped).toBe(0);
+  });
+  it('음수 셀은 건너뛰고 센다', () => {
+    const headers = ['전출지', '서울', '경기'];
+    const data = [{ 전출지: '서울', 서울: 0, 경기: -5 }];
     expect(parseMatrixTable({ headers, data }).skipped).toBe(1);
   });
 });
@@ -106,7 +124,7 @@ describe('buildDataset', () => {
     expect(ds.locations.map((l) => l.id)).toEqual(['11', '41', '28']);
     expect(ds.locations[0]).toEqual({ id: '11', name: '서울특별시', lon: 127, lat: 37.5 });
     expect(ds.meta.unmatched).toEqual([{ name: '세종', count: 7 }]);
-    expect(ds.meta.matched).toBe(3);
+    expect(ds.meta.matched).toBe(4);
     expect(ds.meta.title).toBe('t');
   });
   it('손으로 짝지은 이름은 그대로 쓴다', () => {
@@ -116,6 +134,71 @@ describe('buildDataset', () => {
     });
     expect(ds.flows).toEqual([{ origin: '28', dest: '41', count: 7 }]);
     expect(ds.meta.unmatched).toEqual([]);
+  });
+});
+
+describe('buildDataset — id 계약', () => {
+  it('id 에 구분자가 섞여 있거나 숫자여도 flows 의 origin/dest 는 locations 의 id 와 그대로(===) 일치한다', () => {
+    const trickyCandidates = [
+      { id: 'seoul|11', name: '서울', lon: 127, lat: 37.5 },
+      { id: 11, name: '경기', lon: 127.2, lat: 37.4 }
+    ];
+    const ds = buildDataset({
+      pairs: [{ origin: '서울', dest: '경기', count: 5 }],
+      candidates: trickyCandidates
+    });
+    expect(ds.flows).toEqual([{ origin: 'seoul|11', dest: 11, count: 5 }]);
+    expect(ds.flows[0].origin).toBe(ds.locations[0].id);
+    expect(ds.flows[0].dest).toBe(ds.locations[1].id);
+    expect(typeof ds.flows[0].dest).toBe('number');
+  });
+});
+
+describe('buildDataset — 후보 중복·모호 매칭', () => {
+  it('같은 id 의 후보가 여러 번 있으면 locations 에는 한 번만(첫 값 우선) 남는다', () => {
+    const dupCandidates = [
+      { id: '11', name: '서울특별시', lon: 127, lat: 37.5 },
+      { id: '11', name: '서울(중복)', lon: 999, lat: 999 },
+      { id: '41', name: '경기도', lon: 127.2, lat: 37.4 }
+    ];
+    const ds = buildDataset({
+      pairs: [{ origin: '서울', dest: '경기', count: 10 }],
+      candidates: dupCandidates
+    });
+    expect(ds.locations).toEqual([
+      { id: '11', name: '서울특별시', lon: 127, lat: 37.5 },
+      { id: '41', name: '경기도', lon: 127.2, lat: 37.4 }
+    ]);
+  });
+  it('정규화한 이름이 서로 다른 id 를 가리키면 모호하다고 보고 unmatched 로 보낸다', () => {
+    const ambiguousCandidates = [
+      { id: '42', name: '고성군', lon: 128.4, lat: 38.4 }, // 강원 고성
+      { id: '48', name: '고성군', lon: 128.3, lat: 34.9 }, // 경남 고성
+      { id: '41', name: '경기도', lon: 127.2, lat: 37.4 }
+    ];
+    const ds = buildDataset({
+      pairs: [{ origin: '고성군', dest: '경기', count: 9 }],
+      candidates: ambiguousCandidates
+    });
+    expect(ds.flows).toEqual([]);
+    expect(ds.meta.unmatched).toEqual([{ name: '고성군', count: 9 }]);
+  });
+  it("manualMap 에 없는 이름이 'constructor' 처럼 프로토타입 속성과 겹쳐도 오염되지 않는다", () => {
+    const ds = buildDataset({
+      pairs: [{ origin: 'constructor', dest: '경기', count: 3 }],
+      candidates
+    });
+    expect(ds.flows).toEqual([]);
+    expect(ds.meta.unmatched).toEqual([{ name: 'constructor', count: 3 }]);
+  });
+  it('출발·도착이 같은 이름이고 둘 다 매칭에 실패하면 양을 두 번 더하지 않는다', () => {
+    const ds = buildDataset({
+      pairs: [{ origin: '세종', dest: '세종', count: 7 }],
+      candidates
+    });
+    expect(ds.flows).toEqual([]);
+    expect(ds.meta.matched).toBe(0);
+    expect(ds.meta.unmatched).toEqual([{ name: '세종', count: 7 }]);
   });
 });
 
@@ -154,5 +237,10 @@ describe('스케일', () => {
     expect(rampColor(COLOR_RAMPS.blue, 0)).toBe('rgb(191,219,254)');
     expect(rampColor(COLOR_RAMPS.blue, 1)).toBe('rgb(30,58,138)');
     expect(rampColor(['#000000', '#ffffff'], 0.5)).toBe('rgb(128,128,128)');
+  });
+  it('t 가 NaN·Infinity 여도 던지지 않고 0 으로 본다', () => {
+    expect(rampColor(COLOR_RAMPS.blue, NaN)).toBe('rgb(191,219,254)');
+    expect(() => rampColor(COLOR_RAMPS.blue, Infinity)).not.toThrow();
+    expect(rampColor(COLOR_RAMPS.blue, Infinity)).toBe('rgb(191,219,254)');
   });
 });

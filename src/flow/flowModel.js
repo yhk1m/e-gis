@@ -24,10 +24,15 @@ export function guessColumns(headers) {
   return { origin, dest, count };
 }
 
+// KOSIS 표에서 빈 칸을 '-' 로 표시하는 경우가 있다 — 빈 칸과 똑같이 다룬다
+function isBlankCell(v) {
+  return v == null || v === '' || String(v).trim() === '-';
+}
+
 function isNumeric(v) {
   if (typeof v === 'number') return Number.isFinite(v);
-  if (v == null || v === '') return false;
-  return !Number.isNaN(Number(String(v).replace(/,/g, '')));
+  if (isBlankCell(v)) return false;
+  return Number.isFinite(Number(String(v).replace(/,/g, '').trim()));
 }
 
 /** 'long' | 'matrix' — 첫 열 뒤 셀의 80% 이상이 숫자면 행렬형(첫 행 기준) */
@@ -38,12 +43,12 @@ export function detectTableShape({ headers, data }) {
   return numeric >= cells.length * 0.8 ? 'matrix' : 'long';
 }
 
-/** 셀 → 양. 숫자가 아니면 NaN, 빈 칸은 0 */
+/** 셀 → 양. 숫자가 아니면 NaN, 빈 칸('-' 포함)은 0. Infinity 는 숫자로 치지 않는다 */
 function readCount(v) {
-  if (v == null || v === '') return 0;
+  if (isBlankCell(v)) return 0;
   if (typeof v === 'number') return v;
   const n = Number(String(v).replace(/,/g, '').trim());
-  return Number.isNaN(n) ? NaN : n;
+  return Number.isFinite(n) ? n : NaN;
 }
 
 /** 긴 형식: 한 행이 흐름 하나. 양이 숫자가 아니거나 0 이하, 합계 행은 건너뛰고 센다 */
@@ -62,7 +67,7 @@ export function parseLongTable({ data }, { origin, dest, count }) {
 
 /**
  * 행렬형: 첫 열 = 전출지, 나머지 헤더 = 전입지, 셀 = 양 (KOSIS 국내인구이동 표).
- * 빈 칸·0은 "흐름 없음"이라 조용히 버리고, 숫자가 아닌 셀만 건너뛰고 센다. 합계 행·열은 뺀다.
+ * 빈 칸·0은 "흐름 없음"이라 조용히 버리고, 숫자가 아니거나 음수인 셀은 건너뛰고 센다. 합계 행·열은 뺀다.
  */
 export function parseMatrixTable({ headers, data }) {
   const [labelCol, ...destCols] = headers;
@@ -74,7 +79,7 @@ export function parseMatrixTable({ headers, data }) {
     if (!o || TOTAL_PAT.test(o)) continue;
     for (const d of dests) {
       const n = readCount(row[d]);
-      if (Number.isNaN(n)) { skipped++; continue; }
+      if (Number.isNaN(n) || n < 0) { skipped++; continue; }
       if (n > 0) pairs.push({ origin: o, dest: String(d).trim(), count: n });
     }
   }
@@ -85,7 +90,7 @@ export function parseMatrixTable({ headers, data }) {
 //  이름 정규화·매칭
 // ----------------------------------------------------------------------------
 
-// 긴 접미사가 먼저 와야 "특별자치도"가 "도"로만 잘리지 않는다
+// 모든 대안이 $ 로 끝에 고정돼 있어, 정규식이 가장 왼쪽(=가장 긴 접미사)에서 먼저 매칭에 성공한다 — 나열 순서는 결과에 영향을 주지 않는다
 const SUFFIX_RE = /(특별자치시|특별자치도|통합특별시|특별시|광역시|자치시|자치도|도|시)$/;
 // 접미사를 벗긴 뒤의 별칭 (KOSIS·KOSTAT 표기 차이)
 const ALIASES = {
@@ -101,22 +106,47 @@ export function normalizeName(name) {
   return ALIASES[s] || s;
 }
 
+/** 같은 id 의 후보가 여러 번 있으면 첫 값만 남긴다 (locations 에 중복 id 가 들어가지 않도록) */
+function dedupeCandidates(candidates) {
+  const seen = new Set();
+  const result = [];
+  for (const c of candidates) {
+    if (seen.has(c.id)) continue;
+    seen.add(c.id);
+    result.push(c);
+  }
+  return result;
+}
+
 function buildIndex(candidates) {
   const byCode = new Map();
-  const byName = new Map();
+  const byNameIds = new Map(); // 정규화한 이름 → 그 이름을 쓰는 서로 다른 id 의 집합
   for (const c of candidates) {
-    if (c.code != null && String(c.code).trim() !== '') byCode.set(String(c.code).trim(), c.id);
+    if (c.code != null && String(c.code).trim() !== '') {
+      const codeKey = String(c.code).trim();
+      if (!byCode.has(codeKey)) byCode.set(codeKey, c.id);
+    }
     const key = normalizeName(c.name);
-    if (key && !byName.has(key)) byName.set(key, c.id);
+    if (!key) continue;
+    if (!byNameIds.has(key)) byNameIds.set(key, new Set());
+    byNameIds.get(key).add(c.id);
+  }
+  // 이름 하나가 서로 다른 id 여럿을 가리키면(예: 고성군 → 강원/경남) 모호하므로 이름 매칭에서 뺀다.
+  // 손 매칭(manualMap)이나 코드 매칭으로 풀도록 unmatched 에 남긴다.
+  const byName = new Map();
+  for (const [key, ids] of byNameIds) {
+    if (ids.size === 1) byName.set(key, [...ids][0]);
   }
   return { byCode, byName };
 }
 
 function resolveId(rawName, index, manualMap) {
-  if (manualMap[rawName]) return manualMap[rawName];
+  // hasOwn 으로만 확인해야 'constructor' 같은 이름이 프로토타입 속성으로 오인되지 않는다
+  if (Object.hasOwn(manualMap, rawName) && manualMap[rawName]) return manualMap[rawName];
   const trimmed = String(rawName).trim();
   if (index.byCode.has(trimmed)) return index.byCode.get(trimmed);
-  return index.byName.get(normalizeName(trimmed)) || null;
+  const id = index.byName.get(normalizeName(trimmed));
+  return id === undefined ? null : id;
 }
 
 /**
@@ -128,25 +158,34 @@ function resolveId(rawName, index, manualMap) {
  * @param {Object} [p.meta]
  */
 export function buildDataset({ pairs, candidates, manualMap = {}, meta = {} }) {
-  const index = buildIndex(candidates);
-  const flowMap = new Map();     // 'origin|dest' → count (같은 쌍은 합친다)
+  const dedupedCandidates = dedupeCandidates(candidates);
+  const index = buildIndex(dedupedCandidates);
+  // origin id → Map(dest id → count). 문자열로 이어붙였다 쪼개지 않아 id 가 '|' 를 포함하거나
+  // 숫자여도 locations[].id 와 그대로(===) 일치한다.
+  const flowMap = new Map();
   const unmatched = new Map();   // 원본 이름 → 양
   const used = new Set();
+  let matched = 0;
   for (const p of pairs) {
     const o = resolveId(p.origin, index, manualMap);
     const d = resolveId(p.dest, index, manualMap);
-    if (!o) unmatched.set(p.origin, (unmatched.get(p.origin) || 0) + p.count);
-    if (!d) unmatched.set(p.dest, (unmatched.get(p.dest) || 0) + p.count);
-    if (!o || !d) continue;
+    // 출발·도착이 같은 이름이라 둘 다 못 찾아도 한 쌍의 양을 두 번 더하지 않는다
+    const missingNames = new Set();
+    if (o == null) missingNames.add(p.origin);
+    if (d == null) missingNames.add(p.dest);
+    for (const name of missingNames) unmatched.set(name, (unmatched.get(name) || 0) + p.count);
+    if (o == null || d == null) continue;
+    matched++;
     used.add(o); used.add(d);
-    const k = o + '|' + d;
-    flowMap.set(k, (flowMap.get(k) || 0) + p.count);
+    if (!flowMap.has(o)) flowMap.set(o, new Map());
+    const inner = flowMap.get(o);
+    inner.set(d, (inner.get(d) || 0) + p.count);
   }
-  const flows = [...flowMap].map(([k, count]) => {
-    const [origin, dest] = k.split('|');
-    return { origin, dest, count };
-  });
-  const locations = candidates
+  const flows = [];
+  for (const [origin, inner] of flowMap) {
+    for (const [dest, count] of inner) flows.push({ origin, dest, count });
+  }
+  const locations = dedupedCandidates
     .filter((c) => used.has(c.id))
     .map(({ id, name, lon, lat }) => ({ id, name, lon, lat }));
   return {
@@ -154,7 +193,7 @@ export function buildDataset({ pairs, candidates, manualMap = {}, meta = {} }) {
     flows,
     meta: {
       ...meta,
-      matched: flows.length,
+      matched,
       unmatched: [...unmatched].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
     }
   };
@@ -204,9 +243,10 @@ function hexToRgb(hex) {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** 램프 색 목록을 t∈[0,1] 로 보간 → 'rgb(r,g,b)' */
+/** 램프 색 목록을 t∈[0,1] 로 보간 → 'rgb(r,g,b)'. t 가 NaN·Infinity 면 0 으로 본다 */
 export function rampColor(stops, t) {
-  const x = Math.min(1, Math.max(0, t)) * (stops.length - 1);
+  const t0 = Number.isFinite(t) ? t : 0;
+  const x = Math.min(1, Math.max(0, t0)) * (stops.length - 1);
   const i = Math.min(stops.length - 2, Math.floor(x));
   const f = x - i;
   const a = hexToRgb(stops[i]);
