@@ -5443,4 +5443,7 @@ body.exporting .egis-basemap-panel {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 .flow-tooltip b { font-weight: 700; margin-right: 6px; }
+.flow-tooltip--left { transform: translate(calc(-100% - 14px), 14px); }
+.flow-tooltip--up { transform: translate(14px, calc(-100% - 14px)); }
+.flow-tooltip--left.flow-tooltip--up { transform: translate(calc(-100% - 14px), calc(-100% - 14px)); }
 body.exporting .flow-tooltip { display: none; }
