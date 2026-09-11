@@ -64,9 +64,7 @@ export class FlowInteraction {
     this.map.getViewport().removeEventListener('pointerleave', this._onLeave);
     if (this.tooltip) this.tooltip.remove();
     this.tooltip = null;
-    const target = this.map.getTargetElement();
-    if (target) target.style.cursor = '';
-    this._hovering = false;
+    // 커서는 _clearHover 가 "우리가 바꿨을 때만" 되돌린다 — 다른 도구가 둔 crosshair 를 지우지 않는다
   }
 
   hideTooltip() { if (this.tooltip) this.tooltip.hidden = true; }
