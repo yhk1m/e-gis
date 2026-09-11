@@ -38,6 +38,7 @@ import { exportPanel } from './ui/panels/ExportPanel.js';
 import { fieldCalculatorPanel } from './ui/panels/FieldCalculatorPanel.js';
 import { spatialOperationsPanel } from './ui/panels/SpatialOperationsPanel.js';
 import { heatmapPanel } from './ui/panels/HeatmapPanel.js';
+import { flowPanel } from './ui/panels/FlowPanel.js';
 import { bookmarkPanel } from './ui/panels/BookmarkPanel.js';
 import { coordinateImportPanel } from './ui/panels/CoordinateImportPanel.js';
 import { georeferencePanel } from './ui/panels/GeoreferencePanel.js';
@@ -816,6 +817,9 @@ function handleMenuAction(action) {
       break;
     case 'analysis-cartogram':
       cartogramPanel.show();
+      break;
+    case 'analysis-flow':
+      flowPanel.show();
       break;
     case 'analysis-isochrone':
       isochronePanel.show();

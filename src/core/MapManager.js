@@ -303,6 +303,7 @@ class BasemapControl extends Control {
 
     const options = [
       { key: 'OSM', label: '일반지도' },
+      { key: 'ESRI_DARK', label: '어두운 지도' },
       { key: 'SATELLITE', label: '위성' },
       { key: 'SATELLITE_LABELS', label: '위성 + 라벨' }
     ];
@@ -365,8 +366,9 @@ class BasemapControl extends Control {
     this.panel.querySelectorAll('.egis-basemap-option').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.key === current);
     });
-    const isSatellite = current === 'SATELLITE' || current === 'SATELLITE_LABELS';
-    this.button.classList.toggle('active', isSatellite);
+    // 기본(일반지도)이 아닌 배경을 쓰는 동안 버튼을 강조한다
+    const highlighted = current === 'SATELLITE' || current === 'SATELLITE_LABELS' || current === 'ESRI_DARK';
+    this.button.classList.toggle('active', highlighted);
   }
 }
 
@@ -396,6 +398,16 @@ export const BASEMAPS = {
       url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
       crossOrigin: TILE_CROSS_ORIGIN,
       attributions: '&copy; <a href="https://carto.com/">CARTO</a>'
+    })
+  },
+  // CARTO 무료 타일은 이제 "API KEY REQUIRED" 워터마크가 찍혀, 어두운 배경은 Esri 다크 그레이를 쓴다 (흐름도 등)
+  ESRI_DARK: {
+    name: '어두운 지도 (Esri)',
+    source: () => new XYZ({
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      maxZoom: 16,
+      crossOrigin: TILE_CROSS_ORIGIN,
+      attributions: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors'
     })
   },
   SATELLITE: {
@@ -469,6 +481,9 @@ export class MapManager {
       }
     });
 
+    // 배경지도 선택 버튼 — setBasemap() 이 코드로 불릴 때도 활성 표시를 맞추려고 참조를 들고 있는다
+    this.basemapControl = new BasemapControl(this);
+
     // 지도 생성
     this.map = new Map({
       target: targetId,
@@ -490,7 +505,7 @@ export class MapManager {
         }),
         new CompassControl(),
         new GeolocateControl(),
-        new BasemapControl(this)
+        this.basemapControl
       ])
     });
 
@@ -647,6 +662,7 @@ export class MapManager {
     }
 
     this.currentBasemap = basemapKey;
+    if (this.basemapControl) this.basemapControl.updateActive();
   }
 
   /**

@@ -35,7 +35,7 @@ export function formatNumber(num, format = 'comma', rounding = 0) {
 }
 
 /** 범례 기호로 요약할 수 없는 레이어 종류 (자체 범례를 지도 위에 띄운다) */
-const UNSUMMARIZABLE_TYPES = ['raster', 'heatmap', 'chartmap'];
+const UNSUMMARIZABLE_TYPES = ['raster', 'heatmap', 'chartmap', 'flow'];
 
 /**
  * 색을 어둡게 (각 채널 -40).

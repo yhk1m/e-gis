@@ -10,6 +10,7 @@ import { rasterAnalysisTool } from '../../tools/RasterAnalysisTool.js';
 import { cartogramTool } from '../../tools/CartogramTool.js';
 import { saveTextAs } from '../../utils/saveFile.js';
 import { swatchSpec, swatchHTML } from './layerSwatch.js';
+import { flowPanel } from './FlowPanel.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 export class LayerPanel {
@@ -178,6 +179,15 @@ export class LayerPanel {
   }
 
   /**
+   * 목록에 괄호로 붙는 개수. 흐름 레이어는 피처가 없어 featureCount 가 0 이라
+   * 렌더러가 실제로 그리는 흐름 수(FlowRenderer.getFlowCount)를 쓴다.
+   */
+  layerCount(layer) {
+    if (layer.type !== 'flow') return layer.featureCount;
+    return typeof layer.olLayer?.getFlowCount === 'function' ? layer.olLayer.getFlowCount() : 0;
+  }
+
+  /**
    * 레이어 목록 렌더링
    */
   render() {
@@ -218,7 +228,7 @@ export class LayerPanel {
                  title="표시/숨김">
           <span class="layer-color" title="색·테두리 바꾸기">${this.swatchMarkup(layer)}</span>
           <span class="layer-name" title="${layer.name}">${layer.name}</span>
-          <span class="layer-count">(${layer.featureCount})</span>
+          <span class="layer-count">(${this.layerCount(layer)})</span>
           <button class="layer-menu-btn" title="메뉴">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="5" r="2"/>
@@ -384,13 +394,16 @@ export class LayerPanel {
       // '색상 변경'이라고만 적어두면 투명도 조절을 찾지 못한다.
       const isRaster = !!(info && info.type === 'raster');
       const isFilterRaster = isRaster && !!(info.analysisData && info.analysisData.colorScheme === 'filter');
-      const styleLabel = isRaster ? (isFilterRaster ? '색상·투명도' : '투명도 조절') : '색상 변경';
+      // 흐름 레이어는 색상 팝업 대신 흐름도 패널이 열린다(showColorPicker 분기)
+      const isFlow = !!(info && info.type === 'flow');
+      const styleLabel = isFlow ? '흐름도 스타일'
+        : isRaster ? (isFilterRaster ? '색상·투명도' : '투명도 조절') : '색상 변경';
       menu.innerHTML = `
         <div class="context-menu-item" data-action="zoom">레이어로 이동</div>
         <div class="context-menu-item" data-action="rename">이름 변경</div>
         ${isVector ? '<div class="context-menu-item" data-action="duplicate">레이어 복사</div>' : ''}
         ${isVector ? '<div class="context-menu-item" data-action="export">내보내기 (GeoJSON)</div>' : ''}
-        <div class="context-menu-item" data-action="table">속성 테이블</div>
+        ${info && info.source ? '<div class="context-menu-item" data-action="table">속성 테이블</div>' : ''}
         <div class="context-menu-item" data-action="color">${styleLabel}</div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item danger" data-action="remove">삭제</div>
@@ -613,6 +626,12 @@ export class LayerPanel {
     const self = this;
     const layer = layerManager.getLayer(layerId);
     if (!layer) return;
+
+    // 흐름 레이어는 색상 팝업이 아니라 흐름도 패널에서 스타일을 고친다
+    if (layer.type === 'flow') {
+      flowPanel.showForLayer(layerId);
+      return;
+    }
 
     const existingPicker = document.querySelector(".color-picker-popup");
     if (existingPicker) existingPicker.remove();

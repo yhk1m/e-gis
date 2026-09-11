@@ -1,0 +1,23 @@
+/* © 2026 김용현 */
+/* 흐름도 시연 페이지 전용 스타일 — demo/flowmap-demo.html */
+/* HTML 안 <style> 로 두면 이 PC 의 subst(X:) 빌드에서 Vite html-inline-proxy 가 경로를 못 맞춰 실패하므로 파일로 분리 */
+html, body { margin: 0; height: 100%; background: #0b1220; font-family: Pretendard, sans-serif; color: #e2e8f0; }
+#map { position: absolute; inset: 0; }
+.panel { position: absolute; top: 16px; left: 16px; z-index: 10; width: 280px; padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 10px; backdrop-filter: blur(6px); }
+.panel h1 { margin: 0 0 4px; font-size: 16px; }
+.badge { display: inline-block; margin-bottom: 10px; padding: 2px 8px; border-radius: 999px; background: #f59e0b; color: #1f2937; font-size: 11px; font-weight: 700; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; font-size: 12px; }
+.row input[type=range] { width: 130px; }
+.row select, .row input[type=number] { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 4px; padding: 2px 6px; font-size: 12px; }
+.hint { margin-top: 10px; font-size: 11px; color: #94a3b8; line-height: 1.6; }
+.legend { position: absolute; right: 16px; bottom: 28px; z-index: 10; padding: 10px 12px; font-size: 11px;
+  background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 8px; }
+.legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 1.5px solid #fff; }
+.flow-tooltip { position: absolute; transform: translate(14px, 14px); pointer-events: none; z-index: 30; padding: 6px 9px; border-radius: 6px;
+  background: rgba(15, 23, 42, 0.92); color: #fff; font-size: 12px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+.flow-tooltip b { font-weight: 700; margin-right: 6px; }
+.flow-tooltip--left { transform: translate(calc(-100% - 14px), 14px); }
+.flow-tooltip--up { transform: translate(14px, calc(-100% - 14px)); }
+.flow-tooltip--left.flow-tooltip--up { transform: translate(calc(-100% - 14px), calc(-100% - 14px)); }
+.ol-attribution { font-size: 10px; }

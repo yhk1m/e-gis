@@ -1,7 +1,7 @@
 # 흐름도(공간적 상호작용) 레이어 설계
 
 작성일: 2026-09-11
-상태: 설계 확정
+상태: 구현 완료 (2026-09-11, 브랜치 flow-map) — 구현 중 바뀐 결정은 본문에 반영했고, 원래 설계와 다른 곳은 「구현하며 바뀐 점」에 모았다
 
 ## 무엇을 만드는가
 
@@ -23,9 +23,9 @@ flowmap.blue가 보여 주는 것 — 굵기가 양에 비례하는 테이퍼 �
 | `LayerManager.addLayer({ type, olLayer })` | 히트맵·차트맵처럼 특수 레이어를 `olLayer`로 받고 `type`으로 분기 | `type: 'flow'`를 더한다 |
 | `ProjectManager` | 히트맵은 `_heatmapConfig`를 저장하고 `heatmapTool.restoreHeatmap`으로 복원 | 같은 방식으로 `flowConfig` 저장·복원 |
 | `ExportTool` | `html2canvas`로 지도 DOM 캡처 — Canvas 2D 요소는 그대로 찍힌다 | 흐름 캔버스가 별도 처리 없이 PNG/PDF에 들어간다 |
-| `TableLoader` | CSV/XLSX → 행 배열 | 흐름 표·위치 표 읽기에 재사용 |
+| `TableLoader` | CSV/XLSX → 행 배열 (모든 셀에 parseFloat) | **재사용하지 않는다** — "1,234"가 1이 되므로 `FlowLoader`가 셀을 손대지 않고 읽는다 (CSV는 UTF-8 실패 시 CP949) |
 | 실습 데이터 (`practice_catalog.json`) | 그룹 순서 = 화면 섹션 순서, 데이터셋 `type`으로 로더 분기 | `Flow Data(흐름)` 그룹과 `flow` 유형을 더한다 |
-| 배경지도 (`MapManager`) | Carto Light/Dark 등 전환 가능 | 스타일 패널의 "어두운 배경" 스위치가 이걸 부른다 |
+| 배경지도 (`MapManager`) | OSM·Carto·위성 전환 가능 | 스타일 패널의 "어두운 배경" 스위치가 새 `ESRI_DARK`(Esri World Dark Gray)를 부른다 |
 | 3D 보기 | `import()` 지연 로딩, 헤드리스 Chrome 실측 관행 | 검증 방식을 그대로 따른다 (의존성은 더하지 않으므로 지연 로딩은 불필요) |
 
 ## 확정된 결정
@@ -39,8 +39,8 @@ flowmap.blue가 보여 주는 것 — 굵기가 양에 비례하는 테이퍼 �
 | 1차 상호작용 | 애니메이션, 툴팁, 위치 클릭 필터, 위치 원(총량·순이동), 스타일(램프·굵기·투명도·라벨·상위 N·어두운 배경) | flowmap.blue의 정체성. 줌별 군집·시간 슬라이더는 2차 |
 | 표시 범위 | **기본은 모두 표시**. "상위 N개"는 선택 옵션(기본 꺼짐) | 사용자 결정. 대신 그리는 순서(작은 것 먼저)와 적응형 애니메이션으로 버틴다 |
 | 애니메이션 | `lineDashOffset`을 매 프레임 밀어 흐르는 점선 | flowmap.blue의 애니메이션이 실제로 이 모양. 입자 시뮬레이션보다 훨씬 싸다 |
-| 위치 좌표 | 위치 표가 있으면 그 좌표, 없으면 기준 레이어 피처의 대표점(`turf.pointOnFeature`) | 학생이 준비할 자료를 표 한 장으로 줄인다 |
-| 내장 예제 | 시도 간 인구이동. **KOSIS 자료를 받기 전까지는 "예시 자료(가상 수치)" 배지를 단 가상 데이터** | KOSIS는 자동으로 못 받는다. 실제 수치는 사용자가 XLSX로 받아 주면 교체 |
+| 위치 좌표 | 위치 표가 있으면 그 좌표, 없으면 기준 레이어 피처의 대표점(가장 큰 폴리곤 조각의 무게중심, 조각 밖이면 `turf.pointOnFeature`) | 학생이 준비할 자료를 표 한 장으로 줄인다. 그냥 `pointOnFeature`는 인천·경북처럼 섬이 많은 시도에서 섬에 찍힌다 |
+| 내장 예제 | 시도 간 인구이동. **KOSIS 자료를 받기 전까지는 "예시 자료 · 가상 수치" 배지를 단 가상 데이터** | KOSIS는 자동으로 못 받는다. 실제 수치는 사용자가 XLSX로 받아 주면 교체 |
 | 구글 스프레드시트 입력 | 2차 | `GoogleSheetLoader`가 있어 몇 줄이면 붙지만 1차 범위를 좁힌다 |
 | flowmap.gl 확인 페이지 | CDN으로 띄워 보는 스파이크 1장 + 결과 메모. **배포하지 않고 제품 코드와 무관** | 2차 판단 근거 |
 
@@ -56,7 +56,8 @@ FlowDataset = {
     title, unit,                                 // 예: '시도 간 인구이동', '명'
     source,                                      // 출처 표시용
     matched, unmatched: [{ name, count }],       // 매칭 결과 (unmatched 는 흐름에서 제외됨)
-    skipped                                      // count 가 숫자가 아니거나 0 이하라 건너뛴 행 수
+    skipped                                      // 긴 형식: count 가 숫자가 아니거나 0 이하인 행 수
+                                                 // 행렬형: 숫자가 아니거나 음수인 셀 수 (빈 칸·0·'-'는 "흐름 없음"이라 세지 않는다)
   }
 }
 ```
@@ -67,15 +68,16 @@ FlowDataset = {
 
 `practice_catalog.json`에 그룹 `{ id: 'flow-data', name: 'Flow Data(흐름)', icon: '🔀' }`를
 Attribute Data 앞에 둔다. 데이터셋 `type: 'flow'`는 클릭 시 흐름도 패널을 열고 그 파일을 미리 채운다.
-내장 예제: `practice/Flow Data/시도간_인구이동_예시.xlsx` (행렬형, 가상 수치, 설명에 "예시 자료(가상 수치)").
+내장 예제: `practice/Flow Data/시도간_인구이동_예시.xlsx` (행렬형, 가상 수치, 이름에 "예시 자료 · 가상 수치"). `scripts/make-flow-example.cjs`가 만든다.
 
 ### 2. 파일 업로드 (CSV/XLSX) — 두 형식
 
 - **긴 형식**: `출발, 도착, 양` 세 열. 헤더는 자동 추측 — origin/출발/전출(지), dest/도착/전입(지),
   count/이동자수/값/인원 — 패널 드롭다운에서 고칠 수 있다.
 - **행렬형**: 첫 열 = 전출지, 첫 행 = 전입지, 셀 = 양. KOSIS 국내인구이동 표의 기본 형식이라 필수.
-  행·열 이름의 교집합만 쓰고 어긋난 이름은 알려 준다. 긴 형식/행렬형은 "첫 행의 나머지 셀이 모두
-  숫자 헤더가 아닌 지역 이름인가"로 자동 판별하고 패널에서 강제 지정할 수 있다.
+  합계 행·열(전국·계·합계)을 뺀 모든 행·열을 쓰고, 위치를 못 찾는 이름은 매칭 결과의 "매칭 안 됨"으로
+  알려 준다. 빈 A1(Excel 기본)은 `구분`으로 이름 붙인다. 긴 형식/행렬형은 "열이 4개 이상이고 첫 데이터 행에서
+  첫 열 뒤 셀의 80% 이상이 숫자인가"로 자동 판별하고 패널에서 강제 지정할 수 있다.
 
 ### 3. 위치 표 업로드 (선택)
 
@@ -84,29 +86,33 @@ Attribute Data 앞에 둔다. 데이터셋 `type: 'flow'`는 클릭 시 흐름�
 ## 위치 매칭 (위치 표가 없을 때)
 
 1. 패널에서 **기준 레이어**(면 또는 점 레이어)와 **이름 열**을 고른다. `code` 열이 있으면 코드로 먼저 맞춘다.
-2. 대표점: 면은 `turf.pointOnFeature`(면 안에 놓이는 점), 점은 그 점.
+2. 대표점: 면은 가장 큰 폴리곤 조각의 무게중심(조각 밖이면 `turf.pointOnFeature`), 점은 그 점.
 3. 이름 정규화: 공백 제거 → "특별시/광역시/특별자치시/특별자치도/도" 접미 제거 → 별칭 표
-   (전북특별자치도=전라북도, 강원특별자치도=강원도, 전남광주통합특별시=전라남도+광주광역시 등) 적용.
+   (전라북도=전북, 전라남도=전남, 경상북·남도, 충청북·남도, 광주전남(통합)=전남광주통합 등) 적용.
+   옛 표의 전라남도·광주광역시를 통합시 하나로 합치는 것은 자동 별칭으로 두면 옛 경계 레이어에서 모호해지므로
+   손 매칭으로 한다. 같은 이름이 서로 다른 피처 둘 이상을 가리키면(고성군 등) 자동 매칭에서 빼고 손 매칭으로 넘긴다.
 4. 못 맞춘 이름은 버리지 않고 `meta.unmatched`에 모아 패널에 "매칭 안 됨 3건: 세종, …"으로 보이고,
    각 항목 옆 드롭다운으로 손으로 짝지을 수 있다. 짝지으면 즉시 다시 집계한다.
-5. 자기 자신으로의 흐름(서울→서울)은 기본 제외, 스타일에서 "자기 흐름 포함"으로 켤 수 있다.
+5. 자기 자신으로의 흐름(서울→서울)은 그리지 않는다. 유입·유출 집계에는 기본 제외, 스타일의 "자기 흐름을 집계에 포함"으로 넣을 수 있다.
 
 ## 정합성 규칙
 
 - `count`가 숫자가 아니거나 0 이하이면 그 행은 건너뛰고 `meta.skipped`에 센다.
 - 위치가 2개 미만이거나 남는 흐름이 0개면 "흐름을 그릴 수 없습니다"로 생성 버튼을 막고 이유를 보인다.
-- 일부만 못 맞추면 경고와 함께 생성 가능. 제외된 건수는 패널과 레이어 툴팁에 남는다.
+- 일부만 못 맞추면 경고와 함께 생성 가능. 제외된 이름·건수는 패널에 보이고 `meta.unmatched/skipped`로 저장돼 스타일 창을 다시 열어도 보인다.
 
 ## 구성 요소
 
 | 파일 | 역할 | 의존 |
 |---|---|---|
 | `src/flow/flowModel.js` | 순수 함수: 긴 형식/행렬형 파싱, 헤더 추측, 이름 정규화·별칭 매칭, 집계(유입·유출·순이동), 굵기·색 스케일 | 없음 |
-| `src/flow/flowGeometry.js` | 순수 함수: 두 점 사이 3차 베지어(굽힘 = 거리의 20%, 양방향은 서로 반대편으로), 곡선 샘플링, 테이퍼 폭 보간, 점-곡선 거리 | 없음 |
+| `src/flow/flowGeometry.js` | 순수 함수: 두 점 사이 2차 베지어(제어점 오프셋 = 현 길이의 20%, 짧은 현은 머리 폭에 맞춰 더 굽힘; 진행 방향 오른쪽으로 굽어 양방향이 서로 반대편), 곡선 샘플링, 테이퍼 외곽선, 점-폴리라인 거리 | 없음 |
+| `src/flow/FlowInteraction.js` | `pointermove/click` → `hitTest` → 툴팁·클릭 필터·커서. 제품(FlowTool)과 시연이 공유 | escapeHtml |
+| `src/flow/layerLocations.js` | 기준 레이어 피처 → 위치 후보(대표점), 이름 열 추측 | ol, turf, layerManager |
 | `src/flow/FlowRenderer.js` | OL `Layer` 서브클래스. `render(frameState)`에서 Canvas 2D에 흐름·위치 원·라벨을 그려 캔버스 요소를 돌려줌 | ol, flowGeometry |
-| `src/tools/FlowTool.js` | 레이어 생성·복원, `pointermove/click` → `hitTest` → 툴팁·클릭 필터, 애니메이션 루프 | FlowRenderer, layerManager, mapManager, eventBus |
+| `src/tools/FlowTool.js` | 레이어 생성·복원·스타일 갱신, FlowInteraction 부착·해제, 내보내기용 freeze/thaw(중첩 카운터) | FlowRenderer, FlowInteraction, layerManager, mapManager, toolManager, eventBus |
 | `src/ui/panels/FlowPanel.js` | 주제도 → "흐름도" 패널: 데이터(실습/업로드), 형식·열 지정, 기준 레이어·이름 열, 매칭 결과·손 매칭, 스타일 | FlowTool, flowModel, FlowLoader, makeDraggable |
-| `src/loaders/FlowLoader.js` | CSV/XLSX → 행 배열 (`TableLoader` 재사용), 위치 표 읽기 | TableLoader |
+| `src/loaders/FlowLoader.js` | CSV/XLSX → `{ headers, data }` (셀 그대로, CSV는 UTF-8 → CP949 폴백), 위치 표 → 후보 | xlsx, papaparse |
 
 레이어 등록: `layerManager.addLayer({ type: 'flow', name, olLayer: renderer })`, 설정은 `layerInfo._flowConfig`에 둔다.
 메뉴: `AppLayout`의 주제도 드롭다운에 `data-action="analysis-flow"` "흐름도", `main.js`에서 패널 토글.
@@ -119,10 +125,11 @@ Attribute Data 앞에 둔다. 데이터셋 `type: 'flow'`는 클릭 시 흐름�
 - **위치 원**: 반지름 = `sqrt(유입+유출)` 비례(최소 3px, 최대 스타일 값). 채움색은 순유입(+)/순유출(−) 두 색.
   라벨은 위치가 많으면 총량 상위만(겹침 방지), 줌 인 할수록 더 보인다.
 - **애니메이션**: 흐름 곡선을 점선으로 그리고 `lineDashOffset`을 매 프레임 밀어 출발→도착으로 흐르게 한다.
-  켜져 있으면 `requestAnimationFrame` → `layer.changed()`. 한 프레임이 33ms를 넘으면 프레임을 건너뛰어
-  지도 조작이 굳지 않게 한다(적응형).
+  켜져 있으면 `requestAnimationFrame` 루프가 렌더러의 캔버스에 **직접** 다시 그린다(`layer.changed()`로
+  지도 전체를 다시 그리지 않는다 — 캔버스 요소는 이미 DOM에 있으므로). 한 프레임이 33ms를 넘으면
+  프레임을 건너뛰어 지도 조작이 굳지 않게 한다(적응형). 레이어가 숨겨지거나 지도에서 빠지면 루프를 멈춘다.
 - **성능**: 뷰가 바뀔 때만 픽셀 좌표와 `Path2D`를 다시 만든다. 애니메이션 프레임은 만들어 둔 Path2D를
-  다시 stroke만 한다. 정적일 땐 오프스크린 캔버스에 한 번 그려 두고 복사한다.
+  다시 stroke만 한다. 정적일 땐 뷰가 바뀔 때만 그리므로 별도 오프스크린 복사는 두지 않는다.
   흐름이 5,000개를 넘으면 애니메이션은 꺼진 채 시작한다(켜면 적응형으로 돈다).
 - **회전**: 픽셀 좌표를 `frameState`에서 매 렌더 계산하므로 지도 회전을 그대로 따른다.
 - **강조/필터**: 선택된 위치와 연결된 흐름만 본래 색, 나머지는 투명도 0.08로 남긴다.
@@ -133,20 +140,23 @@ Attribute Data 앞에 둔다. 데이터셋 `type: 'flow'`는 클릭 시 흐름�
   읽어 id로 되돌린다(수만 개여도 O(1)). 툴팁은 지도 위 DOM: `서울 → 경기  12,345명` /
   `경기  유입 ○ · 유출 ○ · 순이동 +○`.
 - **클릭**: 위치 원을 클릭하면 선택 집합에 넣고(다시 클릭하면 뺀다) 그 위치들과 연결된 흐름만 남긴다.
-  빈 곳 클릭 시 해제. 선택은 패널에 칩으로도 보이고 `flowConfig.selectedIds`로 저장된다.
+  빈 곳 클릭 시 해제. 선택은 `flowConfig.selectedIds`로 저장된다(패널 칩은 두지 않았다 — 지도 위 강조로 충분).
 - **기존 도구와의 관계**: 흐름 레이어는 OL 피처가 없어 `SelectTool`이 무시한다. `FlowTool`은 흐름 레이어가
-  보이는 동안만 리스너를 붙이고, 다른 도구(그리기·측정)가 활성이면 클릭 필터를 받지 않는다.
+  하나라도 있는 동안 리스너를 붙이고(보이는 레이어만 히트 대상), 어떤 도구든(선택 도구 포함) 활성이면
+  클릭 필터를 받지 않는다. 태블릿에서는 탭이 툴팁을 띄운다.
 
 ## 스타일 패널 항목
 
 색상 램프(4종: 청록·파랑·주황·보라), 흐름 굵기 배율, 투명도, 애니메이션 켬/끔·속도, 위치 원 표시,
-라벨 표시, 자기 흐름 포함, 상위 N개(선택, 기본 꺼짐), 어두운 배경(배경지도를 Carto Dark로 전환).
+라벨 표시, 자기 흐름 포함, 상위 N개(선택, 기본 꺼짐), 어두운 배경(배경지도를 Esri 다크 그레이로 전환 — CARTO 무료 타일은 API 키 없이는 워터마크가 찍힌다.
+켜면 램프도 "중간 톤 → 아주 밝음"으로 바꿔 큰 흐름이 밝게 보인다, `style.darkMode`). 램프의 낮은 끝은 중간 톤이라 흰 면 채움 위에서도 보인다.
 
 ## 저장·복원·내보내기
 
 - `ProjectManager.serialize()`: `type === 'flow'`면 `flowConfig: { locations, flows, style, meta, selectedIds }`를
   통째로 저장한다(피처 없음). 좌표를 확정해 저장하므로 기준 레이어가 없어도 복원된다.
-- `deserialize()`: `flowTool.restoreFlow(layerData)`로 재생성. 자동 저장·최근 파일·클라우드 저장은 손대지 않는다.
+- `deserialize()`: `flowTool.restoreFlow(layerData)`로 재생성. **IndexedDB 자동 저장도** 같은 `flowConfig` 레코드로 저장·복원한다
+  (`StateManager.saveLayer` / `AutoSaveManager.restoreLayer`, 위치 선택이 바뀌어도 저장). 최근 파일·클라우드 저장은 `serialize()`를 그대로 쓴다.
 - 내보내기: Canvas 2D라 `html2canvas`가 그대로 찍는다. 캡처 직전 `renderer.setAnimation(false)`로 실선 한 프레임을
   그리고 캡처 후 복구해 점선 조각이 찍히지 않게 한다.
 - 레이어 목록: 표시·순서·이름 변경·삭제는 그대로. 벡터 전용 메뉴(속성 테이블·필드 계산기·공간 연산·복제)는
@@ -163,10 +173,10 @@ Attribute Data 앞에 둔다. 데이터셋 `type: 'flow'`는 클릭 시 흐름�
 
 ## 시연용 HTML
 
-`public/demo/flowmap-demo.html` — e-gis.kr/demo/flowmap-demo.html 로 열리는 단독 페이지.
-제품과 **같은** `flowGeometry`·`FlowRenderer`를 Vite의 별도 엔트리(`demo/flowmap-demo.js`)로 번들한다.
+`demo/flowmap-demo.html`(저장소 루트, Vite 멀티 엔트리) + `src/demo/flowmap-demo.js`·`.css` → 빌드 후
+`dist/demo/flowmap-demo.html`, e-gis.kr/demo/flowmap-demo 로 열리는 단독 페이지. 제품과 **같은** `FlowRenderer`·`FlowInteraction`을 쓴다.
 어두운 배경지도 + 시도 간 이동 예시 자료 + 애니메이션·툴팁·클릭 필터가 바로 도는 한 화면.
-상단에 "예시 자료(가상 수치)" 배지. 시연이 곧 렌더러의 스파이크이므로 이중 작업이 없다.
+상단에 "예시 자료 · 가상 수치" 배지. 배경은 Esri 다크 그레이. 시연이 곧 렌더러의 스파이크이므로 이중 작업이 없다.
 
 ## flowmap.gl 확인 페이지 (스파이크)
 
@@ -174,6 +184,9 @@ Attribute Data 앞에 둔다. 데이터셋 `type: 'flow'`는 클릭 시 흐름�
 불러 같은 예시 자료로 `FlowMapLayer`를 띄워 본다. 결과(뜨는지, 콘솔 오류, 번들 크기, 필요한 deck.gl 버전)를
 `docs/spikes/flowmap-gl-check.md`에 적는다. deck.gl 9에서 안 뜨면 8.9로 한 번 더 시도한다.
 2차(줌별 군집) 판단 근거로만 쓴다.
+결과: flowmap.gl은 UMD가 없어 deck.gl 9.4 + `@flowmap.gl/layers` 9.4를 esm.sh `?deps=`로만 띄울 수 있었다
+(jsdelivr `/+esm`은 luma.gl 중복 충돌, 8.9 조합은 mjolnir TypeError). 줌별 군집·애니메이션은 라이브러리가 그냥 주지만
+npm+Vite 번들(gz ≈280 KB 지연 청크)과 OL↔deck 뷰 동기화 층(약 200~300줄)이 전제다 — 상세는 메모.
 
 ## 단계
 
@@ -193,3 +206,17 @@ Attribute Data 앞에 둔다. 데이터셋 `type: 'flow'`는 클릭 시 흐름�
 - 시간 슬라이더(연도·월 열)
 - 구글 스프레드시트 입력
 - deck.gl 렌더러로의 교체 (스파이크 결과에 따라)
+
+## 구현하며 바뀐 점 (원래 설계와 다른 곳)
+
+- `TableLoader`를 재사용하지 않고 `FlowLoader`가 직접 읽는다 — 셀 강제 변환("1,234"→1) 때문. CSV는 CP949 폴백.
+- 대표점은 `pointOnFeature`가 아니라 가장 큰 조각의 무게중심(조각 밖이면 `pointOnFeature`) — 섬 문제.
+- 행렬형은 교집합이 아니라 합계를 뺀 전체를 쓰고, 못 찾는 이름은 "매칭 안 됨"으로 넘긴다. 빈 칸·0은 세지 않는다.
+- 통합시 별칭(전남+광주→통합)은 자동이 아니라 손 매칭. 같은 이름이 여럿이면 자동 매칭에서 뺀다.
+- `FlowInteraction`·`layerLocations` 모듈이 추가됐고, 애니메이션 루프는 `FlowTool`이 아니라 `FlowRenderer`가 캔버스에 직접 돌린다.
+- 짧은 현(현 < 5·머리폭)은 굽힘을 키워 양방향 리본이 겹치지 않게 한다.
+- 어두운 배경은 CARTO Dark가 아니라 새 `ESRI_DARK` 배경지도이고, 켜면 램프도 다크 모드로 바뀐다.
+- IndexedDB 자동 저장에도 흐름 레이어를 담는다(원래는 "손대지 않는다").
+- 패널의 선택 칩, 레이어 툴팁의 제외 건수는 넣지 않았다.
+- 시연 페이지 경로는 `demo/flowmap-demo.html`(루트) + `src/demo/`.
+- 3D 보기의 표면 합성은 흐름 캔버스를 집지 않는다 — 3D에서는 흐름이 안 보인다 (범위 밖, 알려진 한계).

@@ -15,9 +15,20 @@
  */
 
 import { strokeWidthOf } from '../../utils/strokeStyle.js';
+import { COLOR_RAMPS } from '../../flow/flowModel.js';
 
 /** 분류색을 스스로 정하는 레이어 — 단색 하나로는 표현할 수 없어 사각형으로 둔다 */
-const THEMATIC_TYPES = ['choropleth', 'heatmap', 'raster', 'chartmap', 'dem'];
+const THEMATIC_TYPES = ['choropleth', 'heatmap', 'raster', 'chartmap', 'dem', 'flow'];
+
+/**
+ * 흐름 레이어의 대표색 — 램프(_flowConfig.style.ramp)의 가운데 색.
+ * 흐름은 굵기별로 램프를 타므로 단색 하나가 없다; 램프를 알아볼 수 있는 색 하나를 고른다.
+ */
+function flowRampColor(layerInfo) {
+  const ramp = layerInfo._flowConfig && layerInfo._flowConfig.style && layerInfo._flowConfig.style.ramp;
+  const stops = COLOR_RAMPS[ramp] || COLOR_RAMPS.teal;
+  return stops[Math.floor(stops.length / 2)];
+}
 
 function isThematic(layerInfo) {
   // 카토그램은 type이 'vector'라 타입만으로는 못 알아본다 (CartogramTool.js:205)
@@ -40,6 +51,11 @@ function shapeOf(geometryType) {
  */
 export function swatchSpec(layerInfo, lineDash) {
   const color = layerInfo.color || '#808080';
+  if (layerInfo.type === 'flow') {
+    // 흐름 레이어: 캔버스 렌더러라 fillColor 등이 없다. 램프 색으로 꽉 채운 사각형, 테두리 없음
+    const fill = flowRampColor(layerInfo);
+    return { shape: 'square', fill, stroke: fill, fillOpacity: 1, strokeOpacity: 1, strokeWidth: 0, dash: null, radius: 6 };
+  }
   const spec = {
     shape: isThematic(layerInfo) ? 'square' : shapeOf(layerInfo.geometryType),
     fill: layerInfo.fillColor || color,

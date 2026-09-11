@@ -37,7 +37,8 @@ class DrawingPanel {
    * 모달 HTML 생성
    */
   getModalHTML() {
-    const layers = layerManager.getAllLayers().filter(l => l.type !== 'heatmap');
+    // 그리기 대상은 벡터 소스가 있는 레이어만 — 흐름·래스터 레이어는 source 가 없어 addFeature 할 수 없다
+    const layers = layerManager.getAllLayers().filter(l => l.type !== 'heatmap' && l.source);
     let layerOptions = '<option value="">새 레이어로 생성</option>';
     layers.forEach(l => {
       layerOptions += `<option value="${l.id}">${l.name}</option>`;

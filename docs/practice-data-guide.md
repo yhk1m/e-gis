@@ -2,7 +2,7 @@
 
 '데이터 불러오기' → '📂 실습 데이터' 탭에 표시되는 데이터셋을 추가하는 방법입니다.
 
-실습 데이터 탭은 데이터 형태별 다섯 섹션으로 이루어집니다. 섹션의 순서와 이름은
+실습 데이터 탭은 데이터 형태별 여섯 섹션으로 이루어집니다. 섹션의 순서와 이름은
 `public/data/builtin/practice_catalog.json`의 그룹 순서를 그대로 따릅니다.
 
 | 섹션 | 실제 폴더 | 등록 방법 |
@@ -11,6 +11,7 @@
 | 📏 Line Data(선) | `practice/Line Data/` | `practice_catalog.json`에 직접 등록 |
 | 🟩 Area Data(면) | `practice/Area Data/` (행정경계는 `행정경계/` 하위 폴더) | `practice_catalog.json`에 직접 등록 |
 | 🏔 Raster Data(래스터) | `raster/` | 파일만 넣고 `npm run catalog` (자동 생성) |
+| 🔀 Flow Data(흐름) | `practice/Flow Data/` | `practice_catalog.json`에 직접 등록 (`type: "flow"`, 긴 형식 또는 행렬형 XLSX/CSV) |
 | 📊 Attribute Data(속성정보) | `practice/Attribute Data/` | `practice_catalog.json`에 직접 등록 |
 
 ## 1. 데이터 파일 넣기
@@ -23,6 +24,7 @@
 |---|---|---|
 | `spatial` | GeoJSON (`.geojson`) | 클릭 시 벡터 레이어로 추가 |
 | `coordinate` | 엑셀 (`.xlsx`) 또는 CSV (`.csv`) | 위도·경도 열로 포인트 레이어 생성 (`latColumn`/`lonColumn` 지정) |
+| `flow` | 엑셀 (`.xlsx`) 또는 CSV (`.csv`) | 클릭 시 주제도 › 흐름도 패널이 열리고 표가 채워짐 (출발·도착·양 세 열, 또는 행=전출지·열=전입지 행렬) |
 | `attribute` | 엑셀 (`.xlsx`) 또는 CSV (`.csv`) | 클릭 시 미리보기 → 테이블 결합 |
 
 래스터(GeoTIFF)는 `public/data/builtin/raster/` 에 `광역자치단체명 시군구명.tif` 형식으로 넣고
@@ -108,7 +110,7 @@
 - `id` — 영문 고유 ID (전체에서 유일해야 함)
 - `name` — 표시 이름
 - `description` — (선택) 설명
-- `type` — `spatial` | `coordinate` | `attribute`
+- `type` — `spatial` | `coordinate` | `attribute` | `flow`
 - `file` — `public/data/builtin/` 기준 상대 경로 (예: `practice/Area Data/행정경계/대한민국 시군구.geojson`)
 - `folder` — (선택) 같은 값끼리 섹션 안에서 접이식 폴더로 묶임 (예: `행정경계`)
 - `keyColumn` — (선택, attribute 전용) 테이블 결합 시 기본 선택될 키 컬럼
@@ -118,5 +120,5 @@
 ## 3. 확인
 
 `npm run dev` 후 '데이터 불러오기' → '실습 데이터' 탭에서 확인합니다.
-검색창은 이름·설명·폴더명으로 다섯 섹션을 한꺼번에 찾습니다.
+검색창은 이름·설명·폴더명으로 여섯 섹션을 한꺼번에 찾습니다.
 `practice_catalog.json`은 `npm run catalog`를 실행해도 덮어쓰이지 않습니다 (래스터 카탈로그만 생성).

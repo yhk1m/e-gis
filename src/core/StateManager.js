@@ -135,103 +135,131 @@ class StateManager {
   // ==================== IndexedDB (레이어 데이터) ====================
 
   /**
-   * 레이어를 GeoJSON 형태로 저장
+   * 레이어를 GeoJSON 형태로 저장 (흐름 레이어는 피처 대신 flowConfig 로)
    */
   async saveLayer(layerInfo) {
     await this.waitForReady();
+
+    // 흐름 레이어: 피처가 없다. 좌표까지 확정된 데이터셋과 스타일을 그대로 저장한다 (ProjectManager 와 같은 규약)
+    if (layerInfo.type === 'flow' && layerInfo._flowConfig) {
+      const c = layerInfo._flowConfig;
+      const layerData = {
+        id: layerInfo.id,
+        name: layerInfo.name,
+        type: 'flow',
+        geometryType: 'Flow',
+        visible: layerInfo.visible,
+        zIndex: (layerInfo.olLayer && typeof layerInfo.olLayer.getZIndex === 'function')
+          ? layerInfo.olLayer.getZIndex()
+          : undefined,
+        flowConfig: { dataset: c.dataset, style: c.style, selectedIds: c.selectedIds || [] },
+        timestamp: Date.now()
+      };
+      return this._putLayerRecord(layerData);
+    }
 
     // 래스터 레이어는 저장하지 않음 (GeoJSON 변환 불가)
     if (layerInfo.type === 'raster' || !layerInfo.source) {
       return Promise.resolve(layerInfo.id);
     }
 
+    // 레코드 조립 — 여기서 던지는 예외는 async 함수의 거부(reject)로 그대로 전달된다
+    const features = layerInfo.source.getFeatures();
+    const geoJSONFormat = new GeoJSON();
+
+    // 단계구분도 설정 직렬화 (tool 참조 제외)
+    let choroplethConfig = null;
+    if (layerInfo._choroplethConfig) {
+      const cfg = layerInfo._choroplethConfig;
+      choroplethConfig = {
+        attribute: cfg.attribute,
+        breaks: cfg.breaks,
+        colors: cfg.colors,
+        title: cfg.title,
+        unit: cfg.unit,
+        format: cfg.format,
+        rounding: cfg.rounding,
+        controlsHidden: cfg.controlsHidden
+      };
+    }
+
+    // 카토그램 설정 직렬화 (색상 분류 — 복원 시 색 유지)
+    let cartogramConfig = null;
+    if (layerInfo._cartogramConfig) {
+      const c = layerInfo._cartogramConfig;
+      cartogramConfig = {
+        attribute: c.attribute,
+        colorScheme: c.colorScheme,
+        method: c.method,
+        colors: c.colors,
+        breaks: c.breaks,
+        cartogramType: c.cartogramType
+      };
+    }
+
+    // 도형표현도 설정 직렬화
+    let chartMapConfig = null;
+    if (layerInfo._chartMapConfig) {
+      const c = layerInfo._chartMapConfig;
+      chartMapConfig = {
+        sourceLayerId: c.sourceLayerId,
+        chartType: c.chartType,
+        fields: c.fields,
+        sizeField: c.sizeField,
+        minSize: c.minSize,
+        maxSize: c.maxSize,
+        showLabels: c.showLabels,
+        colors: c.colors,        // 필드별 지정 색
+        showValues: c.showValues // 수치 라벨 표시
+      };
+    }
+
+    // 히트맵 설정 직렬화 — 저장하지 않으면 복원 시 OL Heatmap이 아니라
+    // 포인트로만 표시된다 (ProjectManager.js:165-170과 같은 규약)
+    let heatmapConfig = null;
+    if (layerInfo._heatmapConfig) {
+      const h = layerInfo._heatmapConfig;
+      heatmapConfig = {
+        sourceLayerId: h.sourceLayerId,
+        blur: h.blur,
+        radius: h.radius,
+        weight: h.weight,
+        gradient: h.gradient,
+        hideSource: h.hideSource
+      };
+    }
+
+    const layerData = {
+      id: layerInfo.id,
+      name: layerInfo.name,
+      type: layerInfo.type,
+      geometryType: layerInfo.geometryType,
+      color: layerInfo.color,
+      ...pickStyleFields(layerInfo),
+      visible: layerInfo.visible,
+      // 화면 순서 — 복원 시 이 값으로 아래에서 위 순서를 되살린다
+      zIndex: (layerInfo.olLayer && typeof layerInfo.olLayer.getZIndex === 'function')
+        ? layerInfo.olLayer.getZIndex()
+        : undefined,
+      choroplethConfig,
+      chartMapConfig,
+      cartogramConfig,
+      heatmapConfig,
+      features: geoJSONFormat.writeFeaturesObject(features),
+      timestamp: Date.now()
+    };
+
+    return this._putLayerRecord(layerData);
+  }
+
+  /**
+   * 레이어 레코드 하나를 IndexedDB 에 넣는다 (벡터·흐름 공용).
+   * 호출자가 waitForReady 를 마친 뒤 부른다. 트랜잭션을 열다 던지는 예외도 거부(reject)로 돌린다.
+   * @returns {Promise<string>} 저장된 레코드 id
+   */
+  _putLayerRecord(layerData) {
     return new Promise((resolve, reject) => {
       try {
-        const features = layerInfo.source.getFeatures();
-        const geoJSONFormat = new GeoJSON();
-
-        // 단계구분도 설정 직렬화 (tool 참조 제외)
-        let choroplethConfig = null;
-        if (layerInfo._choroplethConfig) {
-          const cfg = layerInfo._choroplethConfig;
-          choroplethConfig = {
-            attribute: cfg.attribute,
-            breaks: cfg.breaks,
-            colors: cfg.colors,
-            title: cfg.title,
-            unit: cfg.unit,
-            format: cfg.format,
-            rounding: cfg.rounding,
-            controlsHidden: cfg.controlsHidden
-          };
-        }
-
-        // 카토그램 설정 직렬화 (색상 분류 — 복원 시 색 유지)
-        let cartogramConfig = null;
-        if (layerInfo._cartogramConfig) {
-          const c = layerInfo._cartogramConfig;
-          cartogramConfig = {
-            attribute: c.attribute,
-            colorScheme: c.colorScheme,
-            method: c.method,
-            colors: c.colors,
-            breaks: c.breaks,
-            cartogramType: c.cartogramType
-          };
-        }
-
-        // 도형표현도 설정 직렬화
-        let chartMapConfig = null;
-        if (layerInfo._chartMapConfig) {
-          const c = layerInfo._chartMapConfig;
-          chartMapConfig = {
-            sourceLayerId: c.sourceLayerId,
-            chartType: c.chartType,
-            fields: c.fields,
-            sizeField: c.sizeField,
-            minSize: c.minSize,
-            maxSize: c.maxSize,
-            showLabels: c.showLabels,
-            colors: c.colors,        // 필드별 지정 색
-            showValues: c.showValues // 수치 라벨 표시
-          };
-        }
-
-        // 히트맵 설정 직렬화 — 저장하지 않으면 복원 시 OL Heatmap이 아니라
-        // 포인트로만 표시된다 (ProjectManager.js:165-170과 같은 규약)
-        let heatmapConfig = null;
-        if (layerInfo._heatmapConfig) {
-          const h = layerInfo._heatmapConfig;
-          heatmapConfig = {
-            sourceLayerId: h.sourceLayerId,
-            blur: h.blur,
-            radius: h.radius,
-            weight: h.weight,
-            gradient: h.gradient,
-            hideSource: h.hideSource
-          };
-        }
-
-        const layerData = {
-          id: layerInfo.id,
-          name: layerInfo.name,
-          type: layerInfo.type,
-          geometryType: layerInfo.geometryType,
-          color: layerInfo.color,
-          ...pickStyleFields(layerInfo),
-          visible: layerInfo.visible,
-          // 화면 순서 — 복원 시 이 값으로 아래에서 위 순서를 되살린다
-          zIndex: (layerInfo.olLayer && typeof layerInfo.olLayer.getZIndex === 'function')
-            ? layerInfo.olLayer.getZIndex()
-            : undefined,
-          choroplethConfig,
-          chartMapConfig,
-          cartogramConfig,
-          heatmapConfig,
-          features: geoJSONFormat.writeFeaturesObject(features),
-          timestamp: Date.now()
-        };
-
         const transaction = this.db.transaction([STORE_LAYERS], 'readwrite');
         const store = transaction.objectStore(STORE_LAYERS);
         const request = store.put(layerData);

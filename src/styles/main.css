@@ -5427,3 +5427,51 @@ body.exporting .egis-basemap-panel {
     align-self: flex-end;
   }
 }
+
+/* ===== 흐름도 ===== */
+.flow-tooltip {
+  position: absolute;
+  transform: translate(14px, 14px);
+  pointer-events: none;
+  z-index: 30;
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.flow-tooltip b { font-weight: 700; margin-right: 6px; }
+.flow-tooltip--left { transform: translate(calc(-100% - 14px), 14px); }
+.flow-tooltip--up { transform: translate(14px, calc(-100% - 14px)); }
+.flow-tooltip--left.flow-tooltip--up { transform: translate(calc(-100% - 14px), calc(-100% - 14px)); }
+body.exporting .flow-tooltip { display: none; }
+
+/* ===== 흐름도 패널 (FlowPanel) ===== */
+.flow-modal .modal-content {
+  width: 600px; max-width: 94vw; max-height: 90vh; display: flex; flex-direction: column;
+  background: var(--bg-panel); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+}
+.flow-modal .modal-body { overflow-y: auto; padding: var(--spacing-sm) var(--spacing-lg); }
+.flow-modal .form-group { display: block; margin-bottom: var(--spacing-sm); }
+.flow-modal .form-group label { display: block; margin-bottom: var(--spacing-xs); font-size: var(--font-size-sm); font-weight: 500; color: var(--text-primary); }
+.flow-modal .form-group select,
+.flow-modal .form-group input[type="text"],
+.flow-modal .form-group input[type="range"] { width: 100%; box-sizing: border-box; }
+.flow-modal .form-group select,
+.flow-modal .form-group input[type="text"] {
+  padding: var(--spacing-sm); border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+  background: var(--bg-input); color: var(--text-primary); font-size: var(--font-size-sm);
+}
+.flow-section { padding: 10px 0 12px; border-bottom: 1px solid var(--border-color); }
+.flow-section:last-child { border-bottom: none; }
+.flow-section-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.flow-muted { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+.flow-warn { margin: 6px 0; padding: 6px 10px; border-radius: 6px; background: rgba(245, 158, 11, 0.12); color: #b45309; font-size: 12px; }
+.flow-loaded { margin: 4px 0 8px; font-size: 12px; color: var(--text-secondary); }
+.flow-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.flow-radio label, .flow-checks label { display: inline-flex; align-items: center; gap: 6px; margin: 4px 14px 4px 0; font-size: 12px; }
+.flow-unmatched { max-height: 160px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; }
+.flow-unmatched-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+.flow-unmatched-row select { max-width: 55%; }

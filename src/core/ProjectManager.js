@@ -13,6 +13,7 @@ import { choroplethTool } from '../tools/ChoroplethTool.js';
 import { chartMapTool } from '../tools/ChartMapTool.js';
 import { cartogramTool } from '../tools/CartogramTool.js';
 import { heatmapTool } from '../tools/HeatmapTool.js';
+import { flowTool } from '../tools/FlowTool.js';
 import { saveTextAs } from '../utils/saveFile.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
@@ -164,6 +165,12 @@ export class ProjectManager {
           };
         }
 
+        // 흐름 레이어: 피처가 없다. 좌표까지 확정된 데이터셋과 스타일을 통째로 저장
+        if (layer.type === 'flow' && layer._flowConfig) {
+          const c = layer._flowConfig;
+          return { ...base, flowConfig: { dataset: c.dataset, style: c.style, selectedIds: c.selectedIds || [] } };
+        }
+
         // 벡터 레이어: GeoJSON으로 직렬화 (source가 없으면 빈 피처)
         const features = layer.source ? layer.source.getFeatures() : [];
         const geojsonData = geojsonFormat.writeFeaturesObject(features, {
@@ -250,6 +257,18 @@ export class ProjectManager {
           }
 
           console.log(`래스터 레이어 "${layerData.name}" 복원됨`);
+          continue;
+        }
+
+        // 흐름 레이어 복원 — 피처 없이 flowConfig 로 렌더러를 다시 만든다.
+        // 설정이 빠진 기록은 벡터 경로로 흘러들지 않게 여기서 건너뛴다
+        if (layerData.type === 'flow') {
+          if (!layerData.flowConfig) {
+            console.warn(`흐름 레이어 "${layerData.name}"에 flowConfig 가 없어 건너뜁니다.`);
+            continue;
+          }
+          flowTool.restoreFlow(layerData);
+          console.log(`흐름 레이어 "${layerData.name}" 복원됨`);
           continue;
         }
 

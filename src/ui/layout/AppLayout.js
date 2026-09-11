@@ -128,6 +128,7 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="analysis-chart-map">도형표현도</div>
                 <div class="dropdown-item" data-action="analysis-heatmap">히트맵</div>
                 <div class="dropdown-item" data-action="analysis-cartogram">카토그램</div>
+                <div class="dropdown-item" data-action="analysis-flow">흐름도</div>
               </div>
             </div>
             <div class="menu-item" data-menu="builtin-data">

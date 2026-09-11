@@ -15,7 +15,8 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         privacy: resolve(__dirname, 'privacy.html'),
-        guide: resolve(__dirname, 'guide.html')
+        guide: resolve(__dirname, 'guide.html'),
+        flowDemo: resolve(__dirname, 'demo/flowmap-demo.html')
       }
     }
   }
