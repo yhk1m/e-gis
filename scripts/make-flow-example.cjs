@@ -1,3 +1,4 @@
+// © 2026 김용현
 // scripts/make-flow-example.cjs
 /**
  * 시도 간 인구이동 **예시(가상 수치)** 를 만든다.
