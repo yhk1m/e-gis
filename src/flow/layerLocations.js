@@ -1,7 +1,7 @@
 // © 2026 김용현
 /**
  * 기준 레이어(행정경계 등)의 피처 → 위치 후보.
- * 면은 turf.pointOnFeature 로 면 안에 놓이는 점을, 점은 그 점을 대표점으로 쓴다.
+ * 면은 대표점(representativePoint)을, 점은 그 점을 그대로 쓴다.
  */
 import GeoJSON from 'ol/format/GeoJSON';
 import { toLonLat } from 'ol/proj';
@@ -14,7 +14,7 @@ const geojson = new GeoJSON();
 /** 위치 기준으로 쓸 수 있는 레이어 (피처가 있는 벡터 레이어) */
 export function listCandidateLayers() {
   return layerManager.getAllLayers().filter((l) =>
-    l.type !== 'raster' && l.type !== 'flow' && l.type !== 'chartmap' &&
+    l.type !== 'raster' && l.type !== 'flow' && l.type !== 'chartmap' && l.type !== 'heatmap' &&
     l.source && typeof l.source.getFeatures === 'function' && l.source.getFeatures().length > 0
   );
 }
@@ -25,9 +25,41 @@ export function layerFieldNames(layerInfo) {
 
 /** 이름 열 후보의 기본값: name/이름/NAME_KO 류가 있으면 그것, 없으면 첫 문자열 열 */
 export function guessNameField(fields) {
-  return fields.find((f) => /^(name_ko|name|이름|명칭|지역명|시도명|시군구명|sido_name|sgg_nm|gu_nm)$/i.test(f))
-    || fields.find((f) => /name|이름|명/i.test(f))
+  return fields.find((f) => /^(name_ko|name|이름|명칭|지역명|시도명|시군구명|sido_name|sgg_nm|gu_nm|ctp_kor_nm|sig_kor_nm|emd_kor_nm|adm_nm)$/i.test(f))
+    || fields.find((f) => /name|이름|명|_nm$/i.test(f))
     || fields[0] || null;
+}
+
+/**
+ * 면 피처의 대표점. MultiPolygon(섬 딸린 시도 등)에서 turf.pointOnFeature 를 바로 쓰면
+ * 가장 먼 조각(작은 섬)에 점이 찍혀 인천이 먼바다 섬에, 경북·전남이 해안으로 끌려가는
+ * 문제가 있었다. 가장 큰 조각을 고르고, 그 안에서 무게중심이 조각 안에 있으면 그걸,
+ * 아니면(오목한 모양이라 무게중심이 밖으로 나가면) pointOnFeature 를 쓴다.
+ * @param {Object} featureObj GeoJSON Feature
+ * @returns {Object} GeoJSON Point Feature
+ */
+export function representativePoint(featureObj) {
+  const geom = featureObj.geometry;
+  if (!geom) return turf.pointOnFeature(featureObj);
+
+  if (geom.type === 'MultiPolygon') {
+    let best = null;
+    let bestArea = -Infinity;
+    geom.coordinates.forEach((coords) => {
+      const poly = turf.polygon(coords);
+      const area = turf.area(poly);
+      if (area > bestArea) { bestArea = area; best = poly; }
+    });
+    return representativePoint(best);
+  }
+
+  if (geom.type === 'Polygon') {
+    const center = turf.centerOfMass(featureObj);
+    if (turf.booleanPointInPolygon(center, featureObj)) return center;
+    return turf.pointOnFeature(featureObj);
+  }
+
+  return turf.pointOnFeature(featureObj);
 }
 
 /**
@@ -47,7 +79,7 @@ export function layerLocations(layerInfo, nameField, codeField = null) {
       [lon, lat] = toLonLat(geom.getCoordinates());
     } else {
       const obj = geojson.writeFeatureObject(feature, { featureProjection: 'EPSG:3857', dataProjection: 'EPSG:4326' });
-      [lon, lat] = turf.pointOnFeature(obj).geometry.coordinates;
+      [lon, lat] = representativePoint(obj).geometry.coordinates;
     }
     const name = String(feature.get(nameField) ?? '').trim();
     if (!name) return;

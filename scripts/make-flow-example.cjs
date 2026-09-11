@@ -28,9 +28,36 @@ const POP = {
   경상북도: 255, 경상남도: 325, 제주특별자치도: 67, 전북특별자치도: 175, 전남광주통합특별시: 320
 };
 
+/**
+ * 면 피처의 대표점. src/flow/layerLocations.js 의 representativePoint 와 로직이 같다
+ * (이 스크립트는 CJS라 그 ESM 모듈을 require 할 수 없어 여기 그대로 옮겼다).
+ * MultiPolygon 은 가장 큰 조각을 고르고, 그 조각의 무게중심이 안에 있으면 그 점을,
+ * 아니면(오목한 모양) pointOnFeature 를 쓴다 — 그냥 pointOnFeature 만 쓰면 섬처럼
+ * 멀리 떨어진 작은 조각에 점이 찍혀 인천이 섬으로, 경북·전남이 해안으로 끌려갔다.
+ */
+function representativePoint(featureObj) {
+  const geom = featureObj.geometry;
+  if (!geom) return turf.pointOnFeature(featureObj);
+  if (geom.type === 'MultiPolygon') {
+    let best = null, bestArea = -Infinity;
+    geom.coordinates.forEach((coords) => {
+      const poly = turf.polygon(coords);
+      const area = turf.area(poly);
+      if (area > bestArea) { bestArea = area; best = poly; }
+    });
+    return representativePoint(best);
+  }
+  if (geom.type === 'Polygon') {
+    const center = turf.centerOfMass(featureObj);
+    if (turf.booleanPointInPolygon(center, featureObj)) return center;
+    return turf.pointOnFeature(featureObj);
+  }
+  return turf.pointOnFeature(featureObj);
+}
+
 const geo = JSON.parse(fs.readFileSync(SIDO_GEOJSON, 'utf8'));
 const locations = geo.features.map((f) => {
-  const [lon, lat] = turf.pointOnFeature(f).geometry.coordinates;
+  const [lon, lat] = representativePoint(f).geometry.coordinates;
   return { id: String(f.properties.code), name: f.properties.name, lon, lat };
 });
 
