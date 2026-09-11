@@ -35,6 +35,24 @@ export function curvePoints(p0, p1, { bend = 0.2, samples = 24 } = {}) {
 }
 
 /**
+ * p0 → p1 선분을 진행 방향의 오른쪽으로 offset 만큼 평행 이동한 두 끝점.
+ * flowmap.blue 처럼 직선으로 그릴 때 A→B 와 B→A 가 서로 다른 쪽으로 비켜서 나란히 붙는다.
+ * 같은 점 둘이면 그대로 돌려준다.
+ */
+export function offsetSegment(p0, p1, offset) {
+  const dx = p1[0] - p0[0];
+  const dy = p1[1] - p0[1];
+  const len = Math.hypot(dx, dy);
+  if (len === 0) return [p0.slice(), p1.slice()];
+  const nx = -dy / len; // 화면 좌표(y 아래)에서 오른쪽 법선
+  const ny = dx / len;
+  return [
+    [p0[0] + nx * offset, p0[1] + ny * offset],
+    [p1[0] + nx * offset, p1[1] + ny * offset]
+  ];
+}
+
+/**
  * 폴리라인을 따라 폭이 w0(출발) → w1(도착) 로 변하는 닫힌 다각형.
  * 바깥쪽(진행 방향의 오른쪽) 변을 앞으로, 안쪽(왼쪽) 변을 뒤로 이어 fill 한 번으로 그린다.
  */

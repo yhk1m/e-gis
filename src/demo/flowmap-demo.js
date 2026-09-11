@@ -43,6 +43,7 @@ $('ramp').addEventListener('change', (e) => renderer.setStyle({ ramp: e.target.v
 $('width').addEventListener('input', (e) => renderer.setStyle({ widthScale: Number(e.target.value) }));
 $('topn').addEventListener('change', (e) => renderer.setStyle({ topN: Math.max(0, Number(e.target.value) || 0) }));
 $('locs').addEventListener('change', (e) => renderer.setStyle({ showLocations: e.target.checked }));
+$('curved').addEventListener('change', (e) => renderer.setStyle({ curved: e.target.checked }));
 
 // 실측용
 window.__flowDemo = { map, renderer, interaction };

@@ -10,7 +10,7 @@
 import Layer from 'ol/layer/Layer';
 import { fromLonLat } from 'ol/proj';
 import { apply as applyTransform } from 'ol/transform';
-import { curvePoints, taperOutline } from './flowGeometry.js';
+import { curvePoints, taperOutline, offsetSegment } from './flowGeometry.js';
 import {
   COLOR_RAMPS, rampColor, darkModeStops, flowStrength, flowWidth, locationRadius, aggregateTotals, visibleFlows
 } from './flowModel.js';
@@ -21,7 +21,8 @@ export const DEFAULT_FLOW_STYLE = {
   maxWidth: 12,          // 가장 큰 흐름의 머리 폭(px)
   opacity: 0.85,
   animate: true,
-  animSpeed: 1,
+  animSpeed: 1,          // 1 = 초당 약 20px (기본), 슬라이더로 0.3~3배
+  curved: false,         // false: 직선(왕복 흐름은 나란히 붙음, flowmap.blue), true: 호
   showLocations: true,
   showLabels: true,
   includeSelf: false,    // 자기 흐름을 유입·유출 집계에 넣을지
@@ -200,11 +201,19 @@ export class FlowRenderer extends Layer {
       const w1 = flowWidth(f.count, maxCount, s.maxWidth * s.widthScale);
       const a = px.get(f.origin);
       const b = px.get(f.dest);
-      // 양방향 리본이 겹치지 않게: 굽힘 오프셋이 머리 폭 + 여유보다 작아지면(짧은 현) 더 굽힌다.
-      // 오프셋 = bend × 현 길이, 보이는 처짐은 그 절반이므로 현 < 5·w1 이면 기본 0.2 로는 겹친다.
-      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      const bend = len > 0 ? Math.min(1, Math.max(0.2, (w1 + 4) / len)) : 0.2;
-      const pts = curvePoints(a, b, { bend, samples: 24 });
+      let pts;
+      if (s.curved) {
+        // 호: 양방향 리본이 겹치지 않게 굽힘 오프셋이 머리 폭 + 여유보다 작아지면(짧은 현) 더 굽힌다.
+        // 오프셋 = bend × 현 길이, 보이는 처짐은 그 절반이므로 현 < 5·w1 이면 기본 0.2 로는 겹친다.
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        const bend = len > 0 ? Math.min(1, Math.max(0.2, (w1 + 4) / len)) : 0.2;
+        pts = curvePoints(a, b, { bend, samples: 24 });
+      } else {
+        // 직선(flowmap.blue): 진행 방향 오른쪽으로 자기 머리 폭의 절반 + 틈만큼 비켜 놓으면
+        // A→B 와 B→A 가 한 띠처럼 나란히 붙고 화살 머리가 서로 마주 본다. 선이 두 배로 늘어나지 않는다.
+        const [a2, b2] = offsetSegment(a, b, w1 / 2 + 0.5);
+        pts = curvePoints(a2, b2, { bend: 0, samples: 6 });
+      }
       const outline = new Path2D();
       taperOutline(pts, Math.max(0.6, w1 * 0.15), w1)
         .forEach(([x, y], k) => (k === 0 ? outline.moveTo(x, y) : outline.lineTo(x, y)));
@@ -344,7 +353,7 @@ export class FlowRenderer extends Layer {
     this._raf = requestAnimationFrame(() => {
       this._raf = null;
       if (this._skipFrames > 0) { this._skipFrames--; this._tick(); return; }
-      this._dashOffset -= 0.9 * this.style.animSpeed; // 오프셋이 줄면 점선이 경로 방향(출발→도착)으로 흐른다
+      this._dashOffset -= 0.35 * this.style.animSpeed; // 오프셋이 줄면 점선이 경로 방향(출발→도착)으로 흐른다 (≈20px/s)
       const t0 = performance.now();
       this._draw();
       const dt = performance.now() - t0;

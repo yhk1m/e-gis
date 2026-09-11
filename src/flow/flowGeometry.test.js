@@ -1,6 +1,6 @@
 // © 2026 김용현
 import { describe, it, expect } from 'vitest';
-import { curvePoints, taperOutline, distanceToPolyline } from './flowGeometry.js';
+import { curvePoints, taperOutline, distanceToPolyline, offsetSegment } from './flowGeometry.js';
 
 describe('curvePoints', () => {
   it('양 끝은 입력점이고 samples+1 개를 돌려준다', () => {
@@ -89,5 +89,19 @@ describe('distanceToPolyline', () => {
   });
   it('빈 폴리라인이면 Infinity', () => {
     expect(distanceToPolyline([1, 1], [])).toBe(Infinity);
+  });
+});
+
+describe('offsetSegment', () => {
+  it('진행 방향 오른쪽으로 offset 만큼 비키고, 반대 방향은 반대쪽으로 비킨다', () => {
+    const [a, b] = offsetSegment([0, 0], [100, 0], 5);
+    expect(a).toEqual([0, 5]);   // 동쪽 진행 → 오른쪽은 화면 아래(+y)
+    expect(b).toEqual([100, 5]);
+    const [c, d] = offsetSegment([100, 0], [0, 0], 5);
+    expect(c).toEqual([100, -5]);
+    expect(d).toEqual([0, -5]);
+  });
+  it('같은 점 둘이면 그대로', () => {
+    expect(offsetSegment([3, 3], [3, 3], 5)).toEqual([[3, 3], [3, 3]]);
   });
 });
