@@ -15,8 +15,10 @@ const map = new Map({
   target: 'map',
   layers: [new TileLayer({
     source: new XYZ({
-      url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-      attributions: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors'
+      // CARTO 무료 타일은 이제 API 키 없이는 "API KEY REQUIRED" 워터마크가 찍힌다 → Esri 다크 그레이
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      maxZoom: 16,
+      attributions: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors'
     })
   })],
   view: new View({ center: fromLonLat([127.6, 36.2]), zoom: 7 })
