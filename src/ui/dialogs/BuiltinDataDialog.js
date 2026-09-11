@@ -3,8 +3,8 @@
  * BuiltinDataDialog - 데이터 불러오기 다이얼로그
  * 탭 구성:
  *  - 실습 데이터: practice_catalog.json 의 그룹 순서대로 섹션을 놓는다
- *      Point(점) / Line(선) / Area(면, 행정경계 폴더) / Raster(래스터, raster_catalog.json) / Attribute(속성정보)
- *      spatial→레이어, coordinate→좌표 가져오기, attribute→미리보기→테이블 결합, raster→다중선택 일괄 로드
+ *      Point(점) / Line(선) / Area(면, 행정경계 폴더) / Raster(래스터, raster_catalog.json) / Flow(흐름) / Attribute(속성정보)
+ *      spatial→레이어, coordinate→좌표 가져오기, attribute→미리보기→테이블 결합, raster→다중선택 일괄 로드, flow→흐름도 패널
  *  - 공공데이터: 공공데이터포털 검색 → 레이어
  *  - 스프레드시트: 공개 구글 시트 링크 → 속성 데이터(테이블 결합) 또는 좌표 데이터(포인트 레이어)
  */
@@ -16,6 +16,7 @@ import { tableJoinTool } from '../../tools/TableJoinTool.js';
 import { tableLoader } from '../../loaders/TableLoader.js';
 import { googleSheetLoader } from '../../loaders/GoogleSheetLoader.js';
 import { publicDataTab } from './publicDataTab.js';
+import { flowPanel } from '../panels/FlowPanel.js';
 
 const TAB_FOOTER_TEXT = {
   basic: '점·선·면·속성 자료는 클릭으로, 래스터는 골라서 한꺼번에 불러옵니다',
@@ -27,7 +28,8 @@ const PRACTICE_TYPE_META = {
   spatial: { icon: '🗺️', label: '공간' },
   attribute: { icon: '📊', label: '속성' },
   coordinate: { icon: '📍', label: '좌표' },
-  raster: { icon: '🏔', label: '래스터' }
+  raster: { icon: '🏔', label: '래스터' },
+  flow: { icon: '🔀', label: '흐름' }
 };
 
 class BuiltinDataDialog {
@@ -538,6 +540,10 @@ class BuiltinDataDialog {
           lonColumn: result.dataset.lonColumn,
           sourceLabel: result.dataset.source || result.fileName
         });
+      } else if (result.type === 'flow') {
+        // 흐름 데이터 → 흐름도 패널로 (위치 매칭·스타일은 거기서)
+        this.close();
+        flowPanel.showWithTable({ headers: result.headers, data: result.data, fileName: result.fileName, dataset: result.dataset });
       } else {
         loadingEl.innerHTML = '<span style="color: var(--success-color, #10b981);">✓ 레이어 추가 완료!</span>';
         setTimeout(() => this.close(), 600);

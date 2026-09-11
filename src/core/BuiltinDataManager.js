@@ -7,6 +7,7 @@
 
 import { geojsonLoader } from '../loaders/GeoJSONLoader.js';
 import { demLoader } from '../loaders/DEMLoader.js';
+import { parseFlowXlsx, parseFlowCsv, decodeCsvBytes } from '../loaders/FlowLoader.js';
 import * as XLSX from 'xlsx';
 
 const BUILTIN_BASE = './data/builtin/';
@@ -48,7 +49,7 @@ class BuiltinDataManager {
    * 형식: [{ id, name, icon, description, datasets: [{ id, name, description, type, file, folder?, ... }] }]
    *   - 그룹에 type: 'raster' 가 있으면 datasets 대신 rasterCatalog 를 그 자리에 보여준다
    *   - 데이터셋의 folder 는 섹션 안에서 같은 이름끼리 접이식 폴더로 묶인다 (예: 행정경계)
-   * type: 'spatial' | 'attribute' | 'coordinate' | 'raster'
+   * type: 'spatial' | 'attribute' | 'coordinate' | 'raster' | 'flow'
    *   coordinate 데이터셋은 latColumn/lonColumn 힌트로 위경도 포인트 레이어를 만듭니다.
    */
   getPracticeCatalog() {
@@ -81,6 +82,15 @@ class BuiltinDataManager {
     if (dataset.type === 'raster') {
       const layerId = await demLoader.loadFromUrl(url, dataset.name);
       return { type: 'raster', layerId };
+    }
+    if (dataset.type === 'flow') {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('파일을 찾을 수 없습니다: ' + dataset.file);
+      const buf = await resp.arrayBuffer();
+      const { headers, data } = /\.csv$/i.test(dataset.file)
+        ? parseFlowCsv(decodeCsvBytes(buf))   // UTF-8 이 아니면 CP949 로 다시 읽는다
+        : parseFlowXlsx(buf);
+      return { type: 'flow', headers, data, fileName: dataset.name, dataset };
     }
     if (dataset.type === 'attribute' || dataset.type === 'coordinate') {
       const resp = await fetch(url);

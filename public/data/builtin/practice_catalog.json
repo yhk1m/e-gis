@@ -105,6 +105,22 @@
     "description": "광역자치단체별 DEM GeoTIFF — 폴더를 열어 여러 개를 골라 한꺼번에 불러옵니다"
   },
   {
+    "id": "flow-data",
+    "name": "Flow Data(흐름)",
+    "icon": "🔀",
+    "description": "지역 간 이동량(출발·도착·양) — 주제도 › 흐름도에서 곡선으로 그립니다. 행정경계와 함께 쓰세요",
+    "datasets": [
+      {
+        "id": "sido-migration-example",
+        "name": "시도 간 인구이동 (예시 자료 · 가상 수치)",
+        "description": "16개 시도 간 이동자수 행렬 — 중력 모형으로 만든 가상 값. 실제 자료는 KOSIS 국내인구이동통계로 교체 예정",
+        "type": "flow",
+        "file": "practice/Flow Data/시도간_인구이동_예시.xlsx",
+        "source": "예시 자료"
+      }
+    ]
+  },
+  {
     "id": "attribute-data",
     "name": "Attribute Data(속성정보)",
     "icon": "📊",
