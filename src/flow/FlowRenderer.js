@@ -12,7 +12,7 @@ import { fromLonLat } from 'ol/proj';
 import { apply as applyTransform } from 'ol/transform';
 import { curvePoints, taperOutline } from './flowGeometry.js';
 import {
-  COLOR_RAMPS, rampColor, flowStrength, flowWidth, locationRadius, aggregateTotals, visibleFlows
+  COLOR_RAMPS, rampColor, darkModeStops, flowStrength, flowWidth, locationRadius, aggregateTotals, visibleFlows
 } from './flowModel.js';
 
 export const DEFAULT_FLOW_STYLE = {
@@ -26,7 +26,8 @@ export const DEFAULT_FLOW_STYLE = {
   showLabels: true,
   includeSelf: false,    // 자기 흐름을 유입·유출 집계에 넣을지
   topN: 0,               // 0 = 모두 표시
-  locationMaxRadius: 14
+  locationMaxRadius: 14,
+  darkMode: false        // 어두운 배경지도: 램프를 중간 톤→아주 밝음으로 바꿔 큰 흐름이 밝게 (flowmap.blue 의 다크 모드)
 };
 
 const INFLOW_COLOR = '#22c55e';
@@ -170,7 +171,9 @@ export class FlowRenderer extends Layer {
     const maxCount = flows.reduce((m, f) => Math.max(m, f.count), 0);
     let maxTotal = 0;
     for (const t of totals.values()) maxTotal = Math.max(maxTotal, t.inflow + t.outflow);
-    const stops = COLOR_RAMPS[this.style.ramp] || COLOR_RAMPS.teal;
+    const base = COLOR_RAMPS[this.style.ramp] || COLOR_RAMPS.teal;
+    // 밝은 배경에선 큰 흐름이 진하게, 어두운 배경에선 큰 흐름이 밝게 — 배경 위에서 큰 흐름이 늘 잘 보이도록
+    const stops = this.style.darkMode ? darkModeStops(base) : base;
     this._derived = { flows, totals, maxCount, maxTotal, locById, locations: ds.locations, stops };
   }
 
@@ -278,7 +281,8 @@ export class FlowRenderer extends Layer {
         ctx.lineDashOffset = this._dashOffset;
         ctx.lineCap = 'round';
         ctx.lineWidth = Math.max(1, fp.width * 0.45);
-        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+        // 어두운 점선: 밝은 배경(리본이 중간 톤)에서도, 어두운 배경(리본이 밝음)에서도 리본 위에서 읽힌다
+        ctx.strokeStyle = 'rgba(15,23,42,0.45)';
         ctx.globalAlpha = Math.min(1, s.opacity + 0.1);
         ctx.stroke(fp.center);
         ctx.restore();

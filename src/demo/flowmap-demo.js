@@ -33,6 +33,7 @@ interaction.attach();
 // 최상위 await 는 Vite 기본 타깃(es2020)에서 막히므로 async 함수로 감싼다
 (async () => {
   const resp = await fetch('/data/builtin/practice/Flow Data/시도간_인구이동_예시.json');
+  renderer.setStyle({ darkMode: true }); // 시연은 어두운 배경 — 큰 흐름이 밝게
   renderer.setData(await resp.json());
 })();
 

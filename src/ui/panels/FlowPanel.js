@@ -265,7 +265,7 @@ class FlowPanel {
           <label><input type="checkbox" id="flow-labels" ${s.showLabels ? 'checked' : ''}> 라벨</label>
           <label><input type="checkbox" id="flow-self" ${s.includeSelf ? 'checked' : ''}> 자기 흐름을 집계에 포함</label>
           <label>상위 <input type="number" id="flow-topn" min="0" value="${s.topN}" style="width:60px"> 개만 (0 = 전부)</label>
-          <label><input type="checkbox" id="flow-dark" ${mapManager.getBasemap() === 'ESRI_DARK' ? 'checked' : ''}> 어두운 배경지도</label>
+          <label><input type="checkbox" id="flow-dark" ${(s.darkMode || mapManager.getBasemap() === 'ESRI_DARK') ? 'checked' : ''}> 어두운 배경지도</label>
         </div>
         ${tooMany ? `<div class="flow-muted">흐름이 ${FLOW_ANIMATE_LIMIT.toLocaleString('ko-KR')}개를 넘어 애니메이션은 꺼진 채 시작합니다 (스타일에서 켜면 돕니다)</div>` : ''}
       </div>`;
@@ -387,6 +387,8 @@ class FlowPanel {
       } else {
         mapManager.setBasemap(this._basemapBefore && this._basemapBefore !== 'ESRI_DARK' ? this._basemapBefore : 'OSM');
       }
+      // 램프도 배경에 맞춰 뒤집는다 (어두운 배경 = 큰 흐름이 밝게)
+      live({ darkMode: e.target.checked });
     });
   }
 

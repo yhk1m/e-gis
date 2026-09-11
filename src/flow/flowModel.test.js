@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   guessColumns, detectTableShape, parseLongTable, parseMatrixTable,
   normalizeName, buildDataset, aggregateTotals, visibleFlows,
-  rampColor, flowStrength, flowWidth, locationRadius, COLOR_RAMPS
+  rampColor, flowStrength, flowWidth, locationRadius, COLOR_RAMPS, lightenHex, darkModeStops
 } from './flowModel.js';
 
 describe('guessColumns', () => {
@@ -246,13 +246,24 @@ describe('스케일', () => {
     expect(flowWidth(0.0001, 100, 12)).toBe(1);
     expect(locationRadius(0, 100, 14)).toBe(3);
     expect(locationRadius(100, 100, 14)).toBe(14);
-    expect(rampColor(COLOR_RAMPS.blue, 0)).toBe('rgb(191,219,254)');
+    expect(rampColor(COLOR_RAMPS.blue, 0)).toBe('rgb(147,197,253)');
     expect(rampColor(COLOR_RAMPS.blue, 1)).toBe('rgb(30,58,138)');
     expect(rampColor(['#000000', '#ffffff'], 0.5)).toBe('rgb(128,128,128)');
   });
   it('t 가 NaN·Infinity 여도 던지지 않고 0 으로 본다', () => {
-    expect(rampColor(COLOR_RAMPS.blue, NaN)).toBe('rgb(191,219,254)');
+    expect(rampColor(COLOR_RAMPS.blue, NaN)).toBe('rgb(147,197,253)');
     expect(() => rampColor(COLOR_RAMPS.blue, Infinity)).not.toThrow();
-    expect(rampColor(COLOR_RAMPS.blue, Infinity)).toBe('rgb(191,219,254)');
+    expect(rampColor(COLOR_RAMPS.blue, Infinity)).toBe('rgb(147,197,253)');
+  });
+});
+
+describe('어두운 배경 램프', () => {
+  it('lightenHex 는 흰색 쪽으로 섞고 darkModeStops 는 중간 진함 → 아주 밝음 순서다', () => {
+    expect(lightenHex('#000000', 0.5)).toBe('#808080');
+    expect(lightenHex('#ff0000', 0)).toBe('#ff0000');
+    const d = darkModeStops(COLOR_RAMPS.teal);
+    expect(d[0]).toBe(COLOR_RAMPS.teal[2]);
+    expect(d[2]).toBe(COLOR_RAMPS.teal[0]);
+    expect(d[3]).toBe(lightenHex(COLOR_RAMPS.teal[0], 0.55));
   });
 });

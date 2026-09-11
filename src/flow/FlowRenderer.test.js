@@ -104,6 +104,19 @@ describe('FlowRenderer', () => {
     expect(r.hitTest([10, 10])).toBeNull(); // (10,10) 은 실제 투영된 a 위치에서 멀다
   });
 
+  it('darkMode 는 램프를 뒤집어 큰 흐름이 밝은 색이 된다', async () => {
+    const { FlowRenderer } = await import('./FlowRenderer.js');
+    const { COLOR_RAMPS } = await import('./flowModel.js');
+    const r = new FlowRenderer({});
+    r.setStyle({ animate: false, ramp: 'blue' });
+    r.setData(dataset);
+    expect(r._derived.stops[0]).toBe(COLOR_RAMPS.blue[0]);
+    r.setStyle({ darkMode: true });
+    expect(r._derived.stops[0]).toBe(COLOR_RAMPS.blue[2]);   // 작은 흐름: 중간 진함
+    expect(r._derived.stops[2]).toBe(COLOR_RAMPS.blue[0]);   // 큰 흐름 쪽으로 밝아진다
+    expect(r._derived.stops[3]).not.toBe(COLOR_RAMPS.blue[0]); // 가장 큰 흐름: 더 밝게 섞은 색
+  });
+
   it('render 는 데이터가 없으면 null', async () => {
     const { FlowRenderer } = await import('./FlowRenderer.js');
     expect(new FlowRenderer({}).render(frameState())).toBeNull();

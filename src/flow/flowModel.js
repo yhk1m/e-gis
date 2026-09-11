@@ -238,16 +238,32 @@ export function visibleFlows(dataset, { topN = 0 } = {}) {
 //  스케일
 // ----------------------------------------------------------------------------
 
+// 낮은 끝은 중간 톤으로 둔다 — 아주 옅은 색은 밝은 배경지도(OSM·흰 면 채움) 위에서 보이지 않는다.
+// 어두운 배경에서는 어차피 밝은 쪽으로 보이므로 양쪽 다 읽힌다.
 export const COLOR_RAMPS = {
-  teal: ['#b2f5ea', '#4fd1c5', '#2c9c92', '#1c6b64'],
-  blue: ['#bfdbfe', '#60a5fa', '#2563eb', '#1e3a8a'],
-  orange: ['#fed7aa', '#fb923c', '#ea580c', '#9a3412'],
-  purple: ['#e9d5ff', '#c084fc', '#9333ea', '#581c87']
+  teal: ['#5eead4', '#14b8a6', '#0f766e', '#134e4a'],
+  blue: ['#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'],
+  orange: ['#fdba74', '#f97316', '#c2410c', '#7c2d12'],
+  purple: ['#d8b4fe', '#a855f7', '#7e22ce', '#581c87']
 };
 
 function hexToRgb(hex) {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** 16진 색을 흰색 쪽으로 f(0~1)만큼 섞는다 → '#rrggbb' (어두운 배경용 램프의 밝은 끝을 만들 때) */
+export function lightenHex(hex, f) {
+  const c = hexToRgb(hex).map((v) => Math.round(v + (255 - v) * Math.min(1, Math.max(0, f))));
+  return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * 어두운 배경지도용 램프: 밝은 배경 램프(옅음→진함)를 "중간 진함 → 아주 밝음"으로 다시 편다.
+ * 작은 흐름도 어두운 바탕 위에서 읽히고(중간 톤), 큰 흐름은 가장 밝게 도드라진다 (flowmap.blue 다크 모드).
+ */
+export function darkModeStops(stops) {
+  return [stops[2], stops[1], stops[0], lightenHex(stops[0], 0.55)];
 }
 
 /** 램프 색 목록을 t∈[0,1] 로 보간 → 'rgb(r,g,b)'. t 가 NaN·Infinity 면 0 으로 본다 */
