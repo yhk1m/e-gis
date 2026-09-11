@@ -5427,3 +5427,20 @@ body.exporting .egis-basemap-panel {
     align-self: flex-end;
   }
 }
+
+/* ===== 흐름도 ===== */
+.flow-tooltip {
+  position: absolute;
+  transform: translate(14px, 14px);
+  pointer-events: none;
+  z-index: 30;
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.flow-tooltip b { font-weight: 700; margin-right: 6px; }
+body.exporting .flow-tooltip { display: none; }
