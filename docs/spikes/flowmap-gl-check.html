@@ -1,0 +1,233 @@
+<!-- © 2026 김용현 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>flowmap.gl 확인 (deck.gl 9)</title>
+  <!--
+    docs/spikes/flowmap-gl-check.html — 배포하지 않는 스파이크 페이지.
+    목적: deck.gl + @flowmap.gl/layers 를 CDN 에서 불러 예시 흐름 데이터가 그려지는지만 본다.
+
+    조사 결과(2026-09-11) 에 맞춰 계획서의 UMD 로딩을 ESM 로딩으로 바꿨다 (자세한 건 flowmap-gl-check.md):
+      - @flowmap.gl/layers 는 8.0.3 / 9.4.0 모두 dist/ 에 ESM(index.js)만 있고 UMD/IIFE 번들이 없다.
+        (계획서의 .../layers@8/dist/index.umd.js 는 404)
+      - 그래서 CDN 의 동적 ESM 빌드를 <script type="module"> + import() 로 쓴다.
+      - jsdelivr /+esm 은 패키지마다 peer 범위를 따로 고정해 두어 luma.gl 이 두 벌 실리고(9.3.2 vs 9.3.3)
+        deck.gl 의 중복 버전 가드가 던진다. esm.sh 는 ?deps= 로 한 버전에 고정할 수 있어 그쪽이 기본값.
+
+    사용법: dev 서버(:3000)가 떠 있는 상태에서 정적 서버로 이 폴더를 띄우고 연다.
+      python -m http.server 8765  (docs/spikes 에서)  →  http://localhost:8765/flowmap-gl-check.html
+      file:// 로 열면 localhost:3000 fetch 가 CORS(origin null)에 막힐 수 있다.
+    쿼리: ?cdn=esmsh|jsdelivr|umd89   ?zoom=4.5 (초기 줌, 군집 관찰용)   ?mode=curved|straight|animated-straight   ?cluster=0 (군집 끄기)
+    콘솔: __spikeInfo() → 현재 줌에서 그려진 원(위치/군집)·선 개수, __spike → 로딩/오류/경고 기록
+  -->
+  <style>
+    html,body,#map{margin:0;height:100%;background:#0b1220;color:#e2e8f0;font:13px sans-serif}
+    #map{position:relative}
+    /* 로그는 왼쪽 아래(지도 중앙을 가리지 않게). 클릭하면 접힘. */
+    #log{position:absolute;bottom:10px;left:10px;z-index:9;background:rgba(15,23,42,.9);padding:10px;border-radius:8px;max-width:520px;white-space:pre-wrap;line-height:1.45;max-height:42%;overflow:auto;cursor:pointer}
+    #log.collapsed{max-height:1.6em;overflow:hidden}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<pre id="log">loading…</pre>
+
+<script>
+  // 모듈 스크립트보다 먼저 실행되는 고전 스크립트: 로그와 전역 오류 수집.
+  window.__spike = { loaded: {}, urls: {}, layerCreated: false, frames: 0, pixels: null, errors: [], warnings: [] };
+  window.__log = function (m) {
+    document.getElementById('log').textContent += '\n' + m;
+    console.log(m);
+  };
+  document.getElementById('log').addEventListener('click', function () { this.classList.toggle('collapsed'); });
+  window.addEventListener('error', function (e) {
+    var msg = 'ERROR ' + (e.message || e.type) + (e.filename ? ' @ ' + e.filename + ':' + e.lineno : '');
+    window.__spike.errors.push(msg); window.__log(msg);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var msg = 'UNHANDLED ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason));
+    window.__spike.errors.push(msg); window.__log(msg);
+  });
+  // console.warn 도 모아 둔다 (flowmap.gl 의 deprecation 경고 등).
+  (function () {
+    var w = console.warn.bind(console);
+    console.warn = function () { var s = Array.prototype.map.call(arguments, String).join(' '); window.__spike.warnings.push(s); w.apply(console, arguments); };
+  })();
+</script>
+
+<script type="module">
+  const log = window.__log;
+  const S = window.__spike;
+  const q = new URLSearchParams(location.search);
+
+  // 실제로 쓴 CDN 경로 — 결과 메모(flowmap-gl-check.md)에도 같은 값을 적는다.
+  //   ?cdn=esmsh (기본)   : esm.sh + ?deps= 로 deck/luma 를 한 버전에 고정. 하위 import 까지 전파된다. → 뜸.
+  //   ?cdn=jsdelivr       : jsdelivr /+esm. 패키지마다 peer 범위를 따로 고정해 두어 luma.gl 이 두 벌 실린다. → 안 뜸.
+  //   ?cdn=umd89          : 계획서의 "deck.gl 8.9 로 한 번 더" — deck.gl@8.9 UMD(dist.min.js, 전역 deck) + @flowmap.gl/layers@8.0.3 ESM. → 안 뜸.
+  const CDN = q.get('cdn') || 'esmsh';
+  const DECK_VER = q.get('deck') || (CDN === 'esmsh' ? '9.4.0' : CDN === 'umd89' ? '8.9' : '9.3.4');   // 9.3.4 = flowmap.gl 9.4.0 의 jsdelivr 빌드가 고정해 둔 peer 버전
+  const FM_VER = q.get('fm') || (CDN === 'umd89' ? '8.0.3' : '9.4.0');
+  const LUMA_VER = q.get('luma') || DECK_VER;
+  const lumaDeps = `@luma.gl/core@${LUMA_VER},@luma.gl/engine@${LUMA_VER},@luma.gl/shadertools@${LUMA_VER}`;
+  // esm.sh 는 ?deps= 목록이 URL 해시(X-…)에 들어가므로, 세 모듈이 같은 core 인스턴스를 받으려면
+  // 각 모듈이 실제로 의존하는 것만 정확히 나열해야 한다 (core 에 @deck.gl/layers 를 넣으면 다른 해시가 된다).
+  const URLS = CDN === 'esmsh' ? {
+    core: `https://esm.sh/@deck.gl/core@${DECK_VER}?deps=${lumaDeps}`,
+    layers: `https://esm.sh/@deck.gl/layers@${DECK_VER}?deps=@deck.gl/core@${DECK_VER},${lumaDeps}`,
+    flowmap: `https://esm.sh/@flowmap.gl/layers@${FM_VER}?deps=@deck.gl/core@${DECK_VER},@deck.gl/layers@${DECK_VER},${lumaDeps}`,
+    data: 'http://localhost:3000/data/builtin/practice/Flow Data/시도간_인구이동_예시.json'
+  } : CDN === 'umd89' ? {
+    core: `https://cdn.jsdelivr.net/npm/deck.gl@${DECK_VER}/dist.min.js`,   // UMD, 전역 deck (core+layers 포함)
+    layers: null,
+    flowmap: `https://cdn.jsdelivr.net/npm/@flowmap.gl/layers@${FM_VER}/+esm`,
+    data: 'http://localhost:3000/data/builtin/practice/Flow Data/시도간_인구이동_예시.json'
+  } : {
+    core: `https://cdn.jsdelivr.net/npm/@deck.gl/core@${DECK_VER}/+esm`,
+    layers: `https://cdn.jsdelivr.net/npm/@deck.gl/layers@${DECK_VER}/+esm`,
+    flowmap: `https://cdn.jsdelivr.net/npm/@flowmap.gl/layers@${FM_VER}/+esm`,
+    data: 'http://localhost:3000/data/builtin/practice/Flow Data/시도간_인구이동_예시.json'
+  };
+  S.urls = URLS;
+
+  // UMD 는 <script> 태그로 넣고 전역 deck 을 돌려준다.
+  function loadUmd(url) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = url;
+      s.onload = () => window.deck ? resolve(window.deck) : reject(new Error('전역 deck 이 없음'));
+      s.onerror = () => reject(new Error('script load error (HTTP 상태는 네트워크 탭)'));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function load(name, url) {
+    if (url === null) return null;
+    const t = performance.now();
+    try {
+      const mod = url.endsWith('.js') ? await loadUmd(url) : await import(url);
+      S.loaded[name] = true;
+      log(`${name}: loaded (${Math.round(performance.now() - t)} ms) ← ${url}`);
+      return mod;
+    } catch (e) {
+      S.loaded[name] = false;
+      const msg = `${name}: FAILED ← ${url}\n   ${e.name}: ${e.message}`;
+      S.errors.push(msg); log(msg);
+      return null;
+    }
+  }
+
+  (async () => {
+    log(`cdn=${CDN}: deck.gl core/layers @${DECK_VER}, luma.gl @${LUMA_VER}, @flowmap.gl/layers @${FM_VER}`);
+    const core = await load('deck.gl/core', URLS.core);
+    const layersMod = await load('deck.gl/layers', URLS.layers);
+    const fm = await load('flowmap.gl/layers', URLS.flowmap);
+    if (!core || !fm) { log('모듈 로딩 실패 — 결과 메모에 기록'); return; }
+
+    const { Deck, Layer } = core;
+    const { FlowmapLayer, FlowmapLegendWidget } = fm;
+    if (!FlowmapLayer) { log('FlowmapLayer export 를 찾지 못함 — exports: ' + Object.keys(fm).join(', ')); return; }
+    log('flowmap.gl exports: ' + Object.keys(fm).join(', '));
+
+    // 예시 데이터 (dev 서버)
+    let ds;
+    try {
+      const r = await fetch(URLS.data);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      ds = await r.json();
+      log(`data: locations ${ds.locations.length}, flows ${ds.flows.length}`);
+    } catch (e) {
+      S.errors.push('data fetch failed: ' + e.message);
+      log('data fetch FAILED (dev 서버 :3000 필요): ' + e.message); return;
+    }
+
+    const mode = q.get('mode') || 'animated-straight';   // 9.4.0: animationEnabled 는 deprecated → flowLinesRenderingMode
+    const clusteringEnabled = q.get('cluster') !== '0';
+    const zoom = Number(q.get('zoom') || 6);
+    // 8.0.3 에는 flowLinesRenderingMode 가 없고 animationEnabled 만 있다.
+    const modeProps = FM_VER.startsWith('8') ? { animationEnabled: mode.startsWith('animated') } : { flowLinesRenderingMode: mode };
+
+    let layer;
+    try {
+      layer = new FlowmapLayer({
+        id: 'flows',
+        data: { locations: ds.locations, flows: ds.flows },
+        getLocationId: (l) => l.id,
+        getLocationLat: (l) => l.lat,
+        getLocationLon: (l) => l.lon,
+        getLocationName: (l) => l.name,
+        getFlowOriginId: (f) => f.origin,
+        getFlowDestId: (f) => f.dest,
+        getFlowMagnitude: (f) => f.count,
+        ...modeProps,
+        clusteringEnabled,
+        clusteringAuto: true,
+        locationLabelsEnabled: true,
+        darkMode: true,
+        pickable: true,
+        // 한글 라벨: 내부 TextLayer 의 기본 characterSet(ASCII)에 한글이 없어 "Missing character" 경고가 난다.
+        // FlowmapLayer 가 getSubLayerProps({id:'location-labels'}) 를 쓰므로 deck 표준 _subLayerProps 로 덮어쓸 수 있는지 본다.
+        ...(q.get('ko') !== '0' ? { _subLayerProps: { 'location-labels': {
+          characterSet: [...new Set(ds.locations.map((l) => l.name).join('') + ' "and others0123456789')],   // 군집 이름은 "A" and 2 others 꼴(영문 고정)
+          fontFamily: 'Malgun Gothic, Apple SD Gothic Neo, sans-serif'
+        } } } : {})
+      });
+      S.layerCreated = true;
+      log(`FlowmapLayer 생성됨 (mode=${mode}, clustering=${clusteringEnabled}); instanceof core.Layer = ${layer instanceof Layer}`);
+    } catch (e) {
+      S.errors.push('new FlowmapLayer: ' + e.message);
+      log('FlowmapLayer 생성 FAILED: ' + e.stack); return;
+    }
+
+    // 렌더 확인: onAfterRender 는 컴포지팅 전에 불리므로 이때 2D 캔버스로 복사해 픽셀을 센다
+    // (preserveDrawingBuffer 없이도 실제 그려진 픽셀을 셀 수 있다). deck 은 투명으로 clear 하므로 alpha>0 이 "그려진 픽셀".
+    function countPixels(glCanvas) {
+      const c = document.createElement('canvas');
+      const w = c.width = Math.min(glCanvas.width, 800), h = c.height = Math.min(glCanvas.height, 600);
+      const ctx = c.getContext('2d');
+      ctx.drawImage(glCanvas, 0, 0, w, h);
+      const d = ctx.getImageData(0, 0, w, h).data;
+      let n = 0;
+      for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+      return { drawn: n, total: w * h, ratio: +(n / (w * h)).toFixed(4) };
+    }
+
+    // 군집 관찰용: FlowmapLayer 내부 상태에서 현재 그려지는 원(위치/군집)·선 개수를 읽는다 (스파이크라 private 접근).
+    window.__spikeInfo = () => {
+      const l = window.__deck?.layerManager?.getLayers().find((x) => x.id === 'flows');
+      const d = l?.state?.layersData;
+      const vp = window.__deck?.getViewports()[0];
+      return d ? { zoom: vp?.zoom, circles: d.circleAttributes?.length, lines: d.lineAttributes?.length, labels: d.locationLabels?.length ?? null } : { zoom: vp?.zoom, layersData: null };
+    };
+
+    let deck;
+    try {
+      deck = new Deck({
+        parent: document.getElementById('map'),
+        initialViewState: { longitude: 127.6, latitude: 36.2, zoom, pitch: 0, bearing: 0 },
+        controller: true,
+        layers: [layer],
+        widgets: FlowmapLegendWidget ? [new FlowmapLegendWidget({ placement: 'bottom-right' })] : [],
+        onLoad: () => log('deck onLoad (device 준비됨)'),
+        onError: (e) => { S.errors.push('deck onError: ' + e.message); log('deck onError: ' + e.message); },
+        onAfterRender: ({ device }) => {
+          S.frames++;
+          if (S.frames === 30 || S.frames === 120) {
+            try {
+              const canvas = device?.canvasContext?.canvas || document.querySelector('#map canvas');
+              S.pixels = countPixels(canvas);
+              log(`frame ${S.frames}: 배경과 다른 픽셀 ${S.pixels.drawn}/${S.pixels.total} (${(S.pixels.ratio * 100).toFixed(2)}%)`);
+            } catch (e) { log('pixel count failed: ' + e.message); }
+          }
+        }
+      });
+      window.__deck = deck;
+      log('Deck 생성됨 — 화면에 흐름이 보이면 성공. 드래그/휠로 이동·줌, 줌아웃하면 군집(clusteringAuto) 관찰');
+    } catch (e) {
+      S.errors.push('new Deck: ' + e.message);
+      log('Deck 생성 FAILED: ' + e.stack);
+    }
+  })().catch((e) => { S.errors.push('FAIL ' + e.message); log('FAIL ' + e.stack); });
+</script>
+</body>
+</html>
