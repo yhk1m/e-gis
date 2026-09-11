@@ -22,9 +22,9 @@ e-GIS는 GIS를 처음 접하는 교사와 학생들을 위한 교육용 GIS 웹
 ## 주요 기능
 
 ### 📂 데이터 불러오기
-- **기본 데이터**: 내장 공간정보(시도/시군구/세계 GeoJSON), 래스터(광역자치단체별 DEM GeoTIFF), 속성정보(XLSX) — 카탈로그 자동 생성(`npm run catalog`)
+- **공간 데이터**: 내장 공간정보(시도/시군구/서울 자치구/세계 GeoJSON), 래스터(광역자치단체별 DEM GeoTIFF) — 카탈로그 자동 생성(`npm run catalog`)
 - **스프레드시트**: 공개된 구글 스프레드시트 링크를 붙여넣어 속성 데이터(테이블 결합) 또는 좌표 데이터(포인트 레이어) 가져오기
-- **실습 데이터**: 수업 실습 유형별 데이터셋 카탈로그 (`public/data/builtin/practice_catalog.json`, [가이드](docs/practice-data-guide.md))
+- **실습 데이터**: Point(점) / Line(선) / Area(면) / Attribute Data(속성정보) 폴더별 실습 데이터셋 — 좌표 XLSX는 포인트 레이어로, 속성 XLSX/CSV는 테이블 결합으로 불러오기 (`public/data/builtin/practice_catalog.json`, [가이드](docs/practice-data-guide.md))
 - **파일 업로드**: GeoJSON, Shapefile(ZIP), GeoPackage(GPKG), DEM(GeoTIFF/IMG), CSV/XLSX 좌표 데이터 — 드래그 앤 드롭 지원
 
 ### 🏛️ 공공데이터 불러오기
@@ -121,9 +121,10 @@ npm test
 
 ```bash
 # public/data/builtin/ 에 GeoJSON,
-# public/data/builtin/raster/ 에 GeoTIFF,
-# public/data/builtin/xlsx/ 에 XLSX 파일을 넣고
+# public/data/builtin/raster/ 에 GeoTIFF 파일을 넣고
 npm run catalog
+# 실습 데이터(XLSX/CSV/GeoJSON)는 public/data/builtin/practice/ 에 넣고
+# practice_catalog.json 에 직접 등록 (docs/practice-data-guide.md)
 ```
 
 ### 환경 변수 설정

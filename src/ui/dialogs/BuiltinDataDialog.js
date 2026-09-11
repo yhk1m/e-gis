@@ -2,7 +2,7 @@
 /**
  * BuiltinDataDialog - 데이터 불러오기 다이얼로그
  * 탭 구성:
- *  - 기본 데이터: 공간정보(GeoJSON→레이어) / 래스터(GeoTIFF) / 속성정보(XLSX→테이블 결합)
+ *  - 공간 데이터: 공간정보(GeoJSON→레이어) / 래스터(GeoTIFF) / 속성정보(XLSX→테이블 결합, 보통 비어 있음)
  *  - 스프레드시트: 공개 구글 시트 링크 → 속성 데이터(테이블 결합) 또는 좌표 데이터(포인트 레이어)
  *  - 실습 데이터: 실습 유형별 데이터셋 (practice_catalog.json)
  */
@@ -16,7 +16,7 @@ import { googleSheetLoader } from '../../loaders/GoogleSheetLoader.js';
 import { publicDataTab } from './publicDataTab.js';
 
 const TAB_FOOTER_TEXT = {
-  basic: '공간정보는 레이어로 추가, 속성정보는 테이블 결합에 활용됩니다',
+  basic: '공간정보는 벡터 레이어로, 래스터는 DEM 레이어로 추가됩니다',
   sheets: '공개된 구글 스프레드시트 링크로 속성·좌표 데이터를 가져옵니다',
   practice: '수업 실습 유형별 데이터셋을 불러옵니다',
   public: '공공데이터포털의 데이터를 실시간으로 불러옵니다'
@@ -68,7 +68,7 @@ class BuiltinDataDialog {
           <div class="modal-body" style="padding: 0;">
             <!-- 탭 -->
             <div class="builtin-tabs">
-              <button class="builtin-tab" data-tab="basic">📂 기본 데이터</button>
+              <button class="builtin-tab" data-tab="basic">📂 공간 데이터</button>
               <button class="builtin-tab" data-tab="sheets">📋 스프레드시트</button>
               <button class="builtin-tab" data-tab="practice">🎓 실습 데이터</button>
               <button class="builtin-tab" data-tab="public">🌐 공공데이터</button>
@@ -118,7 +118,7 @@ class BuiltinDataDialog {
   }
 
   // ============================
-  //  탭 1: 기본 데이터
+  //  탭 1: 공간 데이터
   // ============================
   _renderBasicTab() {
     const spatialList = builtinDataManager.getSpatialCatalog();
@@ -233,9 +233,8 @@ class BuiltinDataDialog {
   }
 
   _renderAttributeSection(list) {
-    const emptyMsg = list.length === 0
-      ? '<div style="padding: 16px; color: var(--text-muted); font-size: 12px; text-align: center;">속성 데이터가 없습니다.<br><code>public/data/builtin/attribute_catalog.json</code>에 항목을 추가하세요.</div>'
-      : '';
+    // 내장 속성정보는 실습 데이터(Attribute Data)로 옮겨져 보통 비어 있다 → 비어 있으면 섹션 자체를 숨긴다
+    if (list.length === 0) return '';
     return `
       <div class="builtin-category" data-category="attribute">
         <div class="builtin-category-header" data-toggle="attribute">
@@ -244,7 +243,6 @@ class BuiltinDataDialog {
           <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
         <div class="builtin-category-body">
-          ${emptyMsg}
           ${list.map(d => `
             <div class="builtin-dataset-card" data-id="${d.id}" data-type="attribute">
               <div class="builtin-dataset-main">
@@ -526,12 +524,13 @@ class BuiltinDataDialog {
         ${groups.map(g => `
           <div class="builtin-category" data-category="practice-${g.id}">
             <div class="builtin-category-header">
-              <span>🎓 ${g.name}</span>
+              <span>${g.icon || '🎓'} ${g.name}</span>
               <span class="builtin-badge" style="margin-left:auto; margin-right:8px;">${(g.datasets || []).length}개</span>
               <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
             <div class="builtin-category-body">
               ${g.description ? `<div style="padding: 8px 16px; font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color);">${g.description}</div>` : ''}
+              ${(g.datasets || []).length === 0 ? '<div style="padding: 14px 16px; font-size: 12px; color: var(--text-muted); text-align: center;">아직 등록된 데이터가 없습니다.</div>' : ''}
               ${(g.datasets || []).map(d => {
                 const meta = PRACTICE_TYPE_META[d.type] || { icon: '📄', label: d.type };
                 return `
@@ -997,7 +996,7 @@ class BuiltinDataDialog {
   }
 
   // ============================
-  //  검색 필터 (기본 데이터 탭)
+  //  검색 필터 (공간 데이터 탭)
   // ============================
   _filterDatasets(keyword) {
     const listEl = document.getElementById('builtin-data-list');

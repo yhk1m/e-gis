@@ -43,7 +43,7 @@ function renderItem(item) {
  * 카탈로그 목록.
  *
  * 350종이 넘어 그냥 늘어놓으면 못 찾는다.
- *  - 평소에는 갈래별로 접어 둔다 (기본 데이터 탭의 분류와 같은 모양)
+ *  - 평소에는 갈래별로 접어 둔다 (공간 데이터 탭의 분류와 같은 모양)
  *  - 검색 중에는 갈래를 접지 않고 걸린 것만 죽 보여준다
  */
 export function renderCatalogList(items, keyword = '') {

@@ -1,34 +1,85 @@
 [
   {
-    "id": "gongju-260713",
-    "name": "260713 공주여고 수업량유연화",
-    "description": "서울 자치구 고령화와 의료복지시설 분포 실습 — 경계·고령인구비율·복지시설",
+    "id": "point-data",
+    "name": "Point Data(점)",
+    "icon": "📍",
+    "description": "점(포인트) 형태의 실습 데이터 — 위경도 좌표를 포인트 레이어로 불러옵니다",
     "datasets": [
       {
-        "id": "gongju-seoul-districts",
-        "name": "서울 자치구 경계",
-        "description": "서울특별시 25개 자치구 경계 (폴리곤)",
-        "type": "spatial",
-        "file": "practice/260713 공주여고 수업량유연화/서울_자치구.geojson",
-        "source": "KOSTAT"
-      },
+        "id": "seoul-welfare-facilities",
+        "name": "서울 의료복지시설 현황",
+        "description": "지오코딩된 의료·복지시설 235개 지점",
+        "type": "coordinate",
+        "file": "practice/Point Data/서울_의료복지시설현황.xlsx",
+        "latColumn": "Latitude",
+        "lonColumn": "Longitude",
+        "source": ""
+      }
+    ]
+  },
+  {
+    "id": "line-data",
+    "name": "Line Data(선)",
+    "icon": "📏",
+    "description": "선(라인) 형태의 실습 데이터",
+    "datasets": []
+  },
+  {
+    "id": "area-data",
+    "name": "Area Data(면)",
+    "icon": "🟩",
+    "description": "면(폴리곤) 형태의 실습 데이터",
+    "datasets": []
+  },
+  {
+    "id": "attribute-data",
+    "name": "Attribute Data(속성정보)",
+    "icon": "📊",
+    "description": "레이어에 테이블 결합으로 붙이는 속성 데이터 — 공간 데이터의 시도·시군구·서울 자치구 경계와 함께 쓰세요",
+    "datasets": [
       {
-        "id": "gongju-elderly-ratio",
-        "name": "서울 고령인구비율",
-        "description": "자치구별 고령인구비율·총인구 (2026.06)",
+        "id": "seoul-elderly-ratio",
+        "name": "서울 자치구별 고령인구비율",
+        "description": "자치구별 고령인구비율·총인구 (2026.06) — 서울 자치구 경계와 결합",
         "type": "attribute",
-        "file": "practice/260713 공주여고 수업량유연화/서울_고령인구비율.csv",
+        "file": "practice/Attribute Data/서울_자치구별_고령인구비율.csv",
         "keyColumn": "gu_nm",
         "source": ""
       },
       {
-        "id": "gongju-welfare-facilities",
-        "name": "서울 의료복지시설 현황",
-        "description": "지오코딩된 의료·복지시설 235개 지점",
-        "type": "coordinate",
-        "file": "practice/260713 공주여고 수업량유연화/서울_인의료복지시설현황.xlsx",
-        "latColumn": "Latitude",
-        "lonColumn": "Longitude",
+        "id": "korea-sido-population",
+        "name": "시도별 인구",
+        "description": "17개 시도 총인구·남녀·세대수·인구밀도 — 대한민국 시도(~2026.06.30.)와 결합",
+        "type": "attribute",
+        "file": "practice/Attribute Data/korea_sido_population.xlsx",
+        "keyColumn": "code",
+        "source": ""
+      },
+      {
+        "id": "korea-sido-population-20260701",
+        "name": "시도별 인구 (2026.7.1~)",
+        "description": "16개 시도 총인구·남녀·세대수·인구밀도 — 대한민국 시도(2026.07.01.~)와 결합",
+        "type": "attribute",
+        "file": "practice/Attribute Data/korea_sido_population_20260701.xlsx",
+        "keyColumn": "code",
+        "source": ""
+      },
+      {
+        "id": "korea-sido-grdp",
+        "name": "시도별 GRDP",
+        "description": "17개 시도 GRDP·1인당 GRDP·성장률 — 대한민국 시도(~2026.06.30.)와 결합",
+        "type": "attribute",
+        "file": "practice/Attribute Data/korea_sido_grdp.xlsx",
+        "keyColumn": "code",
+        "source": ""
+      },
+      {
+        "id": "korea-sido-grdp-20260701",
+        "name": "시도별 GRDP (2026.7.1~)",
+        "description": "16개 시도 GRDP·1인당 GRDP·성장률 — 대한민국 시도(2026.07.01.~)와 결합",
+        "type": "attribute",
+        "file": "practice/Attribute Data/korea_sido_grdp_20260701.xlsx",
+        "keyColumn": "code",
         "source": ""
       }
     ]
