@@ -80,3 +80,152 @@ export function parseMatrixTable({ headers, data }) {
   }
   return { pairs, skipped };
 }
+
+// ----------------------------------------------------------------------------
+//  이름 정규화·매칭
+// ----------------------------------------------------------------------------
+
+// 긴 접미사가 먼저 와야 "특별자치도"가 "도"로만 잘리지 않는다
+const SUFFIX_RE = /(특별자치시|특별자치도|통합특별시|특별시|광역시|자치시|자치도|도|시)$/;
+// 접미사를 벗긴 뒤의 별칭 (KOSIS·KOSTAT 표기 차이)
+const ALIASES = {
+  전라북: '전북', 전라남: '전남', 경상북: '경북', 경상남: '경남', 충청북: '충북', 충청남: '충남',
+  전남광주: '전남광주통합', 광주전남통합: '전남광주통합', 광주전남: '전남광주통합'
+};
+
+/** '서울특별시' → '서울', '전라북도' → '전북'. 양쪽(흐름 표·기준 레이어)에 같이 적용해 비교한다 */
+export function normalizeName(name) {
+  let s = String(name ?? '').replace(/\(.*?\)/g, '').replace(/\s+/g, '');
+  const stripped = s.replace(SUFFIX_RE, '');
+  if (stripped.length >= 2) s = stripped; // '시' 한 글자처럼 남는 게 없으면 벗기지 않는다
+  return ALIASES[s] || s;
+}
+
+function buildIndex(candidates) {
+  const byCode = new Map();
+  const byName = new Map();
+  for (const c of candidates) {
+    if (c.code != null && String(c.code).trim() !== '') byCode.set(String(c.code).trim(), c.id);
+    const key = normalizeName(c.name);
+    if (key && !byName.has(key)) byName.set(key, c.id);
+  }
+  return { byCode, byName };
+}
+
+function resolveId(rawName, index, manualMap) {
+  if (manualMap[rawName]) return manualMap[rawName];
+  const trimmed = String(rawName).trim();
+  if (index.byCode.has(trimmed)) return index.byCode.get(trimmed);
+  return index.byName.get(normalizeName(trimmed)) || null;
+}
+
+/**
+ * 흐름 쌍 + 위치 후보 → FlowDataset.
+ * @param {Object} p
+ * @param {Array<{origin,dest,count}>} p.pairs   이름 기준 흐름
+ * @param {Array<{id,name,code?,lon,lat}>} p.candidates  위치 후보 (기준 레이어 대표점 또는 위치 표)
+ * @param {Object<string,string>} [p.manualMap]  손으로 짝지은 { 원본이름: 위치id }
+ * @param {Object} [p.meta]
+ */
+export function buildDataset({ pairs, candidates, manualMap = {}, meta = {} }) {
+  const index = buildIndex(candidates);
+  const flowMap = new Map();     // 'origin|dest' → count (같은 쌍은 합친다)
+  const unmatched = new Map();   // 원본 이름 → 양
+  const used = new Set();
+  for (const p of pairs) {
+    const o = resolveId(p.origin, index, manualMap);
+    const d = resolveId(p.dest, index, manualMap);
+    if (!o) unmatched.set(p.origin, (unmatched.get(p.origin) || 0) + p.count);
+    if (!d) unmatched.set(p.dest, (unmatched.get(p.dest) || 0) + p.count);
+    if (!o || !d) continue;
+    used.add(o); used.add(d);
+    const k = o + '|' + d;
+    flowMap.set(k, (flowMap.get(k) || 0) + p.count);
+  }
+  const flows = [...flowMap].map(([k, count]) => {
+    const [origin, dest] = k.split('|');
+    return { origin, dest, count };
+  });
+  const locations = candidates
+    .filter((c) => used.has(c.id))
+    .map(({ id, name, lon, lat }) => ({ id, name, lon, lat }));
+  return {
+    locations,
+    flows,
+    meta: {
+      ...meta,
+      matched: flows.length,
+      unmatched: [...unmatched].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+    }
+  };
+}
+
+// ----------------------------------------------------------------------------
+//  집계·선별
+// ----------------------------------------------------------------------------
+
+/** 위치별 { inflow, outflow, net }. 자기 흐름(서울→서울)은 includeSelf 일 때만 센다 */
+export function aggregateTotals(dataset, { includeSelf = false } = {}) {
+  const totals = new Map();
+  const get = (id) => {
+    if (!totals.has(id)) totals.set(id, { inflow: 0, outflow: 0, net: 0 });
+    return totals.get(id);
+  };
+  for (const loc of dataset.locations) get(loc.id);
+  for (const f of dataset.flows) {
+    if (f.origin === f.dest && !includeSelf) continue;
+    get(f.origin).outflow += f.count;
+    get(f.dest).inflow += f.count;
+  }
+  for (const t of totals.values()) t.net = t.inflow - t.outflow;
+  return totals;
+}
+
+/** 그릴 흐름: 자기 흐름 제외, 작은 것부터(큰 것이 위에 그려지도록), 상위 N개 옵션 */
+export function visibleFlows(dataset, { topN = 0 } = {}) {
+  let flows = dataset.flows.filter((f) => f.origin !== f.dest).sort((a, b) => a.count - b.count);
+  if (topN > 0 && flows.length > topN) flows = flows.slice(flows.length - topN);
+  return flows;
+}
+
+// ----------------------------------------------------------------------------
+//  스케일
+// ----------------------------------------------------------------------------
+
+export const COLOR_RAMPS = {
+  teal: ['#b2f5ea', '#4fd1c5', '#2c9c92', '#1c6b64'],
+  blue: ['#bfdbfe', '#60a5fa', '#2563eb', '#1e3a8a'],
+  orange: ['#fed7aa', '#fb923c', '#ea580c', '#9a3412'],
+  purple: ['#e9d5ff', '#c084fc', '#9333ea', '#581c87']
+};
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** 램프 색 목록을 t∈[0,1] 로 보간 → 'rgb(r,g,b)' */
+export function rampColor(stops, t) {
+  const x = Math.min(1, Math.max(0, t)) * (stops.length - 1);
+  const i = Math.min(stops.length - 2, Math.floor(x));
+  const f = x - i;
+  const a = hexToRgb(stops[i]);
+  const b = hexToRgb(stops[i + 1]);
+  const c = a.map((v, k) => Math.round(v + (b[k] - v) * f));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+/** 양 → [0,1]. 제곱근 스케일이라 큰 흐름이 화면을 독점하지 않는다 */
+export function flowStrength(count, maxCount) {
+  if (!(maxCount > 0)) return 0;
+  return Math.min(1, Math.sqrt(count / maxCount));
+}
+
+export function flowWidth(count, maxCount, maxWidth) {
+  return Math.max(1, maxWidth * flowStrength(count, maxCount));
+}
+
+export function locationRadius(total, maxTotal, maxRadius) {
+  if (!(maxTotal > 0)) return 3;
+  return Math.max(3, maxRadius * Math.sqrt(total / maxTotal));
+}
