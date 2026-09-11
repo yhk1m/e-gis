@@ -12,6 +12,7 @@ import { choroplethTool } from '../tools/ChoroplethTool.js';
 import { chartMapTool } from '../tools/ChartMapTool.js';
 import { cartogramTool } from '../tools/CartogramTool.js';
 import { heatmapTool } from '../tools/HeatmapTool.js';
+import { flowTool } from '../tools/FlowTool.js';
 
 class AutoSaveManager {
   constructor() {
@@ -268,6 +269,11 @@ class AutoSaveManager {
    * 단일 레이어 복원
    */
   async restoreLayer(layerData) {
+    // 흐름 레이어 — 피처 없이 flowConfig 로 렌더러를 다시 만든다
+    if (layerData.type === 'flow' && layerData.flowConfig) {
+      return flowTool.restoreFlow(layerData);
+    }
+
     // GeoJSON에서 피처 파싱
     const features = this.geoJSON.readFeatures(layerData.features);
 

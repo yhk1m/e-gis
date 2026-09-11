@@ -15,7 +15,7 @@
  * ProjectManager(.egis)는 이 함정을 알고 손대지 않은 레이어에는 updateLayerStyle을
  * 부르지 않도록 가드한다(ProjectManager.js:287-293). AutoSaveManager에는 그 가드가 없다.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Feature from 'ol/Feature.js';
 import Point from 'ol/geom/Point.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
@@ -40,8 +40,16 @@ HTMLCanvasElement.prototype.getContext = function () {
   };
 };
 
+// 흐름 레이어는 FlowRenderer(캔버스 그리기)까지 끌고 오므로 도구를 통째로 목으로 대체한다.
+// 여기서는 복원 경로가 restoreFlow 로 갈라지는지만 본다.
+vi.mock('../tools/FlowTool.js', () => ({
+  flowTool: { restoreFlow: vi.fn((layerData) => layerData.id) }
+}));
+
 const { layerManager, STYLE_FIELDS, pickStyleFields } = await import('./LayerManager.js');
 const { autoSaveManager } = await import('./AutoSaveManager.js');
+const { stateManager } = await import('./StateManager.js');
+const { flowTool } = await import('../tools/FlowTool.js');
 
 const COLOR = '#ff0000';
 
@@ -169,6 +177,93 @@ describe('AutoSaveManager.restoreLayer — 스타일 보존', () => {
 
     const restoredId = await autoSaveManager.restoreLayer(serializeLike(original));
     expect(layerManager.getLayer(restoredId).strokeSyncToFill).toBe(false);
+  });
+});
+
+describe('흐름 레이어 자동 저장·복원', () => {
+  const FLOW_CONFIG = {
+    dataset: { locations: [], flows: [], meta: {} },
+    style: {},
+    selectedIds: ['a']
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    layerManager.getAllLayers().slice().forEach(l => layerManager.removeLayer(l.id));
+  });
+
+  it('restoreLayer: 흐름 레코드는 피처를 읽지 않고 flowTool.restoreFlow 로 넘긴다', async () => {
+    const layerData = {
+      id: 'f1', name: '흐름', type: 'flow', visible: false, flowConfig: FLOW_CONFIG
+    };
+    const readFeatures = vi.spyOn(autoSaveManager.geoJSON, 'readFeatures');
+
+    const id = await autoSaveManager.restoreLayer(layerData);
+
+    expect(id).toBe('f1');
+    expect(flowTool.restoreFlow).toHaveBeenCalledTimes(1);
+    expect(flowTool.restoreFlow).toHaveBeenCalledWith(layerData);
+    // 흐름 레코드에는 features 가 없다 — readFeatures(undefined) 로 죽으면 안 된다
+    expect(readFeatures).not.toHaveBeenCalled();
+    readFeatures.mockRestore();
+  });
+
+  it('saveLayer: 흐름 레이어는 source 가 없어도 flowConfig 를 담은 레코드로 저장된다', async () => {
+    // indexedDB 스텁은 onsuccess 를 부르지 않으므로 waitForReady 가 영원히 기다린다 → 준비된 척한다
+    stateManager.isReady = true;
+    const put = vi.spyOn(stateManager, '_putLayerRecord').mockResolvedValue('f1');
+
+    const layerInfo = {
+      id: 'f1', name: '흐름', type: 'flow', visible: true,
+      source: null,                       // 흐름 레이어는 VectorSource 가 없다
+      olLayer: { getZIndex: () => 7 },
+      _flowConfig: FLOW_CONFIG
+    };
+    const id = await stateManager.saveLayer(layerInfo);
+
+    expect(id).toBe('f1');
+    expect(put).toHaveBeenCalledTimes(1);
+    const record = put.mock.calls[0][0];
+    expect(record).toMatchObject({
+      id: 'f1', name: '흐름', type: 'flow', geometryType: 'Flow', visible: true, zIndex: 7,
+      flowConfig: { dataset: FLOW_CONFIG.dataset, style: FLOW_CONFIG.style, selectedIds: ['a'] }
+    });
+    expect(record.features).toBeUndefined();
+    expect(typeof record.timestamp).toBe('number');
+    put.mockRestore();
+  });
+
+  it('saveLayer: 벡터 레이어는 여전히 피처를 GeoJSON 으로 담아 같은 헬퍼로 저장된다', async () => {
+    stateManager.isReady = true;
+    const put = vi.spyOn(stateManager, '_putLayerRecord').mockImplementation(async (rec) => rec.id);
+
+    const layerId = layerManager.addLayer({
+      name: '관측소',
+      features: [new Feature({ geometry: new Point([0, 0]) })],
+      color: COLOR
+    });
+    const id = await stateManager.saveLayer(layerManager.getLayer(layerId));
+
+    expect(id).toBe(layerId);
+    expect(put).toHaveBeenCalledTimes(1);
+    const record = put.mock.calls[0][0];
+    expect(record.type).toBe('vector');
+    expect(record.color).toBe(COLOR);
+    expect(record.features.type).toBe('FeatureCollection');
+    expect(record.features.features).toHaveLength(1);
+    expect(record.flowConfig).toBeUndefined();
+    put.mockRestore();
+  });
+
+  it('saveLayer: 래스터처럼 source 가 없는 비-흐름 레이어는 저장하지 않는다', async () => {
+    stateManager.isReady = true;
+    const put = vi.spyOn(stateManager, '_putLayerRecord');
+
+    const id = await stateManager.saveLayer({ id: 'r1', name: '위성', type: 'raster', source: null });
+
+    expect(id).toBe('r1');
+    expect(put).not.toHaveBeenCalled();
+    put.mockRestore();
   });
 });
 

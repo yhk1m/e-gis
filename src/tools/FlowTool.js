@@ -125,6 +125,7 @@ class FlowTool {
           if (r === renderer) {
             const info = layerManager.getLayer(layerId);
             if (info && info._flowConfig) info._flowConfig.selectedIds = ids;
+            eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId }); // 선택도 자동 저장에 담기도록
           }
         }
       },
