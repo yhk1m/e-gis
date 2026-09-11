@@ -14,6 +14,26 @@
         "latColumn": "Latitude",
         "lonColumn": "Longitude",
         "source": ""
+      },
+      {
+        "id": "seoul-starbucks",
+        "name": "서울 스타벅스 매장 목록",
+        "description": "서울 스타벅스 매장 692곳 — 매장명·도로명주소 (2026.07.)",
+        "type": "coordinate",
+        "file": "practice/Point Data/서울_스타벅스_매장.xlsx",
+        "latColumn": "Latitude",
+        "lonColumn": "Longitude",
+        "source": ""
+      },
+      {
+        "id": "korea-mcdonalds",
+        "name": "전국 맥도날드 매장 목록",
+        "description": "전국 맥도날드 매장 404곳 — 지점명·주소·시도·구군·전화번호 (2026.07.)",
+        "type": "coordinate",
+        "file": "practice/Point Data/전국_맥도날드_매장.xlsx",
+        "latColumn": "latitude",
+        "lonColumn": "longitude",
+        "source": ""
       }
     ]
   },
