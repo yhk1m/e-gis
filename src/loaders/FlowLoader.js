@@ -25,7 +25,9 @@ function readFile(file) {
  */
 function rowsToTable(rows) {
   if (!rows || rows.length === 0) throw new Error('표에 데이터가 없습니다.');
-  const headers = rows[0].map((h, idx) => {
+  // XLSX 의 sheet_to_json({header:1})은 빈 A1을 배열의 "구멍"으로 낸다. Array#map은 구멍을 건너뛰므로
+  // Array.from으로 구멍도 undefined로 채워 방문한다 (CSV는 구멍이 없어 어느 쪽이든 상관없다).
+  const headers = Array.from(rows[0], (h, idx) => {
     const s = String(h ?? '').trim();
     return s === '' && idx === 0 ? '구분' : s;
   });

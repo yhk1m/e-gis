@@ -77,6 +77,14 @@ describe('layerLocations', () => {
     const layerInfo = { source: sourceOf([f1, f2]) };
     expect(layerLocations(layerInfo, 'name', 'code').map((l) => l.id)).toEqual(['11', 'f-1']);
   });
+
+  it('대표점을 낼 수 없는 빈 MultiPolygon 피처는 전체를 깨뜨리지 않고 그 피처만 건너뛴다', () => {
+    const f1 = new Feature({ geometry: new Point(fromLonLat([127.0, 37.5])), name: '서울' });
+    const f2 = new Feature({ geometry: new MultiPolygon([]), name: '빈도형' });
+    const layerInfo = { source: sourceOf([f1, f2]) };
+    expect(() => layerLocations(layerInfo, 'name')).not.toThrow();
+    expect(layerLocations(layerInfo, 'name').map((l) => l.name)).toEqual(['서울']);
+  });
 });
 
 describe('guessNameField', () => {

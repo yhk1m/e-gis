@@ -50,6 +50,8 @@ export function representativePoint(featureObj) {
       const area = turf.area(poly);
       if (area > bestArea) { bestArea = area; best = poly; }
     });
+    // coordinates가 빈 배열이면(잘못 만들어진 도형) 조각이 하나도 안 걸린다 — pointOnFeature로 물러선다
+    if (!best) return turf.pointOnFeature(featureObj);
     return representativePoint(best);
   }
 
@@ -75,11 +77,16 @@ export function layerLocations(layerInfo, nameField, codeField = null) {
     if (!geom) return;
     let lon, lat;
     const type = geom.getType();
-    if (type === 'Point') {
-      [lon, lat] = toLonLat(geom.getCoordinates());
-    } else {
-      const obj = geojson.writeFeatureObject(feature, { featureProjection: 'EPSG:3857', dataProjection: 'EPSG:4326' });
-      [lon, lat] = representativePoint(obj).geometry.coordinates;
+    try {
+      if (type === 'Point') {
+        [lon, lat] = toLonLat(geom.getCoordinates());
+      } else {
+        const obj = geojson.writeFeatureObject(feature, { featureProjection: 'EPSG:3857', dataProjection: 'EPSG:4326' });
+        [lon, lat] = representativePoint(obj).geometry.coordinates;
+      }
+    } catch {
+      // 좌표가 없는 빈 MultiPolygon 등 대표점을 낼 수 없는 도형은 이 피처만 건너뛴다
+      return;
     }
     const name = String(feature.get(nameField) ?? '').trim();
     if (!name) return;

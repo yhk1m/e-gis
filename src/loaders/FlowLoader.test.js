@@ -32,8 +32,9 @@ describe('parseFlowCsv', () => {
 
   it('첫 열 헤더가 비어 있으면(행렬표의 A1 공백) "구분"으로 채운다', () => {
     const csv = ',서울,경기\n서울,0,10\n경기,5,0\n';
-    const { headers } = parseFlowCsv(csv);
+    const { headers, data } = parseFlowCsv(csv);
     expect(headers).toEqual(['구분', '서울', '경기']);
+    expect(data[0].구분).toBe('서울');
   });
 
   it('헤더뿐이고 데이터 행이 전부 빈 칸이면 예외를 던진다', () => {
@@ -74,6 +75,17 @@ describe('parseFlowXlsx', () => {
     expect(typeof data[0].인구).toBe('number');
     expect(data[0].비고).toBe('1,234');
     expect(typeof data[0].비고).toBe('string');
+  });
+
+  it('첫 열 헤더가 비어 있으면(행렬표 A1 공백, 희소 배열 구멍) "구분"으로 채운다', () => {
+    const buf = buildWorkbook([
+      [null, '서울', '부산'],
+      ['서울', 0, 5],
+      ['부산', 7, 0]
+    ]);
+    const { headers, data } = parseFlowXlsx(buf);
+    expect(headers).toEqual(['구분', '서울', '부산']);
+    expect(data[0].구분).toBe('서울');
   });
 });
 
