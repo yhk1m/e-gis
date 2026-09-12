@@ -134,6 +134,11 @@ export class Scene3D {
     return viewBearing(this.camera.position, this.controls.target);
   }
 
+  /** 고정점 표시를 숨기거나 다시 보인다 — 화면을 저장할 때 빨간 점이 걸리적거릴 수 있다 */
+  setPivotMarkerVisible(visible) {
+    this.pivotMarker.visible = Boolean(visible);
+  }
+
   /** 고정점 표시를 카메라 거리에 맞춰 키운다 — 멀어져도 보이게 */
   updatePivotMarker() {
     const distance = this.camera.position.distanceTo(this.controls.target);

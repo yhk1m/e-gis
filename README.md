@@ -22,7 +22,7 @@ e-GIS는 GIS를 처음 접하는 교사와 학생들을 위한 교육용 GIS 웹
 ## 주요 기능
 
 ### 📂 데이터 불러오기
-- **실습 데이터**: 데이터 형태별 여섯 섹션 — Point(점) / Line(선) / Area(면, 행정경계 폴더: 시도·시군구·서울 자치구·세계 국가 GeoJSON) / Raster(래스터, 광역자치단체별 DEM GeoTIFF) / Flow(흐름, 지역 간 이동량) / Attribute(속성정보, 테이블 결합용 XLSX·CSV). 점·선·면·흐름·속성은 `public/data/builtin/practice_catalog.json`에 직접 등록([가이드](docs/practice-data-guide.md)), 래스터는 `npm run catalog`로 자동 생성
+- **실습 데이터**: 데이터 형태별 여섯 섹션 — Point(점) / Line(선) / Area(면, 행정경계 폴더: 시도·시군구·서울 자치구·세계 국가 GeoJSON) / Raster(래스터, 한반도 전체·광역자치단체별 DEM GeoTIFF) / Flow(흐름, 지역 간 이동량) / Attribute(속성정보, 테이블 결합용 XLSX·CSV). 점·선·면·흐름·속성은 `public/data/builtin/practice_catalog.json`에 직접 등록([가이드](docs/practice-data-guide.md)), 래스터는 `npm run catalog`로 자동 생성
 - **공공데이터**: 서울열린데이터광장·경기데이터드림·인천데이터포털 자료를 검색해 바로 지도에 추가
 - **스프레드시트**: 공개된 구글 스프레드시트 링크를 붙여넣어 속성 데이터(테이블 결합) 또는 좌표 데이터(포인트 레이어) 가져오기
 - **파일 업로드**: GeoJSON, Shapefile(ZIP), GeoPackage(GPKG), DEM(GeoTIFF/IMG), CSV/XLSX 좌표 데이터 — 드래그 앤 드롭 지원

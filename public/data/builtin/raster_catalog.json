@@ -781,17 +781,6 @@
     ]
   },
   {
-    "id": "경상북도-군위군",
-    "name": "경상북도 군위군",
-    "description": "GeoTIFF (387 KB)",
-    "file": "raster/경상북도 군위군.tif",
-    "fileSize": 395835,
-    "source": "",
-    "tags": [
-      "경상북도 군위군"
-    ]
-  },
-  {
     "id": "경상북도-김천시",
     "name": "경상북도 김천시",
     "description": "GeoTIFF (614 KB)",
@@ -998,6 +987,17 @@
     "source": "",
     "tags": [
       "경상북도 포항시 북구"
+    ]
+  },
+  {
+    "id": "대구광역시-군위군",
+    "name": "대구광역시 군위군",
+    "description": "GeoTIFF (387 KB)",
+    "file": "raster/대구광역시 군위군.tif",
+    "fileSize": 395835,
+    "source": "",
+    "tags": [
+      "대구광역시 군위군"
     ]
   },
   {
@@ -2582,6 +2582,17 @@
     "source": "",
     "tags": [
       "충청북도 충주시"
+    ]
+  },
+  {
+    "id": "한반도",
+    "name": "한반도",
+    "description": "GeoTIFF (13.1 MB)",
+    "file": "raster/한반도.tif",
+    "fileSize": 13776783,
+    "source": "",
+    "tags": [
+      "한반도"
     ]
   }
 ]

@@ -73,6 +73,7 @@ export class View3DController {
     this.span = 0;            // 지금 메시가 덮는 크기(미터) — 이동량 판단에 쓴다
     this.lastRefreshAt = 0;
     this.terrainLayerId = ALL;    // ALL이면 불러온 DEM을 모두 잇는다. FLAT이면 평면
+    this.pivotMarkerVisible = true;   // 회전 중심(빨간 점) 표시 여부 — 패널 체크박스가 바꾼다
     this.quality = currentQuality();   // 태블릿·휴대폰에서는 격자와 텍스처를 낮춘다
     this.emptyRetries = 0;             // 타일이 안 와 빈 그림이 나온 횟수
     this.layerTimer = null;
@@ -135,6 +136,7 @@ export class View3DController {
       if (this.onCameraMoved) this.onCameraMoved(this.scene.getBearing());
     };
     this.scene.onPivotMoved = () => this.scheduleRefresh();
+    this.scene.setPivotMarkerVisible(this.pivotMarkerVisible);
     this.active = true;
 
     this.refresh({ frame: true });
@@ -190,6 +192,12 @@ export class View3DController {
     this.scene.dispose();
     this.scene = null;
     this.active = false;
+  }
+
+  /** 회전 중심(빨간 점)을 숨기거나 보인다 — 3D를 껐다 켜도 설정이 남는다 */
+  setPivotMarkerVisible(visible) {
+    this.pivotMarkerVisible = Boolean(visible);
+    this.scene?.setPivotMarkerVisible(this.pivotMarkerVisible);
   }
 
   /** 세로 과장을 바꾼다 — 메시를 다시 만든다 */

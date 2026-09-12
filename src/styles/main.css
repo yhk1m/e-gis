@@ -5234,6 +5234,15 @@ body.exporting .egis-basemap-panel {
   min-width: 120px;
 }
 
+/* 체크박스 줄 — 셀렉트 줄과 달리 늘어날 것이 없어 왼쪽에 붙인다 */
+.view3d-check {
+  cursor: pointer;
+}
+
+.view3d-check input {
+  margin: 0;
+}
+
 .view3d-num-wrap {
   white-space: nowrap;
 }

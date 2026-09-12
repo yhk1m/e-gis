@@ -102,7 +102,7 @@
     "name": "Raster Data(래스터)",
     "icon": "🏔",
     "type": "raster",
-    "description": "광역자치단체별 DEM GeoTIFF — 폴더를 열어 여러 개를 골라 한꺼번에 불러옵니다"
+    "description": "한반도 전체(270m)와 광역자치단체별(90m) DEM GeoTIFF — 폴더를 열어 여러 개를 골라 한꺼번에 불러옵니다"
   },
   {
     "id": "flow-data",

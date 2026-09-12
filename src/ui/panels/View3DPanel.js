@@ -25,6 +25,7 @@ export class View3DPanel {
     this.saveButton = document.getElementById('view3d-save');
     this.terrainSelect = document.getElementById('view3d-terrain');
     this.basemapSelect = document.getElementById('view3d-basemap');
+    this.hidePivotCheck = document.getElementById('view3d-hide-pivot');
     this.compass = document.getElementById('view3d-compass');
     this.compassNeedle = document.getElementById('view3d-compass-needle');
     if (!this.toggleButton) return;
@@ -50,6 +51,9 @@ export class View3DPanel {
     this.basemapSelect.addEventListener('change', () => {
       this.controller?.setBasemap(this.basemapSelect.value);
     });
+    this.hidePivotCheck.addEventListener('change', () => {
+      this.controller?.setPivotMarkerVisible(!this.hidePivotCheck.checked);
+    });
   }
 
   async toggle() {
@@ -73,6 +77,7 @@ export class View3DPanel {
         container: document.getElementById('map-container')
       });
       this.controller.exaggeration = Number(this.sliderValue.value) || 2;
+      this.controller.pivotMarkerVisible = !this.hidePivotCheck.checked;
       this.controller.onLayersChanged = () => this.fillTerrainOptions();
       this.controller.onCameraMoved = (bearing) => this.setCompass(bearing);
       this.controller.enter();

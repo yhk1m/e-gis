@@ -138,7 +138,9 @@ class BuiltinDataManager {
    * @returns {Array<{ name: string, items: Array }>} 정렬된 그룹 목록
    */
   getRasterCatalogGrouped() {
+    // 한반도 전체 DEM은 광역자치단체가 아니지만 같은 방식으로 폴더를 만든다 — 맨 앞에 둔다
     const PROVINCE_ORDER = [
+      '한반도',
       '서울특별시', '부산광역시', '대구광역시', '인천광역시',
       '광주광역시', '대전광역시', '울산광역시', '세종특별자치시',
       '경기도', '강원특별자치도', '강원도', '충청북도', '충청남도',
