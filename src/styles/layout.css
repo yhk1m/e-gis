@@ -534,6 +534,20 @@
   background: var(--bg-hover);
 }
 
+/* 링크 항목 (About e-GIS 의 GUIDE·커뮤니티) — 새 탭 링크지만 다른 항목과 같은 모양 */
+.dropdown-item.dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+/* About e-GIS 처럼 링크 모양 버튼이 드롭다운을 열 때, 열린 동안 강조 */
+.menu-item.dropdown.open > .btn-community {
+  color: var(--color-primary);
+  background: var(--bg-hover);
+}
+
 .dropdown-divider {
   height: 1px;
   background: var(--border-color);

@@ -461,10 +461,6 @@ function initToolbar() {
       case 'view3d':
         view3dPanel?.toggle();
         return;
-      case 'geocoding':
-        // 도구 모드를 켜는 게 아니라 안내창을 바로 연다
-        geocodingPanel.show();
-        return;
       case 'upload-image': {
         import('./ui/MapImageOverlay.js').then(({ triggerImageUpload }) => {
           triggerImageUpload(document.getElementById('map'));
@@ -556,16 +552,19 @@ function initMenubar() {
 
   // 드롭다운 토글
   menubar.addEventListener('click', (e) => {
-    const menuButton = e.target.closest('.menu-button');
+    // .menu-button: 일반 메뉴, .btn-community: 링크 모양 버튼(Geocoding·About e-GIS)
+    const menuButton = e.target.closest('.menu-button, .btn-community');
     if (menuButton) {
-      // 데이터 불러오기 버튼은 바로 실행 (드롭다운 아님)
+      const menuItem = menuButton.closest('.menu-item');
+      const isDropdown = menuItem?.classList.contains('dropdown');
+
+      // 드롭다운이 아닌 버튼(데이터 불러오기·Geocoding)은 바로 실행
       const action = menuButton.dataset.action;
-      if (action === 'builtin-data') {
+      if (action && !isDropdown) {
         handleMenuAction(action);
         return;
       }
-
-      const menuItem = menuButton.closest('.menu-item');
+      if (!isDropdown) return;
 
       // 다른 드롭다운 닫기
       document.querySelectorAll('.menu-item.dropdown.open').forEach(item => {
@@ -580,8 +579,9 @@ function initMenubar() {
     // 드롭다운 메뉴 아이템 클릭
     const dropdownItem = e.target.closest('.dropdown-item');
     if (dropdownItem) {
+      // 링크 항목(GUIDE·커뮤니티)은 액션 없이 새 탭으로 열린다
       const action = dropdownItem.dataset.action;
-      handleMenuAction(action);
+      if (action) handleMenuAction(action);
 
       // 드롭다운 닫기
       document.querySelectorAll('.menu-item.dropdown.open').forEach(item => {
@@ -856,6 +856,11 @@ function handleMenuAction(action) {
     // ===== 내장 데이터 =====
     case 'builtin-data':
       builtinDataDialog.show();
+      break;
+
+    // ===== Geocoding 안내창 =====
+    case 'geocoding':
+      geocodingPanel.show();
       break;
 
     default:

@@ -4,7 +4,7 @@
 
 ## 목적
 
-학생이 주소·장소명 목록을 좌표로 바꿔 e-GIS에 올리는 흐름을 툴바 버튼 하나로 안내한다.
+학생이 주소·장소명 목록을 좌표로 바꿔 e-GIS에 올리는 흐름을 메뉴바 버튼 하나로 안내한다.
 지오코딩 자체는 e-GIS 안에서 하지 않는다. 선생님이 배포한 구글 시트 지오코딩 도구
 (Apps Script `Maps.newGeocoder()`)를 학생이 **각자 사본으로** 쓰는 기존 방식을 그대로 둔다.
 
@@ -17,11 +17,11 @@ e-GIS가 한 곳에서 호출하면 반 하나(30명 × 30건)로 바닥난다. 
 
 ## 동작
 
-### 툴바 버튼
+### 메뉴바 버튼
 
-- 위치: 툴바의 3D 버튼 그룹 오른쪽, 새 그룹 `data-group="geocoding"`.
-- 3D 버튼과 같은 `btn btn-tool-labeled` 모양. 아이콘은 선 SVG 핀(이모지 사용 안 함), 라벨 `Geocoding`.
-- `data-tool="geocoding"` → `main.js` 툴바 클릭 처리에서 `geocodingPanel.show()` (도구 모드를 켜지 않고 바로 실행).
+- 위치: 메뉴바 "📂 데이터 불러오기" 왼쪽. GUIDE·커뮤니티 링크와 같은 `btn-community` 모양(선 SVG 핀 + `Geocoding`).
+- `data-action="geocoding"` → `main.js` 메뉴 액션에서 `geocodingPanel.show()`.
+- 같은 작업에서 GUIDE·커뮤니티 링크는 "데이터 불러오기" 오른쪽의 **About e-GIS** 드롭다운(같은 `btn-community` 모양, 주제도 메뉴처럼 열림) 안으로 옮긴다.
 
 ### 안내창 `GeocodingPanel`
 
@@ -42,8 +42,8 @@ e-GIS가 한 곳에서 호출하면 반 하나(30명 × 30건)로 바닥난다. 
 | 파일 | 변경 |
 |---|---|
 | `src/ui/panels/GeocodingPanel.js` | 새 파일. `GEOCODING_SHEET_ID`, `geocodingCopyUrl()`, `GeocodingPanel { show, close }`, 싱글턴 `geocodingPanel` |
-| `src/ui/layout/AppLayout.js` | 툴바 버튼 마크업 (3D 그룹 오른쪽) |
-| `src/main.js` | 툴바 클릭 처리에 `case 'geocoding'` |
+| `src/ui/layout/AppLayout.js` | 메뉴바 Geocoding 버튼, About e-GIS 드롭다운(GUIDE·커뮤니티) |
+| `src/main.js` | 메뉴바 클릭 처리 일반화(드롭다운 아닌 `data-action` 버튼 즉시 실행, 링크 항목은 액션 없음), `case 'geocoding'` |
 | `src/ui/dialogs/BuiltinDataDialog.js` | `show(tab = 'basic')` — 열 때 탭을 고를 수 있게. 기존 호출은 인자 없이 그대로 |
 | `src/styles/main.css` | 단계 목록 스타일 소량 |
 

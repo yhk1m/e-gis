@@ -131,25 +131,46 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="analysis-flow">흐름도</div>
               </div>
             </div>
+            <div class="menu-item" data-menu="geocoding">
+              <button class="btn-community" data-action="geocoding" title="주소를 좌표로 (Geocoding)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                Geocoding
+              </button>
+            </div>
             <div class="menu-item" data-menu="builtin-data">
               <button class="menu-button" data-action="builtin-data" title="데이터 불러오기" style="color: var(--color-primary); font-weight: 600;"><span class="menu-btn-icon">📂</span><span class="menu-btn-label">📂 데이터 불러오기</span></button>
             </div>
-            <a href="/guide" class="btn-community btn-guide" id="btn-guide" target="_blank" rel="noopener" title="e-GIS 사용 설명서">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-              </svg>
-              GUIDE
-            </a>
-            <a href="https://cafe.naver.com/egiskr" class="btn-community" target="_blank" title="e-GIS 커뮤니티">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-              커뮤니티
-            </a>
+            <div class="menu-item dropdown" data-menu="about">
+              <button class="btn-community" title="About e-GIS">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                About e-GIS
+              </button>
+              <div class="dropdown-menu" id="menu-about">
+                <a href="/guide" class="dropdown-item dropdown-link" id="btn-guide" target="_blank" rel="noopener" title="e-GIS 사용 설명서">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                  GUIDE
+                </a>
+                <a href="https://cafe.naver.com/egiskr" class="dropdown-item dropdown-link" target="_blank" rel="noopener" title="e-GIS 커뮤니티">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  커뮤니티
+                </a>
+              </div>
+            </div>
           </div>
         </div>
         <div class="menu-right">
@@ -328,16 +349,6 @@ export class AppLayout {
               <path d="M2 7.5 12 13l10-5.5M12 13v9"/>
             </svg>
             <span class="btn-tool-label">3D</span>
-          </button>
-        </div>
-
-        <div class="toolbar-group" data-group="geocoding">
-          <button class="btn btn-tool-labeled" data-tool="geocoding" title="주소를 좌표로 (Geocoding)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
-            <span class="btn-tool-label">Geocoding</span>
           </button>
         </div>
 
