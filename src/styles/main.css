@@ -359,6 +359,15 @@ body.exporting .egis-basemap-panel {
   border-color: var(--color-primary);
 }
 
+/* 팝오버 묶음 제목 (한국 (VWorld) / 세계) */
+.egis-basemap-panel .egis-basemap-group-title {
+  padding: 6px 14px 2px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* 회전 조절 팝업 (나침반 클릭 시) */
 .egis-compass-panel {
   position: absolute;

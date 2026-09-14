@@ -5,8 +5,6 @@
 import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
-import XYZ from 'ol/source/XYZ';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
@@ -17,6 +15,7 @@ import Control from 'ol/control/Control';
 import { defaults as defaultControls, Attribution } from 'ol/control';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { MapScaleBar } from '../ui/MapScaleBar.js';
+import { getBasemapCatalog, findBasemap, BASEMAP_GROUPS, DEFAULT_BASEMAP } from './basemaps.js';
 
 /**
  * 나침반 컨트롤 - 지도 회전 표시 및 정북 복귀
@@ -301,19 +300,10 @@ class BasemapControl extends Control {
       </svg>
     `;
 
-    const options = [
-      { key: 'OSM', label: '일반지도' },
-      { key: 'ESRI_DARK', label: '어두운 지도' },
-      { key: 'SATELLITE', label: '위성' },
-      { key: 'SATELLITE_LABELS', label: '위성 + 라벨' }
-    ];
-
     const panel = document.createElement('div');
     panel.className = 'egis-basemap-panel';
     panel.hidden = true;
-    panel.innerHTML = options.map((o) =>
-      `<button type="button" class="egis-basemap-option" data-key="${o.key}">${o.label}</button>`
-    ).join('');
+    panel.innerHTML = BasemapControl.panelHTML();
 
     const element = document.createElement('div');
     element.className = 'ol-control egis-basemap';
@@ -347,6 +337,21 @@ class BasemapControl extends Control {
     this.updateActive();
   }
 
+  /** 묶음 제목 + 항목 버튼. 키가 없어 한국 묶음이 비면 그 제목도 안 그린다. */
+  static panelHTML() {
+    const catalog = getBasemapCatalog();
+    return BASEMAP_GROUPS.map((group) => {
+      const items = catalog.filter((b) => b.group === group.id);
+      if (!items.length) return '';
+      return `
+        <div class="egis-basemap-group-title">${group.label}</div>
+        ${items.map((b) =>
+          `<button type="button" class="egis-basemap-option" data-key="${b.key}">${b.label}</button>`
+        ).join('')}
+      `;
+    }).join('');
+  }
+
   togglePanel() {
     this.panel.hidden = !this.panel.hidden;
   }
@@ -366,80 +371,10 @@ class BasemapControl extends Control {
     this.panel.querySelectorAll('.egis-basemap-option').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.key === current);
     });
-    // 기본(일반지도)이 아닌 배경을 쓰는 동안 버튼을 강조한다
-    const highlighted = current === 'SATELLITE' || current === 'SATELLITE_LABELS' || current === 'ESRI_DARK';
-    this.button.classList.toggle('active', highlighted);
+    // 기본(OSM)이 아닌 배경을 쓰는 동안 버튼을 강조한다
+    this.button.classList.toggle('active', current !== DEFAULT_BASEMAP);
   }
 }
-
-// 배경 타일은 예외 없이 익명 CORS 로 받는다.
-// crossOrigin 을 주지 않으면 타일 이미지가 캔버스를 오염시켜(tainted canvas)
-// 지도 내보내기의 canvas.toDataURL() 이 SecurityError 로 막힌다.
-// ol/source/OSM 만 기본값이 'anonymous' 이고 ol/source/XYZ 는 지정하지 않으면 null 이다.
-const TILE_CROSS_ORIGIN = 'anonymous';
-
-// 기본 배경지도 옵션
-export const BASEMAPS = {
-  OSM: {
-    name: 'OpenStreetMap',
-    source: () => new OSM({ crossOrigin: TILE_CROSS_ORIGIN })
-  },
-  CARTO_LIGHT: {
-    name: 'Carto Light',
-    source: () => new XYZ({
-      url: 'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-      crossOrigin: TILE_CROSS_ORIGIN,
-      attributions: '&copy; <a href="https://carto.com/">CARTO</a>'
-    })
-  },
-  CARTO_DARK: {
-    name: 'Carto Dark',
-    source: () => new XYZ({
-      url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-      crossOrigin: TILE_CROSS_ORIGIN,
-      attributions: '&copy; <a href="https://carto.com/">CARTO</a>'
-    })
-  },
-  // CARTO 무료 타일은 이제 "API KEY REQUIRED" 워터마크가 찍혀, 어두운 배경은 Esri 다크 그레이를 쓴다 (흐름도 등)
-  ESRI_DARK: {
-    name: '어두운 지도 (Esri)',
-    source: () => new XYZ({
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-      maxZoom: 16,
-      crossOrigin: TILE_CROSS_ORIGIN,
-      attributions: '&copy; Esri, HERE, Garmin, OpenStreetMap contributors'
-    })
-  },
-  SATELLITE: {
-    name: '위성 영상',
-    source: () => new XYZ({
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      maxZoom: 19,
-      crossOrigin: TILE_CROSS_ORIGIN,
-      attributions: '&copy; Esri'
-    })
-  },
-  NONE: {
-    name: '없음',
-    source: () => new XYZ({ url: '', crossOrigin: TILE_CROSS_ORIGIN })
-  }
-};
-
-// 라벨(지명/도로명) 오버레이 타일 — 위성+라벨 모드에서만 표시
-// Esri World_Boundaries_and_Places는 광역 지명만 있어 확대 시 라벨이 사라지므로,
-// 거리·동네까지 촘촘한 CARTO(OSM 기반) 라벨 전용 타일로 교체.
-// voyager_only_labels: 도로·지명이 서로 다른 색(+흰 외곽선)이라 위성 위에서 잘 보임.
-// @2x 레티나 타일(tilePixelRatio:2)로 고해상도 화면에서도 선명.
-export const REFERENCE_LABELS = {
-  name: 'CARTO 라벨',
-  source: () => new XYZ({
-    url: 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png',
-    tilePixelRatio: 2,
-    maxZoom: 20,
-    crossOrigin: TILE_CROSS_ORIGIN,
-    attributions: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  })
-};
 
 export class MapManager {
   constructor() {
@@ -457,23 +392,25 @@ export class MapManager {
     const {
       center = [127.5, 36.5], // 한국 중심 좌표 (경도, 위도)
       zoom = 7,
-      basemap = 'OSM'
+      basemap = DEFAULT_BASEMAP
     } = options;
+    const initial = findBasemap(basemap) || findBasemap(DEFAULT_BASEMAP);
 
     // 기본 배경 레이어 생성
     this.baseLayer = new TileLayer({
-      source: BASEMAPS[basemap].source(),
+      source: initial.source(),
       properties: {
         name: 'basemap',
         type: 'base'
       }
     });
 
-    // 라벨(지명/도로명) 오버레이 레이어 — 위성+라벨 모드에서만 표시
+    // 라벨(지명/도로명) 오버레이 레이어 — 라벨이 있는 항목(위성+라벨)에서만 표시.
+    // 소스는 항목마다 다르므로 setBasemap 이 그때그때 꽂는다.
     // zIndex 0.5: 베이스맵(0) 위 · 사용자 데이터(1+) 아래에 위치
     this.referenceLayer = new TileLayer({
-      source: REFERENCE_LABELS.source(),
-      visible: false,
+      source: initial.labels ? initial.labels() : null,
+      visible: !!initial.labels,
       zIndex: 0.5,
       properties: {
         name: 'reference',
@@ -509,7 +446,7 @@ export class MapManager {
       ])
     });
 
-    this.currentBasemap = basemap;
+    this.currentBasemap = initial.key;
 
     // 자체 축척바 (드래그 가능)
     this.scaleBar = new MapScaleBar(this.map);
@@ -638,30 +575,33 @@ export class MapManager {
 
   /**
    * 배경지도 변경
-   * @param {string} basemapKey - 배경지도 키
+   * @param {string} basemapKey - 카탈로그 키 (basemaps.js)
    */
   setBasemap(basemapKey) {
-    // 'SATELLITE_LABELS'는 위성 영상 + 라벨 오버레이를 함께 표시하는 합성 모드
-    const showLabels = basemapKey === 'SATELLITE_LABELS';
-    const sourceKey = showLabels ? 'SATELLITE' : basemapKey;
-
-    if (!BASEMAPS[sourceKey]) {
+    const item = findBasemap(basemapKey);
+    if (!item) {
       console.warn(`Unknown basemap: ${basemapKey}`);
       return;
     }
 
-    if (sourceKey === 'NONE') {
+    if (item.key === 'NONE') {
       this.baseLayer.setVisible(false);
     } else {
       this.baseLayer.setVisible(true);
-      this.baseLayer.setSource(BASEMAPS[sourceKey].source());
+      this.baseLayer.setSource(item.source());
     }
 
+    // 라벨 오버레이: 항목에 labels 가 있을 때만 그 소스로 켠다
     if (this.referenceLayer) {
-      this.referenceLayer.setVisible(showLabels);
+      if (item.labels && item.key !== 'NONE') {
+        this.referenceLayer.setSource(item.labels());
+        this.referenceLayer.setVisible(true);
+      } else {
+        this.referenceLayer.setVisible(false);
+      }
     }
 
-    this.currentBasemap = basemapKey;
+    this.currentBasemap = item.key;
     if (this.basemapControl) this.basemapControl.updateActive();
   }
 
@@ -673,13 +613,10 @@ export class MapManager {
   }
 
   /**
-   * 사용 가능한 배경지도 목록 반환
+   * 사용 가능한 배경지도 목록 (카탈로그 그대로 — 3D 패널이 optgroup 을 그린다)
    */
   getAvailableBasemaps() {
-    return Object.entries(BASEMAPS).map(([key, value]) => ({
-      key,
-      name: value.name
-    }));
+    return getBasemapCatalog().map(({ key, label, group }) => ({ key, label, group }));
   }
 
   /**
