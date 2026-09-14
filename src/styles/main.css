@@ -4311,6 +4311,75 @@ body.exporting .egis-basemap-panel {
   line-height: 1.7;
 }
 
+/* Geocoding 안내창 */
+.geocoding-modal .geocoding-content {
+  width: 460px;
+  max-width: 92vw;
+  background: var(--bg-panel);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.geocoding-intro {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.geocoding-steps {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.geocoding-steps > li {
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.geocoding-steps > li::marker {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.geocoding-step-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.geocoding-steps p {
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+}
+
+.geocoding-steps code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.92em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--bg-input);
+}
+
+.geocoding-steps .btn svg {
+  vertical-align: -2px;
+  margin-left: 2px;
+}
+
+/* 전역 .btn-secondary 는 테두리가 없어 글자처럼 보인다 — 3단계 버튼은 외곽선으로 */
+.geocoding-steps .btn-outline {
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.geocoding-steps .btn-outline:hover {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+}
+
 /* ==================== 위치 검색 ==================== */
 .toolbar-search {
   position: relative;

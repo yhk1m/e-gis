@@ -331,6 +331,16 @@ export class AppLayout {
           </button>
         </div>
 
+        <div class="toolbar-group" data-group="geocoding">
+          <button class="btn btn-tool-labeled" data-tool="geocoding" title="주소를 좌표로 (Geocoding)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span class="btn-tool-label">Geocoding</span>
+          </button>
+        </div>
+
         <div class="toolbar-spacer"></div>
 
         <!-- 카피라이트 -->

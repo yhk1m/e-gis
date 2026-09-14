@@ -57,7 +57,7 @@ class GeocodingPanel {
             <li>
               <div class="geocoding-step-title">e-GIS로 가져오기</div>
               <p>완성된 시트를 "링크가 있는 모든 사용자"로 공유한 뒤 시트 주소를 붙여 넣으면 포인트 레이어가 됩니다.</p>
-              <button type="button" class="btn btn-secondary btn-sm" id="geocoding-import">구글 시트 불러오기</button>
+              <button type="button" class="btn btn-outline btn-sm" id="geocoding-import">구글 시트 불러오기</button>
             </li>
           </ol>
         </div>

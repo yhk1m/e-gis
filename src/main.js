@@ -45,6 +45,7 @@ import { georeferencePanel } from './ui/panels/GeoreferencePanel.js';
 import { chartMapPanel } from './ui/panels/ChartMapPanel.js';
 import { isochronePanel } from './ui/panels/IsochronePanel.js';
 import { routingPanel } from './ui/panels/RoutingPanel.js';
+import { geocodingPanel } from './ui/panels/GeocodingPanel.js';
 import { drawingPanel } from './ui/panels/DrawingPanel.js';
 import { layerExportPanel } from './ui/panels/LayerExportPanel.js';
 import { cartogramPanel } from './ui/panels/CartogramPanel.js';
@@ -459,6 +460,10 @@ function initToolbar() {
         return;
       case 'view3d':
         view3dPanel?.toggle();
+        return;
+      case 'geocoding':
+        // 도구 모드를 켜는 게 아니라 안내창을 바로 연다
+        geocodingPanel.show();
         return;
       case 'upload-image': {
         import('./ui/MapImageOverlay.js').then(({ triggerImageUpload }) => {
