@@ -82,6 +82,7 @@ export class View3DPanel {
       this.controller.onCameraMoved = (bearing) => this.setCompass(bearing);
       this.controller.enter();
       this.fillTerrainOptions();
+      this.fillBasemapOptions();
       this.basemapSelect.value = this.mapManager.getBasemap?.() || 'OSM';
 
       this.panel.hidden = false;
@@ -143,6 +144,23 @@ export class View3DPanel {
   }
 
   /** 지형 드롭다운을 지금 있는 DEM 레이어로 채운다 */
+  /** 배경지도 드롭다운을 카탈로그로 채운다 (묶음별 optgroup + 없음) */
+  fillBasemapOptions() {
+    const catalog = this.mapManager.getAvailableBasemaps();
+    const groups = [
+      { id: 'korea', label: '한국 (VWorld)' },
+      { id: 'world', label: '세계' }
+    ];
+    const optgroups = groups.map((g) => {
+      const items = catalog.filter((b) => b.group === g.id);
+      if (!items.length) return '';
+      const options = items.map((b) => `<option value="${b.key}">${escapeHtml(b.label)}</option>`).join('');
+      return `<optgroup label="${g.label}">${options}</optgroup>`;
+    }).join('');
+    const none = catalog.find((b) => b.key === 'NONE');
+    this.basemapSelect.innerHTML = optgroups + (none ? `<option value="NONE">${escapeHtml(none.label)}</option>` : '');
+  }
+
   fillTerrainOptions() {
     const sources = this.controller.listTerrainSources();
     const previous = this.terrainSelect.value;

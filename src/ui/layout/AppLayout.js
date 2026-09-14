@@ -434,12 +434,7 @@ export class AppLayout {
               </label>
               <label class="view3d-row">
                 배경지도
-                <select id="view3d-basemap">
-                  <option value="OSM">일반지도</option>
-                  <option value="SATELLITE">위성</option>
-                  <option value="SATELLITE_LABELS">위성 + 라벨</option>
-                  <option value="NONE">없음</option>
-                </select>
+                <select id="view3d-basemap"></select>
               </label>
               <label class="view3d-row view3d-check">
                 <input type="checkbox" id="view3d-hide-pivot">
