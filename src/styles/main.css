@@ -4303,6 +4303,14 @@ body.exporting .egis-basemap-panel {
   color: var(--color-danger);
 }
 
+.member-delete-list {
+  margin: 0 0 var(--spacing-md);
+  padding-left: 20px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
 /* ==================== 위치 검색 ==================== */
 .toolbar-search {
   position: relative;

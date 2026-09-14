@@ -925,36 +925,100 @@ class MyPagePanel {
 
   /**
    * 회원 탈퇴 (동의 철회) 처리
+   *
+   * 1단계: 비밀번호 재입력 모달 — 탈퇴로 사라지는 것을 보여 주고 본인 확인
+   * 2단계: 마지막 확인창 → 삭제 실행
    */
-  async handleWithdrawConsent() {
-    const confirmFirst = confirm(
-      '정말로 회원 탈퇴를 진행하시겠습니까?\n\n' +
-      '탈퇴 시 다음 데이터가 모두 삭제됩니다:\n' +
-      '• 계정(이메일) 및 프로필 정보\n' +
-      '• 저장된 프로젝트\n' +
-      '• 게시한 스토리맵 (공개 주소에서 더 이상 열리지 않음)\n' +
-      '• 모든 개인정보\n\n' +
-      '이 작업은 되돌릴 수 없습니다.'
-    );
+  handleWithdrawConsent() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay member-delete-modal active';
+    overlay.innerHTML = `
+      <div class="modal-content member-delete-content">
+        <div class="modal-header">
+          <h3>회원 탈퇴</h3>
+          <button class="modal-close" data-close>&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="member-delete-warning">
+            탈퇴하면 다음 데이터가 <strong>영구 삭제</strong>되며 <strong>되돌릴 수 없습니다.</strong>
+          </p>
+          <ul class="member-delete-list">
+            <li>계정(이메일) 및 프로필 정보</li>
+            <li>저장된 프로젝트</li>
+            <li>게시한 스토리맵 (공개 주소에서 더 이상 열리지 않음)</li>
+            <li>모든 개인정보</li>
+          </ul>
+          <div class="form-group">
+            <label for="withdraw-pw">비밀번호 확인</label>
+            <input type="password" id="withdraw-pw" placeholder="현재 비밀번호를 입력하세요" autocomplete="current-password">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-close>취소</button>
+          <button class="btn btn-danger" id="withdraw-confirm">탈퇴하기</button>
+        </div>
+      </div>
+    `;
 
-    if (!confirmFirst) return;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
-    const confirmSecond = confirm(
-      '마지막 확인입니다.\n\n' +
-      '회원 탈퇴를 진행하면 모든 데이터가 영구적으로 삭제됩니다.\n' +
-      '정말로 진행하시겠습니까?'
-    );
+    const pwInput = overlay.querySelector('#withdraw-pw');
+    const confirmBtn = overlay.querySelector('#withdraw-confirm');
+    setTimeout(() => pwInput.focus(), 0);
 
-    if (!confirmSecond) return;
+    const resetButton = () => {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '탈퇴하기';
+    };
 
-    try {
-      await consentManager.withdrawConsent();
-      alert('회원 탈퇴가 완료되었습니다.\n이용해주셔서 감사합니다.');
-      this.close();
-      window.location.reload();
-    } catch (error) {
-      alert('회원 탈퇴 처리 중 오류가 발생했습니다: ' + error.message);
-    }
+    const doWithdraw = async () => {
+      const pw = pwInput.value;
+      if (!pw) {
+        alert('비밀번호를 입력하세요.');
+        return;
+      }
+
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '확인 중...';
+      try {
+        const ok = await supabaseManager.verifyPassword(pw);
+        if (!ok) {
+          alert('비밀번호가 일치하지 않습니다.');
+          resetButton();
+          pwInput.value = '';
+          pwInput.focus();
+          return;
+        }
+
+        const confirmLast = confirm(
+          '마지막 확인입니다.\n\n' +
+          '회원 탈퇴를 진행하면 모든 데이터가 영구적으로 삭제됩니다.\n' +
+          '정말로 진행하시겠습니까?'
+        );
+        if (!confirmLast) {
+          resetButton();
+          return;
+        }
+
+        confirmBtn.textContent = '삭제 중...';
+        await consentManager.withdrawConsent();
+        close();
+        alert('회원 탈퇴가 완료되었습니다.\n이용해주셔서 감사합니다.');
+        this.close();
+        window.location.reload();
+      } catch (error) {
+        alert('회원 탈퇴 처리 중 오류가 발생했습니다: ' + error.message);
+        resetButton();
+      }
+    };
+
+    confirmBtn.addEventListener('click', doWithdraw);
+    pwInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doWithdraw(); }
+    });
   }
 
   /**
