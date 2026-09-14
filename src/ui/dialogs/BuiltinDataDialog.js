@@ -51,9 +51,16 @@ class BuiltinDataDialog {
   /**
    * 다이얼로그 표시
    */
-  async show() {
+  /**
+   * 창 열기
+   * @param {'basic'|'public'|'sheets'} [tab='basic'] 처음 보일 탭
+   *   — Geocoding 안내창이 'sheets'로 연다
+   */
+  async show(tab = 'basic') {
     this.close();
     await builtinDataManager.loadCatalogs();
+    // close()가 _activeTab을 'basic'으로 되돌리므로 그 뒤에 정한다
+    this._activeTab = tab;
     this._renderMain();
   }
 
