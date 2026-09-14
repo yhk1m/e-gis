@@ -247,6 +247,21 @@ style.textContent = `
       justify-content: center;
     }
   }
+
+  /* 인쇄·PDF: 화면 조작용 버튼은 빼고, 헤더는 첫 장에만 */
+  @media print {
+    .privacy-page-actions {
+      display: none;
+    }
+
+    .privacy-page-header {
+      position: static;
+    }
+
+    .privacy-page-section {
+      break-inside: avoid;
+    }
+  }
 `;
 document.head.appendChild(style);
 

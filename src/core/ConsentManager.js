@@ -132,17 +132,19 @@ class ConsentManager {
     }
 
     try {
-      // 1. 사용자 프로필 삭제
-      await supabaseManager.deleteProfile();
+      // 1. 프로필·프로젝트·게시한 스토리맵·계정을 서버에서 한 번에 삭제
+      //    (실패하면 아무것도 지워지지 않으므로 이어지는 정리는 건너뛴다)
+      await supabaseManager.deleteAccount();
 
-      // 2. 사용자 프로젝트 삭제
-      await supabaseManager.deleteAllProjects();
+      // 2. 세션 정리 — 계정이 이미 사라져 서버가 세션을 모를 수 있으니
+      //    로컬 세션만 지워지면 충분하다
+      try {
+        await supabaseManager.signOut();
+      } catch (e) {
+        await supabaseManager.signOutLocal();
+      }
 
-      // 3. 계정 삭제 요청 (Supabase에서는 직접 삭제 불가, 관리자 처리 필요)
-      // 대신 로그아웃 처리
-      await supabaseManager.signOut();
-
-      // 4. 로컬 데이터 정리
+      // 3. 로컬 데이터 정리
       this.clearLocalConsent();
 
       return true;

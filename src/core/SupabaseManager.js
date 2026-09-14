@@ -184,6 +184,18 @@ class SupabaseManager {
   }
 
   /**
+   * 로컬 세션만 지우는 로그아웃 — 계정이 서버에서 이미 삭제돼
+   * 일반 로그아웃(서버 세션 폐기)이 실패할 때 쓴다.
+   */
+  async signOutLocal() {
+    if (!this.supabase) return;
+
+    await this.supabase.auth.signOut({ scope: 'local' });
+    this.user = null;
+    this.profileCache = null;
+  }
+
+  /**
    * 비밀번호 변경
    */
   async updatePassword(newPassword) {
@@ -585,6 +597,23 @@ class SupabaseManager {
       .eq('user_id', this.user.id);
 
     if (error && error.code !== 'PGRST116') throw error;
+    return true;
+  }
+
+  /**
+   * 회원 탈퇴 — 계정 완전 삭제
+   *
+   * 클라이언트 키로는 auth.users 를 지울 수 없어 서버 함수(supabase-delete-own-account.sql)
+   * 에 맡긴다. 프로젝트·프로필·게시한 스토리맵·계정을 한 트랜잭션으로 지우므로
+   * 절반만 지워진 채 남는 일이 없다.
+   */
+  async deleteAccount() {
+    if (!this.supabase || !this.user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const { error } = await this.supabase.rpc('delete_own_account');
+    if (error) throw error;
     return true;
   }
 
