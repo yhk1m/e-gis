@@ -54,7 +54,8 @@ const vworldSource = (layer, ext, key) => () => new XYZ({
 function koreaBasemaps(key) {
   return [
     { key: 'VW_BASE', label: '일반', group: 'korea', source: vworldSource('Base', 'png', key) },
-    { key: 'VW_GRAY', label: '회색', group: 'korea', source: vworldSource('gray', 'png', key) },
+    // 이 엔드포인트가 주는 타일 종류는 Base·midnight·Hybrid·Satellite·white 뿐이다 (gray 없음, 2026-09-14 확인)
+    { key: 'VW_WHITE', label: '흰색', group: 'korea', source: vworldSource('white', 'png', key) },
     { key: 'VW_MIDNIGHT', label: '야간', group: 'korea', source: vworldSource('midnight', 'png', key) },
     { key: 'VW_SATELLITE', label: '위성', group: 'korea', source: vworldSource('Satellite', 'jpeg', key) },
     {

@@ -19,7 +19,7 @@
 | 묶음 | key | 라벨 | 소스 | 비고 |
 |---|---|---|---|---|
 | 한국 (VWorld) | `VW_BASE` | 일반 | `…/{키}/Base/{z}/{y}/{x}.png` | |
-| | `VW_GRAY` | 회색 | `…/gray/….png` | 주제도 배경 |
+| | `VW_WHITE` | 흰색 | `…/white/….png` | 주제도 배경 (이 엔드포인트에 gray 는 없고 white 가 있다 — 2026-09-14 확인) |
 | | `VW_MIDNIGHT` | 야간 | `…/midnight/….png` | 어두운 배경 |
 | | `VW_SATELLITE` | 위성 | `…/Satellite/….jpeg` | |
 | | `VW_HYBRID` | 위성 + 라벨 | Satellite 위에 `Hybrid/….png` 오버레이 | |

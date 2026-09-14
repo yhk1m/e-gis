@@ -33,7 +33,7 @@ describe('getBasemapCatalog', () => {
 
   it('키가 있으면 한국 5종이 앞에 온다', () => {
     const keys = getBasemapCatalog({ vworldKey: KEY }).map((b) => b.key);
-    expect(keys.slice(0, 5)).toEqual(['VW_BASE', 'VW_GRAY', 'VW_MIDNIGHT', 'VW_SATELLITE', 'VW_HYBRID']);
+    expect(keys.slice(0, 5)).toEqual(['VW_BASE', 'VW_WHITE', 'VW_MIDNIGHT', 'VW_SATELLITE', 'VW_HYBRID']);
     expect(keys).toHaveLength(11);
   });
 
