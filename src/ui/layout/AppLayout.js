@@ -141,7 +141,12 @@ export class AppLayout {
               </button>
             </div>
             <div class="menu-item" data-menu="builtin-data">
-              <button class="menu-button" data-action="builtin-data" title="데이터 불러오기" style="color: var(--color-primary); font-weight: 600;"><span class="menu-btn-icon">📂</span><span class="menu-btn-label">📂 데이터 불러오기</span></button>
+              <button class="btn-community btn-community-primary" data-action="builtin-data" title="데이터 불러오기">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span class="btn-community-label">데이터 불러오기</span>
+              </button>
             </div>
             <div class="menu-item dropdown" data-menu="about">
               <button class="btn-community" title="About e-GIS">
