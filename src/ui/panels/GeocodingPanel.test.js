@@ -49,3 +49,43 @@ describe('GeocodingPanel.show', () => {
     expect(document.querySelectorAll('.geocoding-modal')).toHaveLength(1);
   });
 });
+
+describe('GeocodingPanel 버튼', () => {
+  it('사본 만들기는 새 탭(noopener)으로 사본 주소를 연다', () => {
+    geocodingPanel.show();
+    document.querySelector('#geocoding-copy').click();
+    expect(window.open).toHaveBeenCalledWith(geocodingCopyUrl(), '_blank', 'noopener');
+    // 창은 그대로 — 학생이 2·3단계를 이어서 읽는다
+    expect(document.querySelector('.geocoding-modal')).not.toBeNull();
+  });
+
+  it('구글 시트 불러오기는 창을 닫고 데이터 불러오기 창을 스프레드시트 탭으로 연다', () => {
+    geocodingPanel.show();
+    document.querySelector('#geocoding-import').click();
+    expect(document.querySelector('.geocoding-modal')).toBeNull();
+    expect(builtinDataDialog.show).toHaveBeenCalledWith('sheets');
+  });
+});
+
+describe('GeocodingPanel 닫기', () => {
+  it('X 버튼', () => {
+    geocodingPanel.show();
+    document.querySelector('#geocoding-close').click();
+    expect(document.querySelector('.geocoding-modal')).toBeNull();
+  });
+
+  it('바깥 클릭은 닫히고, 안쪽 클릭은 안 닫힌다', () => {
+    geocodingPanel.show();
+    document.querySelector('.geocoding-content').click();
+    expect(document.querySelector('.geocoding-modal')).not.toBeNull();
+    document.querySelector('.geocoding-modal').click();
+    expect(document.querySelector('.geocoding-modal')).toBeNull();
+  });
+
+  it('Esc 로 닫히고, 닫힌 뒤에는 Esc 리스너가 남지 않는다', () => {
+    geocodingPanel.show();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(document.querySelector('.geocoding-modal')).toBeNull();
+    expect(geocodingPanel._escHandler).toBeNull();
+  });
+});
