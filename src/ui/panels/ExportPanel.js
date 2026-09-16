@@ -8,6 +8,7 @@ import { exportTool } from '../../tools/ExportTool.js';
 import { mapManager } from '../../core/MapManager.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLegendModel } from '../../tools/legendModel.js';
+import { applyLegendVisibility } from '../../tools/legendVisibility.js';
 
 class ExportPanel {
   constructor() {
@@ -116,9 +117,12 @@ class ExportPanel {
     const legendSelector = '.choropleth-legend, .chart-map-legend, .heatmap-legend, .cartogram-legend';
     const legends = document.querySelectorAll(legendSelector);
     legends.forEach(el => {
-      el.style.display = this.mapElements.showLegend ? '' : 'none';
       el.style.fontSize = this.mapElements.legendFontSize + 'px';
     });
+    // '범례 표시'는 켜진 레이어의 범례만 다시 보인다 — 숨긴 레이어의 범례까지 되살리면 안 된다
+    for (const [layerId, layerInfo] of layerManager.layers) {
+      applyLegendVisibility(layerId, this.mapElements.showLegend && layerInfo.visible !== false);
+    }
 
     const scaleBars = document.querySelectorAll('.map-scale-bar, .ol-scale-line');
     scaleBars.forEach(el => {

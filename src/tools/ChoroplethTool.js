@@ -12,6 +12,7 @@ import { makeDraggable } from "../utils/DraggableElement.js";
 import { isVectorLayer, collectNumericFields } from "../utils/layerSelect.js";
 import { sampleColorRamp, lerpColor } from "../utils/colorRamp.js";
 import { formatNumber } from "./legendModel.js";
+import { syncLegendVisibility } from "./legendVisibility.js";
 
 // 색상 팔레트 정의
 const COLOR_RAMPS = {
@@ -332,6 +333,8 @@ class ChoroplethTool {
       this.legends.set(layerId, legendEl);
       makeDraggable(legendEl, () => mapContainer);
       this.attachLegendEditors(legendEl, layerId);
+      // 복원처럼 숨긴 레이어의 범례를 만들 때도 레이어 가시성을 따른다
+      syncLegendVisibility(layerId);
     }
   }
 

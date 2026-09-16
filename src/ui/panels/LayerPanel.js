@@ -12,6 +12,7 @@ import { saveTextAs } from '../../utils/saveFile.js';
 import { swatchSpec, swatchHTML } from './layerSwatch.js';
 import { flowPanel } from './FlowPanel.js';
 import GeoJSON from 'ol/format/GeoJSON';
+import { applyLegendVisibility } from '../../tools/legendVisibility.js';
 
 export class LayerPanel {
   constructor(containerId = 'layer-list') {
@@ -250,21 +251,10 @@ export class LayerPanel {
 
   /**
    * 레이어 가시성에 맞춰 해당 레이어의 범례(legend) 표시/숨김
-   * 각 도구가 만든 범례는 `{접두사}-{layerId}` id를 가짐
+   * (id 규약과 접두사 목록은 tools/legendVisibility.js 한 곳에 둔다)
    */
   toggleLayerLegend(layerId, visible) {
-    const prefixes = [
-      'choropleth-legend', // 단계구분도
-      'heatmap-legend',    // 히트맵
-      'raster-legend',     // 래스터 분석
-      'dem-legend',        // DEM
-      'chart-legend',      // 도형표현도(차트맵)
-      'legend'             // 카토그램
-    ];
-    prefixes.forEach(prefix => {
-      const el = document.getElementById(`${prefix}-${layerId}`);
-      if (el) el.style.display = visible ? '' : 'none';
-    });
+    applyLegendVisibility(layerId, visible);
   }
 
   /**

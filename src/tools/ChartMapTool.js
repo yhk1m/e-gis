@@ -17,6 +17,7 @@ import { collectNumericFields } from '../utils/layerSelect.js';
 import { mapManager } from '../core/MapManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { makeDraggable } from '../utils/DraggableElement.js';
+import { syncLegendVisibility } from './legendVisibility.js';
 
 class ChartMapTool {
   constructor() {
@@ -497,6 +498,8 @@ class ChartMapTool {
       mapContainer.appendChild(legendEl);
       this.legends.set(layerId, legendEl);
       makeDraggable(legendEl, () => mapContainer);
+      // 복원처럼 숨긴 레이어의 범례를 만들 때도 레이어 가시성을 따른다
+      syncLegendVisibility(layerId);
     }
   }
 
