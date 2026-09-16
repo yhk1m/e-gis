@@ -579,7 +579,7 @@ function initMenubar() {
     // 드롭다운 메뉴 아이템 클릭
     const dropdownItem = e.target.closest('.dropdown-item');
     if (dropdownItem) {
-      // 링크 항목(GUIDE·커뮤니티)은 액션 없이 새 탭으로 열린다
+      // 링크 항목(GUIDE·커뮤니티·e-GIStory)은 액션 없이 새 탭으로 열린다
       const action = dropdownItem.dataset.action;
       if (action) handleMenuAction(action);
 

@@ -534,7 +534,7 @@
   background: var(--bg-hover);
 }
 
-/* 링크 항목 (About e-GIS 의 GUIDE·커뮤니티) — 새 탭 링크지만 다른 항목과 같은 모양 */
+/* 링크 항목 (About e-GIS 의 GUIDE·커뮤니티·e-GIStory) — 새 탭 링크지만 다른 항목과 같은 모양 */
 .dropdown-item.dropdown-link {
   display: flex;
   align-items: center;
