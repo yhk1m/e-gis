@@ -34,6 +34,14 @@
         "latColumn": "latitude",
         "lonColumn": "longitude",
         "source": ""
+      },
+      {
+        "id": "seoul-subway-line2",
+        "name": "서울 지하철 2호선 역",
+        "description": "2호선 역 51개 지점(지선 포함) — 역명(sub_nm). '2호선 8~9시 승하차'와 결합해 도형표현도로",
+        "type": "spatial",
+        "file": "practice/Point Data/서울_지하철_2호선_역.geojson",
+        "source": ""
       }
     ]
   },
@@ -169,6 +177,15 @@
         "type": "attribute",
         "file": "practice/Attribute Data/korea_sido_grdp_20260701.xlsx",
         "keyColumn": "code",
+        "source": ""
+      },
+      {
+        "id": "seoul-subway-line2-rush",
+        "name": "2호선 8~9시 승하차",
+        "description": "역별 8~9시 승차·하차 인원(49역) — '서울 지하철 2호선 역'과 결합 (sub_nm ↔ stn_nm)",
+        "type": "attribute",
+        "file": "practice/Attribute Data/서울_지하철_2호선_8-9시_승하차.csv",
+        "keyColumn": "stn_nm",
         "source": ""
       }
     ]
