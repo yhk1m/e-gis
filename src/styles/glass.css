@@ -1,57 +1,71 @@
 /**
  * © 2026 김용현
  *
- * 글래스 UI (실험실 `glass`)
+ * 글래스 UI (실험실 `glass`) — v2
  *
  * documentElement 에 data-surface="glass" 가 붙었을 때만 산다.
- * 색 토큰을 반투명으로 바꾸고, 지도 위에 얹히는 면에만 backdrop-filter 를 건다.
+ * 색 토큰을 반투명으로 바꾸고, 지도 위에 얹히는 면에 backdrop-filter + 광택 그라디언트를 건다.
  * 글자 색 토큰은 손대지 않는다 — 대비는 배경 불투명도로 지킨다.
  *
- * 성능: 지도 위 부유 요소는 지도가 다시 그려질 때마다 블러를 재계산하므로
- * 블러 반경을 절반으로 두고, 태블릿·휴대폰과 "투명도 줄이기" 설정에서는 블러를 뺀다.
+ * 데스크톱에서는 지도를 창(#app) 전체에 깔아 메뉴바·툴바·상태줄·왼쪽 패널 카드가 전부 지도 위에 뜬다.
+ * 지도 위 부유 요소는 glass.js 가 #map-container 에 두는 세 오프셋만큼 민다.
+ *
+ * 성능: 지도 위 부유 요소는 지도가 다시 그려질 때마다 블러를 재계산하므로 블러 반경을 줄이고,
+ * 태블릿·휴대폰에서는 블러를 뺀다.
+ * 시스템 "투명도 줄이기"(prefers-reduced-transparency)는 무시한다 — 실험을 직접 켠 사용자에게만 적용되는데
+ * Windows 는 "투명 효과" 가 꺼진 게 기본이라 그 설정을 따르면 유리가 아예 안 보인다.
  * 내보내기(html2canvas)는 backdrop-filter 를 못 그리므로 body.exporting 동안 불투명으로 돌린다.
  */
 
 [data-surface="glass"] {
-  --glass-blur: 14px;
-  --glass-blur-float: 7px;
-  --glass-border: rgba(255, 255, 255, 0.45);
-  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-blur: 18px;
+  --glass-blur-float: 12px;
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --glass-highlight: rgba(255, 255, 255, 0.85);
+  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.08));
+  --glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.14);
+  --glass-popover-bg: rgba(255, 255, 255, 0.82); /* 메뉴·컨텍스트 메뉴·검색 결과 — 패널 위에 겹치므로 더 진하게 */
   --bg-solid-fallback: #ffffff;
 
-  --bg-panel: rgba(255, 255, 255, 0.62);
-  --bg-menubar: rgba(255, 255, 255, 0.62);
-  --bg-toolbar: rgba(255, 255, 255, 0.62);
-  --bg-statusbar: rgba(241, 245, 249, 0.62);
-  --map-overlay-bg: rgba(255, 255, 255, 0.62);
+  --bg-panel: rgba(255, 255, 255, 0.42);
+  --bg-menubar: rgba(255, 255, 255, 0.42);
+  --bg-toolbar: rgba(255, 255, 255, 0.42);
+  --bg-statusbar: rgba(255, 255, 255, 0.42);
+  --map-overlay-bg: rgba(255, 255, 255, 0.5);
 }
 
 [data-theme="dark"][data-surface="glass"] {
-  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.22);
   --glass-highlight: rgba(255, 255, 255, 0.18);
+  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --glass-popover-bg: rgba(15, 23, 42, 0.85);
   --bg-solid-fallback: #1e293b;
 
-  --bg-panel: rgba(30, 41, 59, 0.55);
-  --bg-menubar: rgba(30, 41, 59, 0.55);
-  --bg-toolbar: rgba(30, 41, 59, 0.55);
-  --bg-statusbar: rgba(30, 41, 59, 0.55);
-  --map-overlay-bg: rgba(30, 41, 59, 0.55);
+  /* 막대는 밝은 배경지도 위에서 밝은 글자·아이콘(--text-secondary)이 씻겨 나가므로 패널보다 진하게.
+     .6 에서는 툴바 아이콘이 거의 안 보였다(하네스 labs-04). */
+  --bg-panel: rgba(15, 23, 42, 0.45);
+  --bg-menubar: rgba(15, 23, 42, 0.72);
+  --bg-toolbar: rgba(15, 23, 42, 0.72);
+  --bg-statusbar: rgba(15, 23, 42, 0.72);
+  --map-overlay-bg: rgba(15, 23, 42, 0.5);
 }
 
-/* 큰 면 — 지도 옆·위에 고정된 틀 */
+/* 큰 면 — 지도 위에 고정된 틀. (.modal 은 대화상자 본체, .modal-overlay 는 건드리지 않는다) */
 [data-surface="glass"] #menubar,
 [data-surface="glass"] #toolbar,
 [data-surface="glass"] #left-panel,
 [data-surface="glass"] #statusbar,
 [data-surface="glass"] .modal,
 [data-surface="glass"] .modal-content {
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
-  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  background-image: var(--glass-sheen);
   border-color: var(--glass-border);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-md);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
 }
 
-/* 지도 위 부유 요소 — 블러 반경 절반 */
+/* 지도 위 부유 요소 — 블러 반경을 줄인다 */
 [data-surface="glass"] .choropleth-legend,
 [data-surface="glass"] .cartogram-legend,
 [data-surface="glass"] .heatmap-legend,
@@ -60,50 +74,44 @@
 [data-surface="glass"] .view3d-panel,
 [data-surface="glass"] .chart-map-legend,
 [data-surface="glass"] .isochrone-legend,
-[data-surface="glass"] .raster-analysis-legend {
-  -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(140%);
-  backdrop-filter: blur(var(--glass-blur-float)) saturate(140%);
+[data-surface="glass"] .raster-analysis-legend,
+[data-surface="glass"] .map-scale-bar { /* 축척바는 자기 흰 배경(#333 글자)을 그대로 쓴다 — 다크에서도 */
+  -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(170%);
+  backdrop-filter: blur(var(--glass-blur-float)) saturate(170%);
+  background-image: var(--glass-sheen);
   border: 1px solid var(--glass-border);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-md);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
 }
 
-/* 태블릿·휴대폰: 블러 없이 반투명만 (GPU 를 아낀다) */
+/* 팝오버 — 메뉴바 드롭다운·좌표계 목록·레이어 컨텍스트 메뉴·장소 검색 결과.
+   패널·툴바 위에 겹쳐 뜨므로 아래 글자가 비치지 않게 진한 유리로 */
+[data-surface="glass"] .dropdown-menu,
+[data-surface="glass"] .crs-dropdown-menu,
+[data-surface="glass"] .layer-context-menu,
+[data-surface="glass"] .search-results {
+  -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(170%);
+  backdrop-filter: blur(var(--glass-blur-float)) saturate(170%);
+  background-color: var(--glass-popover-bg);
+  background-image: var(--glass-sheen);
+  border-color: var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
+}
+
+/* 태블릿·휴대폰: 블러 없이 반투명만 (GPU 를 아낀다) — 블러가 없으니 읽히도록 덜 투명하게 */
 @media (pointer: coarse) and (max-width: 1366px) {
-  [data-surface="glass"] #menubar,
-  [data-surface="glass"] #toolbar,
-  [data-surface="glass"] #left-panel,
-  [data-surface="glass"] #statusbar,
-  [data-surface="glass"] .modal,
-  [data-surface="glass"] .modal-content,
-  [data-surface="glass"] .choropleth-legend,
-  [data-surface="glass"] .cartogram-legend,
-  [data-surface="glass"] .heatmap-legend,
-  [data-surface="glass"] .feature-info-card,
-  [data-surface="glass"] .egis-basemap-panel,
-  [data-surface="glass"] .view3d-panel,
-  [data-surface="glass"] .chart-map-legend,
-  [data-surface="glass"] .isochrone-legend,
-  [data-surface="glass"] .raster-analysis-legend {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
-/* 시스템 "투명도 줄이기": 블러 없이, 배경은 거의 불투명 */
-@media (prefers-reduced-transparency: reduce) {
   [data-surface="glass"] {
-    --bg-panel: rgba(255, 255, 255, 0.94);
-    --bg-menubar: rgba(255, 255, 255, 0.94);
-    --bg-toolbar: rgba(255, 255, 255, 0.94);
-    --bg-statusbar: rgba(241, 245, 249, 0.94);
-    --map-overlay-bg: rgba(255, 255, 255, 0.94);
+    --bg-panel: rgba(255, 255, 255, 0.78);
+    --bg-menubar: rgba(255, 255, 255, 0.78);
+    --bg-toolbar: rgba(255, 255, 255, 0.78);
+    --bg-statusbar: rgba(255, 255, 255, 0.78);
+    --map-overlay-bg: rgba(255, 255, 255, 0.78);
   }
   [data-theme="dark"][data-surface="glass"] {
-    --bg-panel: rgba(30, 41, 59, 0.94);
-    --bg-menubar: rgba(30, 41, 59, 0.94);
-    --bg-toolbar: rgba(30, 41, 59, 0.94);
-    --bg-statusbar: rgba(30, 41, 59, 0.94);
-    --map-overlay-bg: rgba(30, 41, 59, 0.94);
+    --bg-panel: rgba(15, 23, 42, 0.7);
+    --bg-menubar: rgba(15, 23, 42, 0.7);
+    --bg-toolbar: rgba(15, 23, 42, 0.7);
+    --bg-statusbar: rgba(15, 23, 42, 0.7);
+    --map-overlay-bg: rgba(15, 23, 42, 0.7);
   }
   [data-surface="glass"] #menubar,
   [data-surface="glass"] #toolbar,
@@ -119,28 +127,86 @@
   [data-surface="glass"] .view3d-panel,
   [data-surface="glass"] .chart-map-legend,
   [data-surface="glass"] .isochrone-legend,
-  [data-surface="glass"] .raster-analysis-legend {
+  [data-surface="glass"] .raster-analysis-legend,
+  [data-surface="glass"] .map-scale-bar,
+  [data-surface="glass"] .dropdown-menu,
+  [data-surface="glass"] .crs-dropdown-menu,
+  [data-surface="glass"] .layer-context-menu,
+  [data-surface="glass"] .search-results {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 }
 
-/* 왼쪽 패널을 지도 위에 띄운다 — 지도가 패널 아래로 이어져야 유리 너머가 보인다.
-   지도를 #main-container 전체에 absolute 로 깔고 패널·리사이저를 그 위에 둔다.
-   왼쪽에 붙는 부유 요소는 --glass-panel-offset(glass.js 가 ResizeObserver 로 갱신) 만큼 민다.
+/* 데스크톱: 지도를 창 전체에 깔고 메뉴바·툴바·상태줄·패널 카드를 그 위에 띄운다.
+   #app 이 절대 배치 기준(#main-container 는 static 으로 돌린다).
+   부유 요소는 glass.js 가 #map-container 에 두는 --glass-panel-offset / --glass-top-offset /
+   --glass-bottom-offset 만큼 민다 (ResizeObserver 가 패널·main 을 따라간다 — 툴바 접기 포함).
    태블릿·휴대폰(layout.css 의 bottom sheet 분기)은 이미 패널이 지도 위에 있으므로 제외 —
    아래 조건은 그 분기 `(pointer: coarse) and (max-width: 1366px), (max-width: 1024px)` 의 여집합이다. */
 @media (min-width: 1025px) and (pointer: fine) {
-  [data-surface="glass"] #main-container { position: relative; }
-  [data-surface="glass"] #map-container { position: absolute; inset: 0; --glass-panel-offset: 0px; }
+  [data-surface="glass"] #app { position: relative; }
+  [data-surface="glass"] #main-container { position: static; }
+  [data-surface="glass"] #map-container {
+    position: absolute;
+    inset: 0;
+    --glass-panel-offset: 0px;
+    --glass-top-offset: 0px;
+    --glass-bottom-offset: 0px;
+  }
+
+  /* 막대·패널을 지도 위로. #menubar·#toolbar 는 자기 z-index(--z-menubar/--z-toolbar)를 유지해
+     드롭다운이 패널 위에 뜬다. 막대는 border-bottom/top 만 유리색으로 — 너비가 변하지 않는다. */
+  [data-surface="glass"] #menubar,
+  [data-surface="glass"] #toolbar { position: relative; }
+  [data-surface="glass"] #statusbar,
   [data-surface="glass"] #left-panel,
   [data-surface="glass"] .panel-resizer { position: relative; z-index: var(--z-panel); }
-  [data-surface="glass"] .sidebar-toggle { left: var(--glass-panel-offset); }
+  [data-surface="glass"] #menubar,
+  [data-surface="glass"] #toolbar { border-bottom: 1px solid var(--glass-border); }
+  [data-surface="glass"] #statusbar { border-top: 1px solid var(--glass-border); }
+
+  /* 왼쪽 패널은 둥근 카드 */
+  [data-surface="glass"] #left-panel {
+    margin: 8px 0 8px 8px;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* 왼쪽에 붙는 요소 */
+  [data-surface="glass"] .sidebar-toggle {
+    left: var(--glass-panel-offset);
+    top: calc(50% + (var(--glass-top-offset) - var(--glass-bottom-offset)) / 2);
+  }
+  [data-surface="glass"] .choropleth-legend,
+  [data-surface="glass"] .heatmap-legend,
+  [data-surface="glass"] .isochrone-legend { left: calc(var(--glass-panel-offset) + 10px); }
+  [data-surface="glass"] .feature-info-card {
+    left: calc(var(--glass-panel-offset) + 10px);
+    top: calc(var(--glass-top-offset) + 10px);
+  }
+  [data-surface="glass"] .map-scale-bar { /* 자체 축척바(MapScaleBar) — OL ScaleLine 은 안 쓴다 */
+    left: calc(var(--glass-panel-offset) + 12px);
+    bottom: calc(var(--glass-bottom-offset) + 12px);
+  }
+
+  /* 위에 붙는 요소 (오른쪽 위 OL 컨트롤 묶음) */
+  [data-surface="glass"] .ol-zoom { top: calc(var(--glass-top-offset) + var(--spacing-sm)) !important; }
+  [data-surface="glass"] .egis-compass { top: calc(var(--glass-top-offset) + 76px); }
+  [data-surface="glass"] .egis-geolocate { top: calc(var(--glass-top-offset) + 116px); }
+  [data-surface="glass"] .egis-basemap { top: calc(var(--glass-top-offset) + 156px); }
+  [data-surface="glass"] .view3d-controls { top: calc(var(--glass-top-offset) + 12px); }
+  /* .egis-basemap-panel 은 .egis-basemap 안에 top:0 으로 붙으므로 따로 밀지 않는다 */
+
+  /* 아래에 붙는 요소 */
   [data-surface="glass"] .choropleth-legend,
   [data-surface="glass"] .heatmap-legend,
   [data-surface="glass"] .isochrone-legend,
-  [data-surface="glass"] .feature-info-card { left: calc(var(--glass-panel-offset) + 10px); }
-  [data-surface="glass"] .map-scale-bar { left: calc(var(--glass-panel-offset) + 12px); } /* 자체 축척바(MapScaleBar) — OL ScaleLine 은 안 쓴다 */
+  [data-surface="glass"] .chart-map-legend,
+  [data-surface="glass"] .raster-analysis-legend,
+  [data-surface="glass"] .cartogram-legend { bottom: calc(var(--glass-bottom-offset) + 40px); }
+  [data-surface="glass"] .ol-attribution { bottom: calc(var(--glass-bottom-offset) + 0.5em); }
 }
 
 /* 내보내기 중: 범례는 불투명·블러 없음 (html2canvas 가 backdrop-filter 를 못 그린다)
