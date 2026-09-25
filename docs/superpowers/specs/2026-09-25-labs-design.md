@@ -40,7 +40,7 @@
 | 지구본 렌더러 | **d3-geo 캔버스**, 배경은 내장 「세계 국가」 GeoJSON | 사용자 결정(2026-09-25). 확대해도 선명하고 투영법 전환이 거의 공짜. three.js 텍스처판은 세계 규모에서만 쓸 만하다 |
 | 구간 채움 진입 | **범례의 색 칸 클릭** → 팝오버 | 만든 뒤 고치는 길이 지금은 없다. 만들 때 패널을 키우는 것보다 범례가 모든 분류 레이어(격자 포함)에 공통 |
 | 카토그램 | `class-fill` 1차 범위 밖 | 범례가 그라디언트 바라 구간 칸이 없고 설정도 별개(`_cartogramConfig`). 반응 보고 별건 |
-| 글래스 범위 | CSS 속성 `data-surface="glass"` 하나. 라이트·다크와 직교 | 배경색이 거의 전부 CSS 변수라 JS 는 패널 오프셋 추적뿐. 내보내기 중엔 불투명으로 |
+| 글래스 범위 | CSS 속성 `data-surface="glass"` 하나. 라이트·다크와 직교. 데스크톱에서는 지도를 창 전체에 깔고 메뉴바·툴바·상태줄·패널 카드가 그 위에 뜬다(v2, 2026-09-26) | 배경색이 거의 전부 CSS 변수라 JS 는 부유 요소 오프셋(패널·위·아래) 추적뿐. 시스템 "투명도 줄이기"는 무시(직접 켠 실험). 내보내기는 가려진 지도까지 찍히는 한계를 문서화 |
 | 개인정보 방침 | 변경 없음 | 새로 수집하는 정보가 없다(localStorage 뿐) |
 
 ## 0단계 — 실험실 껍데기
@@ -110,15 +110,24 @@ export const FEEDBACK_URL = '';   // 구글 폼 주소. 비어 있으면 링크�
 
 - `labs.onChange`: `glass` 가 켜지면 `document.documentElement.setAttribute('data-surface','glass')`, 꺼지면 제거. 초기화 때도 한 번 적용.
 - 새 파일 `src/styles/glass.css`, `main.css` 끝에서 `@import`. 모든 규칙은 `[data-surface="glass"]` 아래.
-- 토큰 덮어쓰기: `--bg-panel`·`--bg-menubar`·`--bg-toolbar`·`--bg-statusbar`·`--map-overlay-bg` 를 반투명 rgba 로
-  (라이트 0.62, 다크 0.55), 새 토큰 `--glass-blur: 14px`, `--glass-border: rgba(255,255,255,.45)`(다크 .12), `--glass-highlight`(위쪽 안쪽 하이라이트 1px).
-- `backdrop-filter: blur(var(--glass-blur)) saturate(140%)` 대상: `#menubar`, `#toolbar`, `#left-panel`, `#statusbar`, `.modal`,
-  지도 위 부유 요소(`.choropleth-legend`, `.cartogram-legend`, 히트맵·흐름도 범례, `.view3d-controls`, 피처 정보 카드, 배경지도 팝오버 — 정확한 선택자는 계획서에서 grep 으로 확정).
-  지도 위 부유 요소는 블러 반경을 절반(7px)으로 — 지도가 다시 그려질 때마다 블러가 재계산된다.
-- 성능 예외: `@media (pointer: coarse) and (max-width: 1366px)` 에서는 블러 없이 반투명만. `prefers-reduced-transparency` 도 같다.
-- 내보내기 예외: `body.exporting [data-surface="glass"] .choropleth-legend …` 은 블러 없이 불투명 배경. html2canvas 는 backdrop-filter 를 못 그린다.
-- 글자 색 토큰은 손대지 않는다. 검증: OSM 과 Esri 어두운 지도 위에서 범례·패널 글자 대비 4.5:1 이상(하네스 캡처로 육안 확인).
-- 데스크톱에서 글래스가 켜지면 `#map-container` 를 `#main-container` 전체에 absolute 로 깔고 왼쪽 패널·리사이저를 그 위에 둔다. 왼쪽에 붙는 부유 요소(범례·피처 카드·사이드바 토글·축척)는 `--glass-panel-offset`(glass.js 가 ResizeObserver 로 갱신) 만큼 민다. 태블릿 분기는 이미 패널이 지도 위라 제외. (2026-09-26 사용자 결정)
+- (v2, 2026-09-26) 토큰 덮어쓰기 — 라이트: `--bg-panel`·`--bg-menubar`·`--bg-toolbar`·`--bg-statusbar: rgba(255,255,255,.42)`, `--map-overlay-bg: rgba(255,255,255,.5)`,
+  `--glass-border: rgba(255,255,255,.75)`, `--glass-highlight: rgba(255,255,255,.85)`, `--glass-blur: 18px`, `--glass-blur-float: 12px`,
+  `--glass-sheen: linear-gradient(160deg, rgba(255,255,255,.45), rgba(255,255,255,.08))`, `--glass-shadow: 0 8px 32px rgba(15,23,42,.14)`, `--glass-popover-bg: rgba(255,255,255,.82)`.
+  다크: `--bg-panel: rgba(15,23,42,.45)`, 막대 셋은 `.72`(밝은 배경지도 위에서 `--text-secondary` 아이콘이 씻겨 나가 `.45`·`.6` 은 안 읽혔다), `--map-overlay-bg: rgba(15,23,42,.5)`,
+  `--glass-border: rgba(255,255,255,.22)`, `--glass-highlight: rgba(255,255,255,.18)`, `--glass-sheen: …(.12 → .02)`, `--glass-shadow: 0 8px 32px rgba(0,0,0,.35)`, `--glass-popover-bg: rgba(15,23,42,.85)`.
+- 레시피: 큰 면(`#menubar`, `#toolbar`, `#left-panel`, `#statusbar`, `.modal`(대화상자 본체 — `.modal-overlay` 는 안 건드린다), `.modal-content`)은
+  `backdrop-filter: blur(var(--glass-blur)) saturate(170%)` + `background-image: var(--glass-sheen)` + `border-color: var(--glass-border)` + `box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow)`.
+  막대는 `border-bottom`(메뉴바·툴바)·`border-top`(상태줄)만 유리색이라 너비가 변하지 않는다. 지도 위 부유 요소(범례들·피처 카드·배경지도 팝오버·3D 패널·`.map-scale-bar`)는 `--glass-blur-float` 로 같은 레시피에 테두리 1px.
+  팝오버(`.dropdown-menu`·`.crs-dropdown-menu`·`.layer-context-menu`·`.search-results`)는 패널 위에 겹치므로 `--glass-popover-bg` 로 더 진하게.
+- 성능 예외: `@media (pointer: coarse) and (max-width: 1366px)` 에서는 블러 없이 반투명만 — 그 대신 `--bg-*` 를 `.78`(다크 `.7`)로 올려 읽히게 한다.
+  `prefers-reduced-transparency` 는 **무시한다**(v2): 실험을 직접 켠 사용자에게만 적용되는데 Windows 는 "투명 효과" 가 꺼진 게 흔해, 따르면 유리가 아예 안 보인다(v1 이 "그냥 음영만" 으로 보인 원인).
+- 내보내기 예외: `[data-surface="glass"] body.exporting .choropleth-legend …` 은 블러 없이 불투명 배경(html2canvas 는 backdrop-filter 를 못 그린다).
+  **알려진 한계(v2)**: 지도가 패널·막대 아래까지 이어지므로 `html2canvas(mapElement)` 내보내기에 가려진 지도 영역까지 찍힌다. 실험 범위에서는 고치지 않고 사용설명서에 "내보내기 전 끄기" 로 안내한다.
+- 글자 색 토큰은 손대지 않는다. 검증: 하네스 캡처로 육안 확인(다크에서 밝은 배경지도 위 `--text-secondary` 는 4.5:1 에 못 미친다 — 실험 한계로 둔다).
+- (v2, 2026-09-26) 데스크톱(`@media (min-width: 1025px) and (pointer: fine)`)에서 글래스가 켜지면 `#app` 을 relative, `#main-container` 를 static 으로 두고 `#map-container` 를 `#app` 전체에 absolute `inset:0` 으로 깐다.
+  `#menubar`·`#toolbar`(자기 z-index 유지 — 드롭다운이 패널 위에 뜬다)·`#statusbar`·`#left-panel`·`.panel-resizer` 는 relative 로 지도 위에. 왼쪽 패널은 `margin: 8px 0 8px 8px; border-radius: 12px` 카드.
+  부유 요소는 `#map-container` 의 세 변수만큼 민다 — 왼쪽(`--glass-panel-offset`: 사이드바 토글·왼쪽 범례·피처 카드·축척), 위(`--glass-top-offset`: `.ol-zoom`·나침반·GPS·배경지도 버튼·`.view3d-controls`·피처 카드), 아래(`--glass-bottom-offset`: 범례들·축척·`.ol-attribution`). 사이드바 토글은 보이는 띠의 세로 가운데.
+  glass.js 의 `layoutOffsets`(순수)·`trackLayoutOffsets`(ResizeObserver 가 패널과 main 을 관찰 — 툴바 접기로 main 의 위쪽이 바뀐다) 가 갱신하고 `resize` 를 쏴 OL 이 크기를 다시 잰다. 태블릿 분기는 이미 패널이 지도 위라 제외.
 
 ## 1단계 — 구간 채움 편집기 (`class-fill`)
 
