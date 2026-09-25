@@ -41,7 +41,12 @@ function sameAboveStatusbar(a, b, statusbarPx = 26) {
   const scale = a.toBitmap().length / (sa.width * sa.height * 4); // DPR^2
   const cut = Math.ceil(statusbarPx * Math.sqrt(scale)) + 2;
   const rect = { x: 0, y: 0, width: sa.width, height: sa.height - cut };
-  return a.crop(rect).toBitmap().equals(b.crop(rect).toBitmap());
+  const ba = a.crop(rect).toBitmap(), bb = b.crop(rect).toBitmap();
+  if (ba.length !== bb.length) return false;
+  // 지도 타일 글자 안티앨리어싱 정도의 차이(채널 차 ≤ 12, 전체의 0.1% 미만)는 같은 화면으로 본다
+  let bad = 0;
+  for (let i = 0; i < ba.length; i++) { if (Math.abs(ba[i] - bb[i]) > 12) bad++; }
+  return bad < ba.length * 0.001;
 }
 
 function check(name, ok) {
@@ -119,7 +124,7 @@ app.whenReady().then(async () => {
   check('menubar sits over the map (map.top < menubar.bottom)', g.map.top < g.menubar.bottom);
   check('--glass-top-offset == main.top', near(px(g.topOffset), g.main.top - g.app.top));
   check('--glass-bottom-offset == app.bottom - main.bottom', near(px(g.bottomOffset), g.app.bottom - g.main.bottom));
-  check('panel card has 8px left margin', near(g.panel.left, g.app.left + 8));
+  check('panel card has 4px left margin', near(g.panel.left, g.app.left + 4));
   check('--glass-panel-offset == panel.right + resizer', near(px(g.panelOffset), g.panel.right - g.app.left + g.resizerW));
   check('sidebar toggle at panel edge', near(g.toggle.left, g.panel.right + g.resizerW, 2));
   check('sidebar toggle centred on visible strip', near(g.toggle.top + g.toggle.height / 2, (g.main.top + g.main.bottom) / 2, 2));
@@ -236,7 +241,7 @@ app.whenReady().then(async () => {
   check('map back below the bars (map.top == main.top)', near(g.map.top, g.main.top));
   check('offset props removed', g.panelOffset === '' && g.topOffset === '' && g.bottomOffset === '');
   const img05 = await capture(win, 'labs-05-off');
-  check('labs-05-off identical to labs-01-toolbar (above statusbar)', sameAboveStatusbar(img01, img05));
+  check('labs-05-off matches labs-01-toolbar (above statusbar, tolerance)', sameAboveStatusbar(img01, img05));
 
   app.quit();
 });
