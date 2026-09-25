@@ -70,6 +70,71 @@ app.whenReady().then(async () => {
   await sleep(300);
   await capture(win, 'labs-03-glass-light');
 
+  // 3b. 데스크톱: 지도가 패널 아래까지 깔리고, 왼쪽 부유 요소는 패널 너비만큼 밀린다
+  const rects = `(() => {
+    const r = (sel) => document.querySelector(sel).getBoundingClientRect().toJSON(); // DOMRect 는 IPC 로 안 넘어온다
+    const rz = document.getElementById('panel-resizer');
+    return { main: r('#main-container'), map: r('#map-container'), panel: r('#left-panel'),
+      toggle: r('.sidebar-toggle'), scale: r('.map-scale-bar'), resizerW: rz && rz.style.display !== 'none' ? rz.getBoundingClientRect().width : 0,
+      offset: getComputedStyle(document.getElementById('map-container')).getPropertyValue('--glass-panel-offset').trim() };
+  })()`;
+  check('desktop media branch (pointer: fine)', await js(`matchMedia('(min-width: 1025px) and (pointer: fine)').matches`));
+  let g = await js(rects);
+  check('map extends under panel (map.left == main.left)', Math.abs(g.map.left - g.main.left) < 1);
+  check('sidebar toggle at panel edge', Math.abs(g.toggle.left - (g.panel.right + g.resizerW)) <= 2);
+  check('--glass-panel-offset set', g.offset !== '' && g.offset !== '0px');
+  check('scale bar not under panel (scale.left >= panel.right)', g.scale.left >= g.panel.right);
+  await js(`document.getElementById('sidebar-toggle').click()`);
+  await sleep(400);
+  g = await js(rects);
+  check('panel hidden → offset 0px', g.offset === '0px');
+  check('panel hidden → toggle at main.left', Math.abs(g.toggle.left - g.main.left) < 1);
+  await js(`document.getElementById('sidebar-toggle').click()`);
+  await sleep(400);
+  g = await js(rects);
+  check('panel restored → offset back', g.offset !== '0px' && Math.abs(g.toggle.left - (g.panel.right + g.resizerW)) <= 2);
+
+  // 3c. 단계구분도 범례가 패널에 가리지 않는다 — 데이터 불러오기 → 서울 자치구 → 주제도 ▸ 단계구분도
+  await js(`window.alert = (m) => console.log('ALERT', m); 0`); // 하네스가 멈추지 않게
+  try {
+    await js(`document.querySelector('[data-action="builtin-data"]').click()`);
+    await sleep(800);
+    const cardOk = await js(`(() => {
+      const c = document.querySelector('.builtin-dataset-card[data-id="seoul-gu"]');
+      if (!c) return false;
+      const cat = c.closest('.builtin-category'); if (cat) cat.classList.add('open');
+      c.click(); return true;
+    })()`);
+    if (!cardOk) throw new Error('seoul-gu card not found');
+    let layerId = null;
+    for (let i = 0; i < 20 && !layerId; i++) {
+      await sleep(500);
+      layerId = await js(`(() => { const ls = __egisDebug.layerManager.getAllLayers?.() || __egisDebug.layerManager.layers || []; const arr = Array.isArray(ls) ? ls : [...ls.values?.() || []]; const v = arr.filter(l => l.source?.getFeatures?.().length > 0); return v.length ? v[v.length-1].id : null; })()`);
+    }
+    if (!layerId) throw new Error('layer not loaded');
+    await sleep(1000);
+    await js(`document.getElementById('builtin-data-close')?.click()`);
+    await js(`document.querySelector('[data-action="analysis-choropleth"]').click()`);
+    await sleep(500);
+    const applied = await js(`(() => {
+      const sel = document.getElementById('choropleth-layer'); if (!sel) return 'no panel';
+      sel.value = ${JSON.stringify(layerId)}; sel.dispatchEvent(new Event('change', { bubbles: true }));
+      const attr = document.getElementById('choropleth-attr');
+      if (!attr || attr.disabled || !attr.value) return 'no numeric attr';
+      document.getElementById('choropleth-ok').click();
+      return 'ok';
+    })()`);
+    if (applied !== 'ok') throw new Error(applied);
+    await sleep(800);
+    const lg = await js(`(() => { const l = document.querySelector('.choropleth-legend'); if (!l) return null;
+      return { legend: l.getBoundingClientRect().toJSON(), panel: document.getElementById('left-panel').getBoundingClientRect().toJSON() }; })()`);
+    check('choropleth legend on map', !!lg);
+    check('legend not under panel (legend.left >= panel.right)', !!lg && lg.legend.left >= lg.panel.right);
+    await capture(win, 'labs-03b-glass-legend');
+  } catch (e) {
+    check('choropleth legend flow (' + e.message + ')', false);
+  }
+
   // 4. 다크 모드에서도
   await js(`document.getElementById('theme-toggle').click()`);
   await sleep(400);
@@ -90,6 +155,10 @@ app.whenReady().then(async () => {
   await sleep(3000);
   await js(`__egisDebug.labs.set('glass', false)`);
   check('glass attr off', await js(`document.documentElement.getAttribute('data-surface') === null`));
+  await sleep(300);
+  g = await js(rects);
+  check('flow layout restored (map.left == panel.right + resizer)', Math.abs(g.map.left - (g.panel.right + g.resizerW)) < 1);
+  check('--glass-panel-offset removed', g.offset === '');
   await capture(win, 'labs-05-off');
 
   app.quit();

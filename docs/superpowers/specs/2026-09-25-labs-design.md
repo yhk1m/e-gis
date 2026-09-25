@@ -40,7 +40,7 @@
 | 지구본 렌더러 | **d3-geo 캔버스**, 배경은 내장 「세계 국가」 GeoJSON | 사용자 결정(2026-09-25). 확대해도 선명하고 투영법 전환이 거의 공짜. three.js 텍스처판은 세계 규모에서만 쓸 만하다 |
 | 구간 채움 진입 | **범례의 색 칸 클릭** → 팝오버 | 만든 뒤 고치는 길이 지금은 없다. 만들 때 패널을 키우는 것보다 범례가 모든 분류 레이어(격자 포함)에 공통 |
 | 카토그램 | `class-fill` 1차 범위 밖 | 범례가 그라디언트 바라 구간 칸이 없고 설정도 별개(`_cartogramConfig`). 반응 보고 별건 |
-| 글래스 범위 | CSS 속성 `data-surface="glass"` 하나. 라이트·다크와 직교 | 배경색이 거의 전부 CSS 변수라 JS 변경 없음. 내보내기 중엔 불투명으로 |
+| 글래스 범위 | CSS 속성 `data-surface="glass"` 하나. 라이트·다크와 직교 | 배경색이 거의 전부 CSS 변수라 JS 는 패널 오프셋 추적뿐. 내보내기 중엔 불투명으로 |
 | 개인정보 방침 | 변경 없음 | 새로 수집하는 정보가 없다(localStorage 뿐) |
 
 ## 0단계 — 실험실 껍데기
@@ -118,6 +118,7 @@ export const FEEDBACK_URL = '';   // 구글 폼 주소. 비어 있으면 링크�
 - 성능 예외: `@media (pointer: coarse) and (max-width: 1366px)` 에서는 블러 없이 반투명만. `prefers-reduced-transparency` 도 같다.
 - 내보내기 예외: `body.exporting [data-surface="glass"] .choropleth-legend …` 은 블러 없이 불투명 배경. html2canvas 는 backdrop-filter 를 못 그린다.
 - 글자 색 토큰은 손대지 않는다. 검증: OSM 과 Esri 어두운 지도 위에서 범례·패널 글자 대비 4.5:1 이상(하네스 캡처로 육안 확인).
+- 데스크톱에서 글래스가 켜지면 `#map-container` 를 `#main-container` 전체에 absolute 로 깔고 왼쪽 패널·리사이저를 그 위에 둔다. 왼쪽에 붙는 부유 요소(범례·피처 카드·사이드바 토글·축척)는 `--glass-panel-offset`(glass.js 가 ResizeObserver 로 갱신) 만큼 민다. 태블릿 분기는 이미 패널이 지도 위라 제외. (2026-09-26 사용자 결정)
 
 ## 1단계 — 구간 채움 편집기 (`class-fill`)
 

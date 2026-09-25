@@ -125,6 +125,24 @@
   }
 }
 
+/* 왼쪽 패널을 지도 위에 띄운다 — 지도가 패널 아래로 이어져야 유리 너머가 보인다.
+   지도를 #main-container 전체에 absolute 로 깔고 패널·리사이저를 그 위에 둔다.
+   왼쪽에 붙는 부유 요소는 --glass-panel-offset(glass.js 가 ResizeObserver 로 갱신) 만큼 민다.
+   태블릿·휴대폰(layout.css 의 bottom sheet 분기)은 이미 패널이 지도 위에 있으므로 제외 —
+   아래 조건은 그 분기 `(pointer: coarse) and (max-width: 1366px), (max-width: 1024px)` 의 여집합이다. */
+@media (min-width: 1025px) and (pointer: fine) {
+  [data-surface="glass"] #main-container { position: relative; }
+  [data-surface="glass"] #map-container { position: absolute; inset: 0; --glass-panel-offset: 0px; }
+  [data-surface="glass"] #left-panel,
+  [data-surface="glass"] .panel-resizer { position: relative; z-index: var(--z-panel); }
+  [data-surface="glass"] .sidebar-toggle { left: var(--glass-panel-offset); }
+  [data-surface="glass"] .choropleth-legend,
+  [data-surface="glass"] .heatmap-legend,
+  [data-surface="glass"] .isochrone-legend,
+  [data-surface="glass"] .feature-info-card { left: calc(var(--glass-panel-offset) + 10px); }
+  [data-surface="glass"] .map-scale-bar { left: calc(var(--glass-panel-offset) + 12px); } /* 자체 축척바(MapScaleBar) — OL ScaleLine 은 안 쓴다 */
+}
+
 /* 내보내기 중: 범례는 불투명·블러 없음 (html2canvas 가 backdrop-filter 를 못 그린다)
    data-surface 는 <html>, exporting 은 <body> 에 붙으므로 선택자 순서는 이쪽이다. */
 [data-surface="glass"] body.exporting .choropleth-legend,
