@@ -1,0 +1,129 @@
+/**
+ * © 2026 김용현
+ *
+ * 글래스 UI (실험실 `glass`)
+ *
+ * documentElement 에 data-surface="glass" 가 붙었을 때만 산다.
+ * 색 토큰을 반투명으로 바꾸고, 지도 위에 얹히는 면에만 backdrop-filter 를 건다.
+ * 글자 색 토큰은 손대지 않는다 — 대비는 배경 불투명도로 지킨다.
+ *
+ * 성능: 지도 위 부유 요소는 지도가 다시 그려질 때마다 블러를 재계산하므로
+ * 블러 반경을 절반으로 두고, 태블릿·휴대폰과 "투명도 줄이기" 설정에서는 블러를 뺀다.
+ * 내보내기(html2canvas)는 backdrop-filter 를 못 그리므로 body.exporting 동안 불투명으로 돌린다.
+ */
+
+[data-surface="glass"] {
+  --glass-blur: 14px;
+  --glass-blur-float: 7px;
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --bg-solid-fallback: #ffffff;
+
+  --bg-panel: rgba(255, 255, 255, 0.62);
+  --bg-menubar: rgba(255, 255, 255, 0.62);
+  --bg-toolbar: rgba(255, 255, 255, 0.62);
+  --bg-statusbar: rgba(241, 245, 249, 0.62);
+  --map-overlay-bg: rgba(255, 255, 255, 0.62);
+}
+
+[data-theme="dark"][data-surface="glass"] {
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --bg-solid-fallback: #1e293b;
+
+  --bg-panel: rgba(30, 41, 59, 0.55);
+  --bg-menubar: rgba(30, 41, 59, 0.55);
+  --bg-toolbar: rgba(30, 41, 59, 0.55);
+  --bg-statusbar: rgba(30, 41, 59, 0.55);
+  --map-overlay-bg: rgba(30, 41, 59, 0.55);
+}
+
+/* 큰 면 — 지도 옆·위에 고정된 틀 */
+[data-surface="glass"] #menubar,
+[data-surface="glass"] #toolbar,
+[data-surface="glass"] #left-panel,
+[data-surface="glass"] #statusbar,
+[data-surface="glass"] .modal,
+[data-surface="glass"] .modal-content {
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border-color: var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-md);
+}
+
+/* 지도 위 부유 요소 — 블러 반경 절반 */
+[data-surface="glass"] .choropleth-legend,
+[data-surface="glass"] .cartogram-legend,
+[data-surface="glass"] .heatmap-legend,
+[data-surface="glass"] .feature-info-card,
+[data-surface="glass"] .egis-basemap-panel,
+[data-surface="glass"] .view3d-panel {
+  -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur-float)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-md);
+}
+
+/* 태블릿·휴대폰: 블러 없이 반투명만 (GPU 를 아낀다) */
+@media (pointer: coarse) and (max-width: 1366px) {
+  [data-surface="glass"] #menubar,
+  [data-surface="glass"] #toolbar,
+  [data-surface="glass"] #left-panel,
+  [data-surface="glass"] #statusbar,
+  [data-surface="glass"] .modal,
+  [data-surface="glass"] .modal-content,
+  [data-surface="glass"] .choropleth-legend,
+  [data-surface="glass"] .cartogram-legend,
+  [data-surface="glass"] .heatmap-legend,
+  [data-surface="glass"] .feature-info-card,
+  [data-surface="glass"] .egis-basemap-panel,
+  [data-surface="glass"] .view3d-panel {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* 시스템 "투명도 줄이기": 블러 없이, 배경은 거의 불투명 */
+@media (prefers-reduced-transparency: reduce) {
+  [data-surface="glass"] {
+    --bg-panel: rgba(255, 255, 255, 0.94);
+    --bg-menubar: rgba(255, 255, 255, 0.94);
+    --bg-toolbar: rgba(255, 255, 255, 0.94);
+    --bg-statusbar: rgba(241, 245, 249, 0.94);
+    --map-overlay-bg: rgba(255, 255, 255, 0.94);
+  }
+  [data-theme="dark"][data-surface="glass"] {
+    --bg-panel: rgba(30, 41, 59, 0.94);
+    --bg-menubar: rgba(30, 41, 59, 0.94);
+    --bg-toolbar: rgba(30, 41, 59, 0.94);
+    --bg-statusbar: rgba(30, 41, 59, 0.94);
+    --map-overlay-bg: rgba(30, 41, 59, 0.94);
+  }
+  [data-surface="glass"] #menubar,
+  [data-surface="glass"] #toolbar,
+  [data-surface="glass"] #left-panel,
+  [data-surface="glass"] #statusbar,
+  [data-surface="glass"] .modal,
+  [data-surface="glass"] .modal-content,
+  [data-surface="glass"] .choropleth-legend,
+  [data-surface="glass"] .cartogram-legend,
+  [data-surface="glass"] .heatmap-legend,
+  [data-surface="glass"] .feature-info-card,
+  [data-surface="glass"] .egis-basemap-panel,
+  [data-surface="glass"] .view3d-panel {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* 내보내기 중: 범례는 불투명·블러 없음 (html2canvas 가 backdrop-filter 를 못 그린다) */
+body.exporting [data-surface="glass"] .choropleth-legend,
+body.exporting [data-surface="glass"] .cartogram-legend,
+body.exporting [data-surface="glass"] .heatmap-legend,
+[data-surface="glass"] body.exporting .choropleth-legend,
+[data-surface="glass"] body.exporting .cartogram-legend,
+[data-surface="glass"] body.exporting .heatmap-legend {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--bg-solid-fallback);
+}

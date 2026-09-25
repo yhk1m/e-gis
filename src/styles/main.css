@@ -5,6 +5,7 @@
 @import './variables.css';
 @import './layout.css';
 @import './panels.css';
+@import './glass.css';
 
 /* 기본 리셋 */
 *,
