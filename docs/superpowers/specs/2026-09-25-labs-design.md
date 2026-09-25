@@ -18,7 +18,7 @@
 | 1 | `class-fill` | 구간 채움 편집기 (구간별 색·패턴·이미지·질감) | 중간 | 0 |
 | 2 | `globe` | 지구본·투영법 보기 (d3-geo) | 큼 | 0, 1(패턴 재사용) |
 | 3 | `swipe` | 스와이프 비교 | 작음 | 0 |
-| 4 | `time-series` | 시계열 단계구분도 슬라이더 | 중간 | 0, 1(색 규약) |
+| 4 | `time-series` | 시계열 단계구분도 슬라이더 + 애니메이션 저장(GIF·MP4) | 중간~큼 | 0, 1(색 규약) |
 
 사용자가 낸 항목 2·3·4(색 커스텀·이미지 패턴·질감)는 하나의 기능(`class-fill`)이다.
 셋 다 "구간 하나의 채움을 무엇으로 할지"의 선택지일 뿐이라 따로 만들면 저장·범례·내보내기가
@@ -30,7 +30,8 @@
 
 | 항목 | 결정 | 이유 |
 |---|---|---|
-| 실험실 진입 | 메뉴바 `btn-community` 모양 버튼 **실험실** (Geocoding 왼쪽, 선 SVG 플라스크) → 모달 | 사용자가 "버튼"을 요구. 기존 Geocoding·About 과 같은 자리·모양 |
+| 실험실 진입 | **툴바** 3D 버튼 묶음의 구분선 **오른쪽**에 새 묶음 `data-group="labs"`, 첫 버튼이 **실험실**(`btn-tool-labeled` 모양, 선 SVG 플라스크, 반짝이는 하이라이트) → 모달 | 사용자 지정(2026-09-25). 실험 도구(지구본·스와이프) 토글도 이 묶음에 들어가 "실험 중"이 한눈에 보인다 |
+| 실험실 버튼 강조 | 4초마다 빛이 한 번 쓸고 지나가는 shimmer + 옅은 테두리 빛. `prefers-reduced-motion` 이면 정지된 하이라이트만. 켜진 실험 수를 작은 배지로 | 사용자 요청("반짝이는 걸로"). 움직임을 못 견디는 사용자는 시스템 설정으로 끈다 |
 | 상태 저장 | `localStorage['eGIS_labs']` = `{ id: true }`. 모르는 id 는 무시 | 기존 `eGIS_settings`·`egis-theme` 과 같은 방식. 서버 없음 |
 | 세션 켜기 | URL `?lab=globe,glass` / `?lab=all` / `?lab=none` 은 그 세션만 덮어쓴다 | 시연·테스터 링크. 저장값은 건드리지 않는다 |
 | 실험 기능의 자리 | 각 기능은 정식 자리에 들어가고 `labs.isOn(id)` 로만 가려진다 | 승격 = 가드 삭제. 실험실 안에 별도 화면을 만들지 않는다 |
@@ -73,10 +74,33 @@ export const FEEDBACK_URL = '';   // 구글 폼 주소. 비어 있으면 링크�
 
 위 목록은 4단계까지 끝난 뒤의 모습이다. 항목은 **그 단계가 구현될 때** 추가한다. 구현 안 된 실험이 목록에 보이면 안 된다.
 
-### 메뉴바·패널
+### 툴바 버튼·패널
 
-- `AppLayout.js` 메뉴바: Geocoding 왼쪽에 `<div class="menu-item" data-menu="labs"><button class="btn-community" data-action="labs" title="실험실 — 검증 중인 기능">…실험실</button></div>`.
-- `main.js` `handleMenuAction` `case 'labs': labPanel.show()`.
+- `AppLayout.js` 툴바: `data-group="view3d"` 묶음 바로 뒤(구분선 오른쪽)에 새 묶음.
+  ```html
+  <div class="toolbar-group" data-group="labs">
+    <button class="btn btn-tool-labeled btn-labs" id="labs-toggle" data-tool="labs" title="실험실 — 검증 중인 기능">
+      <svg …플라스크 선 아이콘…/><span class="btn-tool-label">실험실</span><span class="labs-badge" hidden></span>
+    </button>
+    <!-- 실험 도구 토글은 이 뒤에 온다. 실험이 꺼져 있으면 hidden -->
+    <button class="btn btn-tool-labeled" id="globe-toggle" data-tool="globe" hidden>…지구본</button>
+    <button class="btn btn-tool-labeled" id="swipe-toggle" data-tool="swipe" hidden>…스와이프</button>
+  </div>
+  ```
+  묶음의 오른쪽 구분선은 `.toolbar-group` 기본 규칙(border-right)이 그린다. 3D 묶음의 구분선이 곧 "실험실 왼쪽 구분선"이다.
+- `main.js` `initToolbar` 의 `[data-tool]` 스위치에 `case 'labs': labPanel.show(); return;` (3D 토글과 같은 자리).
+- 반짝임(`src/styles/main.css` 툴바 절):
+  ```css
+  .btn-labs { position: relative; overflow: hidden; color: var(--color-primary);
+              box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent); }
+  .btn-labs::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.75) 50%, transparent 65%);
+    transform: translateX(-130%); animation: labs-shimmer 4s ease-in-out infinite; }
+  @keyframes labs-shimmer { 0%, 72% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+  [data-theme="dark"] .btn-labs::after { background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.35) 50%, transparent 65%); }
+  @media (prefers-reduced-motion: reduce) { .btn-labs::after { animation: none; } }
+  ```
+  배지 `.labs-badge` 는 켜진 실험 수(0이면 `hidden`). `labs.onChange` 가 갱신한다.
 - 패널: 제목 **실험실**, 안내 한 줄("검증 중인 기능입니다. 켠 상태는 이 브라우저에 저장됩니다."),
   실험 카드(이름 · 한 줄 설명 · 스위치 `role="switch"` · 의견 보내기 ↗). 아래에 "켜진 상태로 여는 링크" + 복사 버튼.
   닫기: ×, 바깥 클릭, Esc. 이모지 없음, 아이콘은 선 SVG.
@@ -203,13 +227,13 @@ d3 는 `import { geoPath, geoOrthographic, … } from 'd3'` 로 쓰고(ESM 트�
 - 휠·핀치: 배율 [0.5×fit, 8×fit]. 더블클릭: 처음 자세로.
 - 들어갈 때 2D 중심(경위도)을 정면으로 돌린다. 나갈 때 정면의 경위도를 2D 중심으로 옮긴다.
 - 3D 와 배타: 지구본을 켜면 3D 를 끄고, 3D 를 켜면 지구본을 끈다(`View3DPanel.toggle` 에 가드 한 줄).
-- 툴바: 3D 옆에 `#globe-toggle`(`data-tool="globe"`), 실험이 켜졌을 때만 보인다. `main.js` `case 'globe': globePanel.toggle()`.
+- 툴바: 실험실 묶음 안 실험실 버튼 오른쪽의 `#globe-toggle`(`data-tool="globe"`), 실험이 켜졌을 때만 `hidden` 이 풀린다. `main.js` `case 'globe': globePanel.toggle()`.
 - 육지 자료: `./data/builtin/practice/Area Data/행정경계/세계 국가.geojson`(276KB, 이미 내장) 을 처음 켤 때 한 번 받아 캐시.
 - PNG 저장: 오버레이 캔버스 `toDataURL`. 지도 내보내기·3D 는 지구본을 모른다(별개 캔버스).
 
 ## 3단계 — 스와이프 비교 (`swipe`)
 
-- 툴바 `#swipe-toggle`(`data-tool="swipe"`, 실험 켜졌을 때만) → 컨트롤 박스: **비교 대상** select(레이어 목록 + `배경지도: …` optgroup), **방향**(세로·가로), 닫기.
+- 툴바 실험실 묶음의 `#swipe-toggle`(`data-tool="swipe"`, 실험 켜졌을 때만 `hidden` 해제) → 컨트롤 박스: **비교 대상** select(레이어 목록 + `배경지도: …` optgroup), **방향**(세로·가로), 닫기.
 - 대상 레이어는 막대의 **왼쪽(위)** 에만 보이고 오른쪽(아래)은 그 밑이 드러난다. OL `prerender` 에서 `ctx.save(); clip`, `postrender` 에서 `restore`. 클립 사각형은 `ol/render.getRenderPixel` 로 잡는다(OL 공식 layer-swipe 예제와 같은 방식 — 캔버스가 뷰포트보다 크고 변형돼 있어 직접 계산하면 어긋난다).
 - 배경지도 비교: `findBasemap(key).source()` 로 `TileLayer` 를 만들어 `baseLayer` 바로 위(index 1)에 끼우고 그것을 대상으로 클립. 나갈 때 제거. 라벨 오버레이는 1차 범위 밖.
 - 막대: `#map` 안의 절대 위치 요소 + 손잡이. 포인터 드래그 → 비율(0~1) → `map.render()`. `body.exporting .swipe-divider { display:none }`.
@@ -231,10 +255,22 @@ src/ui/panels/SwipePanel.js
   단계 이동 = `cfg.attribute = fields[i]` → `updateLayerStyle` → 범례 부제(`choropleth-legend-subtitle`) 갱신 → `LAYER_STYLE_CHANGED`.
 - 저장·복원: `choroplethConfig` 직렬화(`StateManager.saveLayer`·`ProjectManager`)에 `timeSeries` 를 더한다 — 1단계가 `fills` 를 더한 같은 자리. 복원 직후에는 저장된 인덱스의 정적 단계구분도로 서고, 실험이 켜져 있으면 `PROJECT_LOADED`·자동 복원 완료 시 레이어를 훑어 컨트롤을 되살린다(자동 복원은 완료 이벤트가 없으므로 계획서에서 `AutoSaveManager.restore` 끝에 이벤트 하나를 더한다).
 
+### 애니메이션 저장 (GIF · MP4/WebM)
+
+슬라이더 컨트롤 박스의 **저장** 버튼 → 작은 대화상자: 형식(GIF / 동영상), 배율(1×·2×), 프레임 유지(초, 기본은 슬라이더 속도), 연도 라벨 포함, 범례 포함 → 만들기. 진행률("3/10 프레임")과 취소.
+
+- 프레임: 단계마다 `setIndex(i)` → 지도 `rendercomplete` 대기 → `mapTexture.composeMapCanvas`(3D 가 쓰는 OL 캔버스 합성, html2canvas 아님)로 지도를 뽑고, 그 위에 `ExportTool.drawLegend`(범례)와 연도 라벨(왼쪽 위, 큰 글자)을 캔버스로 얹는다. 배경 타일은 이미 익명 CORS 라 캔버스가 오염되지 않는다.
+- GIF: `gifenc`(MIT, 수 KB) 로 오프라인 인코딩. 유지 시간 = 프레임 지연, 무한 반복. 기본 형식.
+- 동영상: 오프스크린 캔버스 `captureStream(0)` + `MediaRecorder`. mime 우선순위 `video/mp4;codecs=avc1` → `video/webm;codecs=vp9` → `video/webm`; 저장 버튼에 실제 확장자를 표시한다(PowerPoint 는 WebM 을 못 넣는다). 프레임마다 `requestFrame()` 후 유지 시간만큼 기다리므로 녹화는 실시간이다(연도 10개 × 1.2초 ≈ 12초).
+- 저장은 `utils/saveFile.js` 에 `saveBlobAs(filename, blob)` 를 더해 쓴다. 파일 이름 `레이어이름_시계열.gif|mp4|webm`.
+- 제한: 필드 30개까지. 3D·지구본이 켜져 있으면 먼저 끈다. 시계열 레이어에만 붙는다(일반 지도 녹화는 범위 밖).
+
 ```
 src/tools/timeSeriesModel.js   순수: detectYearFields · unionValues(features, fields) · nextIndex(i, n) · subtitleFor(field)
 src/tools/TimeSeriesTool.js    apply · setIndex · play/pause · attachControls(layerId) · detach
+src/tools/animationExport.js   captureFrames({layerId, fields, scale, includeLegend, includeLabel}) → canvases · encodeGif(frames, delayMs) · recordVideo(frames, delayMs) · 순수: pickMimeType(isTypeSupported) · labelLayout(width, height, scale)
 src/ui/panels/TimeSeriesPanel.js
+src/ui/panels/AnimationExportDialog.js
 ```
 
 ## 공통
@@ -242,7 +278,7 @@ src/ui/panels/TimeSeriesPanel.js
 ### 테스트
 
 - 순수 모듈은 vitest(`src/**/*.test.js`). DOM 이 필요한 파일만 `// @vitest-environment jsdom`.
-- 기존 규약대로 테스트 파일은 모듈 옆에 둔다. 새 순수 모듈마다 테스트가 먼저다(`labs`, `classFill`, `legendModel` 확장, `globeMath`, `layerStyles`, `toLonLatFeatures`, `buildDrawList`, `swipeClipCorners`, `timeSeriesModel`, 직렬화 왕복).
+- 기존 규약대로 테스트 파일은 모듈 옆에 둔다. 새 순수 모듈마다 테스트가 먼저다(`labs`, `classFill`, `legendModel` 확장, `globeMath`, `layerStyles`, `toLonLatFeatures`, `buildDrawList`, `swipeClipCorners`, `timeSeriesModel`, `pickMimeType`·`labelLayout`, 직렬화 왕복).
 - 화면은 `.claude/skills/verify`(Electron 하네스)로 확인한다. 각 단계 계획서에 하네스 시나리오를 적는다:
   실험 켜기(`__egisDebug.labs.set`) → 기능 사용 → 캡처 → 끄기 → 원상 복구 확인.
 
@@ -257,6 +293,7 @@ src/ui/panels/TimeSeriesPanel.js
 - 이미지 채움: 파일이 이미지가 아니거나 디코딩 실패 → 상태줄 메시지, 설정 불변.
 - 지구본: 육지 fetch 실패 → 육지 없이 그리고 패널에 "배경 육지를 불러오지 못했습니다". WebGL 불필요(2D 캔버스).
 - 스와이프: 대상이 사라지면 종료. 배경지도 키가 카탈로그에 없으면 select 에 안 나온다.
+- 애니메이션 저장: `MediaRecorder` 가 없으면 동영상 선택지를 숨기고 GIF 만. 캔버스가 오염됐으면(외부 이미지 오버레이 등) 상태줄에 이유를 적고 중단. 취소하면 만들던 것을 버린다.
 
 ## Opus 5.5 실행 지침
 
@@ -268,4 +305,4 @@ src/ui/panels/TimeSeriesPanel.js
 
 ## 범위 밖
 
-- 카토그램 구간 채움, 히트맵 그라디언트 커스텀, 지구본 위 래스터·히트맵·흐름도·라벨, 스와이프 라벨 오버레이, 시계열 자동 저장 외 되돌리기, 사용량 집계, 실험별 세부 설정 저장.
+- 카토그램 구간 채움, 히트맵 그라디언트 커스텀, 지구본 위 래스터·히트맵·흐름도·라벨, 스와이프 라벨 오버레이, 시계열 자동 저장 외 되돌리기, 시계열이 아닌 일반 지도 녹화, 사용량 집계, 실험별 세부 설정 저장.
