@@ -365,6 +365,20 @@ export class AppLayout {
           </button>
         </div>
 
+        <div class="toolbar-group" data-group="labs">
+          <button class="btn btn-tool-labeled btn-labs" id="labs-toggle" data-tool="labs"
+                  title="실험실 — 검증 중인 기능">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 3h6"/>
+              <path d="M10 3v6.5L4.6 18.2A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.7-2.8L14 9.5V3"/>
+              <path d="M7.5 15h9"/>
+            </svg>
+            <span class="btn-tool-label">실험실</span>
+            <span class="labs-badge" hidden></span>
+          </button>
+          <!-- 실험 도구 토글(지구본·스와이프)은 뒤 단계에서 이 묶음에 hidden 으로 추가된다 -->
+        </div>
+
         <div class="toolbar-spacer"></div>
 
         <!-- 카피라이트 -->
