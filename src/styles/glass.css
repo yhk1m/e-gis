@@ -156,23 +156,26 @@
   }
 
   /* 막대·패널을 지도 위로. #menubar·#toolbar 는 자기 z-index(--z-menubar/--z-toolbar)를 유지해
-     드롭다운이 패널 위에 뜬다. 막대는 border-bottom/top 만 유리색으로 — 너비가 변하지 않는다. */
+     드롭다운이 패널 위에 뜬다. */
   [data-surface="glass"] #menubar,
   [data-surface="glass"] #toolbar { position: relative; }
   [data-surface="glass"] #statusbar,
   [data-surface="glass"] #left-panel,
   [data-surface="glass"] .panel-resizer { position: relative; z-index: var(--z-panel); }
-  [data-surface="glass"] #menubar,
-  [data-surface="glass"] #toolbar { border-bottom: 1px solid var(--glass-border); }
-  [data-surface="glass"] #statusbar { border-top: 1px solid var(--glass-border); }
 
-  /* 왼쪽 패널은 둥근 카드 */
+  /* 메뉴바·툴바·상태줄·왼쪽 패널 모두 8px 띄운 둥근 유리 카드. 세로 간격도 8px 로 맞춘다.
+     main-container 의 위·아래 오프셋은 glass.js 가 rect 로 재므로 여백이 자동 반영된다. */
+  [data-surface="glass"] #menubar,
+  [data-surface="glass"] #toolbar,
+  [data-surface="glass"] #statusbar,
   [data-surface="glass"] #left-panel {
-    margin: 8px 0 8px 8px;
     border: 1px solid var(--glass-border);
     border-radius: 12px;
-    overflow: hidden;
   }
+  [data-surface="glass"] #menubar,
+  [data-surface="glass"] #toolbar { margin: 8px 8px 0; }
+  [data-surface="glass"] #statusbar { margin: 0 8px 8px; }
+  [data-surface="glass"] #left-panel { margin: 8px 0 8px 8px; overflow: hidden; }
 
   /* 왼쪽에 붙는 요소 */
   [data-surface="glass"] .sidebar-toggle {

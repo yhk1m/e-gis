@@ -124,7 +124,7 @@ export const FEEDBACK_URL = '';   // 구글 폼 주소. 비어 있으면 링크�
 - 내보내기 예외: `[data-surface="glass"] body.exporting .choropleth-legend …` 은 블러 없이 불투명 배경(html2canvas 는 backdrop-filter 를 못 그린다).
   **알려진 한계(v2)**: 지도가 패널·막대 아래까지 이어지므로 `html2canvas(mapElement)` 내보내기에 가려진 지도 영역까지 찍힌다. 실험 범위에서는 고치지 않고 사용설명서에 "내보내기 전 끄기" 로 안내한다.
 - 글자 색 토큰은 손대지 않는다. 검증: 하네스 캡처로 육안 확인(다크에서 밝은 배경지도 위 `--text-secondary` 는 4.5:1 에 못 미친다 — 실험 한계로 둔다).
-- (v2, 2026-09-26) 데스크톱(`@media (min-width: 1025px) and (pointer: fine)`)에서 글래스가 켜지면 `#app` 을 relative, `#main-container` 를 static 으로 두고 `#map-container` 를 `#app` 전체에 absolute `inset:0` 으로 깐다.
+- (v2, 2026-09-26) 데스크톱(`@media (min-width: 1025px) and (pointer: fine)`)에서 글래스가 켜지면 `#app` 을 relative, `#main-container` 를 static 으로 두고 `#map-container` 를 `#app` 전체에 absolute `inset:0` 으로 깐다. 메뉴바·툴바·상태줄·왼쪽 패널은 모두 가장자리에서 8px 띄운 12px 라운드 유리 카드다(사용자 요청, 2026-09-26).
   `#menubar`·`#toolbar`(자기 z-index 유지 — 드롭다운이 패널 위에 뜬다)·`#statusbar`·`#left-panel`·`.panel-resizer` 는 relative 로 지도 위에. 왼쪽 패널은 `margin: 8px 0 8px 8px; border-radius: 12px` 카드.
   부유 요소는 `#map-container` 의 세 변수만큼 민다 — 왼쪽(`--glass-panel-offset`: 사이드바 토글·왼쪽 범례·피처 카드·축척), 위(`--glass-top-offset`: `.ol-zoom`·나침반·GPS·배경지도 버튼·`.view3d-controls`·피처 카드), 아래(`--glass-bottom-offset`: 범례들·축척·`.ol-attribution`). 사이드바 토글은 보이는 띠의 세로 가운데.
   glass.js 의 `layoutOffsets`(순수)·`trackLayoutOffsets`(ResizeObserver 가 패널과 main 을 관찰 — 툴바 접기로 main 의 위쪽이 바뀐다) 가 갱신하고 `resize` 를 쏴 OL 이 크기를 다시 잰다. 태블릿 분기는 이미 패널이 지도 위라 제외.
