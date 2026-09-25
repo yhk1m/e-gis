@@ -752,7 +752,8 @@ export class AppLayout {
     document.addEventListener('mousemove', (e) => {
       if (!isResizing) return;
 
-      const newWidth = e.clientX;
+      // 패널 왼쪽 가장자리 기준 — 글래스 카드처럼 여백이 있어도 커서를 따라간다
+      const newWidth = e.clientX - leftPanel.getBoundingClientRect().left;
       const minWidth = parseInt(getComputedStyle(leftPanel).minWidth);
       const maxWidth = parseInt(getComputedStyle(leftPanel).maxWidth);
 
