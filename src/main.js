@@ -46,6 +46,11 @@ import { chartMapPanel } from './ui/panels/ChartMapPanel.js';
 import { isochronePanel } from './ui/panels/IsochronePanel.js';
 import { routingPanel } from './ui/panels/RoutingPanel.js';
 import { geocodingPanel } from './ui/panels/GeocodingPanel.js';
+import { labPanel } from './ui/panels/LabPanel.js';
+import { labs } from './labs/labs.js';
+import { EXPERIMENT_IDS } from './labs/registry.js';
+import { bindGlass } from './labs/glass.js';
+import { bindLabsButton } from './labs/labsButton.js';
 import { drawingPanel } from './ui/panels/DrawingPanel.js';
 import { layerExportPanel } from './ui/panels/LayerExportPanel.js';
 import { cartogramPanel } from './ui/panels/CartogramPanel.js';
@@ -90,6 +95,16 @@ function initApp() {
   // 3. 레이아웃 렌더링
   const layout = new AppLayout('app');
   layout.render();
+
+  // 3.5 실험실 — 저장값과 ?lab= 을 읽고, 켜자마자 반영되는 것(글래스·배지)을 묶는다
+  labs.init({
+    search: window.location.search,
+    storage: window.localStorage,
+    knownIds: EXPERIMENT_IDS,
+    baseUrl: window.location.origin + window.location.pathname
+  });
+  bindGlass(labs);
+  bindLabsButton(labs, document.getElementById('labs-toggle'));
 
   // 4. 지도 초기화
   mapManager.init('map', {
@@ -457,6 +472,9 @@ function initToolbar() {
         return;
       case 'zoom-extent':
         view.animate({ center: view.getCenter(), zoom: 7, duration: 500 });
+        return;
+      case 'labs':
+        labPanel.show();
         return;
       case 'view3d':
         view3dPanel?.toggle();
@@ -1344,4 +1362,4 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // 진단용 훅 — 헤드리스 재현 테스트(버그 리포트 검증)에서 내부 상태 접근용.
 // 클라이언트 앱이라 보안 경계 아님(모든 코드·키가 이미 번들에 공개).
-window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, get view3dPanel() { return view3dPanel; } };
+window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, get view3dPanel() { return view3dPanel; } };

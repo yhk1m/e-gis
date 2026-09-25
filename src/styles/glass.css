@@ -1,0 +1,157 @@
+/**
+ * © 2026 김용현
+ *
+ * 글래스 UI (실험실 `glass`)
+ *
+ * documentElement 에 data-surface="glass" 가 붙었을 때만 산다.
+ * 색 토큰을 반투명으로 바꾸고, 지도 위에 얹히는 면에만 backdrop-filter 를 건다.
+ * 글자 색 토큰은 손대지 않는다 — 대비는 배경 불투명도로 지킨다.
+ *
+ * 성능: 지도 위 부유 요소는 지도가 다시 그려질 때마다 블러를 재계산하므로
+ * 블러 반경을 절반으로 두고, 태블릿·휴대폰과 "투명도 줄이기" 설정에서는 블러를 뺀다.
+ * 내보내기(html2canvas)는 backdrop-filter 를 못 그리므로 body.exporting 동안 불투명으로 돌린다.
+ */
+
+[data-surface="glass"] {
+  --glass-blur: 14px;
+  --glass-blur-float: 7px;
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --bg-solid-fallback: #ffffff;
+
+  --bg-panel: rgba(255, 255, 255, 0.62);
+  --bg-menubar: rgba(255, 255, 255, 0.62);
+  --bg-toolbar: rgba(255, 255, 255, 0.62);
+  --bg-statusbar: rgba(241, 245, 249, 0.62);
+  --map-overlay-bg: rgba(255, 255, 255, 0.62);
+}
+
+[data-theme="dark"][data-surface="glass"] {
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --bg-solid-fallback: #1e293b;
+
+  --bg-panel: rgba(30, 41, 59, 0.55);
+  --bg-menubar: rgba(30, 41, 59, 0.55);
+  --bg-toolbar: rgba(30, 41, 59, 0.55);
+  --bg-statusbar: rgba(30, 41, 59, 0.55);
+  --map-overlay-bg: rgba(30, 41, 59, 0.55);
+}
+
+/* 큰 면 — 지도 옆·위에 고정된 틀 */
+[data-surface="glass"] #menubar,
+[data-surface="glass"] #toolbar,
+[data-surface="glass"] #left-panel,
+[data-surface="glass"] #statusbar,
+[data-surface="glass"] .modal,
+[data-surface="glass"] .modal-content {
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border-color: var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-md);
+}
+
+/* 지도 위 부유 요소 — 블러 반경 절반 */
+[data-surface="glass"] .choropleth-legend,
+[data-surface="glass"] .cartogram-legend,
+[data-surface="glass"] .heatmap-legend,
+[data-surface="glass"] .feature-info-card,
+[data-surface="glass"] .egis-basemap-panel,
+[data-surface="glass"] .view3d-panel,
+[data-surface="glass"] .chart-map-legend,
+[data-surface="glass"] .isochrone-legend,
+[data-surface="glass"] .raster-analysis-legend {
+  -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur-float)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-md);
+}
+
+/* 태블릿·휴대폰: 블러 없이 반투명만 (GPU 를 아낀다) */
+@media (pointer: coarse) and (max-width: 1366px) {
+  [data-surface="glass"] #menubar,
+  [data-surface="glass"] #toolbar,
+  [data-surface="glass"] #left-panel,
+  [data-surface="glass"] #statusbar,
+  [data-surface="glass"] .modal,
+  [data-surface="glass"] .modal-content,
+  [data-surface="glass"] .choropleth-legend,
+  [data-surface="glass"] .cartogram-legend,
+  [data-surface="glass"] .heatmap-legend,
+  [data-surface="glass"] .feature-info-card,
+  [data-surface="glass"] .egis-basemap-panel,
+  [data-surface="glass"] .view3d-panel,
+  [data-surface="glass"] .chart-map-legend,
+  [data-surface="glass"] .isochrone-legend,
+  [data-surface="glass"] .raster-analysis-legend {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* 시스템 "투명도 줄이기": 블러 없이, 배경은 거의 불투명 */
+@media (prefers-reduced-transparency: reduce) {
+  [data-surface="glass"] {
+    --bg-panel: rgba(255, 255, 255, 0.94);
+    --bg-menubar: rgba(255, 255, 255, 0.94);
+    --bg-toolbar: rgba(255, 255, 255, 0.94);
+    --bg-statusbar: rgba(241, 245, 249, 0.94);
+    --map-overlay-bg: rgba(255, 255, 255, 0.94);
+  }
+  [data-theme="dark"][data-surface="glass"] {
+    --bg-panel: rgba(30, 41, 59, 0.94);
+    --bg-menubar: rgba(30, 41, 59, 0.94);
+    --bg-toolbar: rgba(30, 41, 59, 0.94);
+    --bg-statusbar: rgba(30, 41, 59, 0.94);
+    --map-overlay-bg: rgba(30, 41, 59, 0.94);
+  }
+  [data-surface="glass"] #menubar,
+  [data-surface="glass"] #toolbar,
+  [data-surface="glass"] #left-panel,
+  [data-surface="glass"] #statusbar,
+  [data-surface="glass"] .modal,
+  [data-surface="glass"] .modal-content,
+  [data-surface="glass"] .choropleth-legend,
+  [data-surface="glass"] .cartogram-legend,
+  [data-surface="glass"] .heatmap-legend,
+  [data-surface="glass"] .feature-info-card,
+  [data-surface="glass"] .egis-basemap-panel,
+  [data-surface="glass"] .view3d-panel,
+  [data-surface="glass"] .chart-map-legend,
+  [data-surface="glass"] .isochrone-legend,
+  [data-surface="glass"] .raster-analysis-legend {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* 왼쪽 패널을 지도 위에 띄운다 — 지도가 패널 아래로 이어져야 유리 너머가 보인다.
+   지도를 #main-container 전체에 absolute 로 깔고 패널·리사이저를 그 위에 둔다.
+   왼쪽에 붙는 부유 요소는 --glass-panel-offset(glass.js 가 ResizeObserver 로 갱신) 만큼 민다.
+   태블릿·휴대폰(layout.css 의 bottom sheet 분기)은 이미 패널이 지도 위에 있으므로 제외 —
+   아래 조건은 그 분기 `(pointer: coarse) and (max-width: 1366px), (max-width: 1024px)` 의 여집합이다. */
+@media (min-width: 1025px) and (pointer: fine) {
+  [data-surface="glass"] #main-container { position: relative; }
+  [data-surface="glass"] #map-container { position: absolute; inset: 0; --glass-panel-offset: 0px; }
+  [data-surface="glass"] #left-panel,
+  [data-surface="glass"] .panel-resizer { position: relative; z-index: var(--z-panel); }
+  [data-surface="glass"] .sidebar-toggle { left: var(--glass-panel-offset); }
+  [data-surface="glass"] .choropleth-legend,
+  [data-surface="glass"] .heatmap-legend,
+  [data-surface="glass"] .isochrone-legend,
+  [data-surface="glass"] .feature-info-card { left: calc(var(--glass-panel-offset) + 10px); }
+  [data-surface="glass"] .map-scale-bar { left: calc(var(--glass-panel-offset) + 12px); } /* 자체 축척바(MapScaleBar) — OL ScaleLine 은 안 쓴다 */
+}
+
+/* 내보내기 중: 범례는 불투명·블러 없음 (html2canvas 가 backdrop-filter 를 못 그린다)
+   data-surface 는 <html>, exporting 은 <body> 에 붙으므로 선택자 순서는 이쪽이다. */
+[data-surface="glass"] body.exporting .choropleth-legend,
+[data-surface="glass"] body.exporting .cartogram-legend,
+[data-surface="glass"] body.exporting .heatmap-legend,
+[data-surface="glass"] body.exporting .chart-map-legend,
+[data-surface="glass"] body.exporting .isochrone-legend,
+[data-surface="glass"] body.exporting .raster-analysis-legend {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--bg-solid-fallback);
+}
