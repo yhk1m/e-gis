@@ -1607,3 +1607,6 @@ Task 9 의 `labs-01-toolbar.png`(처음)와 `labs-05-off.png`(끈 뒤)를 나란
 ## 구현하며 바뀐 점
 
 - Task 3 `glass.css`: 스펙의 "정확한 선택자는 grep 으로 확정" 에 따라 부유 범례 `.chart-map-legend`·`.isochrone-legend`·`.raster-analysis-legend` 를 블러·태블릿·투명도 줄이기·내보내기 네 묶음에 추가했다(모두 `position:absolute` + `var(--bg-panel)`, 내보내기에 찍힌다). `.ol-scale-line`·`.ol-attribution`·`.view3d-compass` 는 작은 컨트롤이라 그대로 둔다.
+- Task 3 `glass.css`: 스펙의 "`main.css` 끝에서 `@import`" 는 `@import` 가 규칙보다 앞에 와야 하므로 import 묶음 끝(8행)에 넣었다. 내보내기 블록의 `body.exporting [data-surface="glass"] …` 여섯 줄은 `data-surface` 가 `<html>` 에 붙어 절대 맞지 않는 죽은 선택자라 최종 검토 뒤 지웠다.
+- Task 9 하네스: 조회수 카운터를 안 건드리려 앱보다 먼저 `favicon.svg` 를 열어 `egis_last_visit` 를 심는다(첫 로드부터 `action=read`). `app.disableHardwareAcceleration()` 추가(GPU 드라이버 문제).
+- 확인된 한계(사용자 결정 대기): 글래스를 켜도 왼쪽 패널·메뉴바·툴바·상태줄은 지도와 겹치지 않아(`#main-container` flex 형제) 반투명이 눈에 보이지 않는다. 효과는 지도 위 부유 요소(범례·배경지도 팝오버·3D 컨트롤·모달)에서만 난다.

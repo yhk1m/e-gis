@@ -125,13 +125,8 @@
   }
 }
 
-/* 내보내기 중: 범례는 불투명·블러 없음 (html2canvas 가 backdrop-filter 를 못 그린다) */
-body.exporting [data-surface="glass"] .choropleth-legend,
-body.exporting [data-surface="glass"] .cartogram-legend,
-body.exporting [data-surface="glass"] .heatmap-legend,
-body.exporting [data-surface="glass"] .chart-map-legend,
-body.exporting [data-surface="glass"] .isochrone-legend,
-body.exporting [data-surface="glass"] .raster-analysis-legend,
+/* 내보내기 중: 범례는 불투명·블러 없음 (html2canvas 가 backdrop-filter 를 못 그린다)
+   data-surface 는 <html>, exporting 은 <body> 에 붙으므로 선택자 순서는 이쪽이다. */
 [data-surface="glass"] body.exporting .choropleth-legend,
 [data-surface="glass"] body.exporting .cartogram-legend,
 [data-surface="glass"] body.exporting .heatmap-legend,
