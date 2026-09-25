@@ -13,7 +13,7 @@
 | 3 | `2026-09-25-labs-3-swipe.md` | `swipe` | `labs-swipe` | 0 |
 | 4 | `2026-09-25-labs-4-time-series.md` | `time-series` | `labs-time-series` | 0, 1 |
 
-0단계가 먼저다. 그 뒤 1과 3은 서로 독립이라 동시에 진행할 수 있다. 2와 4는 1단계의 `fillFor`·`fills` 규약을 쓰므로 1이 `main` 에 들어간 뒤 시작한다.
+0단계가 먼저다. 그 뒤 1과 3은 서로 독립이라 동시에 진행할 수 있다. 2와 4는 1단계의 `fillFor`·`fills` 규약을 쓰므로 1이 `main` 에 들어간 뒤 시작한다. 계획서는 다섯 편 모두 작성됐다(2026-09-25).
 
 ## 어떻게 돌리나
 
@@ -36,6 +36,20 @@
 - 화면은 `.claude/skills/verify` 의 Electron 하네스로 본다. 하네스는 `scripts/verify/<단계>.cjs` 에 두고 캡처(`scripts/verify/out/`)는 커밋하지 않는다.
 - 조회수 카운터를 건드리지 않게 하네스 첫머리에서 `localStorage.egis_last_visit` 를 오늘(KST)로 둔다.
 - 스펙과 계획서가 어긋나면 스펙이 맞다. 스펙에 없는 결정을 해야 하면 계획서 끝 「구현하며 바뀐 점」에 적는다.
+
+## 단계끼리 겹치는 접점 (병합 순서와 무관하게 지킬 것)
+
+1~4단계는 각자 브랜치에서 진행되므로 같은 줄을 서로 다르게 고치면 병합 충돌이 난다. 아래 접점은 **먼저 병합된 쪽 것을 그대로 두고 자기 것만 더한다**.
+
+| 접점 | 손대는 단계 | 규칙 |
+|---|---|---|
+| `src/main.js` 의 `window.__egisDebug = { … }` | 1·2·3·4 | 전체를 교체하지 말고 자기 항목만 더한다. 계획서의 줄은 "0단계 직후 모습"이다 |
+| `src/styles/main.css` 의 `#toolbar .btn[hidden] { display:none }` | 2·3 | 한 벌만. 이미 있으면 건너뛴다 |
+| `src/styles/glass.css` 부유 요소 선택자 세 묶음(기본·`pointer: coarse`·`prefers-reduced-transparency`) | 2(`.globe-controls`)·4(시계열 컨트롤) | `.view3d-panel` 줄 뒤에 자기 줄만 더한다 |
+| `src/labs/registry.js` `EXPERIMENTS` | 1·2·3·4 | 스펙의 순서(`glass, class-fill, globe, swipe, time-series`)대로 끼워 넣는다 |
+| `docs/사용설명서.md` 1-14 실험실 절 | 1·2·3·4 | 같은 순서로 `###` 소절을 더한다 |
+| `ChoroplethTool.apply` → `LayerManager.updateLayerStyle` 통합, `choroplethConfig` 직렬화(`fills`·`timeSeries`) | 1 이 만들고 4 가 확장 | 2·4는 1이 `main` 에 들어간 뒤 시작한다. 계획서 코드와 1단계 구현이 다르면 **1단계 구현**이 맞다 |
+| `fillFor(spec, baseColor, fillOpacity = 1, pixelScale = 1)` (`src/tools/classFillCanvas.js`) | 1 이 정의, 2 가 사용 | 반환은 `'rgba(…)'` 문자열 또는 `CanvasPattern` |
 
 ## 완료 기준 (단계마다)
 
