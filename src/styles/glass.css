@@ -57,7 +57,10 @@
 [data-surface="glass"] .heatmap-legend,
 [data-surface="glass"] .feature-info-card,
 [data-surface="glass"] .egis-basemap-panel,
-[data-surface="glass"] .view3d-panel {
+[data-surface="glass"] .view3d-panel,
+[data-surface="glass"] .chart-map-legend,
+[data-surface="glass"] .isochrone-legend,
+[data-surface="glass"] .raster-analysis-legend {
   -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(140%);
   backdrop-filter: blur(var(--glass-blur-float)) saturate(140%);
   border: 1px solid var(--glass-border);
@@ -77,7 +80,10 @@
   [data-surface="glass"] .heatmap-legend,
   [data-surface="glass"] .feature-info-card,
   [data-surface="glass"] .egis-basemap-panel,
-  [data-surface="glass"] .view3d-panel {
+  [data-surface="glass"] .view3d-panel,
+  [data-surface="glass"] .chart-map-legend,
+  [data-surface="glass"] .isochrone-legend,
+  [data-surface="glass"] .raster-analysis-legend {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -110,7 +116,10 @@
   [data-surface="glass"] .heatmap-legend,
   [data-surface="glass"] .feature-info-card,
   [data-surface="glass"] .egis-basemap-panel,
-  [data-surface="glass"] .view3d-panel {
+  [data-surface="glass"] .view3d-panel,
+  [data-surface="glass"] .chart-map-legend,
+  [data-surface="glass"] .isochrone-legend,
+  [data-surface="glass"] .raster-analysis-legend {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -120,9 +129,15 @@
 body.exporting [data-surface="glass"] .choropleth-legend,
 body.exporting [data-surface="glass"] .cartogram-legend,
 body.exporting [data-surface="glass"] .heatmap-legend,
+body.exporting [data-surface="glass"] .chart-map-legend,
+body.exporting [data-surface="glass"] .isochrone-legend,
+body.exporting [data-surface="glass"] .raster-analysis-legend,
 [data-surface="glass"] body.exporting .choropleth-legend,
 [data-surface="glass"] body.exporting .cartogram-legend,
-[data-surface="glass"] body.exporting .heatmap-legend {
+[data-surface="glass"] body.exporting .heatmap-legend,
+[data-surface="glass"] body.exporting .chart-map-legend,
+[data-surface="glass"] body.exporting .isochrone-legend,
+[data-surface="glass"] body.exporting .raster-analysis-legend {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   background: var(--bg-solid-fallback);

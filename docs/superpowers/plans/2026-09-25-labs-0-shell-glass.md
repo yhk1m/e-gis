@@ -1603,3 +1603,7 @@ Task 9 의 `labs-01-toolbar.png`(처음)와 `labs-05-off.png`(끈 뒤)를 나란
 | 설명서 1-14 | Task 8 |
 | 하네스 시나리오(켜기→사용→캡처→끄기→복구) | Task 9 |
 | 개인정보 방침 변경 없음 | 해당 없음(확인만) |
+
+## 구현하며 바뀐 점
+
+- Task 3 `glass.css`: 스펙의 "정확한 선택자는 grep 으로 확정" 에 따라 부유 범례 `.chart-map-legend`·`.isochrone-legend`·`.raster-analysis-legend` 를 블러·태블릿·투명도 줄이기·내보내기 네 묶음에 추가했다(모두 `position:absolute` + `var(--bg-panel)`, 내보내기에 찍힌다). `.ol-scale-line`·`.ol-attribution`·`.view3d-compass` 는 작은 컨트롤이라 그대로 둔다.
