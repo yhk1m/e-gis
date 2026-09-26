@@ -6019,6 +6019,69 @@ body.exporting .time-series-controls {
   color: var(--text-muted);
 }
 
+/* 애니메이션 저장 대화상자 */
+.anim-export-modal .anim-export-content {
+  width: 420px;
+  max-width: 92vw;
+  background: var(--bg-panel);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.anim-intro {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--spacing-md);
+}
+
+.anim-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.anim-label {
+  min-width: 110px;
+  color: var(--text-secondary);
+}
+
+.anim-radio,
+.anim-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.anim-row input[type="number"] {
+  width: 80px;
+  padding: 4px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.anim-progress {
+  margin-top: var(--spacing-md);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-app);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.anim-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
 @media (max-width: 768px) {
   .time-series-controls {
     gap: var(--spacing-xs);

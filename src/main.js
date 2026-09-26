@@ -80,6 +80,9 @@ import { SwipePanel } from './ui/panels/SwipePanel.js';
 import { GlobePanel } from './ui/panels/GlobePanel.js';
 import { timeSeriesPanel } from './ui/panels/TimeSeriesPanel.js';
 import { timeSeriesTool } from './tools/TimeSeriesTool.js';
+import { AnimationExportDialog } from './ui/panels/AnimationExportDialog.js';
+import { captureFrames, encodeGif, recordVideo } from './tools/animationExportCanvas.js';
+import { saveBlobAs } from './utils/saveFile.js';
 import { bindLabMenuItems } from './labs/labMenu.js';
 
 /**
@@ -123,7 +126,6 @@ function initApp() {
   // (레이어는 저장된 연도의 정적 단계구분도로 남는다)
   // 설정 창 안내는 기본 alert 그대로 — 같은 모달 규약의 ChoroplethPanel 도 alert 이고,
   // 모달이 열린 동안 상태표시줄 문구는 눈에 띄지 않는다
-  // timeSeriesTool.onSave(애니메이션 저장)는 AnimationExportDialog 와 함께 이어 붙인다
   labs.onChange((id, on) => {
     if (id !== 'time-series') return;
     if (on) timeSeriesTool.restoreControls();
@@ -143,6 +145,34 @@ function initApp() {
   eventBus.on(Events.PROJECT_LOADED, restoreTimeSeries);
   eventBus.on(Events.STATE_RESTORED, restoreTimeSeries);
   eventBus.on(Events.PROJECT_NEW, () => timeSeriesTool.detach());
+
+  // 슬라이더의 「저장」 → 애니메이션 저장 대화상자. 찍기 전에 재생을 멈추고, 3D·지구본·
+  // 스와이프가 켜져 있으면 먼저 끈다(지도 캔버스가 평면 2D 그대로여야 프레임이 맞다).
+  // view3dPanel·globePanel·swipePanel 은 아래에서 대입된다 — 버튼을 누를 때는 이미 있다.
+  timeSeriesTool.onSave = (layerId) => {
+    const cfg = timeSeriesTool.config(layerId);
+    const info = layerManager.getLayer(layerId);
+    if (!cfg || !info) return;
+    const dialog = new AnimationExportDialog({
+      layerName: info.name,
+      fields: cfg.timeSeries.fields,
+      speed: timeSeriesTool.speed,
+      hasMediaRecorder: typeof window.MediaRecorder === 'function',
+      isTypeSupported: (m) => window.MediaRecorder.isTypeSupported(m),
+      beforeCapture: async () => {
+        timeSeriesTool.pause();
+        swipePanel?.close();
+        globePanel?.exitIfActive();
+        if (view3dPanel?.controller) await view3dPanel.toggle();
+      },
+      captureFrames: (opts) => captureFrames({ tool: timeSeriesTool, layerId, ...opts }),
+      encodeGif,
+      recordVideo,
+      saveBlobAs,
+      onMessage: showStatusMessage
+    });
+    dialog.show();
+  };
 
   // 4. 지도 초기화
   mapManager.init('map', {
