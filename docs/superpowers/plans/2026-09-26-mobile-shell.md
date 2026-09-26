@@ -18,7 +18,7 @@
 - Modify: `src/labs/glass.js` (`layoutOffsets`, `trackLayoutOffsets`)
 - Test: `src/labs/glass.test.js` (기존 파일에 추가)
 
-- [ ] **Step 1: 실패하는 테스트**
+- [x] **Step 1: 실패하는 테스트**
 
 `src/labs/glass.test.js` 에 추가:
 
@@ -53,9 +53,9 @@ describe('trackLayoutOffsets — 변수 쓰기 대상', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — `npx vitest run src/labs/glass.test.js` → `panelFloating` 무시로 panel=390, `app.style.props` 비어 FAIL.
+- [x] **Step 2: 실패 확인** — `npx vitest run src/labs/glass.test.js` → `panelFloating` 무시로 panel=390, `app.style.props` 비어 FAIL.
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 `layoutOffsets` 시그니처에 `panelFloating = false` 추가, `const panel = (panelHidden || panelFloating) ? 0 : …`. `trackLayoutOffsets` 의 `update()` 에서
 
@@ -65,8 +65,8 @@ const panelFloating = !!(win && typeof win.matchMedia === 'function' && win.matc
 
 (`export const PHONE_MEDIA = '(max-width: 768px)';` 파일 상단) 를 넘기고, 세 변수는 `[mapContainer, app]` 두 요소에 `setProperty`, 해제 시 두 요소 모두 `removeProperty`. `matchMedia` 결과에 `addEventListener('change', update)` 를 걸어 회전 시 다시 재고, 해제 함수에서 `removeEventListener`. 파일 머리 주석에 "휴대폰(≤768px)은 패널이 아래 시트라 panel 오프셋 0, 변수는 #app 에도 쓴다(시트가 #app 자식)" 한 줄.
 
-- [ ] **Step 4: 통과 확인** — `npx vitest run src/labs/glass.test.js`
-- [ ] **Step 5: 커밋** — `git add src/labs/glass.js src/labs/glass.test.js` → `feat(glass): 휴대폰 패널 오프셋 0·변수 #app 에도 기록`
+- [x] **Step 4: 통과 확인** — `npx vitest run src/labs/glass.test.js`
+- [x] **Step 5: 커밋** — `git add src/labs/glass.js src/labs/glass.test.js` → `feat(glass): 휴대폰 패널 오프셋 0·변수 #app 에도 기록`
 
 ---
 
@@ -75,7 +75,7 @@ const panelFloating = !!(win && typeof win.matchMedia === 'function' && win.matc
 **Files:**
 - Modify: `src/ui/layout/AppLayout.js`
 
-- [ ] **Step 1: 마크업**
+- [x] **Step 1: 마크업**
 
 (a) `<header id="menubar">` 의 `.menu-left` 앞에 햄버거, `.menu-right` 의 `#header-auth` 앞에 검색·레이어 버튼:
 
@@ -121,7 +121,7 @@ const panelFloating = !!(win && typeof win.matchMedia === 'function' && win.matc
 
 (d) 툴바 `.btn-icon` 전부에 `data-label`: zoom-in 확대 / zoom-out 축소 / zoom-extent 전체 범위 / select 선택 / btn-feature-info 속성 보기 / btn-clear-selection 선택 취소 / btn-delete-selection 선택 삭제 / btn-merge-features 합치기 / edit-split 자르기 / draw-point 점 / draw-line 선 / draw-polygon 면 / draw-multipoint 멀티포인트 / draw-multiline 멀티라인 / draw-multipolygon 멀티폴리곤 / measure-distance 거리 / measure-area 면적 / clear-measures 측정 지우기 / upload-image 이미지. `.btn-tool-labeled` 는 그대로.
 
-- [ ] **Step 2: 사이드바 토글 리팩터**
+- [x] **Step 2: 사이드바 토글 리팩터**
 
 ```js
 initSidebarToggle() {
@@ -151,8 +151,8 @@ toggleSidebar() {
 isSidebarHidden() { return document.getElementById('left-panel').classList.contains('hidden'); }
 ```
 
-- [ ] **Step 3: 확인** — `npm run build` 성공, `npx vitest run src/ui` 통과(SwipePanel 등 기존 테스트가 AppLayout 을 쓰면 깨지지 않는지).
-- [ ] **Step 4: 커밋** — `feat(mobile): 헤더 버튼·검색 줄·서랍 골격·data-label·toggleSidebar()`
+- [x] **Step 3: 확인** — `npm run build` 성공, `npx vitest run src/ui` 통과(SwipePanel 등 기존 테스트가 AppLayout 을 쓰면 깨지지 않는지).
+- [x] **Step 4: 커밋** — `feat(mobile): 헤더 버튼·검색 줄·서랍 골격·data-label·toggleSidebar()`
 
 ---
 
@@ -161,8 +161,8 @@ isSidebarHidden() { return document.getElementById('left-panel').classList.conta
 **Files:**
 - Modify: `src/main.js` (`initMenubar`)
 
-- [ ] **Step 1:** `menubar.addEventListener('click', …)` 를 `document.addEventListener('click', …)` 로 바꾸고, 핸들러 첫 줄에 `if (!e.target.closest('#menubar, #mobile-drawer')) return;` 를 넣는다(서랍으로 옮겨진 `.menu-center` 도 받는다). 주석: "휴대폰에서는 MobileShell 이 .menu-center 를 서랍으로 옮기므로 document 에 건다". 바깥 클릭 닫기 핸들러는 그대로.
-- [ ] **Step 2:** `npm run build`, 브라우저 없이 확인이 어려우므로 Task 7 하네스에서 검증. 커밋 `refactor(menubar): 클릭 위임을 document 로 (서랍 이동 대비)`.
+- [x] **Step 1:** `menubar.addEventListener('click', …)` 를 `document.addEventListener('click', …)` 로 바꾸고, 핸들러 첫 줄에 `if (!e.target.closest('#menubar, #mobile-drawer')) return;` 를 넣는다(서랍으로 옮겨진 `.menu-center` 도 받는다). 주석: "휴대폰에서는 MobileShell 이 .menu-center 를 서랍으로 옮기므로 document 에 건다". 바깥 클릭 닫기 핸들러는 그대로.
+- [x] **Step 2:** `npm run build`, 브라우저 없이 확인이 어려우므로 Task 7 하네스에서 검증. 커밋 `refactor(menubar): 클릭 위임을 document 로 (서랍 이동 대비)`.
 
 ---
 
@@ -173,7 +173,7 @@ isSidebarHidden() { return document.getElementById('left-panel').classList.conta
 - Test: `src/ui/layout/MobileShell.test.js` (jsdom)
 - Modify: `src/main.js` (호출)
 
-- [ ] **Step 1: 실패하는 테스트** — 골격 DOM 을 문자열로 만들고 `matchMedia` 를 흉내 낸다:
+- [x] **Step 1: 실패하는 테스트** — 골격 DOM 을 문자열로 만들고 `matchMedia` 를 흉내 낸다:
 
 ```js
 // @vitest-environment jsdom
@@ -258,9 +258,9 @@ describe('MobileShell', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — `npx vitest run src/ui/layout/MobileShell.test.js` → 모듈 없음.
+- [x] **Step 2: 실패 확인** — `npx vitest run src/ui/layout/MobileShell.test.js` → 모듈 없음.
 
-- [ ] **Step 3: 구현** `src/ui/layout/MobileShell.js`
+- [x] **Step 3: 구현** `src/ui/layout/MobileShell.js`
 
 ```js
 // © 2026 김용현
@@ -341,8 +341,8 @@ export function initMobileShell({ layout, layerManager, eventBus, Events, matchM
 
 주의: `autoOpened` 은 "레이어 수가 0→1" 대신 "이번 프로젝트에서 아직 자동으로 안 열었음"으로 단순화한다 — 테스트 시나리오와 맞는다(두 번째 추가는 열지 않고, 프로젝트 새로 만들기 뒤 다시 연다).
 
-- [ ] **Step 4: 통과 확인** — 위 테스트 7개 PASS.
-- [ ] **Step 5: main.js 호출** — `layout.render()` 뒤, 실험실 블록 앞에:
+- [x] **Step 4: 통과 확인** — 위 테스트 7개 PASS.
+- [x] **Step 5: main.js 호출** — `layout.render()` 뒤, 실험실 블록 앞에:
 
 ```js
 import { initMobileShell } from './ui/layout/MobileShell.js';
@@ -352,7 +352,7 @@ initMobileShell({ layout, layerManager, eventBus, Events });
 
 (`layerManager` 가 그 시점에 이미 만들어져 있어야 한다 — 아니면 생성 직후로 옮긴다.) `__egisDebug` 에 `mobileShell` 을 넣는다.
 
-- [ ] **Step 6: 커밋** — `git add src/ui/layout/MobileShell.js src/ui/layout/MobileShell.test.js src/main.js` → `feat(mobile): MobileShell — 서랍 이동·검색 줄·레이어 버튼·배지·자동 열기`
+- [x] **Step 6: 커밋** — `git add src/ui/layout/MobileShell.js src/ui/layout/MobileShell.test.js src/main.js` → `feat(mobile): MobileShell — 서랍 이동·검색 줄·레이어 버튼·배지·자동 열기`
 
 ---
 
@@ -363,7 +363,7 @@ initMobileShell({ layout, layerManager, eventBus, Events });
 - Modify: `src/styles/main.css` (`@import './layout.css';` 다음 줄에 `@import './mobile.css';`)
 - Modify: `src/styles/layout.css` (휴대폰 블록 745~921행 정리)
 
-- [ ] **Step 1: `mobile.css`**
+- [x] **Step 1: `mobile.css`**
 
 ```css
 /* © 2026 김용현 */
@@ -438,8 +438,8 @@ initMobileShell({ layout, layerManager, eventBus, Events });
 }
 ```
 
-- [ ] **Step 2: `layout.css` 정리** — 745행 `@media (max-width: 768px)` 블록에서 메뉴바 줄바꿈(`#menubar {height:auto…}`), `.menu-left {display:none}`, `.menu-right {order…}`, `.menu-center {order…}`, `.menu-button {font-size:17px…}`, `.menu-btn-icon/.menu-btn-label`, `.menu-item .dropdown-menu {max-width}`, `.btn-community-primary` 3개 규칙, 툴바 줄바꿈(`#toolbar {height:auto…}`, `.toolbar-search`, `#location-search-input`), 상태줄 2개 규칙을 **삭제**한다(mobile.css 로 옮겼다). `.header-user-email`·`.header-auth`·bottom sheet(`#main-container`, `#left-panel`, `.panel-resizer`, `.sidebar-toggle` 3개, `#left-panel:not(.hidden) ~ …`)는 남긴다.
-- [ ] **Step 3:** `npm run build`, `npm test`. 커밋 `git add src/styles/mobile.css src/styles/main.css src/styles/layout.css` → `feat(mobile): 휴대폰 헤더 한 줄·서랍·격자 툴바·아코디언 스타일`
+- [x] **Step 2: `layout.css` 정리** — 745행 `@media (max-width: 768px)` 블록에서 메뉴바 줄바꿈(`#menubar {height:auto…}`), `.menu-left {display:none}`, `.menu-right {order…}`, `.menu-center {order…}`, `.menu-button {font-size:17px…}`, `.menu-btn-icon/.menu-btn-label`, `.menu-item .dropdown-menu {max-width}`, `.btn-community-primary` 3개 규칙, 툴바 줄바꿈(`#toolbar {height:auto…}`, `.toolbar-search`, `#location-search-input`), 상태줄 2개 규칙을 **삭제**한다(mobile.css 로 옮겼다). `.header-user-email`·`.header-auth`·bottom sheet(`#main-container`, `#left-panel`, `.panel-resizer`, `.sidebar-toggle` 3개, `#left-panel:not(.hidden) ~ …`)는 남긴다.
+- [x] **Step 3:** `npm run build`, `npm test`. 커밋 `git add src/styles/mobile.css src/styles/main.css src/styles/layout.css` → `feat(mobile): 휴대폰 헤더 한 줄·서랍·격자 툴바·아코디언 스타일`
 
 ---
 
@@ -449,7 +449,7 @@ initMobileShell({ layout, layerManager, eventBus, Events });
 - Modify: `src/styles/glass.css`
 - Modify: `docs/superpowers/specs/2026-09-25-labs-design.md` (글래스 항목에 "휴대폰·태블릿도 부유 배치·블러" 한 줄)
 
-- [ ] **Step 1:** 146~194행 coarse 블록을 다음으로 교체:
+- [x] **Step 1:** 146~194행 coarse 블록을 다음으로 교체:
 
 ```css
 /* 휴대폰: 블러는 살리되 조금 낮춘다 (GPU) */
@@ -460,9 +460,9 @@ initMobileShell({ layout, layerManager, eventBus, Events });
 
 (블러 값이 리터럴이면 `--glass-blur` 토큰을 도입해 `backdrop-filter: blur(var(--glass-blur)) saturate(170%)` 로 바꾼다 — 기존 값 18px 을 `:root`/`[data-surface="glass"]` 토큰에 둔다.)
 
-- [ ] **Step 2:** 195행 `@media (min-width: 1025px) and (pointer: fine) { … }` 의 미디어 래퍼를 제거해 안의 규칙을 무조건 규칙으로 올린다(들여쓰기만 정리). 주석을 "모든 폭: 지도를 창 전체에 깔고 …; 휴대폰은 아래 블록이 시트·손잡이만 덮어쓴다"로 고친다.
+- [x] **Step 2:** 195행 `@media (min-width: 1025px) and (pointer: fine) { … }` 의 미디어 래퍼를 제거해 안의 규칙을 무조건 규칙으로 올린다(들여쓰기만 정리). 주석을 "모든 폭: 지도를 창 전체에 깔고 …; 휴대폰은 아래 블록이 시트·손잡이만 덮어쓴다"로 고친다.
 
-- [ ] **Step 3:** 그 뒤에 휴대폰 블록:
+- [x] **Step 3:** 그 뒤에 휴대폰 블록:
 
 ```css
 @media (max-width: 768px) {
@@ -489,8 +489,8 @@ initMobileShell({ layout, layerManager, eventBus, Events });
 
 `#mobile-search-row` 는 `#menubar` 바깥 형제이므로 카드가 되도록 상단 블록의 `#menubar, #toolbar` 카드 목록에 `.mobile-search-row` 를 추가한다(`margin: 0 var(--glass-gap)`, radius 12px, border).
 
-- [ ] **Step 4:** 블러·테두리·halo 를 받는 셀렉터 목록(파일 상단 `[data-surface="glass"] #menubar, …` 부유 목록과 `text-shadow` halo 목록)에 `.mobile-drawer-sheet`, `.mobile-search-row` 를 추가. 호버/누름 블록의 `:is(…)` 에 `.mobile-menu-btn, .mobile-header-btn, .mobile-drawer-close` 추가.
-- [ ] **Step 5:** `npm run build`. 커밋 `git add src/styles/glass.css docs/superpowers/specs/2026-09-25-labs-design.md` → `feat(glass): 휴대폰·태블릿도 블러와 부유 카드, 서랍 유리`
+- [x] **Step 4:** 블러·테두리·halo 를 받는 셀렉터 목록(파일 상단 `[data-surface="glass"] #menubar, …` 부유 목록과 `text-shadow` halo 목록)에 `.mobile-drawer-sheet`, `.mobile-search-row` 를 추가. 호버/누름 블록의 `:is(…)` 에 `.mobile-menu-btn, .mobile-header-btn, .mobile-drawer-close` 추가.
+- [x] **Step 5:** `npm run build`. 커밋 `git add src/styles/glass.css docs/superpowers/specs/2026-09-25-labs-design.md` → `feat(glass): 휴대폰·태블릿도 블러와 부유 카드, 서랍 유리`
 
 ---
 

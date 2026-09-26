@@ -75,3 +75,13 @@
 - `?lab=glass` 에서 헤더·상태줄·시트·서랍이 지도 위에 블러로 뜨고(`backdrop-filter` 계산값 blur 포함), 지도 컨트롤이 헤더에 가리지 않음(`.ol-zoom` top ≥ 헤더 아래).
 - 1280×800 데스크톱 회귀: 서랍 없음, 툴바·메뉴 원위치, 기존 `labs-shell.cjs` 캡처와 동일.
 - `npm test` 전부 통과.
+
+## 구현하며 바뀐 점 (2026-09-26)
+
+- `glass.js`: `trackLayoutOffsets` 는 `style.setProperty` 가 있는 요소에만 쓰고, `matchMedia` 가 없는 창(테스트)도 견딘다. 미디어 `change` 를 듣고 다시 잰다.
+- `main.js`: `layout`·`mobileShell` 을 모듈 변수로 올리고, 보기 메뉴의 「패널 접기/펴기」도 `layout.toggleSidebar()` 를 거쳐 손잡이·헤더 레이어 버튼 상태가 같이 맞는다(`mobileShell.syncLayersBtn()`).
+- `MobileShell`: 프로젝트 불러오기는 레이어를 다 넣은 뒤 `PROJECT_LOADED` 를 쏘므로 그때 `autoOpened = 레이어 수 > 0` 으로 두어 다음 수동 추가에 시트가 다시 열리지 않는다. 데스크톱에서 접어 둔 툴바(`#toolbar.collapsed`)는 서랍으로 옮기며 편다. 서랍 안에서 연 드롭다운은 데스크톱으로 돌아갈 때 닫는다.
+- `mobile.css`: 서랍 z-index 1300(시트 1200 위, 모달 2000 아래), 검색 줄 z-index 1250 에 `.search-results` 를 줄 폭에 맞춤, `#location-search-input:focus` 폭 규칙 상쇄, `.toolbar-spacer` 숨김, `.dropdown-item[hidden]` 유지, `#menubar .btn-community:not(.btn-community-primary)` 로 범위를 좁혀 서랍 안 Geocoding·About 은 보인다.
+- `glass.css`: 부유 배치를 전 폭으로 올리면서 태블릿·휴대폰(coarse ≤1366 / ≤1024)의 큰 줌 버튼 간격(나침반 100·내 위치 152·배경지도 204)을 오프셋에 더하는 블록을 추가(데스크톱 값이면 겹침). 휴대폰 시트는 z-index 1200·손잡이 1201 을 명시(부유 규칙의 `--z-panel` 100 이면 축척바 110 이 시트 위로 올라옴). 서랍 시트 배경은 `--glass-popover-bg`, 서랍 안 툴바·드롭다운은 카드·블러를 벗는다.
+- 상태줄: 390px 에서 좌표·축척·좌표계의 최소 폭(100~200px) 때문에 넘쳐 가로 스크롤 막대가 보였음 → 최소 폭 0, 「좌표:」 라벨 숨김, 축척 입력 80px, 스크롤 막대 숨김(스와이프는 됨).
+- 확인한 실측(390×844, DPR 2, touch): 헤더 44px, 서랍 폭 335px, 도구 17개(숨김 2개 제외)·메뉴 11개, 글래스 `blur(14px) saturate(1.7)`, 지도 rect = 창 전체, 시트 아래 = 상태줄 카드 위.
