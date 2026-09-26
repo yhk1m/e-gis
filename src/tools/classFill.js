@@ -161,12 +161,14 @@ function textureOps(name, strength, T, k, seed) {
 
   if (name === 'gloss') {
     // 회색 바탕(planFill 이 정한다) 위에 흰 사선 띠 — 틴트 뒤 기준색이 밝게 스치는 느낌
+    // 띠는 x + y = (pos + j)·T 사선. 주기 = T 라 옆 타일과 이어지고, 세 벌(j = 0..2)이
+    // x + y ∈ [0, 2T] 를 덮는다. 끝은 띠 굵기만큼 늘려 butt 캡의 빈 틈을 막는다.
     const bands = [[0.15, 6], [0.4, 3], [0.7, 8]];
     bands.forEach(([pos, w]) => {
-      const c = pos * T * 2;
-      for (let j = -1; j <= 1; j++) {
-        const off = j * T * 2;
-        ops.push({ op: 'line', x1: c + off - T, y1: T, x2: c + off, y2: 0, color: light(0.45), width: w * k });
+      const e = w * k;
+      for (let j = 0; j <= 2; j++) {
+        const c = (pos + j) * T;
+        ops.push({ op: 'line', x1: c - T - e, y1: T + e, x2: c + e, y2: -e, color: light(0.45), width: w * k });
       }
     });
     return ops;
@@ -242,7 +244,9 @@ export function planFill(spec, baseColor, fillOpacity = 1, { pixelScale = 1, see
 
   if (f.kind === 'texture') {
     const T = Math.round(TEXTURE_TILE * k);
-    const background = f.name === 'gloss' ? '#cfcfcf' : '#ffffff';
+    // 광택 바탕은 강도만큼만 어둡다(강도 1 → #cfcfcf). 강도 0 이면 흰색이라 틴트 뒤 정확히 기준색.
+    const g = Math.round(255 - 48 * f.strength).toString(16).padStart(2, '0');
+    const background = f.name === 'gloss' ? `#${g}${g}${g}` : '#ffffff';
     return {
       size: [T, T],
       background,
@@ -291,7 +295,7 @@ export function planFill(spec, baseColor, fillOpacity = 1, { pixelScale = 1, see
  * @returns {Object[]|null} fills 또는 모르는 이름이면 null
  */
 export function presetFills(name, n) {
-  const count = Math.max(1, Math.floor(n));
+  const count = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
   const t = (i) => (count > 1 ? i / (count - 1) : 1);
   const spacingAt = (i, from, to) => Math.round(from + (to - from) * t(i));
   if (name === 'bw-hatch') {

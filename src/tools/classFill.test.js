@@ -158,6 +158,23 @@ describe('planFill', () => {
     expect(p.background).toBe('#cfcfcf');
     expect(p.ops.some((o) => o.op === 'line' && o.color.startsWith('rgba(255, 255, 255'))).toBe(true);
   });
+
+  it('광택 띠는 x + y = c 사선이고 띠마다 c 가 타일 한 변씩 어긋나 이음매 없이 이어진다', () => {
+    const p = planFill({ kind: 'texture', name: 'gloss', strength: 1 }, '#3366cc', 1);
+    const T = p.size[0];
+    const lines = p.ops.filter((o) => o.op === 'line');
+    expect(lines.length % 3).toBe(0);
+    lines.forEach((l) => expect(l.x1 + l.y1).toBeCloseTo(l.x2 + l.y2, 9));
+    for (let b = 0; b < lines.length; b += 3) {
+      const cs = lines.slice(b, b + 3).map((l) => l.x1 + l.y1);
+      expect(cs[1] - cs[0]).toBeCloseTo(T, 9);
+      expect(cs[2] - cs[1]).toBeCloseTo(T, 9);
+    }
+  });
+
+  it('광택 강도 0 이면 바탕이 흰색이라 틴트 뒤 정확히 기준색', () => {
+    expect(planFill({ kind: 'texture', name: 'gloss', strength: 0 }, '#3366cc').background).toBe('#ffffff');
+  });
 });
 
 describe('mulberry32', () => {
@@ -195,6 +212,11 @@ describe('presetFills', () => {
     expect(presetFills('bw-hatch', 1)[0].spacing).toBe(6);
     expect(presetFills('nope', 3)).toBeNull();
     expect(PRESET_NAMES).toEqual(['bw-hatch', 'dots-density', 'texture-uniform']);
+  });
+
+  it('개수가 NaN·undefined 면 구간 하나로 본다', () => {
+    expect(presetFills('bw-hatch', NaN)).toHaveLength(1);
+    expect(presetFills('dots-density', undefined)).toHaveLength(1);
   });
 });
 
