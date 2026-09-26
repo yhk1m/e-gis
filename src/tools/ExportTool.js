@@ -8,6 +8,8 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { mapManager } from '../core/MapManager.js';
 import { flowTool } from './FlowTool.js';
+import { planFill, isSolid } from './classFill.js';
+import { renderFillCanvas } from './classFillCanvas.js';
 
 class ExportTool {
   constructor() {
@@ -662,6 +664,7 @@ class ExportTool {
     const {
       kind,
       fillColor = '#3b82f6',
+      fill = null,
       fillOpacity = 0.3,
       strokeColor = '#3b82f6',
       strokeOpacity = 1,
@@ -672,6 +675,13 @@ class ExportTool {
 
     ctx.save();
     ctx.fillStyle = this.hexToRgba(fillColor, fillOpacity);
+    // 구간 채움(실험 class-fill): 지도와 같은 타일을 내보내기 배율로 다시 그려 패턴으로 칠한다.
+    // 타일을 못 만들면(컨텍스트 없음·이미지 미해독) 위의 단색이 그대로 남는다.
+    if (fill && !isSolid(fill)) {
+      const tile = renderFillCanvas(planFill(fill, fillColor, fillOpacity, { pixelScale: scale }));
+      const pattern = tile ? ctx.createPattern(tile, 'repeat') : null;
+      if (pattern) ctx.fillStyle = pattern;
+    }
     ctx.strokeStyle = this.hexToRgba(strokeColor, strokeOpacity);
     // 기호가 칸을 넘지 않게 테두리 굵기를 제한한다.
     ctx.lineWidth = Math.max(0.5, Math.min(strokeWidth, 3)) * scale;

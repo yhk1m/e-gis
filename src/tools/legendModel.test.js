@@ -222,3 +222,25 @@ describe('buildLegendModel — 범례로 요약할 수 없는 레이어', () => 
     expect(buildLegendModel(broken)).toBeNull();
   });
 });
+
+describe('buildLegendModel — 구간 채움(fills)', () => {
+  it('fills 가 없으면 fill 은 null', () => {
+    const model = buildLegendModel(makeLayer({
+      type: 'choropleth',
+      _choroplethConfig: { attribute: 'pop', breaks: [0, 50, 100], colors: ['#ffffcc', '#800026'] }
+    }));
+    expect(model.items[0].symbol.fill).toBeNull();
+    expect(buildLegendModel(makeLayer()).items[0].symbol.fill).toBeNull();
+  });
+
+  it('fills 가 있으면 구간마다 그 사양을 싣는다', () => {
+    const fills = [{ kind: 'hatch', spacing: 8 }, { kind: 'solid' }];
+    const model = buildLegendModel(makeLayer({
+      type: 'choropleth',
+      _choroplethConfig: { attribute: 'pop', breaks: [0, 50, 100], colors: ['#ffffcc', '#800026'], fills }
+    }));
+    expect(model.items[0].symbol.fill).toEqual({ kind: 'hatch', spacing: 8 });
+    expect(model.items[0].symbol.fillColor).toBe('#ffffcc');
+    expect(model.items[1].symbol.fill).toEqual({ kind: 'solid' });
+  });
+});

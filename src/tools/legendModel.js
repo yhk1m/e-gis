@@ -67,8 +67,11 @@ function symbolKind(geometryType) {
  * 분류 색(classColor)을 주면 주제도의 구간 기호가 된다. 이때 테두리는 지도와 같은 규칙을
  * 따른다 — 테두리 동기화가 켜져 있으면(기본) 구간 색을 어둡게 한 색, 꺼져 있으면 레이어의
  * 테두리 색. 지도(LayerManager.updateLayerStyle)가 그렇게 그리므로 범례도 같아야 한다.
+ *
+ * classFill 은 구간 채움 사양(_choroplethConfig.fills[i]). 없으면 null — 단색.
+ * ExportTool.drawLegendSymbol 이 fill 이 있으면 같은 타일을 패턴으로 칠한다.
  */
-function makeSymbol(layerInfo, classColor) {
+function makeSymbol(layerInfo, classColor, classFill = null) {
   const fillColor = classColor || layerInfo.fillColor || layerInfo.color;
   // undefined(기존 레이어·기존 저장본)를 기본 ON으로 흡수한다 — 지도와 같은 판정
   const syncStroke = layerInfo.strokeSyncToFill !== false;
@@ -76,6 +79,7 @@ function makeSymbol(layerInfo, classColor) {
   return {
     kind: symbolKind(layerInfo.geometryType),
     fillColor,
+    fill: classFill || null,
     fillOpacity: layerInfo.fillOpacity,
     strokeColor: classColor && syncStroke
       ? darkenColor(classColor)
@@ -102,7 +106,7 @@ function classifiedConfig(layerInfo) {
  * breaks는 경계값이라 구간 수는 breaks.length - 1이다.
  */
 function classifiedItems(layerInfo, config) {
-  const { breaks, colors = [], unit = '', format = 'comma', rounding = 0 } = config;
+  const { breaks, colors = [], fills = null, unit = '', format = 'comma', rounding = 0 } = config;
   const items = [];
 
   for (let i = 0; i < breaks.length - 1; i++) {
@@ -110,7 +114,7 @@ function classifiedItems(layerInfo, config) {
     const max = formatNumber(breaks[i + 1], format, rounding);
     items.push({
       label: `${min} - ${max}${unit ? ' ' + unit : ''}`,
-      symbol: makeSymbol(layerInfo, colors[i])
+      symbol: makeSymbol(layerInfo, colors[i], fills ? fills[i] : null)
     });
   }
 
