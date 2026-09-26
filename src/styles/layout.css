@@ -30,6 +30,11 @@
   flex-shrink: 0;
 }
 
+/* 휴대폰 전용 요소(햄버거·검색·레이어 버튼, 검색 줄)는 기본으로 숨긴다 — mobile.css 가 휴대폰에서 켠다 */
+.mobile-only {
+  display: none;
+}
+
 .menu-left {
   display: flex;
   align-items: center;
