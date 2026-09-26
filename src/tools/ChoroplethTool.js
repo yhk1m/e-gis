@@ -557,7 +557,10 @@ class ChoroplethTool {
    */
   classFillColor(cfg, classIndex, fillOpacity) {
     const base = cfg.colors[classIndex] || cfg.colors[0];
-    return fillFor(cfg.fills ? cfg.fills[classIndex] : undefined, base, fillOpacity, 1);
+    // OL 은 벡터 캔버스를 기기 픽셀로 그리고 CanvasPattern 을 pixelRatio 로 키우지 않는다.
+    // 타일을 DPR 배로 만들어야 화면 무늬가 범례·내보내기(CSS px 기준)와 같은 크기가 된다.
+    const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+    return fillFor(cfg.fills ? cfg.fills[classIndex] : undefined, base, fillOpacity, dpr);
   }
 
   /**
