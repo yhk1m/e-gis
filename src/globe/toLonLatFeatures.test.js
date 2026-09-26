@@ -9,6 +9,7 @@ import Point from 'ol/geom/Point';
 import Polygon from 'ol/geom/Polygon';
 import VectorSource from 'ol/source/Vector';
 import { fromLonLat } from 'ol/proj';
+import { geoArea } from 'd3';
 import { toLonLatFeatures, layerToLonLat } from './toLonLatFeatures.js';
 
 describe('toLonLatFeatures', () => {
@@ -29,6 +30,14 @@ describe('toLonLatFeatures', () => {
     const fc = toLonLatFeatures([f]);
     expect(fc.features[0].geometry.type).toBe('Polygon');
     expect(fc.features[0].geometry.coordinates[0][1][0]).toBeCloseTo(128, 5);
+  });
+
+  it('반시계(RFC 7946) 외곽 링을 d3 규약(시계)으로 뒤집어 작은 폴리곤이 되게 한다', () => {
+    // 반시계 사각형 (경도 126~127, 위도 37~38)
+    const ring = [[126, 37], [127, 37], [127, 38], [126, 38], [126, 37]].map((c) => fromLonLat(c));
+    const f = new Feature(new Polygon([ring]));
+    const out = toLonLatFeatures([f]);
+    expect(geoArea(out.features[0])).toBeLessThan(Math.PI);   // 뒤집히면 4π − 작은 값
   });
 
   it('지오메트리 없는 피처는 뺀다', () => {

@@ -18,7 +18,11 @@ export function toLonLatFeatures(features) {
   return format.writeFeaturesObject(withGeometry, {
     dataProjection: 'EPSG:4326',
     featureProjection: 'EPSG:3857',
-    decimals: 6
+    decimals: 6,
+    // d3-geo 는 외곽 링이 시계 방향(우측 규칙 아님)이어야 "작은 폴리곤"으로 읽는다.
+    // 내장 GeoJSON(서울 자치구·시도·시군구)은 RFC 7946 대로 반시계라 그대로 넘기면
+    // 구 전체가 칠해지고 실제 영역만 구멍이 된다. OL 이 링 방향을 시계로 맞춰 쓰게 한다.
+    rightHanded: false
   });
 }
 
