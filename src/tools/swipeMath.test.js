@@ -106,6 +106,14 @@ describe('swipeTargetOptions', () => {
     expect(opts.map((o) => o.value)).toEqual(['layer:l-1']);
   });
 
+  it('흐름도(자체 렌더러) 레이어도 목록에 넣지 않는다', () => {
+    const withFlow = [
+      { id: 'l-1', name: '시도', type: 'vector' },
+      { id: 'l-f', name: '통근 흐름', type: 'flow' }
+    ];
+    expect(swipeTargetOptions(withFlow, [], 'OSM').map((o) => o.value)).toEqual(['layer:l-1']);
+  });
+
   it('이름이 비면 id 를 라벨로 쓴다', () => {
     const opts = swipeTargetOptions([{ id: 'l-9', name: '' }], [], 'OSM');
     expect(opts).toEqual([{ value: 'layer:l-9', label: 'l-9', group: 'layer' }]);

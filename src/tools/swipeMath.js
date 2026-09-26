@@ -57,18 +57,23 @@ export function dividerStyle(ratio, orientation) {
   return orientation === 'horizontal' ? { left: '0', top: pct } : { left: pct, top: '0' };
 }
 
+/** 2D 캔버스 클립을 못 받는 레이어 종류 — 대상 목록에서 뺀다 */
+const UNCLIPPABLE_TYPES = new Set(['heatmap', 'flow']);
+
 /**
  * 비교 대상 select 의 항목.
  * 레이어는 화면에서 위에 있는 것(layerOrder 의 끝)부터, 배경지도는 현재 것과 hidden 묶음을 뺀다.
  * 히트맵(type 'heatmap', ol/layer/Heatmap)은 WebGL 로 그려서 뺀다. 렌더 이벤트의 context 가
  * WebGLRenderingContext 라 2D save/clip 이 없다(자르려면 gl.scissor 가 필요 — 1차 범위 밖).
+ * 흐름도(type 'flow', FlowRenderer)는 자체 캔버스를 돌려주는 커스텀 Layer 라 prerender/postrender 가
+ * 안 뜬다 — 목록에 넣으면 막대가 아무 일도 안 하므로 함께 뺀다.
  * @param {{id: string, name: string, type?: string}[]} layers layerManager.getAllLayers() (index 0 이 맨 아래)
  * @param {{key: string, label: string, group: string}[]} basemaps mapManager.getAvailableBasemaps()
  * @param {string} currentBasemap mapManager.getBasemap()
  * @returns {{value: string, label: string, group: 'layer'|'basemap'}[]}
  */
 export function swipeTargetOptions(layers, basemaps, currentBasemap) {
-  const layerOptions = layers.filter((l) => l.type !== 'heatmap').reverse().map((l) => ({
+  const layerOptions = layers.filter((l) => !UNCLIPPABLE_TYPES.has(l.type)).reverse().map((l) => ({
     value: `layer:${l.id}`, label: l.name || l.id, group: 'layer'
   }));
   const basemapOptions = basemaps
