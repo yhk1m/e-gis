@@ -5614,11 +5614,12 @@ body.exporting .egis-basemap-panel {
 }
 
 /* ===== 스와이프 비교 (실험실 swipe) ===== */
-/* 컨트롤 박스 — 3D 컨트롤(오른쪽 위)과 같은 자리. 둘이 동시에 열리는 일은 드물고, 3D 는 지도를 덮는다. */
+/* 컨트롤 박스 — 오른쪽 위, 지도 컨트롤 열(확대·나침반·내 위치·배경지도, right: --spacing-sm, 폭 32px)의 왼쪽.
+   스와이프는 3D 와 달리 지도를 그대로 쓰므로 그 버튼들을 가리면 비교하는 동안 확대·배경지도를 못 쓴다. */
 .swipe-controls {
   position: absolute;
   top: 12px;
-  right: 12px;
+  right: calc(var(--spacing-sm) + 32px + 12px);
   z-index: 30;
 }
 
