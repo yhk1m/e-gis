@@ -21,6 +21,12 @@ export const EXPERIMENTS = [
     since: '2026-09'
   },
   {
+    id: 'globe',
+    name: '지구본·투영법 보기',
+    summary: '지금 지도를 지구본으로 돌려 보고 투영법을 바꿔 봅니다.',
+    since: '2026-09'
+  },
+  {
     id: 'swipe',
     name: '스와이프 비교',
     summary: '레이어나 배경지도 둘을 가운데 막대를 끌어 비교합니다.',
