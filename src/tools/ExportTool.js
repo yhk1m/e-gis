@@ -9,7 +9,7 @@ import { jsPDF } from 'jspdf';
 import { mapManager } from '../core/MapManager.js';
 import { flowTool } from './FlowTool.js';
 import { planFill, isSolid } from './classFill.js';
-import { renderFillCanvas } from './classFillCanvas.js';
+import { renderFillCanvas, getCachedImage } from './classFillCanvas.js';
 
 class ExportTool {
   constructor() {
@@ -676,8 +676,10 @@ class ExportTool {
     ctx.save();
     ctx.fillStyle = this.hexToRgba(fillColor, fillOpacity);
     // 구간 채움(실험 class-fill): 지도와 같은 타일을 내보내기 배율로 다시 그려 패턴으로 칠한다.
-    // 타일을 못 만들면(컨텍스트 없음·이미지 미해독) 위의 단색이 그대로 남는다.
-    if (fill && !isSolid(fill)) {
+    // 타일을 못 만들거나(컨텍스트 없음) 이미지가 아직 안 읽혔으면 지도(fillFor)와 같이 위의
+    // 기준색이 그대로 남는다 — 안 읽힌 이미지는 renderFillCanvas 가 빈 타일을 내므로 먼저 걸러야 한다.
+    const imageReady = !fill || fill.kind !== 'image' || !!getCachedImage(fill.dataUrl);
+    if (fill && !isSolid(fill) && imageReady) {
       const tile = renderFillCanvas(planFill(fill, fillColor, fillOpacity, { pixelScale: scale }));
       const pattern = tile ? ctx.createPattern(tile, 'repeat') : null;
       if (pattern) ctx.fillStyle = pattern;

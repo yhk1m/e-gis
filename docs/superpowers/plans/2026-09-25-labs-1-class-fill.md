@@ -3062,3 +3062,4 @@ Expected: 테스트 전부 PASS, 빌드 성공, 작업 트리 깨끗.
 (구현 중 스펙과 다르게 결정한 것을 여기 적는다.)
 
 - **Task 1 검토 보정** (`classFill.js`): (1) 광택 띠가 주기 2T 라 타일 오른쪽 끝에서 끊기던 것을 `x + y = (pos + j)·T`(j = 0..2, 주기 T) 세 벌로 바꾸고 끝을 띠 굵기만큼 늘려 이음매 없이 이어지게 했다. (2) 광택 바탕을 `#cfcfcf` 고정에서 강도에 비례한 회색(`255 − 48·strength`, 강도 1 = `#cfcfcf`)으로 바꿔 강도 0 이면 흰 바탕 → 틴트 뒤 정확히 기준색이 되게 했다(「강도 0 → 정확히 기준색」 규약). (3) `presetFills(name, NaN|undefined)` 가 `[]` 를 내던 것을 구간 하나로 본다. 테스트 3개 추가(21 → 24).
+- **Task 5 검토 보정** (`ExportTool.drawLegendSymbol`): (1) 단색 판정을 계획의 `fill.kind && fill.kind !== 'solid'` 대신 `classFill.isSolid(fill)` 로 — 모르는 `kind` 도 단색으로 물러선다. (2) 이미지 채움은 `getCachedImage(fill.dataUrl)` 로 디코딩 여부를 먼저 확인하고, 아직이면 패턴을 만들지 않고 기준색(`hexToRgba(fillColor, fillOpacity)`)을 남긴다. 안 읽힌 이미지는 `planFill` 이 `background: null` 이라 `renderFillCanvas` 가 null 이 아니라 **빈 타일**을 내므로, 그대로 두면 투명 패턴으로 칠해져 지도(`fillFor` → `plan.fallback`)와 달라진다.
