@@ -129,7 +129,10 @@ function initApp() {
   labs.onChange((id, on) => {
     if (id !== 'time-series') return;
     if (on) timeSeriesTool.restoreControls();
-    else timeSeriesTool.detach();
+    else {
+      animationDialog?.cancel();   // 만들던 애니메이션은 버린다
+      timeSeriesTool.detach();
+    }
   });
   // 복원 뒤(프로젝트 열기·자동 복원 완료) 컨트롤 되살리기.
   // 이 리스너는 restoreState/loadProject 의 try 안에서 불리므로 여기서 던지면 복원 전체가
@@ -144,7 +147,10 @@ function initApp() {
   };
   eventBus.on(Events.PROJECT_LOADED, restoreTimeSeries);
   eventBus.on(Events.STATE_RESTORED, restoreTimeSeries);
-  eventBus.on(Events.PROJECT_NEW, () => timeSeriesTool.detach());
+  eventBus.on(Events.PROJECT_NEW, () => {
+    animationDialog?.cancel();   // 레이어가 곧 사라진다 — 캡처 중이면 중단
+    timeSeriesTool.detach();
+  });
 
   // 슬라이더의 「저장」 → 애니메이션 저장 대화상자. 찍기 전에 재생을 멈추고, 3D·지구본·
   // 스와이프가 켜져 있으면 먼저 끈다(지도 캔버스가 평면 2D 그대로여야 프레임이 맞다).
@@ -153,6 +159,7 @@ function initApp() {
     const cfg = timeSeriesTool.config(layerId);
     const info = layerManager.getLayer(layerId);
     if (!cfg || !info) return;
+    animationDialog?.cancel();
     const dialog = new AnimationExportDialog({
       layerName: info.name,
       fields: cfg.timeSeries.fields,
@@ -171,6 +178,7 @@ function initApp() {
       saveBlobAs,
       onMessage: showStatusMessage
     });
+    animationDialog = dialog;
     dialog.show();
   };
 
@@ -1345,6 +1353,9 @@ let swipePanel = null;
 
 /** 지구본·투영법 보기 패널(실험실 globe) — 진단 훅에서도 쓴다 */
 let globePanel = null;
+
+/** 열려 있는 애니메이션 저장 대화상자 — 새 프로젝트·실험 끄기 때 캡처를 중단한다 */
+let animationDialog = null;
 
 // 최근 파일 관리 (최대 5개)
 const RECENT_FILES_KEY = 'egis_recent_files';

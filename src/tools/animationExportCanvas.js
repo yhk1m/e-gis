@@ -113,6 +113,11 @@ export async function captureFrames({ tool, layerId, scale = 1, includeLegend = 
   try {
     for (let i = 0; i < fields.length; i++) {
       throwIfAborted(signal);
+      // 기다리는 사이(waitRender) 레이어가 지워졌거나(새 프로젝트·삭제) 도구가 다른 레이어로
+      // 옮겨 갔으면 setIndex 가 엉뚱한 레이어를 움직이거나 아무것도 안 한다 — 멈춘다
+      if (tool.layerId !== layerId || !layerManager.getLayer(layerId)) {
+        throw new Error('캡처 중 시계열 레이어가 사라졌습니다');
+      }
       tool.setIndex(i);
       await waitRender(map);
       throwIfAborted(signal);
@@ -143,7 +148,8 @@ export async function captureFrames({ tool, layerId, scale = 1, includeLegend = 
       if (onProgress) onProgress(i + 1, fields.length);
     }
   } finally {
-    tool.setIndex(startIndex);
+    // 도구가 다른 레이어로 옮겨 갔으면 그 레이어를 건드리지 않는다
+    if (tool.layerId === layerId) tool.setIndex(startIndex);
   }
   return frames;
 }

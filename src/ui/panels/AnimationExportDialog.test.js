@@ -116,6 +116,29 @@ describe('AnimationExportDialog', () => {
     expect(document.querySelector('.anim-export-modal')).toBeNull();
   });
 
+  it('바깥에서 cancel() 하면(새 프로젝트·실험 끄기) 진행 중인 캡처를 중단하고 저장 없이 닫는다', async () => {
+    let seenSignal = null;
+    const p = deps({
+      // 중단될 때까지 끝나지 않는 캡처 — 실제 captureFrames 처럼 signal 로만 빠져나온다
+      captureFrames: vi.fn(({ signal }) => new Promise((resolve, reject) => {
+        seenSignal = signal;
+        signal.addEventListener('abort', () => reject(new DOMException('취소', 'AbortError')));
+      }))
+    });
+    const d = new AnimationExportDialog(p);
+    d.show();
+    const running = d.run();
+    await vi.waitFor(() => expect(p.captureFrames).toHaveBeenCalled());
+    d.cancel();
+    await running;
+    expect(seenSignal.aborted).toBe(true);
+    expect(p.encodeGif).not.toHaveBeenCalled();
+    expect(p.saveBlobAs).not.toHaveBeenCalled();
+    expect(p.onMessage).not.toHaveBeenCalled();   // 취소는 실패 메시지가 아니다
+    expect(document.querySelector('.anim-export-modal')).toBeNull();
+    expect(d.controller).toBeNull();
+  });
+
   it('실패하면 상태줄 메시지를 내고 닫는다', async () => {
     const p = deps({ captureFrames: vi.fn(async () => { throw new Error('외부 이미지 때문에 캔버스를 읽을 수 없습니다'); }) });
     const d = new AnimationExportDialog(p);

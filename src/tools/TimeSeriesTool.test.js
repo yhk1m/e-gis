@@ -122,6 +122,65 @@ describe('play / pause / speed', () => {
   });
 });
 
+describe('재생 중 자동 저장 억제', () => {
+  it('재생 틱은 silent 로 다시 그리기만 하고, pause() 에서 LAYER_STYLE_CHANGED 를 한 번 낸다', () => {
+    vi.useFakeTimers();
+    const id = sourceLayer();
+    const derivedId = timeSeriesTool.apply({ layerId: id, fields: ['2015', '2020', '2025'] });
+    const spy = vi.spyOn(layerManager, 'updateLayerStyle');
+    const cb = vi.fn();
+    eventBus.on(Events.LAYER_STYLE_CHANGED, cb);
+    try {
+      timeSeriesTool.setSpeed(1);   // 싱글턴 — 앞 테스트의 속도가 남아 있을 수 있다
+      timeSeriesTool.play();
+      vi.advanceTimersByTime(BASE_INTERVAL_MS * 2);
+      expect(spy).toHaveBeenCalledTimes(2);
+      spy.mock.calls.forEach((call) => expect(call).toEqual([derivedId, { silent: true }]));
+      expect(cb).not.toHaveBeenCalled();
+      expect(layerManager.getLayer(derivedId)._choroplethConfig.attribute).toBe('2025');   // 그래도 그려지긴 한다
+
+      timeSeriesTool.pause();
+      expect(cb).toHaveBeenCalledTimes(1);
+      expect(cb).toHaveBeenCalledWith({ layerId: derivedId });
+      timeSeriesTool.pause();   // 이미 멈췄으면 다시 알리지 않는다
+      expect(cb).toHaveBeenCalledTimes(1);
+    } finally {
+      eventBus.off(Events.LAYER_STYLE_CHANGED, cb);
+      spy.mockRestore();
+    }
+  });
+
+  it('속도를 바꿔 다시 시작해도 알리지 않고, 재생 중 detach 는 한 번 알린다', () => {
+    vi.useFakeTimers();
+    const id = sourceLayer();
+    const derivedId = timeSeriesTool.apply({ layerId: id, fields: ['2015', '2020', '2025'] });
+    const cb = vi.fn();
+    eventBus.on(Events.LAYER_STYLE_CHANGED, cb);
+    try {
+      timeSeriesTool.play();
+      timeSeriesTool.setSpeed(2);
+      vi.advanceTimersByTime(BASE_INTERVAL_MS / 2);
+      expect(cb).not.toHaveBeenCalled();
+      timeSeriesTool.detach();
+      expect(cb).toHaveBeenCalledTimes(1);
+      expect(cb).toHaveBeenCalledWith({ layerId: derivedId });
+    } finally {
+      eventBus.off(Events.LAYER_STYLE_CHANGED, cb);
+      timeSeriesTool.setSpeed(1);
+    }
+  });
+
+  it('멈춘 상태의 detach 는 알리지 않는다', () => {
+    const id = sourceLayer();
+    timeSeriesTool.apply({ layerId: id, fields: ['2015', '2020'] });
+    const cb = vi.fn();
+    eventBus.on(Events.LAYER_STYLE_CHANGED, cb);
+    timeSeriesTool.detach();
+    expect(cb).not.toHaveBeenCalled();
+    eventBus.off(Events.LAYER_STYLE_CHANGED, cb);
+  });
+});
+
 describe('detach / 레이어 삭제 / 복원', () => {
   it('detach 는 컨트롤을 없애고 재생을 멈춘다', () => {
     vi.useFakeTimers();

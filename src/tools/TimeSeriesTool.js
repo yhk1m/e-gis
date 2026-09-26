@@ -5,7 +5,8 @@
  * 시계열은 단계구분도 설정에 timeSeries: { fields, index } 를 더한 것이다.
  * - apply: 모든 필드 값을 합쳐 구간을 한 번만 계산 → choroplethTool.apply(…, { breaks }) → 설정에 timeSeries.
  * - setIndex: cfg.attribute = fields[i] → layerManager.updateLayerStyle (LAYER_STYLE_CHANGED 가 자동 저장을 깨운다)
- *             → 범례 부제 갱신 → 슬라이더 갱신.
+ *             → 범례 부제 갱신 → 슬라이더 갱신. 재생 중 틱은 silent 로 다시 그리기만 하고
+ *             (틱마다 자동 저장·레이어 패널 다시 그리기를 깨우지 않게) 멈출 때 한 번 알린다.
  * - 컨트롤은 #map 안 지도 아래 가운데, 한 번에 하나(가장 최근 시계열 레이어).
  * 저장(애니메이션)은 onSave 훅으로 밖(main.js → AnimationExportDialog)에 맡긴다 — 대화상자가
  * 이 도구를 import 하므로 여기서 대화상자를 import 하면 순환이 된다.
@@ -93,7 +94,8 @@ class TimeSeriesTool {
     const idx = Math.max(0, Math.min(n - 1, Number.isInteger(index) ? index : 0));
     cfg.timeSeries.index = idx;
     cfg.attribute = cfg.timeSeries.fields[idx];
-    layerManager.updateLayerStyle(this.layerId);   // LAYER_STYLE_CHANGED → 자동 저장
+    // LAYER_STYLE_CHANGED → 자동 저장. 재생 중이면 조용히 — pause/detach 가 한 번 낸다
+    layerManager.updateLayerStyle(this.layerId, { silent: this.isPlaying() });
     this.updateLegendSubtitle(cfg);
     this.renderControls(cfg);
   }
@@ -110,7 +112,8 @@ class TimeSeriesTool {
 
   play() {
     if (!this.config()) return;
-    this.pause();
+    // 속도 바꾸기로 다시 시작할 때는 pause() 를 거치지 않는다 — 멈춘 게 아니니 알릴 것도 없다
+    if (this.timer !== null) clearInterval(this.timer);
     this.timer = setInterval(() => this.step(), BASE_INTERVAL_MS / this.speed);
     this.renderControls(this.config());
   }
@@ -119,9 +122,17 @@ class TimeSeriesTool {
     if (this.timer !== null) {
       clearInterval(this.timer);
       this.timer = null;
+      this.notifyStyleChanged();   // 재생 틱은 조용했다 — 멈춘 자리를 한 번 저장하게
     }
     const cfg = this.config();
     if (cfg) this.renderControls(cfg);
+  }
+
+  /** 재생이 끝났을 때 한 번 — 자동 저장·레이어 패널이 마지막 연도를 잡는다 (레이어가 남아 있을 때만) */
+  notifyStyleChanged() {
+    if (this.layerId && layerManager.getLayer(this.layerId)) {
+      eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId: this.layerId });
+    }
   }
 
   setSpeed(speed) {
@@ -204,6 +215,7 @@ class TimeSeriesTool {
     if (this.timer !== null) {
       clearInterval(this.timer);
       this.timer = null;
+      this.notifyStyleChanged();
     }
     if (this.controls) {
       this.controls.remove();
