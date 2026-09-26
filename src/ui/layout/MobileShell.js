@@ -29,11 +29,20 @@ export function initMobileShell({ layout, layerManager, eventBus, Events, matchM
       placeholders.set(el, ph);
       target.appendChild(el);
     }
+    // 데스크톱에서 접어 둔 툴바는 휴대폰에서 펼칠 방법이 없으니(접기 버튼 숨김) 편 상태로 넣는다
+    const toolbar = $('toolbar');
+    if (toolbar?.classList.contains('collapsed')) {
+      toolbar.classList.remove('collapsed');
+      const collapseBtn = $('toolbar-collapse');
+      if (collapseBtn) { collapseBtn.classList.remove('collapsed'); collapseBtn.title = '도구 모음 접기'; }
+    }
     doc.body.classList.add('phone-shell');
   }
   function moveOut() {
     for (const [el, ph] of placeholders) { ph.parentNode?.replaceChild(el, ph); }
     placeholders.clear();
+    // 서랍 안에서 펼친 드롭다운이 헤더로 돌아와 열린 채 남지 않게
+    doc.querySelectorAll('.menu-item.dropdown.open').forEach((el) => el.classList.remove('open'));
     doc.body.classList.remove('phone-shell');
     closeDrawer(); setSearch(false);
   }
@@ -65,7 +74,8 @@ export function initMobileShell({ layout, layerManager, eventBus, Events, matchM
     if (isPhone() && n > 0 && !autoOpened && layout.isSidebarHidden()) { layout.setSidebarHidden(false); autoOpened = true; syncLayersBtn(); }
   });
   eventBus?.on(Events.LAYER_REMOVED, updateCount);
-  eventBus?.on(Events.PROJECT_LOADED, () => { autoOpened = false; updateCount(); });
+  // 불러오기는 레이어를 다 넣은 뒤(LAYER_ADDED 마다 자동 열기 시도) PROJECT_LOADED 를 쏜다 — 레이어가 있으면 이미 연 것으로 친다
+  eventBus?.on(Events.PROJECT_LOADED, () => { autoOpened = updateCount() > 0; });
   eventBus?.on(Events.PROJECT_NEW, () => { autoOpened = false; updateCount(); });
 
   mql.addEventListener?.('change', apply);

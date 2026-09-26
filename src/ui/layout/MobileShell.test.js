@@ -77,4 +77,36 @@ describe('MobileShell', () => {
     m.fire(false); layout.setSidebarHidden(true);
     layers = [{}]; bus.emit('la'); expect(layout.isSidebarHidden()).toBe(true);
   });
+
+  it('프로젝트 불러오기 뒤 레이어를 더해도 시트를 다시 열지 않는다', () => {
+    layers = [{}]; bus.emit('la'); expect(layout.isSidebarHidden()).toBe(false);
+    layout.setSidebarHidden(true);
+    bus.emit('pl');
+    layers = [{}, {}]; bus.emit('la'); expect(layout.isSidebarHidden()).toBe(true);
+  });
+
+  it('빈 프로젝트를 불러오면 다음 첫 레이어에 시트를 연다', () => {
+    bus.emit('pl');
+    layers = [{}]; bus.emit('la'); expect(layout.isSidebarHidden()).toBe(false);
+  });
+
+  it('데스크톱에서 접어 둔 툴바는 서랍에 넣을 때 편다', () => {
+    m.fire(false);
+    const toolbar = document.getElementById('toolbar');
+    const btn = document.createElement('button'); btn.id = 'toolbar-collapse'; btn.className = 'collapsed'; btn.title = '도구 모음 펴기';
+    toolbar.appendChild(btn); toolbar.classList.add('collapsed');
+    m.fire(true);
+    expect(document.querySelector('#mobile-drawer-tools #toolbar')).not.toBeNull();
+    expect(toolbar.classList.contains('collapsed')).toBe(false);
+    expect(btn.classList.contains('collapsed')).toBe(false);
+    expect(btn.title).toBe('도구 모음 접기');
+  });
+
+  it('서랍에서 펼친 드롭다운은 헤더로 돌아올 때 닫힌다', () => {
+    const item = document.querySelector('#mobile-drawer-menus .menu-item.dropdown');
+    item.classList.add('open');
+    m.fire(false);
+    expect(document.querySelector('#menubar .menu-item.dropdown')).toBe(item);
+    expect(item.classList.contains('open')).toBe(false);
+  });
 });
