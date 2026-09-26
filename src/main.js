@@ -673,10 +673,10 @@ function initToolbar() {
  * 메뉴바 초기화
  */
 function initMenubar() {
-  const menubar = document.getElementById('menubar');
-
   // 드롭다운 토글
-  menubar.addEventListener('click', (e) => {
+  // 휴대폰에서는 MobileShell 이 .menu-center 를 서랍(#mobile-drawer)으로 옮기므로 document 에 건다
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#menubar, #mobile-drawer')) return;
     // .menu-button: 일반 메뉴, .btn-community: 링크 모양 버튼(Geocoding·About e-GIS)
     const menuButton = e.target.closest('.menu-button, .btn-community');
     if (menuButton) {
