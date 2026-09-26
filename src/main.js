@@ -51,6 +51,10 @@ import { labs } from './labs/labs.js';
 import { EXPERIMENT_IDS } from './labs/registry.js';
 import { bindGlass } from './labs/glass.js';
 import { bindLabsButton } from './labs/labsButton.js';
+import { bindClassFill } from './labs/classFillBinding.js';
+import { classFillPopover } from './ui/panels/ClassFillPopover.js';
+import { choroplethTool } from './tools/ChoroplethTool.js';
+import { builtinDataManager } from './core/BuiltinDataManager.js';
 import { drawingPanel } from './ui/panels/DrawingPanel.js';
 import { layerExportPanel } from './ui/panels/LayerExportPanel.js';
 import { cartogramPanel } from './ui/panels/CartogramPanel.js';
@@ -105,6 +109,7 @@ function initApp() {
   });
   bindGlass(labs);
   bindLabsButton(labs, document.getElementById('labs-toggle'));
+  bindClassFill(labs, { mapEl: document.getElementById('map'), tool: choroplethTool, popover: classFillPopover });
 
   // 4. 지도 초기화
   mapManager.init('map', {
@@ -1362,4 +1367,4 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // 진단용 훅 — 헤드리스 재현 테스트(버그 리포트 검증)에서 내부 상태 접근용.
 // 클라이언트 앱이라 보안 경계 아님(모든 코드·키가 이미 번들에 공개).
-window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, get view3dPanel() { return view3dPanel; } };
+window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, get view3dPanel() { return view3dPanel; } };
