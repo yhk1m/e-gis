@@ -50,8 +50,9 @@ describe('labelLayout', () => {
 });
 
 describe('animationFilename', () => {
-  it('레이어이름_시계열.확장자, 파일 이름에 못 쓰는 글자는 _', () => {
-    expect(animationFilename('서울 자치구_시계열_2015~2025', 'gif')).toBe('서울 자치구_시계열_2015~2025_시계열.gif');
+  it('레이어이름_시계열.확장자, 파일 이름에 못 쓰는 글자는 _, 이미 _시계열 이 있으면 안 붙인다', () => {
+    expect(animationFilename('서울 자치구_시계열_2015~2025', 'gif')).toBe('서울 자치구_시계열_2015~2025.gif');
+    expect(animationFilename('인구', 'gif')).toBe('인구_시계열.gif');
     expect(animationFilename('a/b:c', 'mp4')).toBe('a_b_c_시계열.mp4');
     expect(animationFilename('', 'webm')).toBe('지도_시계열.webm');
   });

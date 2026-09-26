@@ -272,7 +272,7 @@ src/ui/panels/SwipePanel.js
 - 프레임: 단계마다 `setIndex(i)` → 지도 `rendercomplete` 대기 → `mapTexture.composeMapCanvas`(3D 가 쓰는 OL 캔버스 합성, html2canvas 아님)로 지도를 뽑고, 그 위에 `ExportTool.drawLegend`(범례)와 연도 라벨(왼쪽 위, 큰 글자)을 캔버스로 얹는다. 배경 타일은 이미 익명 CORS 라 캔버스가 오염되지 않는다.
 - GIF: `gifenc`(MIT, 수 KB) 로 오프라인 인코딩. 유지 시간 = 프레임 지연, 무한 반복. 기본 형식.
 - 동영상: 오프스크린 캔버스 `captureStream(0)` + `MediaRecorder`. mime 우선순위 `video/mp4;codecs=avc1` → `video/webm;codecs=vp9` → `video/webm`; 저장 버튼에 실제 확장자를 표시한다(PowerPoint 는 WebM 을 못 넣는다). 프레임마다 `requestFrame()` 후 유지 시간만큼 기다리므로 녹화는 실시간이다(연도 10개 × 1.2초 ≈ 12초).
-- 저장은 `utils/saveFile.js` 에 `saveBlobAs(filename, blob)` 를 더해 쓴다. 파일 이름 `레이어이름_시계열.gif|mp4|webm`.
+- 저장은 `utils/saveFile.js` 에 `saveBlobAs(filename, blob)` 를 더해 쓴다. 파일 이름 `레이어이름_시계열.gif|mp4|webm` (이름에 이미 `_시계열` 이 있으면 그대로 `레이어이름.gif`).
 - 제한: 필드 30개까지. 3D·지구본이 켜져 있으면 먼저 끈다. 시계열 레이어에만 붙는다(일반 지도 녹화는 범위 밖).
 
 ```

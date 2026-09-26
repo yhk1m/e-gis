@@ -2856,4 +2856,8 @@ Expected: 테스트 전부 PASS, 빌드 성공, 작업 트리 깨끗.
 
 ## 구현하며 바뀐 점
 
-(구현 중 스펙에 없는 결정을 하면 여기에 적는다.)
+- Task 5: `#ts-range` 핸들러는 값을 먼저 읽고 `pause()` 한다(멈추면서 값이 되돌아가던 결함). 구간 수는 `naturalBreaks` 가 감당하는 만큼으로 캡.
+- Task 9: `encodeGif`/`recordVideo` 는 `{ signal, onProgress }` 옵션 객체를 받는다(계획은 signal 만). `beforeCapture` 는 `__egisDebug` 대신 실제 패널 API(`globePanel.exitIfActive()`, `swipePanel.close()`, `view3dPanel.toggle()`, `timeSeriesTool.pause()`)를 쓴다. 추가 보강: 도구가 다른 레이어에 붙어 있으면 캡처 거부, 지도 크기는 첫 프레임 뒤 한 번만 재고 바뀌면 중단, `rendercomplete` 3초 폴백 + 리스너 정리, MediaRecorder 생성 실패 시 트랙 정지, 프레임 유지 시간 상한 10초(GIF 16비트 지연 랩 방지), 인코딩 진행률. 2× 배율은 OL 이 DPR 로만 그리므로 지도 픽셀은 업스케일이고 범례·라벨만 선명하다.
+- Task 9: 파일 이름 — 시계열 레이어 이름에 이미 `_시계열` 이 있으면 접미사를 다시 붙이지 않는다(`서울 자치구_시계열_2015~2025.gif`).
+- Task 11: 하네스는 `builtinDataManager` 대신 builtin GeoJSON 을 직접 받아 연도 열 6개(`2015`…`2025`, 이름이 19xx/20xx 로 시작해야 자동 선택에 걸린다)를 붙여 `projectManager.deserialize` 로 넣는다. 다운로드는 `HTMLAnchorElement.prototype.click` 패치로 가로채 GIF 를 페이지 안에서 파싱한다(프레임 6, 지연 120cs, 1983×1259). MP4 는 헤드리스에서 못 본다 — 배포 뒤 실제 Chrome 에서 한 번 확인.
+- 하네스가 드러낸 기존 결함(이 단계 밖, 별도 수정 필요): `AutoSaveManager` 가 복원 확인 창이 떠 있는 동안 시작 `moveend` 로 기본 뷰(줌 7)를 `eGIS_mapState` 에 덮어써, 2초 넘게 기다렸다가 「복원」을 누르면 저장된 뷰가 사라진다. `promptRestore` 전에 `isRestoring` 을 세우는 식으로 막아야 한다.

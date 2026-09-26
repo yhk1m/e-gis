@@ -52,10 +52,11 @@ export function labelLayout(width, height, scale = 1) {
   };
 }
 
-/** 파일 이름: 레이어이름_시계열.확장자 (파일 이름에 못 쓰는 글자는 _) */
+/** 파일 이름: 레이어이름_시계열.확장자 (파일 이름에 못 쓰는 글자는 _).
+ *  시계열 도구가 만든 레이어(이름_시계열_첫~끝)에는 이미 '시계열'이 있으니 두 번 붙이지 않는다. */
 export function animationFilename(layerName, ext) {
   const base = String(layerName || '').replace(/[\\/:*?"<>|]/g, '_').trim() || '지도';
-  return `${base}_시계열.${ext}`;
+  return base.includes('_시계열') ? `${base}.${ext}` : `${base}_시계열.${ext}`;
 }
 
 /** 프레임 유지 시간(초) → ms. 이상한 값은 1.2초, 최소 100ms */
