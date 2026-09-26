@@ -185,7 +185,7 @@ describe('SwipePanel 열기·닫기', () => {
   });
 });
 
-describe('SwipePanel 과 3D 보기는 배타', () => {
+describe('SwipePanel 과 3D 보기·지구본은 배타', () => {
   it('3D 가 켜져 있으면(주입) 열리지 않고 안내한다', () => {
     const a = { id: 'l-a', name: '아래', olLayer: fakeOlLayer() };
     const { panel, messages } = makeEnv({
@@ -210,6 +210,37 @@ describe('SwipePanel 과 3D 보기는 배타', () => {
 
     view3d.classList.remove('active');
     view3d.setAttribute('aria-pressed', 'false');
+    panel.open();
+    expect(panel.isActive()).toBe(true);
+  });
+
+  it('지구본이 켜져 있으면(주입) 열리지 않고 지구본 안내를 한다', () => {
+    const a = { id: 'l-a', name: '아래', olLayer: fakeOlLayer() };
+    const { panel, messages } = makeEnv({
+      layers: [a], search: '?lab=swipe', panelOptions: { isGlobeActive: () => true }
+    });
+    panel.toggle();
+    expect(panel.isActive()).toBe(false);
+    expect(a.olLayer.handlers).toEqual({});
+    expect(document.getElementById('swipe-controls').hidden).toBe(true);
+    expect(document.getElementById('swipe-divider').hidden).toBe(true);
+    expect(messages.at(-1)).toBe('지구본 보기 중에는 스와이프 비교를 쓸 수 없습니다. 지구본을 닫은 뒤 여세요.');
+  });
+
+  it('3D 와 지구본이 함께 켜져 있으면 3D 안내가 먼저다', () => {
+    const a = { id: 'l-a', name: '아래', olLayer: fakeOlLayer() };
+    const { panel, messages } = makeEnv({
+      layers: [a], search: '?lab=swipe',
+      panelOptions: { isView3DActive: () => true, isGlobeActive: () => true }
+    });
+    panel.open();
+    expect(panel.isActive()).toBe(false);
+    expect(messages.at(-1)).toBe('3D 보기 중에는 스와이프 비교를 쓸 수 없습니다. 2D로 돌아간 뒤 여세요.');
+  });
+
+  it('isGlobeActive 를 주입하지 않으면 지구본 때문에 막히지 않는다', () => {
+    const a = { id: 'l-a', name: '아래', olLayer: fakeOlLayer() };
+    const { panel } = makeEnv({ layers: [a], search: '?lab=swipe' });
     panel.open();
     expect(panel.isActive()).toBe(true);
   });

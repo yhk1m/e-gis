@@ -377,6 +377,15 @@ export class AppLayout {
             <span class="labs-badge" hidden></span>
           </button>
           <!-- 실험 도구 토글(지구본·스와이프)은 뒤 단계에서 이 묶음에 hidden 으로 추가된다 -->
+          <button class="btn btn-tool-labeled" id="globe-toggle" data-tool="globe"
+                  title="지구본으로 보기" aria-pressed="false" hidden>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M3 12h18"/>
+              <path d="M12 3a13 13 0 0 1 0 18M12 3a13 13 0 0 0 0 18"/>
+            </svg>
+            <span class="btn-tool-label">지구본</span>
+          </button>
           <button class="btn btn-tool-labeled" id="swipe-toggle" data-tool="swipe" hidden
                   title="스와이프 비교 — 레이어나 배경지도 둘을 막대로 비교" aria-pressed="false">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -489,6 +498,32 @@ export class AppLayout {
                   <polygon points="18,28 14.5,19 18,21.5 21.5,19" class="view3d-compass-south"/>
                 </g>
               </svg>
+            </div>
+          </div>
+          <div id="globe-controls" class="globe-controls" hidden>
+            <div class="globe-panel" role="group" aria-label="지구본">
+              <label class="globe-row">
+                투영법
+                <select id="globe-projection" aria-label="투영법"></select>
+              </label>
+              <label class="globe-row globe-check">
+                <input type="checkbox" id="globe-graticule" checked>
+                경위선
+              </label>
+              <label class="globe-row globe-check">
+                <input type="checkbox" id="globe-land" checked>
+                배경 육지
+              </label>
+              <p id="globe-skipped" class="globe-hint" hidden></p>
+              <p id="globe-land-error" class="globe-hint globe-hint-warn" hidden>배경 육지를 불러오지 못했습니다.</p>
+              <p class="globe-hint">
+                <span class="globe-hint-line">끌어서 돌리고, 휠이나 두 손가락으로 확대합니다.</span>
+                <span class="globe-hint-line">더블클릭하면 처음 자세로 돌아갑니다.</span>
+              </p>
+              <div class="globe-actions">
+                <button id="globe-save" class="btn btn-primary globe-save" type="button">PNG로 저장</button>
+                <button id="globe-close" class="btn globe-close" type="button">닫기</button>
+              </div>
             </div>
           </div>
           <div id="swipe-controls" class="swipe-controls" hidden>

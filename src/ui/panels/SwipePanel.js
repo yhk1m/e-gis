@@ -7,8 +7,8 @@
  * 대상이 배경지도면 카탈로그 소스로 TileLayer 를 만들어 baseLayer 바로 위(index 1)에 끼운다.
  * 세션 도구라 아무것도 저장하지 않는다.
  *
- * 3D 보기와는 배타다. 3D 가 켜져 있으면 열지 않고 안내만 한다. 반대 방향(3D 를 켤 때 스와이프 닫기)은
- * main.js 의 `case 'view3d'` 가 close() 를 불러 맞춘다.
+ * 3D 보기·지구본(실험실 `globe`)과는 배타다. 둘 중 하나가 켜져 있으면 열지 않고 안내만 한다(3D 를 먼저 본다).
+ * 반대 방향(3D·지구본을 켤 때 스와이프 닫기)은 main.js 의 `case 'view3d'`·`case 'globe'` 가 close() 를 불러 맞춘다.
  * 글래스 데스크톱에서는 지도가 창 전체라, 막대 비율을 보이는 지도 칸(--glass-*-offset 안쪽)으로 제한한다.
  * 설계: docs/superpowers/specs/2026-09-25-labs-design.md 「3단계」
  */
@@ -26,6 +26,7 @@ export const SWIPE_LAB_ID = 'swipe';
 export const GLASS_DESKTOP_QUERY = '(min-width: 1025px) and (pointer: fine)';
 
 const VIEW3D_MESSAGE = '3D 보기 중에는 스와이프 비교를 쓸 수 없습니다. 2D로 돌아간 뒤 여세요.';
+const GLOBE_MESSAGE = '지구본 보기 중에는 스와이프 비교를 쓸 수 없습니다. 지구본을 닫은 뒤 여세요.';
 
 /** 3D 보기가 켜져 있는가 — View3DPanel 이 켤 때 #view3d-toggle 에 .active·aria-pressed="true" 를 둔다. */
 function defaultIsView3DActive() {
@@ -86,15 +87,17 @@ export class SwipePanel {
    *   mapManager: object, layerManager: object, labs: object,
    *   onMessage?: (msg: string) => void,
    *   isView3DActive?: () => boolean,
+   *   isGlobeActive?: () => boolean,   지구본이 켜져 있는가 (기본: 늘 false — main.js 가 globePanel.isActive() 를 넘긴다)
    *   glassInsets?: () => ({panel: number, top: number, bottom: number}|null)
    * }} options
    */
-  constructor({ mapManager, layerManager, labs, onMessage, isView3DActive, glassInsets }) {
+  constructor({ mapManager, layerManager, labs, onMessage, isView3DActive, isGlobeActive, glassInsets }) {
     this.mapManager = mapManager;
     this.layerManager = layerManager;
     this.labs = labs;
     this.onMessage = onMessage || (() => {});
     this.isView3DActive = isView3DActive || defaultIsView3DActive;
+    this.isGlobeActive = isGlobeActive || (() => false);
     this.glassInsets = glassInsets || defaultGlassInsets;
     this.tool = null;
     this.tempLayer = null;      // 배경지도 비교용 임시 TileLayer
@@ -158,6 +161,11 @@ export class SwipePanel {
     if (this.isView3DActive()) {
       this.close();
       this.onMessage(VIEW3D_MESSAGE);
+      return;
+    }
+    if (this.isGlobeActive()) {
+      this.close();
+      this.onMessage(GLOBE_MESSAGE);
       return;
     }
     const options = this.buildOptions();

@@ -77,6 +77,7 @@ import { setCrsPrompt } from './core/crsResolver.js';
 import { crsConfirmDialog } from './ui/dialogs/CrsConfirmDialog.js';
 import { View3DPanel } from './ui/panels/View3DPanel.js';
 import { SwipePanel } from './ui/panels/SwipePanel.js';
+import { GlobePanel } from './ui/panels/GlobePanel.js';
 
 /**
  * 앱 초기화
@@ -134,19 +135,31 @@ function initApp() {
   new LayerPanel('layer-list');
   new BrowserPanel('file-drop-zone');
 
+  // 3D 보기와 지구본은 배타 — 서로 켜기 전에 상대를 끈다
   view3dPanel = new View3DPanel({
     mapManager,
     layerManager,
-    onMessage: showStatusMessage
+    onMessage: showStatusMessage,
+    beforeEnter: () => globePanel?.exitIfActive()
   });
   view3dPanel.init();
+
+  globePanel = new GlobePanel({
+    mapManager,
+    layerManager,
+    labs,
+    onMessage: showStatusMessage,
+    exitView3D: async () => { if (view3dPanel?.controller) await view3dPanel.toggle(); }
+  });
+  globePanel.init();
 
   swipePanel = new SwipePanel({
     mapManager,
     layerManager,
     labs,
     onMessage: showStatusMessage,
-    isView3DActive: () => !!view3dPanel?.controller
+    isView3DActive: () => !!view3dPanel?.controller,
+    isGlobeActive: () => !!globePanel?.isActive()
   });
   swipePanel.init();
 
@@ -493,6 +506,11 @@ function initToolbar() {
         return;
       case 'swipe':
         swipePanel?.toggle();
+        return;
+      case 'globe':
+        // 지구본과 스와이프는 배타 — 지구본을 켜고 끌 때 스와이프를 먼저 닫는다(닫혀 있으면 아무 일 없음)
+        swipePanel?.close();
+        globePanel?.toggle();
         return;
       case 'view3d':
         // 3D 와 스와이프는 배타 — 3D 를 켜고 끌 때 스와이프를 먼저 닫는다(닫혀 있으면 아무 일 없음)
@@ -1260,6 +1278,9 @@ let view3dPanel = null;
 /** 스와이프 비교 패널(실험실 swipe) — 진단 훅에서도 쓴다 */
 let swipePanel = null;
 
+/** 지구본·투영법 보기 패널(실험실 globe) — 진단 훅에서도 쓴다 */
+let globePanel = null;
+
 // 최근 파일 관리 (최대 5개)
 const RECENT_FILES_KEY = 'egis_recent_files';
 const MAX_RECENT_FILES = 5;
@@ -1385,4 +1406,4 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // 진단용 훅 — 헤드리스 재현 테스트(버그 리포트 검증)에서 내부 상태 접근용.
 // 클라이언트 앱이라 보안 경계 아님(모든 코드·키가 이미 번들에 공개).
-window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, geojsonLoader, get view3dPanel() { return view3dPanel; }, get swipePanel() { return swipePanel; } };
+window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, geojsonLoader, get view3dPanel() { return view3dPanel; }, get swipePanel() { return swipePanel; }, get globePanel() { return globePanel; } };
