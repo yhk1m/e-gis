@@ -78,6 +78,9 @@ import { crsConfirmDialog } from './ui/dialogs/CrsConfirmDialog.js';
 import { View3DPanel } from './ui/panels/View3DPanel.js';
 import { SwipePanel } from './ui/panels/SwipePanel.js';
 import { GlobePanel } from './ui/panels/GlobePanel.js';
+import { timeSeriesPanel } from './ui/panels/TimeSeriesPanel.js';
+import { timeSeriesTool } from './tools/TimeSeriesTool.js';
+import { bindLabMenuItems } from './labs/labMenu.js';
 
 /**
  * 앱 초기화
@@ -112,6 +115,34 @@ function initApp() {
   bindGlass(labs);
   bindLabsButton(labs, document.getElementById('labs-toggle'));
   bindClassFill(labs, { mapEl: document.getElementById('map'), tool: choroplethTool, popover: classFillPopover });
+
+  // 실험 메뉴 항목(data-lab) 숨김/표시 — 켜고 끄면 바로 반영
+  bindLabMenuItems(labs);
+
+  // 시계열: 실험을 켜면 이미 있는 시계열 레이어의 컨트롤을 되살리고, 끄면 컨트롤만 걷는다
+  // (레이어는 저장된 연도의 정적 단계구분도로 남는다)
+  // 설정 창 안내는 기본 alert 그대로 — 같은 모달 규약의 ChoroplethPanel 도 alert 이고,
+  // 모달이 열린 동안 상태표시줄 문구는 눈에 띄지 않는다
+  // timeSeriesTool.onSave(애니메이션 저장)는 AnimationExportDialog 와 함께 이어 붙인다
+  labs.onChange((id, on) => {
+    if (id !== 'time-series') return;
+    if (on) timeSeriesTool.restoreControls();
+    else timeSeriesTool.detach();
+  });
+  // 복원 뒤(프로젝트 열기·자동 복원 완료) 컨트롤 되살리기.
+  // 이 리스너는 restoreState/loadProject 의 try 안에서 불리므로 여기서 던지면 복원 전체가
+  // 실패로 찍힌다 — 스스로 잡는다. (autoSaveManager.init 보다 앞이라 STATE_RESTORED 를 놓치지 않는다)
+  const restoreTimeSeries = () => {
+    if (!labs.isOn('time-series')) return;
+    try {
+      timeSeriesTool.restoreControls();
+    } catch (e) {
+      console.error('시계열 컨트롤 복원 실패:', e);
+    }
+  };
+  eventBus.on(Events.PROJECT_LOADED, restoreTimeSeries);
+  eventBus.on(Events.STATE_RESTORED, restoreTimeSeries);
+  eventBus.on(Events.PROJECT_NEW, () => timeSeriesTool.detach());
 
   // 4. 지도 초기화
   mapManager.init('map', {
@@ -858,6 +889,10 @@ function handleMenuAction(action) {
     case 'analysis-choropleth':
       choroplethPanel.show();
       break;
+    case 'analysis-time-series':
+      if (!labs.isOn('time-series')) break;   // 메뉴가 숨겨져 있어도 단축 경로로 올 수 있다
+      timeSeriesPanel.show();
+      break;
     case 'analysis-grid':
       gridPanel.show();
       break;
@@ -1406,4 +1441,4 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // 진단용 훅 — 헤드리스 재현 테스트(버그 리포트 검증)에서 내부 상태 접근용.
 // 클라이언트 앱이라 보안 경계 아님(모든 코드·키가 이미 번들에 공개).
-window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, geojsonLoader, get view3dPanel() { return view3dPanel; }, get swipePanel() { return swipePanel; }, get globePanel() { return globePanel; } };
+window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, geojsonLoader, timeSeriesTool, timeSeriesPanel, get view3dPanel() { return view3dPanel; }, get swipePanel() { return swipePanel; }, get globePanel() { return globePanel; } };

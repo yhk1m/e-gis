@@ -5869,6 +5869,168 @@ body.exporting .swipe-controls {
   display: none;
 }
 
+/* ===== 시계열 단계구분도 (실험실 time-series) ===== */
+/* 지도 아래 가운데 슬라이더 박스 — TimeSeriesTool 이 #map 에 붙인다.
+   범례(.choropleth-legend, z-index 100)와 같은 높이(bottom 40px)이고 그 위에 뜬다. */
+.time-series-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--map-overlay-bg);
+  box-shadow: var(--shadow-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  max-width: calc(100% - 32px);
+  white-space: nowrap;
+}
+
+/* 재생·닫기 — 선 SVG 아이콘 버튼 */
+.time-series-controls .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+#ts-play[aria-pressed="true"] {
+  color: var(--color-primary);
+}
+
+#ts-range {
+  width: 220px;
+  min-width: 120px;
+  flex: 0 1 auto;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+/* 지금 연도(필드 이름) */
+.time-series-field {
+  min-width: 64px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+#ts-speed {
+  font-size: var(--font-size-xs);
+  padding: 2px 4px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+#ts-save {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.time-series-controls .btn-outline,
+.time-series-fields-head .btn-outline {
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.time-series-controls .btn-outline:hover,
+.time-series-fields-head .btn-outline:hover {
+  background: var(--color-primary-light);
+}
+
+#ts-close:hover {
+  color: var(--text-primary);
+}
+
+/* 내보내기·3D 캡처에 찍히지 않게 */
+body.exporting .time-series-controls {
+  display: none;
+}
+
+/* 설정 창 — ChoroplethPanel 규약(.choropleth-*) 위에 필드 목록만 더한다 */
+.time-series-content {
+  width: 400px;
+  max-width: calc(100vw - 32px);
+}
+
+.time-series-intro {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--spacing-md);
+  line-height: 1.5;
+}
+
+.time-series-fields-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.time-series-fields-head label {
+  margin-bottom: 0;
+}
+
+.time-series-fields-head .btn-outline {
+  flex-shrink: 0;
+}
+
+.time-series-fields {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--bg-input);
+}
+
+.time-series-field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 3px 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.time-series-field-row:hover {
+  background: var(--bg-hover);
+}
+
+.time-series-field-row input {
+  margin: 0;
+}
+
+.time-series-fields-empty {
+  margin: var(--spacing-xs) 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .time-series-controls {
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  #ts-range {
+    width: 120px;
+    min-width: 80px;
+  }
+}
+
 /* ===== 3D 보기: 태블릿 최적화 ===== */
 /* 손가락으로 잡을 수 있게 키운다. 기준은 이 저장소의 다른 태블릿 규칙과 같다. */
 @media (pointer: coarse) and (max-width: 1366px),
