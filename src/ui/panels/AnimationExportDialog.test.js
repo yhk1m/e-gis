@@ -71,7 +71,7 @@ describe('AnimationExportDialog', () => {
     expect(p.beforeCapture).toHaveBeenCalled();
     expect(p.captureFrames).toHaveBeenCalledWith(expect.objectContaining({ scale: 2, includeLabel: false, includeLegend: true }));
     expect(p.encodeGif).toHaveBeenCalledWith(['f1', 'f2', 'f3'], 1200, expect.anything());
-    expect(p.saveBlobAs).toHaveBeenCalledWith('구_시계열_2015~2025_시계열.gif', expect.any(Blob));
+    expect(p.saveBlobAs).toHaveBeenCalledWith('구_시계열_2015~2025.gif', expect.any(Blob));
     expect(seen).toEqual(['2/3 프레임', '3/3 프레임', 'GIF 만드는 중… 3/3']);
     expect(document.querySelector('.anim-export-modal')).toBeNull();   // 끝나면 닫힌다
   });
@@ -93,7 +93,7 @@ describe('AnimationExportDialog', () => {
     expect(document.querySelector('#anim-run').textContent).toBe('WEBM 만들기');
     await d.run();
     expect(p.recordVideo).toHaveBeenCalledWith(['f1', 'f2', 'f3'], 1200, 'video/webm', expect.anything());
-    expect(p.saveBlobAs).toHaveBeenCalledWith('구_시계열_2015~2025_시계열.webm', expect.any(Blob));
+    expect(p.saveBlobAs).toHaveBeenCalledWith('구_시계열_2015~2025.webm', expect.any(Blob));
   });
 
   it('취소하면 signal 이 중단되고 저장하지 않는다', async () => {
