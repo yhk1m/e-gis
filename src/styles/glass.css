@@ -80,11 +80,12 @@
 [data-surface="glass"] .egis-basemap-panel,
 [data-surface="glass"] .view3d-panel,
 [data-surface="glass"] .swipe-panel,
+[data-surface="glass"] .globe-panel,
 [data-surface="glass"] .map-scale-bar {
   text-shadow: var(--glass-text-halo);
 }
 /* 버튼은 브라우저 기본 스타일이 text-shadow 를 없애므로 다시 준다 */
-[data-surface="glass"] :is(#menubar .menu-button, #toolbar .btn, .btn-community, .theme-toggle, .panel-tab, .sidebar-toggle, .toolbar-collapse-btn, #left-panel .btn-icon, .swipe-close) {
+[data-surface="glass"] :is(#menubar .menu-button, #toolbar .btn, .btn-community, .theme-toggle, .panel-tab, .sidebar-toggle, .toolbar-collapse-btn, #left-panel .btn-icon, .swipe-close, .globe-close) {
   text-shadow: var(--glass-text-halo);
 }
 [data-surface="glass"] :is(input, select, textarea, .btn-primary, .btn-community-primary, .labs-badge, .dropdown-menu, .crs-dropdown-menu, .layer-context-menu, .search-results) {
@@ -113,6 +114,7 @@
 [data-surface="glass"] .egis-basemap-panel,
 [data-surface="glass"] .view3d-panel,
 [data-surface="glass"] .swipe-panel,
+[data-surface="glass"] .globe-panel,
 [data-surface="glass"] .chart-map-legend,
 [data-surface="glass"] .isochrone-legend,
 [data-surface="glass"] .raster-analysis-legend,
@@ -167,6 +169,7 @@
   [data-surface="glass"] .egis-basemap-panel,
   [data-surface="glass"] .view3d-panel,
   [data-surface="glass"] .swipe-panel,
+  [data-surface="glass"] .globe-panel,
   [data-surface="glass"] .chart-map-legend,
   [data-surface="glass"] .isochrone-legend,
   [data-surface="glass"] .raster-analysis-legend,
@@ -243,6 +246,7 @@
   [data-surface="glass"] .egis-basemap { top: calc(var(--glass-top-offset) + 156px); }
   [data-surface="glass"] .view3d-controls { top: calc(var(--glass-top-offset) + 12px); }
   [data-surface="glass"] .swipe-controls { top: calc(var(--glass-top-offset) + 12px); }
+  [data-surface="glass"] .globe-controls { top: calc(var(--glass-top-offset) + 12px); }
   /* .egis-basemap-panel 은 .egis-basemap 안에 top:0 으로 붙으므로 따로 밀지 않는다 */
 
   /* 아래에 붙는 요소 */

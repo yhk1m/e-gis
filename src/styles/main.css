@@ -5613,6 +5613,103 @@ body.exporting .egis-basemap-panel {
   z-index: 20;
 }
 
+/* ===== 지구본 (실험실 globe) ===== */
+/* 컨트롤 박스 — 3D 컨트롤과 같은 자리(지구본 캔버스가 지도와 OL 컨트롤을 덮는다). 3D 와 동시에 뜨지 않는다 */
+.globe-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 30;
+}
+
+.globe-controls[hidden] {
+  display: none;
+}
+
+.globe-panel {
+  width: 260px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--map-overlay-bg);
+  font-size: 12px;
+}
+
+.globe-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.globe-row + .globe-row {
+  margin-top: 8px;
+}
+
+.globe-row select {
+  flex: 1;
+  min-width: 120px;
+}
+
+.globe-check {
+  cursor: pointer;
+}
+
+.globe-check input {
+  margin: 0;
+}
+
+.globe-hint {
+  margin: 10px 0 0;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.globe-hint[hidden] {
+  display: none;
+}
+
+.globe-hint-line {
+  display: block;
+}
+
+.globe-hint-warn {
+  color: var(--color-warning);
+}
+
+.globe-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.globe-save,
+.globe-close {
+  cursor: pointer;
+  padding: var(--spacing-xs) var(--spacing-md);
+}
+
+.globe-close {
+  background: var(--bg-button);
+  color: var(--text-primary);
+}
+
+/* 휴대폰: 3D 와 같이 아래로 눕힌다 */
+@media (max-width: 768px) {
+  .globe-controls {
+    top: auto;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+  }
+
+  .globe-panel {
+    width: auto;
+  }
+}
+
 /* ===== 스와이프 비교 (실험실 swipe) ===== */
 /* 컨트롤 박스 — 오른쪽 위, 지도 컨트롤 열(확대·나침반·내 위치·배경지도, right: --spacing-sm, 폭 32px)의 왼쪽.
    스와이프는 3D 와 달리 지도를 그대로 쓰므로 그 버튼들을 가리면 비교하는 동안 확대·배경지도를 못 쓴다. */

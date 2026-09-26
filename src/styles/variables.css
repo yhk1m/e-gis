@@ -92,6 +92,13 @@
 
   /* 지도 오버레이 */
   --map-overlay-bg: rgba(255, 255, 255, 0.9);
+
+  /* 지구본 (실험실 globe) */
+  --globe-ocean: #dbeafe;
+  --globe-land: #e7e5e4;
+  --globe-land-stroke: #a8a29e;
+  --globe-graticule: rgba(100, 116, 139, 0.35);
+  --globe-outline: #64748b;
 }
 
 /* ===== 다크 모드 ===== */
@@ -135,4 +142,11 @@
 
   /* 지도 오버레이 */
   --map-overlay-bg: rgba(30, 41, 59, 0.9);
+
+  /* 지구본 (실험실 globe) */
+  --globe-ocean: #172554;
+  --globe-land: #334155;
+  --globe-land-stroke: #475569;
+  --globe-graticule: rgba(148, 163, 184, 0.3);
+  --globe-outline: #94a3b8;
 }
