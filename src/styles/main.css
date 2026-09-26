@@ -243,6 +243,11 @@ input:focus, select:focus, textarea:focus {
   background: var(--bg-hover);
 }
 
+/* 실험 기능 메뉴 항목 — 실험이 꺼져 있으면 hidden */
+.dropdown-item[hidden] {
+  display: none;
+}
+
 .dropdown-divider {
   height: 1px;
   background: var(--border-color);
