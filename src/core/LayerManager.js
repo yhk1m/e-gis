@@ -721,7 +721,7 @@ class LayerManager {
         const colorIdx = cfg.tool.getColorIndex(val, cfg.breaks);
         const color = cfg.colors[colorIdx] || cfg.colors[0];
         return new Style({
-          fill: new Fill({ color: cfg.tool.hexToRgba(color, fillOpacity) }),
+          fill: new Fill({ color: cfg.tool.classFillColor(cfg, colorIdx, fillOpacity) }),
           stroke: makeStroke({
             color: syncStroke ? cfg.tool.darkenColor(color) : strokeColor,
             width: strokeWidth,

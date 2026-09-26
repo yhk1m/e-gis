@@ -3,7 +3,6 @@
  * 속성값에 따라 피처 색상을 다르게 표현
  */
 
-import { Style, Fill, Stroke } from "ol/style";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { layerManager } from "../core/LayerManager.js";
@@ -13,6 +12,7 @@ import { isVectorLayer, collectNumericFields } from "../utils/layerSelect.js";
 import { sampleColorRamp, lerpColor } from "../utils/colorRamp.js";
 import { formatNumber } from "./legendModel.js";
 import { syncLegendVisibility } from "./legendVisibility.js";
+import { fillFor } from "./classFillCanvas.js";
 
 // 색상 팔레트 정의
 const COLOR_RAMPS = {
@@ -205,23 +205,6 @@ class ChoroplethTool {
     // 색상 반전
     const selectedColors = reverse ? [...colors].reverse() : colors;
 
-    const self = this;
-    const styleFunction = function(feature) {
-      const val = parseFloat(feature.get(attribute));
-      if (isNaN(val)) {
-        return new Style({
-          fill: new Fill({ color: "rgba(128, 128, 128, 0.5)" }),
-          stroke: new Stroke({ color: "#666", width: 1 })
-        });
-      }
-      const colorIdx = self.getColorIndex(val, breaks);
-      const color = selectedColors[colorIdx] || selectedColors[0];
-      return new Style({
-        fill: new Fill({ color: self.hexToRgba(color, 0.7) }),
-        stroke: new Stroke({ color: self.darkenColor(color), width: 1 })
-      });
-    };
-
     // 같은 원본에서 만든 기존 파생 레이어 제거 (재적용 시 교체)
     if (this.derivedBySource.has(layerId)) {
       const prevDerivedId = this.derivedBySource.get(layerId);
@@ -233,7 +216,7 @@ class ChoroplethTool {
     // 피처 복제 → 새 벡터 레이어로 등록
     const clonedFeatures = sourceLayer.source.getFeatures().map(f => f.clone());
     const newSource = new VectorSource({ features: clonedFeatures });
-    const newOlLayer = new VectorLayer({ source: newSource, style: styleFunction });
+    const newOlLayer = new VectorLayer({ source: newSource });
 
     const newLayerId = layerManager.addLayer({
       name: `${sourceLayer.name}_단계구분_${attribute}`,
@@ -247,7 +230,8 @@ class ChoroplethTool {
     this.derivedBySource.set(layerId, newLayerId);
     this.sourceByDerived.set(newLayerId, layerId);
 
-    // 단계구분도 설정을 layerInfo에 저장 → LayerManager가 투명도 변경 시 재구성
+    // 단계구분도 설정을 layerInfo에 심는다. 스타일 함수는 LayerManager.updateLayerStyle 한 곳이
+    // 만든다(투명도·테두리·구간 채움이 모두 거기서 나온다).
     const newLayerInfo = layerManager.getLayer(newLayerId);
     if (newLayerInfo) {
       newLayerInfo._choroplethConfig = {
@@ -261,6 +245,8 @@ class ChoroplethTool {
         rounding: 0
       };
       newLayerInfo.fillOpacity = 0.7;
+      newLayerInfo.strokeWidth = 1;   // 예전 apply 의 스타일 함수와 같은 두께 (addLayer 기본은 2)
+      layerManager.updateLayerStyle(newLayerId);
     }
 
     // 범례는 파생 레이어 기준으로 생성
@@ -479,6 +465,15 @@ class ChoroplethTool {
     const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 40);
     const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 40);
     return "#" + r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0");
+  }
+
+  /**
+   * 구간 하나의 채움 — LayerManager.updateLayerStyle 이 Fill.color 에 넣는다.
+   * fills 가 없으면 지금처럼 rgba 문자열, 있으면 CanvasPattern(실험 class-fill).
+   */
+  classFillColor(cfg, classIndex, fillOpacity) {
+    const base = cfg.colors[classIndex] || cfg.colors[0];
+    return fillFor(cfg.fills ? cfg.fills[classIndex] : undefined, base, fillOpacity, 1);
   }
 
   /**
