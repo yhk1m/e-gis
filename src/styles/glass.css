@@ -272,6 +272,16 @@
   [data-surface="glass"] #left-panel:not(.hidden) ~ #map-container .sidebar-toggle {
     bottom: calc(55% + var(--glass-bottom-offset, 0px) + var(--glass-gap));
   }
+  /* 3D·지구본 컨트롤은 휴대폰에서 main.css 가 아래(bottom:10px)로 눕히는데, 위 부유 규칙의 top 이 더 특이해 top·bottom 이 둘 다 잡히면
+     상자가 지도 높이만큼 늘어난다 — top 을 풀고 bottom 은 상태줄 카드 위로 */
+  [data-surface="glass"] :is(.view3d-controls, .globe-controls) {
+    top: auto;
+    bottom: calc(var(--glass-bottom-offset, 0px) + 10px);
+  }
+  /* 시계열 슬라이더가 있을 때 범례를 올리는 main.css 규칙(bottom:120px)도 상태줄 오프셋을 더해야 슬라이더와 안 겹친다 */
+  [data-surface="glass"] #map:has(> .time-series-controls) .choropleth-legend {
+    bottom: calc(var(--glass-bottom-offset, 0px) + 120px);
+  }
   /* 서랍 시트는 메뉴 팝오버처럼 진한 유리 (--bg-panel 은 스크림 너머에서 너무 옅다) */
   [data-surface="glass"] .mobile-drawer-sheet { background-color: var(--glass-popover-bg); }
   /* 서랍 안으로 옮겨진 툴바·드롭다운은 카드·블러를 벗는다 — 시트가 이미 유리다 */
