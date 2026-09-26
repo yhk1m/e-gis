@@ -12,7 +12,8 @@ import { isVectorLayer, collectNumericFields } from "../utils/layerSelect.js";
 import { sampleColorRamp, lerpColor } from "../utils/colorRamp.js";
 import { formatNumber } from "./legendModel.js";
 import { syncLegendVisibility } from "./legendVisibility.js";
-import { fillFor } from "./classFillCanvas.js";
+import { fillFor, tileDataUrl, onFillAssetsReady } from "./classFillCanvas.js";
+import { normalizeFill, isSolid } from "./classFill.js";
 
 // 색상 팔레트 정의
 const COLOR_RAMPS = {
@@ -42,6 +43,17 @@ class ChoroplethTool {
     this.legends = new Map();              // derivedLayerId -> legend element
     this.derivedBySource = new Map();      // sourceLayerId -> derivedLayerId
     this.sourceByDerived = new Map();      // derivedLayerId -> sourceLayerId
+
+    /** 범례 색 칸 클릭 훅 — labs/classFillBinding 이 실험이 켜졌을 때 심는다. null 이면 아무 일도 없다. */
+    this.onLegendColorClick = null;
+
+    // 이미지 채움 디코딩이 끝나면 그 이미지를 쓰는 레이어를 다시 그린다 (fillFor 는 동기라 기다릴 수 없다)
+    onFillAssetsReady(() => {
+      layerManager.getAllLayers().forEach((l) => {
+        const fills = l._choroplethConfig && l._choroplethConfig.fills;
+        if (fills && fills.some((f) => f && f.kind === 'image')) this.restyle(l.id);
+      });
+    });
 
     // 레이어 삭제 이벤트 리스너
     eventBus.on(Events.LAYER_REMOVED, (data) => {
@@ -311,7 +323,7 @@ class ChoroplethTool {
     const roundingSel = legendEl.querySelector('.choropleth-legend-rounding');
     if (roundingSel) roundingSel.value = String(rounding);
 
-    this.renderLegendItems(legendEl, breaks, colors, unit, format, rounding);
+    this.renderLegendItems(legendEl, breaks, colors, unit, format, rounding, cfg.fills || null);
 
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
@@ -324,7 +336,12 @@ class ChoroplethTool {
     }
   }
 
-  renderLegendItems(legendEl, breaks, colors, unit, format, rounding = 0) {
+  /**
+   * 범례 항목(색 칸 + 구간 라벨)을 그린다.
+   * 색 칸은 data-class="i" 를 달고, 채움이 단색이 아니면 24px 패턴 타일을 배경 이미지로 깐다
+   * (타일을 못 만들면 — 캔버스 없음·이미지 디코딩 전 — 기준색만 칠한다).
+   */
+  renderLegendItems(legendEl, breaks, colors, unit, format, rounding = 0, fills = null) {
     const itemsEl = legendEl.querySelector('.choropleth-legend-items');
     if (!itemsEl) return;
     let html = '';
@@ -332,9 +349,14 @@ class ChoroplethTool {
       const minVal = formatNumber(breaks[i], format, rounding);
       const maxVal = formatNumber(breaks[i + 1], format, rounding);
       const range = `${minVal} - ${maxVal}`;
+      const fill = fills ? fills[i] : null;
+      const tile = isSolid(fill) ? null : tileDataUrl(fill, colors[i], 24);
+      const style = tile
+        ? `background-color:${colors[i]};background-image:url(${tile})`
+        : `background:${colors[i]}`;
       html += `
         <div class="choropleth-legend-item">
-          <span class="choropleth-legend-color" style="background:${colors[i]}"></span>
+          <span class="choropleth-legend-color" data-class="${i}" style="${style}"></span>
           <span class="choropleth-legend-label">${range}${unit ? ' ' + this.escapeHtml(unit) : ''}</span>
         </div>`;
     }
@@ -353,6 +375,17 @@ class ChoroplethTool {
     const persist = () => {
       eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
     };
+
+    // 색 칸 클릭 → 훅. 항목이 다시 그려져도 살아 있도록 컨테이너에 위임한다.
+    // 실험 켜짐 여부는 훅을 심는 쪽(labs 바인딩)이 판단한다 — 여기서는 labs 를 모른다.
+    const itemsEl = legendEl.querySelector('.choropleth-legend-items');
+    if (itemsEl) {
+      itemsEl.addEventListener('click', (e) => {
+        const swatch = e.target.closest && e.target.closest('.choropleth-legend-color');
+        if (!swatch || typeof this.onLegendColorClick !== 'function') return;
+        this.onLegendColorClick({ layerId, classIndex: Number(swatch.dataset.class), anchor: swatch });
+      });
+    }
 
     // 형식·반올림·단위 설정 숨기기/표시 토글
     const toggleBtn = legendEl.querySelector('.choropleth-legend-toggle');
@@ -384,11 +417,7 @@ class ChoroplethTool {
       });
     });
 
-    const rerenderItems = () => {
-      const cfg = layerInfo._choroplethConfig;
-      if (!cfg) return;
-      this.renderLegendItems(legendEl, cfg.breaks, cfg.colors, cfg.unit || '', cfg.format || 'comma', cfg.rounding || 0);
-    };
+    const rerenderItems = () => this.refreshLegendItems(layerId);
 
     const unitInput = legendEl.querySelector('.choropleth-legend-unit');
     if (unitInput) {
@@ -419,6 +448,63 @@ class ChoroplethTool {
         persist();
       });
     }
+  }
+
+  /** 레이어의 단계구분도 설정 (없으면 null) */
+  configOf(layerId) {
+    const layerInfo = layerManager.getLayer(layerId);
+    return (layerInfo && layerInfo._choroplethConfig) || null;
+  }
+
+  /** 범례 항목만 설정대로 다시 그린다 */
+  refreshLegendItems(layerId) {
+    const legendEl = this.legends.get(layerId);
+    const cfg = this.configOf(layerId);
+    if (!legendEl || !cfg) return;
+    this.renderLegendItems(legendEl, cfg.breaks, cfg.colors, cfg.unit || '', cfg.format || 'comma', cfg.rounding || 0, cfg.fills || null);
+  }
+
+  /** 스타일 함수 재구성(LAYER_STYLE_CHANGED 발행 포함) + 범례 갱신 */
+  restyle(layerId) {
+    layerManager.updateLayerStyle(layerId);
+    this.refreshLegendItems(layerId);
+  }
+
+  /**
+   * 구간 하나의 채움 사양을 바꾼다 (실험 class-fill).
+   * 전부 단색이면 fills 키를 지워 저장본을 예전 모양으로 되돌린다.
+   * @returns {boolean}
+   */
+  setClassFill(layerId, classIndex, spec) {
+    const cfg = this.configOf(layerId);
+    if (!cfg || !Number.isInteger(classIndex) || classIndex < 0 || classIndex >= cfg.colors.length) return false;
+    const fills = cfg.fills ? cfg.fills.slice() : cfg.colors.map(() => ({ kind: 'solid' }));
+    fills[classIndex] = normalizeFill(spec);
+    if (fills.every(isSolid)) delete cfg.fills;
+    else cfg.fills = fills;
+    this.restyle(layerId);
+    return true;
+  }
+
+  /** 구간 하나의 기준색을 바꾼다. colors 는 새 배열로(복제본과 공유하지 않게). */
+  setClassColor(layerId, classIndex, hex) {
+    const cfg = this.configOf(layerId);
+    if (!cfg || !/^#[0-9a-fA-F]{6}$/.test(String(hex)) || !Number.isInteger(classIndex) || classIndex < 0 || classIndex >= cfg.colors.length) return false;
+    const colors = cfg.colors.slice();
+    colors[classIndex] = hex.toLowerCase();
+    cfg.colors = colors;
+    this.restyle(layerId);
+    return true;
+  }
+
+  /** 모든 구간의 채움을 한꺼번에 (프리셋). null 이면 팔레트로 되돌린다. */
+  setAllFills(layerId, fills) {
+    const cfg = this.configOf(layerId);
+    if (!cfg) return false;
+    if (!Array.isArray(fills) || fills.every(isSolid)) delete cfg.fills;
+    else cfg.fills = cfg.colors.map((_, i) => normalizeFill(fills[i]));
+    this.restyle(layerId);
+    return true;
   }
 
   /**
