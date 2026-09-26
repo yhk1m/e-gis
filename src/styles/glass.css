@@ -7,11 +7,12 @@
  * 색 토큰을 반투명으로 바꾸고, 지도 위에 얹히는 면에 backdrop-filter + 광택 그라디언트를 건다.
  * 글자 색 토큰은 손대지 않는다 — 대비는 배경 불투명도로 지킨다.
  *
- * 데스크톱에서는 지도를 창(#app) 전체에 깔아 메뉴바·툴바·상태줄·왼쪽 패널 카드가 전부 지도 위에 뜬다.
- * 지도 위 부유 요소는 glass.js 가 #map-container 에 두는 세 오프셋만큼 민다.
+ * 모든 폭에서 지도를 창(#app) 전체에 깔아 메뉴바·툴바·상태줄·왼쪽 패널 카드가 전부 지도 위에 뜬다
+ * (휴대폰은 왼쪽 패널이 아래 시트, 툴바·메뉴는 서랍 — 2026-09-26 휴대폰 셸 개편).
+ * 지도 위 부유 요소는 glass.js 가 #map-container·#app 에 두는 세 오프셋만큼 민다.
  *
  * 성능: 지도 위 부유 요소는 지도가 다시 그려질 때마다 블러를 재계산하므로 블러 반경을 줄이고,
- * 태블릿·휴대폰에서는 블러를 뺀다.
+ * 휴대폰에서는 큰 면의 블러도 14px 로 낮춘다.
  * 시스템 "투명도 줄이기"(prefers-reduced-transparency)는 무시한다 — 실험을 직접 켠 사용자에게만 적용되는데
  * Windows 는 "투명 효과" 가 꺼진 게 기본이라 그 설정을 따르면 유리가 아예 안 보인다.
  * 내보내기(html2canvas)는 backdrop-filter 를 못 그리므로 body.exporting 동안 불투명으로 돌린다.
@@ -82,14 +83,16 @@
 [data-surface="glass"] .swipe-panel,
 [data-surface="glass"] .globe-panel,
 [data-surface="glass"] .time-series-controls,
-[data-surface="glass"] .map-scale-bar {
+[data-surface="glass"] .map-scale-bar,
+[data-surface="glass"] .mobile-drawer-sheet,
+[data-surface="glass"] .mobile-search-row {
   text-shadow: var(--glass-text-halo);
 }
 /* 버튼은 브라우저 기본 스타일이 text-shadow 를 없애므로 다시 준다 */
-[data-surface="glass"] :is(#menubar .menu-button, #toolbar .btn, .btn-community, .theme-toggle, .panel-tab, .sidebar-toggle, .toolbar-collapse-btn, #left-panel .btn-icon, .swipe-close, .globe-close, .time-series-controls .btn) {
+[data-surface="glass"] :is(#menubar .menu-button, .mobile-drawer .menu-button, #toolbar .btn, .btn-community, .theme-toggle, .panel-tab, .sidebar-toggle, .toolbar-collapse-btn, #left-panel .btn-icon, .swipe-close, .globe-close, .time-series-controls .btn) {
   text-shadow: var(--glass-text-halo);
 }
-[data-surface="glass"] :is(input, select, textarea, .btn-primary, .btn-community-primary, .labs-badge, .dropdown-menu, .crs-dropdown-menu, .layer-context-menu, .search-results) {
+[data-surface="glass"] :is(input, select, textarea, .btn-primary, .btn-community-primary, .labs-badge, .mobile-layers-count, .dropdown-menu, .crs-dropdown-menu, .layer-context-menu, .search-results) {
   text-shadow: none;
 }
 
@@ -98,6 +101,8 @@
 [data-surface="glass"] #toolbar,
 [data-surface="glass"] #left-panel,
 [data-surface="glass"] #statusbar,
+[data-surface="glass"] .mobile-drawer-sheet,
+[data-surface="glass"] .mobile-search-row,
 [data-surface="glass"] .modal,
 [data-surface="glass"] .modal-content {
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
@@ -142,144 +147,131 @@
   box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
 }
 
-/* 태블릿·휴대폰: 블러 없이 반투명만 (GPU 를 아낀다) — 블러가 없으니 읽히도록 덜 투명하게 */
-@media (pointer: coarse) and (max-width: 1366px) {
-  [data-surface="glass"] {
-    --bg-panel: rgba(255, 255, 255, 0.78);
-    --bg-menubar: rgba(255, 255, 255, 0.78);
-    --bg-toolbar: rgba(255, 255, 255, 0.78);
-    --bg-statusbar: rgba(255, 255, 255, 0.78);
-    --map-overlay-bg: rgba(255, 255, 255, 0.78);
-  }
-  [data-theme="dark"][data-surface="glass"] {
-    --bg-panel: rgba(15, 23, 42, 0.7);
-    --bg-menubar: rgba(15, 23, 42, 0.7);
-    --bg-toolbar: rgba(15, 23, 42, 0.7);
-    --bg-statusbar: rgba(15, 23, 42, 0.7);
-    --map-overlay-bg: rgba(15, 23, 42, 0.7);
-  }
-  [data-surface="glass"] #menubar,
-  [data-surface="glass"] #toolbar,
-  [data-surface="glass"] #left-panel,
-  [data-surface="glass"] #statusbar,
-  [data-surface="glass"] .modal,
-  [data-surface="glass"] .modal-content,
-  [data-surface="glass"] .choropleth-legend,
-  [data-surface="glass"] .cartogram-legend,
-  [data-surface="glass"] .heatmap-legend,
-  [data-surface="glass"] .feature-info-card,
-  [data-surface="glass"] .egis-basemap-panel,
-  [data-surface="glass"] .view3d-panel,
-  [data-surface="glass"] .swipe-panel,
-  [data-surface="glass"] .globe-panel,
-  [data-surface="glass"] .time-series-controls,
-  [data-surface="glass"] .chart-map-legend,
-  [data-surface="glass"] .isochrone-legend,
-  [data-surface="glass"] .raster-analysis-legend,
-  [data-surface="glass"] .map-scale-bar,
-  [data-surface="glass"] .dropdown-menu,
-  [data-surface="glass"] .crs-dropdown-menu,
-  [data-surface="glass"] .layer-context-menu,
-  [data-surface="glass"] .search-results {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
+/* 휴대폰: 블러는 살리되 조금 낮춘다 (GPU) */
+@media (max-width: 768px) {
+  [data-surface="glass"] { --glass-blur: 14px; }
 }
 
-/* 데스크톱: 지도를 창 전체에 깔고 메뉴바·툴바·상태줄·패널 카드를 그 위에 띄운다.
+/* 모든 폭: 지도를 창 전체에 깔고 메뉴바·툴바·상태줄·패널 카드를 그 위에 띄운다.
    #app 이 절대 배치 기준(#main-container 는 static 으로 돌린다).
-   부유 요소는 glass.js 가 #map-container 에 두는 --glass-panel-offset / --glass-top-offset /
+   부유 요소는 glass.js 가 #map-container·#app 에 두는 --glass-panel-offset / --glass-top-offset /
    --glass-bottom-offset 만큼 민다 (ResizeObserver 가 패널·main 을 따라간다 — 툴바 접기 포함).
-   태블릿·휴대폰(layout.css 의 bottom sheet 분기)은 이미 패널이 지도 위에 있으므로 제외 —
-   아래 조건은 그 분기 `(pointer: coarse) and (max-width: 1366px), (max-width: 1024px)` 의 여집합이다. */
-@media (min-width: 1025px) and (pointer: fine) {
-  [data-surface="glass"] #app { position: relative; }
-  [data-surface="glass"] #main-container { position: static; }
-  [data-surface="glass"] #map-container {
-    position: absolute;
-    inset: 0;
-    --glass-panel-offset: 0px;
-    --glass-top-offset: 0px;
-    --glass-bottom-offset: 0px;
-  }
+   태블릿(769px~)은 데스크톱과 같은 사이드 패널 구조라 그대로 받는다.
+   휴대폰(≤768px)은 아래 블록이 시트·손잡이·검색 줄·서랍만 덮어쓴다(--glass-panel-offset 은 glass.js 가 0 으로). */
+[data-surface="glass"] #app { position: relative; }
+[data-surface="glass"] #main-container { position: static; }
+[data-surface="glass"] #map-container {
+  position: absolute;
+  inset: 0;
+  --glass-panel-offset: 0px;
+  --glass-top-offset: 0px;
+  --glass-bottom-offset: 0px;
+}
 
-  /* 막대·패널을 지도 위로. #menubar·#toolbar 는 자기 z-index(--z-menubar/--z-toolbar)를 유지해
-     드롭다운이 패널 위에 뜬다. */
-  [data-surface="glass"] #menubar,
-  [data-surface="glass"] #toolbar { position: relative; }
-  [data-surface="glass"] #statusbar,
-  [data-surface="glass"] #left-panel,
-  [data-surface="glass"] .panel-resizer { position: relative; z-index: var(--z-panel); }
+/* 막대·패널을 지도 위로. #menubar·#toolbar 는 자기 z-index(--z-menubar/--z-toolbar)를 유지해
+   드롭다운이 패널 위에 뜬다. */
+[data-surface="glass"] #menubar,
+[data-surface="glass"] #toolbar { position: relative; }
+[data-surface="glass"] #statusbar,
+[data-surface="glass"] #left-panel,
+[data-surface="glass"] .panel-resizer { position: relative; z-index: var(--z-panel); }
 
-  /* 메뉴바·툴바·상태줄·왼쪽 패널 모두 --glass-gap 만큼 띄운 둥근 유리 카드. 세로 간격도 같다.
-     main-container 의 위·아래 오프셋은 glass.js 가 rect 로 재므로 여백이 자동 반영된다. */
-  [data-surface="glass"] #menubar,
-  [data-surface="glass"] #toolbar,
-  [data-surface="glass"] #statusbar,
+/* 메뉴바·툴바·상태줄·왼쪽 패널 모두 --glass-gap 만큼 띄운 둥근 유리 카드. 세로 간격도 같다.
+   main-container 의 위·아래 오프셋은 glass.js 가 rect 로 재므로 여백이 자동 반영된다. */
+[data-surface="glass"] #menubar,
+[data-surface="glass"] #toolbar,
+[data-surface="glass"] .mobile-search-row,
+[data-surface="glass"] #statusbar,
+[data-surface="glass"] #left-panel {
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+[data-surface="glass"] #menubar,
+[data-surface="glass"] #toolbar,
+[data-surface="glass"] .mobile-search-row { margin: var(--glass-gap) var(--glass-gap) 0; }
+[data-surface="glass"] #statusbar { margin: 0 var(--glass-gap) var(--glass-gap); }
+[data-surface="glass"] #left-panel { margin: var(--glass-gap) 0 var(--glass-gap) var(--glass-gap); overflow: hidden; }
+
+/* 왼쪽에 붙는 요소 */
+[data-surface="glass"] .sidebar-toggle {
+  left: var(--glass-panel-offset);
+  top: calc(50% + (var(--glass-top-offset) - var(--glass-bottom-offset)) / 2);
+}
+[data-surface="glass"] .choropleth-legend,
+[data-surface="glass"] .heatmap-legend,
+[data-surface="glass"] .isochrone-legend { left: calc(var(--glass-panel-offset) + 10px); }
+[data-surface="glass"] .feature-info-card {
+  left: calc(var(--glass-panel-offset) + 10px);
+  top: calc(var(--glass-top-offset) + 10px);
+}
+[data-surface="glass"] .map-scale-bar { /* 자체 축척바(MapScaleBar) — OL ScaleLine 은 안 쓴다 */
+  left: calc(var(--glass-panel-offset) + 12px);
+  bottom: calc(var(--glass-bottom-offset) + 12px);
+}
+
+/* 위에 붙는 요소 (오른쪽 위 OL 컨트롤 묶음) */
+[data-surface="glass"] .ol-zoom { top: calc(var(--glass-top-offset) + var(--spacing-sm)) !important; }
+[data-surface="glass"] .egis-compass { top: calc(var(--glass-top-offset) + 76px); }
+[data-surface="glass"] .egis-geolocate { top: calc(var(--glass-top-offset) + 116px); }
+[data-surface="glass"] .egis-basemap { top: calc(var(--glass-top-offset) + 156px); }
+[data-surface="glass"] .view3d-controls { top: calc(var(--glass-top-offset) + 12px); }
+[data-surface="glass"] .swipe-controls { top: calc(var(--glass-top-offset) + 12px); }
+[data-surface="glass"] .globe-controls { top: calc(var(--glass-top-offset) + 12px); }
+/* .egis-basemap-panel 은 .egis-basemap 안에 top:0 으로 붙으므로 따로 밀지 않는다 */
+
+/* 아래에 붙는 요소 */
+[data-surface="glass"] .choropleth-legend,
+[data-surface="glass"] .heatmap-legend,
+[data-surface="glass"] .isochrone-legend,
+[data-surface="glass"] .chart-map-legend,
+[data-surface="glass"] .raster-analysis-legend,
+[data-surface="glass"] .cartogram-legend { bottom: calc(var(--glass-bottom-offset) + 40px); }
+[data-surface="glass"] .ol-attribution { bottom: calc(var(--glass-bottom-offset) + 0.5em); }
+/* 시계열 슬라이더 — 보이는 지도 칸(왼쪽 패널 오른쪽)의 가운데 */
+[data-surface="glass"] .time-series-controls {
+  bottom: calc(var(--glass-bottom-offset) + 40px);
+  left: calc(50% + var(--glass-panel-offset) / 2);
+  max-width: calc(100% - var(--glass-panel-offset) - 32px);
+}
+
+/* 스와이프 막대 — 지도는 창 전체지만 막대는 보이는 지도 칸 안에만 그린다.
+   top/left 는 JS 가 비율(%)로 인라인에 쓰므로 여백·크기로 민다.
+   세로 막대는 위·아래 막대(메뉴·툴바·상태줄)를, 가로 막대는 왼쪽 패널을 피한다. */
+[data-surface="glass"] .swipe-divider {
+  margin-top: var(--glass-top-offset);
+  height: calc(100% - var(--glass-top-offset) - var(--glass-bottom-offset));
+}
+[data-surface="glass"] .swipe-divider.horizontal {
+  margin-top: -6px;
+  height: 12px;
+  margin-left: var(--glass-panel-offset);
+  width: calc(100% - var(--glass-panel-offset));
+}
+
+/* 휴대폰(≤768px): 왼쪽 패널은 아래 시트, 툴바·메뉴는 서랍(mobile.css). 위 부유 배치에서 시트·손잡이·서랍만 덮어쓴다. */
+@media (max-width: 768px) {
+  /* 시트는 #app 기준(main 이 static) — 상태줄 카드 위에 앉힌다. 오프셋 변수는 glass.js 가 #app 에도 쓴다 */
   [data-surface="glass"] #left-panel {
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
+    position: absolute; top: auto; left: var(--glass-gap); right: var(--glass-gap);
+    bottom: calc(var(--glass-bottom-offset, 0px) + var(--glass-gap));
+    width: auto !important; height: 55%; margin: 0;
+    border-radius: 12px 12px 0 0; border-bottom: none;
   }
-  [data-surface="glass"] #menubar,
-  [data-surface="glass"] #toolbar { margin: var(--glass-gap) var(--glass-gap) 0; }
-  [data-surface="glass"] #statusbar { margin: 0 var(--glass-gap) var(--glass-gap); }
-  [data-surface="glass"] #left-panel { margin: var(--glass-gap) 0 var(--glass-gap) var(--glass-gap); overflow: hidden; }
-
-  /* 왼쪽에 붙는 요소 */
   [data-surface="glass"] .sidebar-toggle {
-    left: var(--glass-panel-offset);
-    top: calc(50% + (var(--glass-top-offset) - var(--glass-bottom-offset)) / 2);
+    left: 50%; top: auto; transform: translateX(-50%);
+    bottom: calc(var(--glass-bottom-offset, 0px) + var(--glass-gap));
   }
-  [data-surface="glass"] .choropleth-legend,
-  [data-surface="glass"] .heatmap-legend,
-  [data-surface="glass"] .isochrone-legend { left: calc(var(--glass-panel-offset) + 10px); }
-  [data-surface="glass"] .feature-info-card {
-    left: calc(var(--glass-panel-offset) + 10px);
-    top: calc(var(--glass-top-offset) + 10px);
+  [data-surface="glass"] #left-panel:not(.hidden) ~ #map-container .sidebar-toggle {
+    bottom: calc(55% + var(--glass-bottom-offset, 0px) + var(--glass-gap));
   }
-  [data-surface="glass"] .map-scale-bar { /* 자체 축척바(MapScaleBar) — OL ScaleLine 은 안 쓴다 */
-    left: calc(var(--glass-panel-offset) + 12px);
-    bottom: calc(var(--glass-bottom-offset) + 12px);
+  /* 서랍 시트는 메뉴 팝오버처럼 진한 유리 (--bg-panel 은 스크림 너머에서 너무 옅다) */
+  [data-surface="glass"] .mobile-drawer-sheet { background-color: var(--glass-popover-bg); }
+  /* 서랍 안으로 옮겨진 툴바·드롭다운은 카드·블러를 벗는다 — 시트가 이미 유리다 */
+  [data-surface="glass"] .mobile-drawer #toolbar {
+    margin: 0; border: none; border-radius: 0; background-image: none; box-shadow: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
   }
-
-  /* 위에 붙는 요소 (오른쪽 위 OL 컨트롤 묶음) */
-  [data-surface="glass"] .ol-zoom { top: calc(var(--glass-top-offset) + var(--spacing-sm)) !important; }
-  [data-surface="glass"] .egis-compass { top: calc(var(--glass-top-offset) + 76px); }
-  [data-surface="glass"] .egis-geolocate { top: calc(var(--glass-top-offset) + 116px); }
-  [data-surface="glass"] .egis-basemap { top: calc(var(--glass-top-offset) + 156px); }
-  [data-surface="glass"] .view3d-controls { top: calc(var(--glass-top-offset) + 12px); }
-  [data-surface="glass"] .swipe-controls { top: calc(var(--glass-top-offset) + 12px); }
-  [data-surface="glass"] .globe-controls { top: calc(var(--glass-top-offset) + 12px); }
-  /* .egis-basemap-panel 은 .egis-basemap 안에 top:0 으로 붙으므로 따로 밀지 않는다 */
-
-  /* 아래에 붙는 요소 */
-  [data-surface="glass"] .choropleth-legend,
-  [data-surface="glass"] .heatmap-legend,
-  [data-surface="glass"] .isochrone-legend,
-  [data-surface="glass"] .chart-map-legend,
-  [data-surface="glass"] .raster-analysis-legend,
-  [data-surface="glass"] .cartogram-legend { bottom: calc(var(--glass-bottom-offset) + 40px); }
-  [data-surface="glass"] .ol-attribution { bottom: calc(var(--glass-bottom-offset) + 0.5em); }
-  /* 시계열 슬라이더 — 보이는 지도 칸(왼쪽 패널 오른쪽)의 가운데 */
-  [data-surface="glass"] .time-series-controls {
-    bottom: calc(var(--glass-bottom-offset) + 40px);
-    left: calc(50% + var(--glass-panel-offset) / 2);
-    max-width: calc(100% - var(--glass-panel-offset) - 32px);
-  }
-
-  /* 스와이프 막대 — 지도는 창 전체지만 막대는 보이는 지도 칸 안에만 그린다.
-     top/left 는 JS 가 비율(%)로 인라인에 쓰므로 여백·크기로 민다.
-     세로 막대는 위·아래 막대(메뉴·툴바·상태줄)를, 가로 막대는 왼쪽 패널을 피한다. */
-  [data-surface="glass"] .swipe-divider {
-    margin-top: var(--glass-top-offset);
-    height: calc(100% - var(--glass-top-offset) - var(--glass-bottom-offset));
-  }
-  [data-surface="glass"] .swipe-divider.horizontal {
-    margin-top: -6px;
-    height: 12px;
-    margin-left: var(--glass-panel-offset);
-    width: calc(100% - var(--glass-panel-offset));
-  }
+  [data-surface="glass"] .mobile-drawer .dropdown-menu { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* 유리 위 조작 요소 — 호버는 살짝 밝아지고, 누르면 유리를 누른 듯 안으로 들어간다.
@@ -297,12 +289,12 @@
   --glass-press-lift: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 [data-surface="glass"] :is(#toolbar .btn-icon, #toolbar .btn-tool-labeled, .toolbar-collapse-btn, #menubar .menu-button,
-  .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon, .ol-control button) {
+  .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon, .mobile-menu-btn, .mobile-header-btn, .mobile-drawer-close, .mobile-drawer .menu-button, .ol-control button) {
   transition: background-color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease;
 }
 @media (hover: hover) {
   [data-surface="glass"] :is(#toolbar .btn-icon, #toolbar .btn-tool-labeled, .toolbar-collapse-btn, #menubar .menu-button,
-    .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon):not(.active):hover {
+    .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon, .mobile-menu-btn, .mobile-header-btn, .mobile-drawer-close, .mobile-drawer .menu-button):not(.active):hover {
     background-color: var(--glass-press-hover);
     box-shadow: var(--glass-press-lift);
   }
@@ -317,9 +309,9 @@
 }
 /* :active 는 호버 규칙(:not(.active):hover)보다 우선순위가 낮아 :hover 를 붙인 짝을 함께 둔다 */
 [data-surface="glass"] :is(#toolbar .btn-icon, #toolbar .btn-tool-labeled, .toolbar-collapse-btn, #menubar .menu-button,
-  .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon):active,
+  .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon, .mobile-menu-btn, .mobile-header-btn, .mobile-drawer-close, .mobile-drawer .menu-button):active,
 [data-surface="glass"] :is(#toolbar .btn-icon, #toolbar .btn-tool-labeled, .toolbar-collapse-btn, #menubar .menu-button,
-  .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon):not(.active):hover:active {
+  .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon, .mobile-menu-btn, .mobile-header-btn, .mobile-drawer-close, .mobile-drawer .menu-button):not(.active):hover:active {
   background-color: var(--glass-press-down);
   box-shadow: var(--glass-press-shadow);
   transform: translateY(1px);
@@ -331,7 +323,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   [data-surface="glass"] :is(#toolbar .btn-icon, #toolbar .btn-tool-labeled, .toolbar-collapse-btn, #menubar .menu-button,
-    .btn-community, .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon, .ol-control button) {
+    .btn-community, .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon, .mobile-menu-btn, .mobile-header-btn, .mobile-drawer-close, .mobile-drawer .menu-button, .ol-control button) {
     transition: none;
   }
 }

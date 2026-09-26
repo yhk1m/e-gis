@@ -128,6 +128,7 @@ export const FEEDBACK_URL = '';   // 구글 폼 주소. 비어 있으면 링크�
   `#menubar`·`#toolbar`(자기 z-index 유지 — 드롭다운이 패널 위에 뜬다)·`#statusbar`·`#left-panel`·`.panel-resizer` 는 relative 로 지도 위에. 왼쪽 패널은 `margin: 8px 0 8px 8px; border-radius: 12px` 카드.
   부유 요소는 `#map-container` 의 세 변수만큼 민다 — 왼쪽(`--glass-panel-offset`: 사이드바 토글·왼쪽 범례·피처 카드·축척), 위(`--glass-top-offset`: `.ol-zoom`·나침반·GPS·배경지도 버튼·`.view3d-controls`·피처 카드), 아래(`--glass-bottom-offset`: 범례들·축척·`.ol-attribution`). 사이드바 토글은 보이는 띠의 세로 가운데.
   glass.js 의 `layoutOffsets`(순수)·`trackLayoutOffsets`(ResizeObserver 가 패널과 main 을 관찰 — 툴바 접기로 main 의 위쪽이 바뀐다) 가 갱신하고 `resize` 를 쏴 OL 이 크기를 다시 잰다. 태블릿 분기는 이미 패널이 지도 위라 제외.
+- 휴대폰·태블릿도 부유 배치·블러(2026-09-26 휴대폰 셸 개편): 위 부유 배치의 미디어 조건을 떼 모든 폭에 적용하고 위 성능 예외(coarse 블러 끄기)는 없앴다. 휴대폰(≤768px)은 `--glass-blur: 14px`, 레이어 시트는 `#app` 기준 상태줄 카드 위(`--glass-panel-offset` 0), 서랍 시트(`.mobile-drawer-sheet`)·검색 줄(`.mobile-search-row`)도 유리.
 
 ## 1단계 — 구간 채움 편집기 (`class-fill`)
 
