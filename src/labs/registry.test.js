@@ -30,6 +30,10 @@ describe('EXPERIMENTS', () => {
     expect(EXPERIMENT_IDS).toContain('glass');
   });
 
+  it('1단계 class-fill 이 glass 바로 뒤에 있다 (설계의 순서: glass, class-fill, globe, swipe, time-series)', () => {
+    expect(EXPERIMENT_IDS.indexOf('class-fill')).toBe(EXPERIMENT_IDS.indexOf('glass') + 1);
+  });
+
   it('FEEDBACK_URL 은 비어 있거나 https 주소다', () => {
     expect(FEEDBACK_URL === '' || /^https:\/\//.test(FEEDBACK_URL)).toBe(true);
   });

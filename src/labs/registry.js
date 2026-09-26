@@ -13,6 +13,12 @@ export const EXPERIMENTS = [
     name: '글래스 UI',
     summary: '패널·메뉴·범례를 반투명 유리로 보여줍니다.',
     since: '2026-09'
+  },
+  {
+    id: 'class-fill',
+    name: '구간 채움 편집',
+    summary: '범례의 색 칸을 눌러 구간마다 색·패턴·이미지·질감을 바꿉니다.',
+    since: '2026-09'
   }
 ];
 

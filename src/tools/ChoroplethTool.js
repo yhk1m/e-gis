@@ -3,7 +3,6 @@
  * 속성값에 따라 피처 색상을 다르게 표현
  */
 
-import { Style, Fill, Stroke } from "ol/style";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { layerManager } from "../core/LayerManager.js";
@@ -13,6 +12,8 @@ import { isVectorLayer, collectNumericFields } from "../utils/layerSelect.js";
 import { sampleColorRamp, lerpColor } from "../utils/colorRamp.js";
 import { formatNumber } from "./legendModel.js";
 import { syncLegendVisibility } from "./legendVisibility.js";
+import { fillFor, tileDataUrl, onFillAssetsReady } from "./classFillCanvas.js";
+import { normalizeFill, isSolid } from "./classFill.js";
 
 // 색상 팔레트 정의
 const COLOR_RAMPS = {
@@ -42,6 +43,17 @@ class ChoroplethTool {
     this.legends = new Map();              // derivedLayerId -> legend element
     this.derivedBySource = new Map();      // sourceLayerId -> derivedLayerId
     this.sourceByDerived = new Map();      // derivedLayerId -> sourceLayerId
+
+    /** 범례 색 칸 클릭 훅 — labs/classFillBinding 이 실험이 켜졌을 때 심는다. null 이면 아무 일도 없다. */
+    this.onLegendColorClick = null;
+
+    // 이미지 채움 디코딩이 끝나면 그 이미지를 쓰는 레이어를 다시 그린다 (fillFor 는 동기라 기다릴 수 없다)
+    onFillAssetsReady(() => {
+      layerManager.getAllLayers().forEach((l) => {
+        const fills = l._choroplethConfig && l._choroplethConfig.fills;
+        if (fills && fills.some((f) => f && f.kind === 'image')) this.restyle(l.id);
+      });
+    });
 
     // 레이어 삭제 이벤트 리스너
     eventBus.on(Events.LAYER_REMOVED, (data) => {
@@ -205,23 +217,6 @@ class ChoroplethTool {
     // 색상 반전
     const selectedColors = reverse ? [...colors].reverse() : colors;
 
-    const self = this;
-    const styleFunction = function(feature) {
-      const val = parseFloat(feature.get(attribute));
-      if (isNaN(val)) {
-        return new Style({
-          fill: new Fill({ color: "rgba(128, 128, 128, 0.5)" }),
-          stroke: new Stroke({ color: "#666", width: 1 })
-        });
-      }
-      const colorIdx = self.getColorIndex(val, breaks);
-      const color = selectedColors[colorIdx] || selectedColors[0];
-      return new Style({
-        fill: new Fill({ color: self.hexToRgba(color, 0.7) }),
-        stroke: new Stroke({ color: self.darkenColor(color), width: 1 })
-      });
-    };
-
     // 같은 원본에서 만든 기존 파생 레이어 제거 (재적용 시 교체)
     if (this.derivedBySource.has(layerId)) {
       const prevDerivedId = this.derivedBySource.get(layerId);
@@ -233,7 +228,7 @@ class ChoroplethTool {
     // 피처 복제 → 새 벡터 레이어로 등록
     const clonedFeatures = sourceLayer.source.getFeatures().map(f => f.clone());
     const newSource = new VectorSource({ features: clonedFeatures });
-    const newOlLayer = new VectorLayer({ source: newSource, style: styleFunction });
+    const newOlLayer = new VectorLayer({ source: newSource });
 
     const newLayerId = layerManager.addLayer({
       name: `${sourceLayer.name}_단계구분_${attribute}`,
@@ -247,7 +242,8 @@ class ChoroplethTool {
     this.derivedBySource.set(layerId, newLayerId);
     this.sourceByDerived.set(newLayerId, layerId);
 
-    // 단계구분도 설정을 layerInfo에 저장 → LayerManager가 투명도 변경 시 재구성
+    // 단계구분도 설정을 layerInfo에 심는다. 스타일 함수는 LayerManager.updateLayerStyle 한 곳이
+    // 만든다(투명도·테두리·구간 채움이 모두 거기서 나온다).
     const newLayerInfo = layerManager.getLayer(newLayerId);
     if (newLayerInfo) {
       newLayerInfo._choroplethConfig = {
@@ -261,6 +257,8 @@ class ChoroplethTool {
         rounding: 0
       };
       newLayerInfo.fillOpacity = 0.7;
+      newLayerInfo.strokeWidth = 1;   // 예전 apply 의 스타일 함수와 같은 두께 (addLayer 기본은 2)
+      layerManager.updateLayerStyle(newLayerId);
     }
 
     // 범례는 파생 레이어 기준으로 생성
@@ -325,7 +323,7 @@ class ChoroplethTool {
     const roundingSel = legendEl.querySelector('.choropleth-legend-rounding');
     if (roundingSel) roundingSel.value = String(rounding);
 
-    this.renderLegendItems(legendEl, breaks, colors, unit, format, rounding);
+    this.renderLegendItems(legendEl, breaks, colors, unit, format, rounding, cfg.fills || null);
 
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
@@ -338,7 +336,12 @@ class ChoroplethTool {
     }
   }
 
-  renderLegendItems(legendEl, breaks, colors, unit, format, rounding = 0) {
+  /**
+   * 범례 항목(색 칸 + 구간 라벨)을 그린다.
+   * 색 칸은 data-class="i" 를 달고, 채움이 단색이 아니면 24px 패턴 타일을 배경 이미지로 깐다
+   * (타일을 못 만들면 — 캔버스 없음·이미지 디코딩 전 — 기준색만 칠한다).
+   */
+  renderLegendItems(legendEl, breaks, colors, unit, format, rounding = 0, fills = null) {
     const itemsEl = legendEl.querySelector('.choropleth-legend-items');
     if (!itemsEl) return;
     let html = '';
@@ -346,9 +349,12 @@ class ChoroplethTool {
       const minVal = formatNumber(breaks[i], format, rounding);
       const maxVal = formatNumber(breaks[i + 1], format, rounding);
       const range = `${minVal} - ${maxVal}`;
+      const fill = fills ? fills[i] : null;
+      const tile = isSolid(fill) ? null : tileDataUrl(fill, colors[i], 24);
+      const style = swatchStyle(fill, colors[i], tile);
       html += `
         <div class="choropleth-legend-item">
-          <span class="choropleth-legend-color" style="background:${colors[i]}"></span>
+          <span class="choropleth-legend-color" data-class="${i}" style="${style}"></span>
           <span class="choropleth-legend-label">${range}${unit ? ' ' + this.escapeHtml(unit) : ''}</span>
         </div>`;
     }
@@ -367,6 +373,17 @@ class ChoroplethTool {
     const persist = () => {
       eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
     };
+
+    // 색 칸 클릭 → 훅. 항목이 다시 그려져도 살아 있도록 컨테이너에 위임한다.
+    // 실험 켜짐 여부는 훅을 심는 쪽(labs 바인딩)이 판단한다 — 여기서는 labs 를 모른다.
+    const itemsEl = legendEl.querySelector('.choropleth-legend-items');
+    if (itemsEl) {
+      itemsEl.addEventListener('click', (e) => {
+        const swatch = e.target.closest && e.target.closest('.choropleth-legend-color');
+        if (!swatch || typeof this.onLegendColorClick !== 'function') return;
+        this.onLegendColorClick({ layerId, classIndex: Number(swatch.dataset.class), anchor: swatch });
+      });
+    }
 
     // 형식·반올림·단위 설정 숨기기/표시 토글
     const toggleBtn = legendEl.querySelector('.choropleth-legend-toggle');
@@ -398,11 +415,7 @@ class ChoroplethTool {
       });
     });
 
-    const rerenderItems = () => {
-      const cfg = layerInfo._choroplethConfig;
-      if (!cfg) return;
-      this.renderLegendItems(legendEl, cfg.breaks, cfg.colors, cfg.unit || '', cfg.format || 'comma', cfg.rounding || 0);
-    };
+    const rerenderItems = () => this.refreshLegendItems(layerId);
 
     const unitInput = legendEl.querySelector('.choropleth-legend-unit');
     if (unitInput) {
@@ -433,6 +446,63 @@ class ChoroplethTool {
         persist();
       });
     }
+  }
+
+  /** 레이어의 단계구분도 설정 (없으면 null) */
+  configOf(layerId) {
+    const layerInfo = layerManager.getLayer(layerId);
+    return (layerInfo && layerInfo._choroplethConfig) || null;
+  }
+
+  /** 범례 항목만 설정대로 다시 그린다 */
+  refreshLegendItems(layerId) {
+    const legendEl = this.legends.get(layerId);
+    const cfg = this.configOf(layerId);
+    if (!legendEl || !cfg) return;
+    this.renderLegendItems(legendEl, cfg.breaks, cfg.colors, cfg.unit || '', cfg.format || 'comma', cfg.rounding || 0, cfg.fills || null);
+  }
+
+  /** 스타일 함수 재구성(LAYER_STYLE_CHANGED 발행 포함) + 범례 갱신 */
+  restyle(layerId) {
+    layerManager.updateLayerStyle(layerId);
+    this.refreshLegendItems(layerId);
+  }
+
+  /**
+   * 구간 하나의 채움 사양을 바꾼다 (실험 class-fill).
+   * 전부 단색이면 fills 키를 지워 저장본을 예전 모양으로 되돌린다.
+   * @returns {boolean}
+   */
+  setClassFill(layerId, classIndex, spec) {
+    const cfg = this.configOf(layerId);
+    if (!cfg || !Number.isInteger(classIndex) || classIndex < 0 || classIndex >= cfg.colors.length) return false;
+    const fills = cfg.fills ? cfg.fills.slice() : cfg.colors.map(() => ({ kind: 'solid' }));
+    fills[classIndex] = normalizeFill(spec);
+    if (fills.every(isSolid)) delete cfg.fills;
+    else cfg.fills = fills;
+    this.restyle(layerId);
+    return true;
+  }
+
+  /** 구간 하나의 기준색을 바꾼다. colors 는 새 배열로(복제본과 공유하지 않게). */
+  setClassColor(layerId, classIndex, hex) {
+    const cfg = this.configOf(layerId);
+    if (!cfg || !/^#[0-9a-fA-F]{6}$/.test(String(hex)) || !Number.isInteger(classIndex) || classIndex < 0 || classIndex >= cfg.colors.length) return false;
+    const colors = cfg.colors.slice();
+    colors[classIndex] = hex.toLowerCase();
+    cfg.colors = colors;
+    this.restyle(layerId);
+    return true;
+  }
+
+  /** 모든 구간의 채움을 한꺼번에 (프리셋). null 이면 팔레트로 되돌린다. */
+  setAllFills(layerId, fills) {
+    const cfg = this.configOf(layerId);
+    if (!cfg) return false;
+    if (!Array.isArray(fills) || fills.every(isSolid)) delete cfg.fills;
+    else cfg.fills = cfg.colors.map((_, i) => normalizeFill(fills[i]));
+    this.restyle(layerId);
+    return true;
   }
 
   /**
@@ -479,6 +549,18 @@ class ChoroplethTool {
     const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 40);
     const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 40);
     return "#" + r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0");
+  }
+
+  /**
+   * 구간 하나의 채움 — LayerManager.updateLayerStyle 이 Fill.color 에 넣는다.
+   * fills 가 없으면 지금처럼 rgba 문자열, 있으면 CanvasPattern(실험 class-fill).
+   */
+  classFillColor(cfg, classIndex, fillOpacity) {
+    const base = cfg.colors[classIndex] || cfg.colors[0];
+    // OL 은 벡터 캔버스를 기기 픽셀로 그리고 CanvasPattern 을 pixelRatio 로 키우지 않는다.
+    // 타일을 DPR 배로 만들어야 화면 무늬가 범례·내보내기(CSS px 기준)와 같은 크기가 된다.
+    const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+    return fillFor(cfg.fills ? cfg.fills[classIndex] : undefined, base, fillOpacity, dpr);
   }
 
   /**
@@ -550,6 +632,23 @@ class ChoroplethTool {
     }
     return legend;
   }
+}
+
+/**
+ * 범례 색 칸의 인라인 스타일. 지도(planFill)의 배경 규칙을 그대로 따른다:
+ * 패턴의 배경이 '없음'이면 구간 색을 깔지 않아 타일 아래가 비치고(지도에선 배경지도가 비친다),
+ * 타일을 못 만들었을 때는 지도의 fallback 과 같이 — 없음이면 투명, 그 밖에는 구간 색.
+ * @param {Object|null} fill  채움 사양(정규화 전이어도 됨)
+ * @param {string} color      구간 색
+ * @param {string|null} tileUrl  tileDataUrl 결과
+ * @returns {string}
+ */
+export function swatchStyle(fill, color, tileUrl) {
+  if (isSolid(fill)) return `background:${color}`;
+  const f = normalizeFill(fill);
+  const noBg = (f.kind === 'hatch' || f.kind === 'dots' || f.kind === 'cross') && f.background === 'none';
+  if (!tileUrl) return `background:${noBg ? 'transparent' : color}`;
+  return `background-color:${noBg ? 'transparent' : color};background-image:url(${tileUrl})`;
 }
 
 export const choroplethTool = new ChoroplethTool();

@@ -15,6 +15,7 @@ import { cartogramTool } from '../tools/CartogramTool.js';
 import { heatmapTool } from '../tools/HeatmapTool.js';
 import { flowTool } from '../tools/FlowTool.js';
 import { saveTextAs } from '../utils/saveFile.js';
+import { serializeChoroplethConfig } from '../tools/choroplethConfigSerial.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 const PROJECT_VERSION = '1.0';
@@ -134,12 +135,7 @@ export class ProjectManager {
         // 주제도 설정 — 자동저장(StateManager.saveLayer)과 동일 규약으로 .egis에도 왕복.
         // 저장하지 않으면 단계구분도 색·도형표현도(오버레이라 피처가 비어 있음)가 복원 불가.
         if (layer._choroplethConfig) {
-          const cfg = layer._choroplethConfig;
-          base.choroplethConfig = {
-            attribute: cfg.attribute, breaks: cfg.breaks, colors: cfg.colors,
-            title: cfg.title, unit: cfg.unit, format: cfg.format,
-            rounding: cfg.rounding, controlsHidden: cfg.controlsHidden
-          };
+          base.choroplethConfig = serializeChoroplethConfig(layer._choroplethConfig);
         }
         if (layer._chartMapConfig) {
           const c = layer._chartMapConfig;

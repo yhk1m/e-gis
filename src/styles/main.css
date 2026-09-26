@@ -6,6 +6,7 @@
 @import './layout.css';
 @import './panels.css';
 @import './glass.css';
+@import './classFill.css';
 
 /* 기본 리셋 */
 *,

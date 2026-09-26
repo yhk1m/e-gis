@@ -6,6 +6,7 @@
 import { eventBus, Events } from '../utils/EventBus.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import { pickStyleFields } from './LayerManager.js';
+import { serializeChoroplethConfig } from '../tools/choroplethConfigSerial.js';
 
 const DB_NAME = 'eGIS_DB';
 const DB_VERSION = 1;
@@ -167,21 +168,8 @@ class StateManager {
     const features = layerInfo.source.getFeatures();
     const geoJSONFormat = new GeoJSON();
 
-    // 단계구분도 설정 직렬화 (tool 참조 제외)
-    let choroplethConfig = null;
-    if (layerInfo._choroplethConfig) {
-      const cfg = layerInfo._choroplethConfig;
-      choroplethConfig = {
-        attribute: cfg.attribute,
-        breaks: cfg.breaks,
-        colors: cfg.colors,
-        title: cfg.title,
-        unit: cfg.unit,
-        format: cfg.format,
-        rounding: cfg.rounding,
-        controlsHidden: cfg.controlsHidden
-      };
-    }
+    // 단계구분도 설정 직렬화 (tool 참조 제외, fills 포함) — .egis·복제와 같은 규약
+    const choroplethConfig = serializeChoroplethConfig(layerInfo._choroplethConfig);
 
     // 카토그램 설정 직렬화 (색상 분류 — 복원 시 색 유지)
     let cartogramConfig = null;
