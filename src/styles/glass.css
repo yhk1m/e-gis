@@ -73,6 +73,7 @@
 [data-surface="glass"] .feature-info-card,
 [data-surface="glass"] .egis-basemap-panel,
 [data-surface="glass"] .view3d-panel,
+[data-surface="glass"] .swipe-panel,
 [data-surface="glass"] .chart-map-legend,
 [data-surface="glass"] .isochrone-legend,
 [data-surface="glass"] .raster-analysis-legend,
@@ -126,6 +127,7 @@
   [data-surface="glass"] .feature-info-card,
   [data-surface="glass"] .egis-basemap-panel,
   [data-surface="glass"] .view3d-panel,
+  [data-surface="glass"] .swipe-panel,
   [data-surface="glass"] .chart-map-legend,
   [data-surface="glass"] .isochrone-legend,
   [data-surface="glass"] .raster-analysis-legend,
@@ -201,6 +203,7 @@
   [data-surface="glass"] .egis-geolocate { top: calc(var(--glass-top-offset) + 116px); }
   [data-surface="glass"] .egis-basemap { top: calc(var(--glass-top-offset) + 156px); }
   [data-surface="glass"] .view3d-controls { top: calc(var(--glass-top-offset) + 12px); }
+  [data-surface="glass"] .swipe-controls { top: calc(var(--glass-top-offset) + 12px); }
   /* .egis-basemap-panel 은 .egis-basemap 안에 top:0 으로 붙으므로 따로 밀지 않는다 */
 
   /* 아래에 붙는 요소 */
@@ -211,6 +214,20 @@
   [data-surface="glass"] .raster-analysis-legend,
   [data-surface="glass"] .cartogram-legend { bottom: calc(var(--glass-bottom-offset) + 40px); }
   [data-surface="glass"] .ol-attribution { bottom: calc(var(--glass-bottom-offset) + 0.5em); }
+
+  /* 스와이프 막대 — 지도는 창 전체지만 막대는 보이는 지도 칸 안에만 그린다.
+     top/left 는 JS 가 비율(%)로 인라인에 쓰므로 여백·크기로 민다.
+     세로 막대는 위·아래 막대(메뉴·툴바·상태줄)를, 가로 막대는 왼쪽 패널을 피한다. */
+  [data-surface="glass"] .swipe-divider {
+    margin-top: var(--glass-top-offset);
+    height: calc(100% - var(--glass-top-offset) - var(--glass-bottom-offset));
+  }
+  [data-surface="glass"] .swipe-divider.horizontal {
+    margin-top: -6px;
+    height: 12px;
+    margin-left: var(--glass-panel-offset);
+    width: calc(100% - var(--glass-panel-offset));
+  }
 }
 
 /* 유리 위 조작 요소 — 호버는 살짝 밝아지고, 누르면 유리를 누른 듯 안으로 들어간다.
