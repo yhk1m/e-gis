@@ -33,6 +33,13 @@
   --bg-toolbar: rgba(255, 255, 255, 0.42);
   --bg-statusbar: rgba(255, 255, 255, 0.42);
   --map-overlay-bg: rgba(255, 255, 255, 0.5);
+
+  /* 글자: 유리 너머 지도가 비치므로 보조 글자를 한 단계 진하게 하고 흰 광채로 지도 무늬와 떼어 놓는다.
+     (사용자 보고 2026-09-26: 보조 글자가 지도 위에서 잘 안 보임. 흰 글자는 밝은 유리 위에선 더 안 보여 다크에서만 쓴다) */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #475569;
+  --glass-text-halo: 0 0 3px rgba(255, 255, 255, 0.95), 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 [data-theme="dark"][data-surface="glass"] {
@@ -50,6 +57,37 @@
   --bg-toolbar: rgba(15, 23, 42, 0.72);
   --bg-statusbar: rgba(15, 23, 42, 0.72);
   --map-overlay-bg: rgba(15, 23, 42, 0.5);
+
+  /* 다크 유리 위 글자는 흰색, 검은 그림자로 밝은 배경지도와 떼어 놓는다 */
+  --text-primary: #ffffff;
+  --text-secondary: #e2e8f0;
+  --text-muted: #cbd5e1;
+  --glass-text-halo: 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+/* 유리 면의 글자에 광채(halo) — 폼 컨트롤과 단색 버튼·배지·불투명 팝오버는 제외 */
+[data-surface="glass"] #menubar,
+[data-surface="glass"] #toolbar,
+[data-surface="glass"] #left-panel,
+[data-surface="glass"] #statusbar,
+[data-surface="glass"] .choropleth-legend,
+[data-surface="glass"] .cartogram-legend,
+[data-surface="glass"] .heatmap-legend,
+[data-surface="glass"] .chart-map-legend,
+[data-surface="glass"] .isochrone-legend,
+[data-surface="glass"] .raster-analysis-legend,
+[data-surface="glass"] .feature-info-card,
+[data-surface="glass"] .egis-basemap-panel,
+[data-surface="glass"] .view3d-panel,
+[data-surface="glass"] .map-scale-bar {
+  text-shadow: var(--glass-text-halo);
+}
+/* 버튼은 브라우저 기본 스타일이 text-shadow 를 없애므로 다시 준다 */
+[data-surface="glass"] :is(#menubar .menu-button, #toolbar .btn, .btn-community, .theme-toggle, .panel-tab, .sidebar-toggle, .toolbar-collapse-btn, #left-panel .btn-icon) {
+  text-shadow: var(--glass-text-halo);
+}
+[data-surface="glass"] :is(input, select, textarea, .btn-primary, .btn-community-primary, .labs-badge, .dropdown-menu, .crs-dropdown-menu, .layer-context-menu, .search-results) {
+  text-shadow: none;
 }
 
 /* 큰 면 — 지도 위에 고정된 틀. (.modal 은 대화상자 본체, .modal-overlay 는 건드리지 않는다) */
