@@ -371,3 +371,97 @@ describe('SwipePanel 글래스 비율 제한', () => {
     expect(panel.tool.ratio).toBe(0);
   });
 });
+
+describe('SwipePanel 드래그 견고성', () => {
+  function openDraggable() {
+    const a = { id: 'l-a', name: '아래', olLayer: fakeOlLayer() };
+    const env = makeEnv({ layers: [a], search: '?lab=swipe' });
+    env.panel.toggle();
+    document.getElementById('map').getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 600 });
+    const divider = document.getElementById('swipe-divider');
+    divider.setPointerCapture = () => {};
+    divider.releasePointerCapture = () => {};
+    return { ...env, divider };
+  }
+
+  it('주 버튼이 아니면(오른쪽 클릭) 드래그를 시작하지 않는다', () => {
+    const { panel, divider } = openDraggable();
+    divider.dispatchEvent(new MouseEvent('pointerdown', { clientX: 400, clientY: 300, button: 2, bubbles: true }));
+    expect(panel.dragging).toBe(false);
+    divider.dispatchEvent(new MouseEvent('pointermove', { clientX: 200, clientY: 300, bubbles: true }));
+    expect(panel.tool.ratio).toBe(0.5);
+  });
+
+  it('포인터 캡처를 잃으면 드래그가 끝난다', () => {
+    const { panel, divider } = openDraggable();
+    divider.dispatchEvent(new MouseEvent('pointerdown', { clientX: 400, clientY: 300, bubbles: true }));
+    expect(panel.dragging).toBe(true);
+    divider.dispatchEvent(new MouseEvent('lostpointercapture', { bubbles: true }));
+    expect(panel.dragging).toBe(false);
+    divider.dispatchEvent(new MouseEvent('pointermove', { clientX: 200, clientY: 300, bubbles: true }));
+    expect(panel.tool.ratio).toBe(0.5);
+  });
+});
+
+describe('SwipePanel 레이아웃 변경 시 재클램프', () => {
+  it('열려 있는 동안 resize 가 오면 비율을 새 범위 안으로 끌어온다', () => {
+    const insets = { panel: 100, top: 0, bottom: 0 };
+    const a = { id: 'l-a', name: '아래', olLayer: fakeOlLayer() };
+    const { panel } = makeEnv({ layers: [a], search: '?lab=swipe', panelOptions: { glassInsets: () => insets } });
+    document.getElementById('map').getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 600 });
+    panel.toggle();
+    expect(panel.tool.ratio).toBe(0.5);
+    insets.panel = 600;   // 패널을 넓혔다
+    window.dispatchEvent(new Event('resize'));
+    expect(panel.tool.ratio).toBe(0.75);
+    expect(document.getElementById('swipe-divider').style.left).toBe('75%');
+  });
+
+  it('닫은 뒤에는 resize 를 듣지 않는다', () => {
+    const insets = { panel: 100, top: 0, bottom: 0 };
+    const a = { id: 'l-a', name: '아래', olLayer: fakeOlLayer() };
+    const { panel } = makeEnv({ layers: [a], search: '?lab=swipe', panelOptions: { glassInsets: () => insets } });
+    document.getElementById('map').getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 600 });
+    panel.toggle();
+    panel.close();
+    const spy = vi.spyOn(panel, 'clampToVisible');
+    insets.panel = 600;
+    window.dispatchEvent(new Event('resize'));
+    expect(spy).not.toHaveBeenCalled();
+    expect(panel.tool.ratio).toBe(0.5);
+  });
+});
+
+describe('SwipePanel 목록·대상 전환', () => {
+  it('LAYER_RENAMED 로 목록을 다시 채워도 지금 대상은 그대로 선택돼 있다', () => {
+    const a = { id: 'l-a', name: '아래', olLayer: fakeOlLayer() };
+    const b = { id: 'l-b', name: '위', olLayer: fakeOlLayer() };
+    const { panel } = makeEnv({ layers: [a, b], search: '?lab=swipe' });
+    panel.toggle();
+    const select = document.getElementById('swipe-target');
+    select.value = 'layer:l-a';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    a.name = '새 이름';
+    eventBus.emit(Events.LAYER_RENAMED, { layerId: 'l-a' });
+    expect(select.value).toBe('layer:l-a');
+    expect(select.options[select.selectedIndex].textContent).toBe('새 이름');
+    expect(Object.keys(a.olLayer.handlers).sort()).toEqual(['postrender', 'prerender']);
+  });
+
+  it('배경지도 대상에서 레이어 대상으로 바꾸면 임시 타일 레이어를 뺀다', () => {
+    const a = { id: 'l-a', name: '아래', olLayer: fakeOlLayer() };
+    const { panel, collection } = makeEnv({ layers: [a], search: '?lab=swipe' });
+    panel.toggle();
+    const select = document.getElementById('swipe-target');
+    select.value = 'basemap:SATELLITE';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    const temp = panel.tempLayer;
+    expect(collection.items[1]).toBe(temp);
+    select.value = 'layer:l-a';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(panel.tempLayer).toBeNull();
+    expect(collection.items).toEqual(['base', 'ref']);
+    expect(temp.handlers).toEqual({});
+    expect(Object.keys(a.olLayer.handlers).sort()).toEqual(['postrender', 'prerender']);
+  });
+});

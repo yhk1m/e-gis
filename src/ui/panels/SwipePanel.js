@@ -100,6 +100,7 @@ export class SwipePanel {
     this.tempLayer = null;      // 배경지도 비교용 임시 TileLayer
     this.currentValue = null;   // 'layer:<id>' | 'basemap:<key>'
     this.dragging = false;
+    this._onResize = () => this.reclamp();
   }
 
   init() {
@@ -123,6 +124,8 @@ export class SwipePanel {
     this.divider.addEventListener('pointermove', (e) => this.dragMove(e));
     this.divider.addEventListener('pointerup', (e) => this.dragEnd(e));
     this.divider.addEventListener('pointercancel', (e) => this.dragEnd(e));
+    // 캡처를 잃으면(창 밖에서 놓기·다른 요소가 가져감) pointerup 이 안 올 수 있다 — 여기서도 끝낸다
+    this.divider.addEventListener('lostpointercapture', (e) => this.dragEnd(e));
 
     eventBus.on(Events.LAYER_REMOVED, ({ layerId }) => this.onLayerRemoved(layerId));
     eventBus.on(Events.LAYER_ADDED, () => this.refreshOptions());
@@ -170,10 +173,14 @@ export class SwipePanel {
     if (!this.isActive()) return;   // 대상을 못 찾아 applyTarget 이 이미 닫았다
     this.toggleButton.classList.add('active');
     this.toggleButton.setAttribute('aria-pressed', 'true');
+    // glass.js 는 오프셋이 바뀔 때마다(패널 폭·툴바 접기) window resize 를 쏜다
+    window.removeEventListener('resize', this._onResize);
+    window.addEventListener('resize', this._onResize);
   }
 
   /** 닫는다. 열려 있지 않아도 안전하다(main.js 가 3D 를 켜기 전에 부른다). */
   close() {
+    if (typeof window !== 'undefined') window.removeEventListener('resize', this._onResize);
     if (this.tool) this.tool.detach();
     this.removeTempLayer();
     this.currentValue = null;
@@ -281,6 +288,14 @@ export class SwipePanel {
     return Math.min(max, Math.max(min, ratio));
   }
 
+  /** 레이아웃이 바뀌었다 — 지금 비율을 새 보이는 칸 안으로 끌어오고 막대를 다시 놓는다. */
+  reclamp() {
+    if (!this.isActive()) return;
+    const clamped = this.clampToVisible(this.tool.ratio);
+    if (clamped !== this.tool.ratio) this.tool.setRatio(clamped);
+    this.positionDivider();
+  }
+
   removeTempLayer() {
     if (!this.tempLayer) return;
     this.mapManager.getMap().getLayers().remove(this.tempLayer);
@@ -288,6 +303,7 @@ export class SwipePanel {
   }
 
   dragStart(e) {
+    if (e.button !== undefined && e.button !== 0) return;   // 주 버튼(터치·펜 포함)만
     this.dragging = true;
     if (e.pointerId !== undefined && this.divider.setPointerCapture) this.divider.setPointerCapture(e.pointerId);
     e.preventDefault();
