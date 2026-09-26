@@ -4,6 +4,7 @@
 
 @import './variables.css';
 @import './layout.css';
+@import './mobile.css';
 @import './panels.css';
 @import './glass.css';
 @import './classFill.css';

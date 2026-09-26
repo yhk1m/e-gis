@@ -19,6 +19,9 @@ export class AppLayout {
     this.container.innerHTML = `
       <!-- 메뉴바 -->
       <header id="menubar">
+        <button class="mobile-only mobile-menu-btn" id="mobile-menu-btn" title="메뉴" aria-label="메뉴 열기" aria-expanded="false" aria-controls="mobile-drawer">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+        </button>
         <div class="menu-left">
           <div class="app-logo">
             ${logoMarkSvg}
@@ -189,6 +192,13 @@ export class AppLayout {
         </div>
         <div class="menu-right">
           <a href="/privacy" class="header-privacy-link" target="_blank" title="개인정보 처리방침">개인정보 처리방침</a>
+          <button class="mobile-only mobile-header-btn" id="mobile-search-btn" title="장소 검색" aria-label="장소 검색" aria-expanded="false" aria-controls="mobile-search-row">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
+          <button class="mobile-only mobile-header-btn" id="mobile-layers-btn" title="레이어 목록" aria-label="레이어 목록" aria-pressed="false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <span class="mobile-layers-count" id="mobile-layers-count" hidden>0</span>
+          </button>
           <div class="header-auth" id="header-auth">
             <button class="btn btn-sm btn-primary" id="header-login-btn"><span class="auth-label-ko">로그인</span><span class="auth-label-en">Login</span></button>
           </div>
@@ -217,10 +227,13 @@ export class AppLayout {
         </div>
       </header>
 
+      <!-- 휴대폰 검색 줄 — MobileShell 이 #toolbar-search 를 여기로 옮긴다 -->
+      <div id="mobile-search-row" class="mobile-only mobile-search-row" hidden></div>
+
       <!-- 툴바 -->
       <div id="toolbar">
         <div class="toolbar-group" data-group="navigation">
-          <button class="btn-icon" data-tool="zoom-in" title="확대">
+          <button class="btn-icon" data-tool="zoom-in" data-label="확대" title="확대">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -228,14 +241,14 @@ export class AppLayout {
               <line x1="8" y1="11" x2="14" y2="11"></line>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="zoom-out" title="축소">
+          <button class="btn-icon" data-tool="zoom-out" data-label="축소" title="축소">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               <line x1="8" y1="11" x2="14" y2="11"></line>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="zoom-extent" title="전체 범위">
+          <button class="btn-icon" data-tool="zoom-extent" data-label="전체 범위" title="전체 범위">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
             </svg>
@@ -243,24 +256,24 @@ export class AppLayout {
         </div>
 
         <div class="toolbar-group" data-group="select">
-          <button class="btn-icon" data-tool="select" title="선택 (드래그로 범위 선택)">
+          <button class="btn-icon" data-tool="select" data-label="선택" title="선택 (드래그로 범위 선택)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
             </svg>
           </button>
-          <button class="btn-icon" id="btn-feature-info" title="선택한 피처 속성 보기" style="display:none">
+          <button class="btn-icon" id="btn-feature-info" data-label="속성 보기" title="선택한 피처 속성 보기" style="display:none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
               <circle cx="12" cy="12" r="9.6"></circle>
               <circle cx="12" cy="7" r="1.6" fill="currentColor" stroke="none"></circle>
               <line x1="12" y1="10.8" x2="12" y2="17.4" stroke-width="3.2"></line>
             </svg>
           </button>
-          <button class="btn-icon selection-action" id="btn-clear-selection" title="선택 취소" style="display:none">
+          <button class="btn-icon selection-action" id="btn-clear-selection" data-label="선택 취소" title="선택 취소" style="display:none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
-          <button class="btn-icon selection-action btn-icon-danger" id="btn-delete-selection" title="선택 피처 삭제" style="display:none">
+          <button class="btn-icon selection-action btn-icon-danger" id="btn-delete-selection" data-label="선택 삭제" title="선택 피처 삭제" style="display:none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
@@ -268,14 +281,14 @@ export class AppLayout {
               <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
             </svg>
           </button>
-          <button class="btn-icon" id="btn-merge-features" title="피처 합치기 (선택한 피처들을 박음질하듯 하나로. 다른 레이어끼리 합치면 새 레이어가 생깁니다)">
+          <button class="btn-icon" id="btn-merge-features" data-label="합치기" title="피처 합치기 (선택한 피처들을 박음질하듯 하나로. 다른 레이어끼리 합치면 새 레이어가 생깁니다)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="4" width="8.5" height="16" rx="1.5"/>
               <rect x="13.5" y="4" width="8.5" height="16" rx="1.5"/>
               <path d="M12 3.5 L10 7 L14 10.5 L10 14 L14 17.5 L12 20.5" fill="none"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="edit-split" title="피처 자르기 (선을 그어 분할)">
+          <button class="btn-icon" data-tool="edit-split" data-label="자르기" title="피처 자르기 (선을 그어 분할)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="6" cy="6" r="3"/>
               <circle cx="6" cy="18" r="3"/>
@@ -287,37 +300,37 @@ export class AppLayout {
         </div>
 
         <div class="toolbar-group" data-group="draw">
-          <button class="btn-icon" data-tool="draw-point" title="점 그리기">
+          <button class="btn-icon" data-tool="draw-point" data-label="점" title="점 그리기">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="4"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-line" title="선 그리기">
+          <button class="btn-icon" data-tool="draw-line" data-label="선" title="선 그리기">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="19" x2="19" y2="5"/>
               <circle cx="5" cy="19" r="2" fill="currentColor"/>
               <circle cx="19" cy="5" r="2" fill="currentColor"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-polygon" title="면 그리기">
+          <button class="btn-icon" data-tool="draw-polygon" data-label="면" title="면 그리기">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-multipoint" title="멀티포인트 (다시 클릭하면 저장)">
+          <button class="btn-icon" data-tool="draw-multipoint" data-label="멀티포인트" title="멀티포인트 (다시 클릭하면 저장)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="6" cy="12" r="3"/>
               <circle cx="12" cy="6" r="3"/>
               <circle cx="18" cy="14" r="3"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-multiline" title="멀티라인 (다시 클릭하면 저장)">
+          <button class="btn-icon" data-tool="draw-multiline" data-label="멀티라인" title="멀티라인 (다시 클릭하면 저장)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M2 8 L8 4 L14 10"/>
               <path d="M10 20 L16 14 L22 18"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-multipolygon" title="멀티폴리곤 (다시 클릭하면 저장)">
+          <button class="btn-icon" data-tool="draw-multipolygon" data-label="멀티폴리곤" title="멀티폴리곤 (다시 클릭하면 저장)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" opacity="0.5" stroke="currentColor" stroke-width="1">
               <rect x="2" y="2" width="9" height="9"/>
               <rect x="13" y="13" width="9" height="9"/>
@@ -326,18 +339,18 @@ export class AppLayout {
         </div>
 
         <div class="toolbar-group" data-group="measure">
-          <button class="btn-icon" data-tool="measure-distance" title="거리 측정">
+          <button class="btn-icon" data-tool="measure-distance" data-label="거리" title="거리 측정">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="measure-area" title="면적 측정">
+          <button class="btn-icon" data-tool="measure-area" data-label="면적" title="면적 측정">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="18" height="18" rx="2"/>
               <path d="M3 9h18M9 3v18"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="clear-measures" title="측정 결과 지우기">
+          <button class="btn-icon" data-tool="clear-measures" data-label="측정 지우기" title="측정 결과 지우기">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>
               <path d="M10 11v5M14 11v5"/>
@@ -346,7 +359,7 @@ export class AppLayout {
         </div>
 
         <div class="toolbar-group" data-group="image">
-          <button class="btn-icon" data-tool="upload-image" title="이미지 업로드 (PNG/JPG/SVG)">
+          <button class="btn-icon" data-tool="upload-image" data-label="이미지" title="이미지 업로드 (PNG/JPG/SVG)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -585,6 +598,25 @@ export class AppLayout {
           <span id="status-message">준비</span>
         </div>
       </footer>
+
+      <!-- 휴대폰 서랍 — MobileShell 이 #toolbar 와 .menu-center 를 여기로 옮긴다 -->
+      <div id="mobile-drawer" class="mobile-drawer" hidden>
+        <div class="mobile-drawer-scrim" data-drawer-close></div>
+        <aside class="mobile-drawer-sheet" role="dialog" aria-modal="true" aria-label="메뉴">
+          <div class="mobile-drawer-head">
+            <span class="mobile-drawer-title">e-GIS</span>
+            <button class="btn-icon mobile-drawer-close" data-drawer-close title="닫기" aria-label="메뉴 닫기">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+          <div class="mobile-drawer-body">
+            <h3 class="mobile-drawer-heading">도구</h3>
+            <div class="mobile-drawer-tools" id="mobile-drawer-tools"></div>
+            <h3 class="mobile-drawer-heading">메뉴</h3>
+            <div class="mobile-drawer-menus" id="mobile-drawer-menus"></div>
+          </div>
+        </aside>
+      </div>
     `;
 
     this.addStyles();
@@ -856,21 +888,36 @@ export class AppLayout {
    */
   initSidebarToggle() {
     const btn = document.getElementById('sidebar-toggle');
-    const leftPanel = document.getElementById('left-panel');
-    const resizer = document.getElementById('panel-resizer');
 
     // 모바일에서는 지도가 먼저 보이도록 패널을 접은 상태로 시작
-    if (window.matchMedia('(max-width: 768px)').matches) {
-      leftPanel.classList.add('hidden');
-      btn.classList.add('collapsed');
-      if (resizer) resizer.style.display = 'none';
-    }
+    if (window.matchMedia('(max-width: 768px)').matches) this.setSidebarHidden(true);
 
-    btn.addEventListener('click', () => {
-      const collapsed = leftPanel.classList.toggle('hidden');
-      if (resizer) resizer.style.display = collapsed ? 'none' : '';
-      btn.classList.toggle('collapsed', collapsed);
-      window.dispatchEvent(new Event('resize'));
-    });
+    btn.addEventListener('click', () => this.toggleSidebar());
+  }
+
+  /**
+   * 왼쪽 패널(휴대폰에서는 아래 시트)을 숨기거나 보인다. 손잡이·리사이저를 함께 맞추고
+   * 지도가 크기를 다시 재도록 resize 를 쏜다.
+   * @param {boolean} hidden
+   * @returns {boolean} 바뀐 뒤 숨김 여부
+   */
+  setSidebarHidden(hidden) {
+    const btn = document.getElementById('sidebar-toggle');
+    const leftPanel = document.getElementById('left-panel');
+    const resizer = document.getElementById('panel-resizer');
+    leftPanel.classList.toggle('hidden', hidden);
+    if (resizer) resizer.style.display = hidden ? 'none' : '';
+    btn?.classList.toggle('collapsed', hidden);
+    window.dispatchEvent(new Event('resize'));
+    return hidden;
+  }
+
+  /** @returns {boolean} 바뀐 뒤 숨김 여부 */
+  toggleSidebar() {
+    return this.setSidebarHidden(!this.isSidebarHidden());
+  }
+
+  isSidebarHidden() {
+    return document.getElementById('left-panel').classList.contains('hidden');
   }
 }

@@ -11,9 +11,11 @@
  *   --glass-panel-offset  패널 카드 오른쪽 끝(+리사이저)까지 — 왼쪽에 붙는 요소가 민다
  *   --glass-top-offset    메뉴바+툴바 높이 — 위에 붙는 요소가 민다 (툴바를 접으면 줄어든다)
  *   --glass-bottom-offset 상태줄 높이 — 아래에 붙는 요소가 민다
+ * 휴대폰(≤768px)은 패널이 아래 시트라 panel 오프셋 0, 변수는 #app 에도 쓴다(시트가 #app 자식).
  */
 
 export const GLASS_ATTR = 'data-surface';
+export const PHONE_MEDIA = '(max-width: 768px)';
 export const GLASS_ID = 'glass';
 export const OFFSET_PROPS = {
   panel: '--glass-panel-offset',
@@ -30,11 +32,12 @@ const clampRound = (v) => Math.max(0, Math.round(v));
 
 /**
  * 순수: rect 들로 세 오프셋(px)을 계산한다.
- * panel 은 app 왼쪽 기준 패널 rect 의 오른쪽 끝 + 리사이저 너비 (카드 여백이 rect 에 들어 있다). 숨김이면 0.
+ * panel 은 app 왼쪽 기준 패널 rect 의 오른쪽 끝 + 리사이저 너비 (카드 여백이 rect 에 들어 있다).
+ * 숨김이거나 panelFloating(휴대폰 — 패널이 왼쪽 열이 아니라 아래 시트)이면 0.
  * top 은 main 의 위쪽까지, bottom 은 main 의 아래쪽부터 app 의 아래쪽까지. 음수는 0, 소수는 반올림.
  */
-export function layoutOffsets({ appRect, mainRect, panelRect, panelHidden, resizerWidth = 0 }) {
-  const panel = panelHidden ? 0 : clampRound((panelRect.right - appRect.left) + (resizerWidth || 0));
+export function layoutOffsets({ appRect, mainRect, panelRect, panelHidden, panelFloating = false, resizerWidth = 0 }) {
+  const panel = (panelHidden || panelFloating) ? 0 : clampRound((panelRect.right - appRect.left) + (resizerWidth || 0));
   return {
     panel,
     top: clampRound(mainRect.top - appRect.top),
@@ -63,28 +66,38 @@ export function trackLayoutOffsets({
   const fireResize = () => {
     if (win && typeof win.dispatchEvent === 'function') win.dispatchEvent(new Event('resize'));
   };
+  // 변수를 쓰는 곳: 지도 위 부유 요소는 #map-container, 휴대폰 시트(#left-panel)는 #app 자식이라 #app 에도.
+  const targets = [mapContainer, app].filter((el) => el && el.style && typeof el.style.setProperty === 'function');
+  const phoneMql = (win && typeof win.matchMedia === 'function') ? win.matchMedia(PHONE_MEDIA) : null;
+
   const update = () => {
     const o = layoutOffsets({
       appRect: app.getBoundingClientRect(),
       mainRect: main.getBoundingClientRect(),
       panelRect: panel.getBoundingClientRect(),
       panelHidden: panel.classList.contains('hidden'),
+      panelFloating: !!(phoneMql && phoneMql.matches),
       resizerWidth: resizer ? resizer.getBoundingClientRect().width : 0
     });
-    mapContainer.style.setProperty(OFFSET_PROPS.panel, `${o.panel}px`);
-    mapContainer.style.setProperty(OFFSET_PROPS.top, `${o.top}px`);
-    mapContainer.style.setProperty(OFFSET_PROPS.bottom, `${o.bottom}px`);
+    targets.forEach((el) => {
+      el.style.setProperty(OFFSET_PROPS.panel, `${o.panel}px`);
+      el.style.setProperty(OFFSET_PROPS.top, `${o.top}px`);
+      el.style.setProperty(OFFSET_PROPS.bottom, `${o.bottom}px`);
+    });
     fireResize();
   };
 
   const observer = new ResizeObserverCtor(update);
   observer.observe(panel);
   observer.observe(main);
+  // 회전·창 넓힘으로 휴대폰 경계를 넘으면 다시 잰다
+  if (phoneMql && typeof phoneMql.addEventListener === 'function') phoneMql.addEventListener('change', update);
   update();
 
   return () => {
     observer.disconnect();
-    Object.values(OFFSET_PROPS).forEach((p) => mapContainer.style.removeProperty(p));
+    if (phoneMql && typeof phoneMql.removeEventListener === 'function') phoneMql.removeEventListener('change', update);
+    targets.forEach((el) => Object.values(OFFSET_PROPS).forEach((p) => el.style.removeProperty(p)));
     fireResize();
   };
 }

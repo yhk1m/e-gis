@@ -246,3 +246,51 @@ describe('bindGlass', () => {
     expect(propsOf(L.mapContainer)).toEqual({ panel: '', top: '', bottom: '' });
   });
 });
+
+describe('layoutOffsets — panelFloating', () => {
+  it('panelFloating 이면 패널이 보여도 panel 오프셋은 0', () => {
+    const o = layoutOffsets({
+      appRect: { left: 0, top: 0, bottom: 800 },
+      mainRect: { top: 60, bottom: 770 },
+      panelRect: { right: 390 },
+      panelHidden: false,
+      panelFloating: true
+    });
+    expect(o).toEqual({ panel: 0, top: 60, bottom: 30 });
+  });
+});
+
+describe('trackLayoutOffsets — 변수 쓰기 대상', () => {
+  it('오프셋 변수를 mapContainer 와 app 양쪽에 쓴다', () => {
+    const el = () => ({ style: { props: {}, setProperty(k, v) { this.props[k] = v; }, removeProperty(k) { delete this.props[k]; } }, classList: { contains: () => false }, getBoundingClientRect: () => ({ left: 0, top: 0, right: 300, bottom: 800, width: 300 }) });
+    const app = el(), main = el(), panel = el(), mapContainer = el();
+    main.getBoundingClientRect = () => ({ top: 60, bottom: 770 });
+    class RO { constructor(cb) { this.cb = cb; } observe() {} disconnect() {} }
+    const win = { dispatchEvent() {}, matchMedia: () => ({ matches: true }) };
+    const untrack = trackLayoutOffsets({ app, main, panel, mapContainer, win, ResizeObserverCtor: RO });
+    expect(mapContainer.style.props['--glass-panel-offset']).toBe('0px');
+    expect(app.style.props['--glass-panel-offset']).toBe('0px');
+    expect(app.style.props['--glass-bottom-offset']).toBe('30px');
+    untrack();
+    expect(app.style.props['--glass-top-offset']).toBeUndefined();
+  });
+
+  it('휴대폰 미디어 쿼리가 바뀌면 다시 재고, 해제 시 리스너를 뗀다', () => {
+    const { FakeRO } = makeFakeResizeObserver();
+    const L = layout();
+    const mql = {
+      matches: false,
+      listeners: new Set(),
+      addEventListener(t, f) { this.listeners.add(f); },
+      removeEventListener(t, f) { this.listeners.delete(f); }
+    };
+    const win = { dispatchEvent: vi.fn(), matchMedia: () => mql };
+    const off = trackLayoutOffsets({ ...L, win, ResizeObserverCtor: FakeRO });
+    expect(propsOf(L.mapContainer).panel).toBe('272px');
+    mql.matches = true;
+    mql.listeners.forEach((f) => f());
+    expect(propsOf(L.mapContainer).panel).toBe('0px');
+    off();
+    expect(mql.listeners.size).toBe(0);
+  });
+});

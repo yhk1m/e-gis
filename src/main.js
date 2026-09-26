@@ -5,6 +5,7 @@
 
 import './styles/main.css';
 import { AppLayout } from './ui/layout/AppLayout.js';
+import { initMobileShell } from './ui/layout/MobileShell.js';
 import { mapManager } from './core/MapManager.js';
 import { layerManager } from './core/LayerManager.js';
 import { themeManager } from './utils/ThemeManager.js';
@@ -85,6 +86,10 @@ import { captureFrames, encodeGif, recordVideo } from './tools/animationExportCa
 import { saveBlobAs } from './utils/saveFile.js';
 import { bindLabMenuItems } from './labs/labMenu.js';
 
+// 레이아웃·휴대폰 셸 — initApp 에서 만들고, 메뉴 동작(view-toggle-panel)이 같은 경로로 시트를 토글한다
+let layout = null;
+let mobileShell = null;
+
 /**
  * 앱 초기화
  */
@@ -105,8 +110,11 @@ function initApp() {
   themeManager.init();
 
   // 3. 레이아웃 렌더링
-  const layout = new AppLayout('app');
+  layout = new AppLayout('app');
   layout.render();
+
+  // 3.2 휴대폰 셸 — 툴바·메뉴를 서랍으로, 검색을 검색 줄로 옮기고 레이어 버튼·배지를 돌린다
+  mobileShell = initMobileShell({ layout, layerManager, eventBus, Events });
 
   // 3.5 실험실 — 저장값과 ?lab= 을 읽고, 켜자마자 반영되는 것(글래스·배지)을 묶는다
   labs.init({
@@ -673,10 +681,10 @@ function initToolbar() {
  * 메뉴바 초기화
  */
 function initMenubar() {
-  const menubar = document.getElementById('menubar');
-
   // 드롭다운 토글
-  menubar.addEventListener('click', (e) => {
+  // 휴대폰에서는 MobileShell 이 .menu-center 를 서랍(#mobile-drawer)으로 옮기므로 document 에 건다
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#menubar, #mobile-drawer')) return;
     // .menu-button: 일반 메뉴, .btn-community: 링크 모양 버튼(Geocoding·About e-GIS)
     const menuButton = e.target.closest('.menu-button, .btn-community');
     if (menuButton) {
@@ -826,8 +834,8 @@ function handleMenuAction(action) {
       break;
     }
     case 'view-toggle-panel': {
-      const leftPanel = document.getElementById('left-panel');
-      leftPanel.classList.toggle('hidden');
+      layout.toggleSidebar();
+      mobileShell?.syncLayersBtn();
       mapManager.updateSize();
       break;
     }
@@ -1482,4 +1490,4 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // 진단용 훅 — 헤드리스 재현 테스트(버그 리포트 검증)에서 내부 상태 접근용.
 // 클라이언트 앱이라 보안 경계 아님(모든 코드·키가 이미 번들에 공개).
-window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, geojsonLoader, timeSeriesTool, timeSeriesPanel, get view3dPanel() { return view3dPanel; }, get swipePanel() { return swipePanel; }, get globePanel() { return globePanel; } };
+window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, geojsonLoader, timeSeriesTool, timeSeriesPanel, get view3dPanel() { return view3dPanel; }, get swipePanel() { return swipePanel; }, get globePanel() { return globePanel; }, get mobileShell() { return mobileShell; } };
