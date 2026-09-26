@@ -89,6 +89,9 @@ export class GlobeController {
     this.projectionKey = DEFAULT_PROJECTION;
     this.rotation = [0, 0, 0];
     this.homeRotation = [0, 0, 0];
+    // 원통 투영은 φ 를 0 으로 두고 그리지만 정면 위도는 여기에 기억한다 —
+    // 나갈 때 2D 중심, 방위 투영으로 돌아올 때 정면이 적도로 떨어지지 않게
+    this.phi = 0;
     this.fit = 1;
     this.scale = 1;
     this.showGraticule = true;
@@ -126,6 +129,7 @@ export class GlobeController {
     try { center = this.mapManager?.getCenter?.(); } catch { center = null; }
     this.rotation = safeRotation(Array.isArray(center) ? rotationFromCenter(center) : null);
     this.homeRotation = this.rotation.slice();
+    this.phi = this.homeRotation[1];
     if (findProjection(this.projectionKey).kind === 'cylindrical') this.rotation[1] = 0;
 
     this.active = true;
@@ -203,7 +207,9 @@ export class GlobeController {
 
   /** 정면의 경위도 */
   currentCenter() {
-    return centerFromRotation(this.rotation);
+    const cylindrical = findProjection(this.projectionKey).kind === 'cylindrical';
+    const phi = cylindrical && Number.isFinite(this.phi) ? this.phi : this.rotation[1];
+    return centerFromRotation([this.rotation[0], phi]);
   }
 
   /** 지금 지구본에 못 올린 레이어 요약 한 줄(없으면 '') */
@@ -221,6 +227,7 @@ export class GlobeController {
     const ratio = this.zoomRatio();
     this.projectionKey = entry.key;
     if (entry.kind === 'cylindrical') this.rotation = [this.rotation[0], 0, 0];
+    else this.rotation = [this.rotation[0], Number.isFinite(this.phi) ? this.phi : 0, this.rotation[2] || 0];
     this.fit = fitScale(this.projectionKey, this.width, this.height);
     this.setScale(this.fit * ratio);
     this.schedule();
@@ -239,6 +246,7 @@ export class GlobeController {
   /** 더블클릭: 처음 자세(들어올 때 정면, 맞춤 배율)로 */
   resetView() {
     this.rotation = this.homeRotation.slice();
+    this.phi = this.homeRotation[1];
     if (findProjection(this.projectionKey).kind === 'cylindrical') this.rotation[1] = 0;
     this.scale = this.fit;
     this.schedule();
@@ -424,9 +432,9 @@ export class GlobeController {
         if (!this.dragging) return;
         const dx = e.clientX - previous[0];
         const dy = e.clientY - previous[1];
-        this.rotation = safeRotation(rotationAfterDrag(
-          this.rotation, dx, dy, this.scale, findProjection(this.projectionKey).kind
-        ), this.rotation);
+        const kind = findProjection(this.projectionKey).kind;
+        this.rotation = safeRotation(rotationAfterDrag(this.rotation, dx, dy, this.scale, kind), this.rotation);
+        if (kind === 'azimuthal') this.phi = this.rotation[1];
         this.schedule();
       },
       pointerup: (e) => this.releasePointer(e),
@@ -470,6 +478,10 @@ export class GlobeController {
     } else if (this.pointers.size === 1) {
       this.dragging = true;
       this.pinchDistance = 0;
+    } else if (this.pointers.size === 2) {
+      // 세 손가락 중 하나를 뗐다 — 남은 두 손가락 간격을 새 기준으로 (옛 쌍의 간격이면 배율이 튄다)
+      this.dragging = false;
+      this.pinchDistance = this.pinchSpan();
     }
   }
 
