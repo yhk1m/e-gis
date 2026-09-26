@@ -377,6 +377,16 @@ export class AppLayout {
             <span class="labs-badge" hidden></span>
           </button>
           <!-- 실험 도구 토글(지구본·스와이프)은 뒤 단계에서 이 묶음에 hidden 으로 추가된다 -->
+          <button class="btn btn-tool-labeled" id="swipe-toggle" data-tool="swipe" hidden
+                  title="스와이프 비교 — 레이어나 배경지도 둘을 막대로 비교" aria-pressed="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2"/>
+              <line x1="12" y1="4" x2="12" y2="20"/>
+              <polyline points="8 9 5 12 8 15"/>
+              <polyline points="16 9 19 12 16 15"/>
+            </svg>
+            <span class="btn-tool-label">스와이프</span>
+          </button>
         </div>
 
         <div class="toolbar-spacer"></div>
@@ -478,6 +488,36 @@ export class AppLayout {
                   <polygon points="18,13 14.5,22 18,19.5 21.5,22" class="view3d-compass-north"/>
                   <polygon points="18,28 14.5,19 18,21.5 21.5,19" class="view3d-compass-south"/>
                 </g>
+              </svg>
+            </div>
+          </div>
+          <div id="swipe-controls" class="swipe-controls" hidden>
+            <div class="swipe-panel" role="group" aria-label="스와이프 비교">
+              <label class="swipe-row">
+                비교 대상
+                <select id="swipe-target" aria-label="비교 대상"></select>
+              </label>
+              <label class="swipe-row">
+                방향
+                <select id="swipe-orientation" aria-label="막대 방향">
+                  <option value="vertical">세로 막대</option>
+                  <option value="horizontal">가로 막대</option>
+                </select>
+              </label>
+              <p class="swipe-hint">
+                <span class="swipe-hint-line">막대 왼쪽(위)에만 비교 대상이 보입니다.</span>
+                <span class="swipe-hint-line">막대를 끌어 옮기세요.</span>
+              </p>
+              <div class="swipe-actions">
+                <button id="swipe-close" class="btn btn-sm swipe-close" type="button">닫기</button>
+              </div>
+            </div>
+          </div>
+          <div id="swipe-divider" class="swipe-divider" hidden role="separator" aria-orientation="vertical" aria-label="스와이프 막대">
+            <div class="swipe-handle">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 6 4 12 9 18"/>
+                <polyline points="15 6 20 12 15 18"/>
               </svg>
             </div>
           </div>

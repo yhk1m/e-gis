@@ -19,6 +19,12 @@ export const EXPERIMENTS = [
     name: '구간 채움 편집',
     summary: '범례의 색 칸을 눌러 구간마다 색·패턴·이미지·질감을 바꿉니다.',
     since: '2026-09'
+  },
+  {
+    id: 'swipe',
+    name: '스와이프 비교',
+    summary: '레이어나 배경지도 둘을 가운데 막대를 끌어 비교합니다.',
+    since: '2026-09'
   }
 ];
 

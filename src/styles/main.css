@@ -118,6 +118,12 @@ input:focus, select:focus, textarea:focus {
   color: var(--color-primary);
 }
 
+/* 실험 도구 토글(지구본·스와이프)은 실험이 꺼져 있으면 hidden 이다.
+   .btn 이 display:inline-flex 라 hidden 속성만으로는 안 숨는다. */
+#toolbar .btn[hidden] {
+  display: none;
+}
+
 /* 실험실 버튼 — 4초마다 빛이 한 번 쓸고 지나간다. 켜진 실험 수는 배지로. */
 .btn-labs {
   position: relative;
@@ -5605,6 +5611,146 @@ body.exporting .egis-basemap-panel {
   position: absolute;
   inset: 0;
   z-index: 20;
+}
+
+/* ===== 스와이프 비교 (실험실 swipe) ===== */
+/* 컨트롤 박스 — 오른쪽 위, 지도 컨트롤 열(확대·나침반·내 위치·배경지도, right: --spacing-sm, 폭 32px)의 왼쪽.
+   스와이프는 3D 와 달리 지도를 그대로 쓰므로 그 버튼들을 가리면 비교하는 동안 확대·배경지도를 못 쓴다. */
+.swipe-controls {
+  position: absolute;
+  top: 12px;
+  right: calc(var(--spacing-sm) + 32px + 12px);
+  z-index: 30;
+}
+
+.swipe-controls[hidden] {
+  display: none;
+}
+
+.swipe-panel {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--map-overlay-bg);
+  font-size: 12px;
+}
+
+.swipe-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.swipe-row + .swipe-row {
+  margin-top: 8px;
+}
+
+.swipe-row select {
+  flex: 1;
+  min-width: 160px;
+  max-width: 240px;
+}
+
+.swipe-hint {
+  margin: 10px 0 0;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.swipe-hint-line {
+  display: block;
+  white-space: nowrap;
+}
+
+.swipe-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.swipe-close {
+  cursor: pointer;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+}
+
+/* 막대 — #map-container 안 절대 위치. 12px 폭의 투명 손잡이 영역 가운데에 2px 선. */
+.swipe-divider {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 12px;
+  height: 100%;
+  margin-left: -6px;
+  z-index: 15;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.swipe-divider[hidden] {
+  display: none;
+}
+
+.swipe-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 5px;
+  width: 2px;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.swipe-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  background: var(--map-overlay-bg);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+}
+
+.swipe-divider.horizontal {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  margin-left: 0;
+  margin-top: -6px;
+  cursor: ns-resize;
+}
+
+.swipe-divider.horizontal::before {
+  top: 5px;
+  bottom: auto;
+  left: 0;
+  right: 0;
+  width: auto;
+  height: 2px;
+}
+
+.swipe-divider.horizontal .swipe-handle svg {
+  transform: rotate(90deg);
+}
+
+/* 내보내기에는 막대·박스를 찍지 않는다(클립된 지도는 그대로 찍힌다) */
+body.exporting .swipe-divider,
+body.exporting .swipe-controls {
+  display: none;
 }
 
 /* ===== 3D 보기: 태블릿 최적화 ===== */

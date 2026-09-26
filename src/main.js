@@ -76,6 +76,7 @@ import { builtinDataDialog } from './ui/dialogs/BuiltinDataDialog.js';
 import { setCrsPrompt } from './core/crsResolver.js';
 import { crsConfirmDialog } from './ui/dialogs/CrsConfirmDialog.js';
 import { View3DPanel } from './ui/panels/View3DPanel.js';
+import { SwipePanel } from './ui/panels/SwipePanel.js';
 
 /**
  * 앱 초기화
@@ -139,6 +140,15 @@ function initApp() {
     onMessage: showStatusMessage
   });
   view3dPanel.init();
+
+  swipePanel = new SwipePanel({
+    mapManager,
+    layerManager,
+    labs,
+    onMessage: showStatusMessage,
+    isView3DActive: () => !!view3dPanel?.controller
+  });
+  swipePanel.init();
 
   // 6. 테마 토글 버튼 이벤트
   const themeToggle = document.getElementById('theme-toggle');
@@ -481,7 +491,12 @@ function initToolbar() {
       case 'labs':
         labPanel.show();
         return;
+      case 'swipe':
+        swipePanel?.toggle();
+        return;
       case 'view3d':
+        // 3D 와 스와이프는 배타 — 3D 를 켜고 끌 때 스와이프를 먼저 닫는다(닫혀 있으면 아무 일 없음)
+        swipePanel?.close();
         view3dPanel?.toggle();
         return;
       case 'upload-image': {
@@ -1242,6 +1257,9 @@ let featureClipboard = [];
 /** 3D 보기 패널 — 진단 훅에서도 쓴다 */
 let view3dPanel = null;
 
+/** 스와이프 비교 패널(실험실 swipe) — 진단 훅에서도 쓴다 */
+let swipePanel = null;
+
 // 최근 파일 관리 (최대 5개)
 const RECENT_FILES_KEY = 'egis_recent_files';
 const MAX_RECENT_FILES = 5;
@@ -1367,4 +1385,4 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // 진단용 훅 — 헤드리스 재현 테스트(버그 리포트 검증)에서 내부 상태 접근용.
 // 클라이언트 앱이라 보안 경계 아님(모든 코드·키가 이미 번들에 공개).
-window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, get view3dPanel() { return view3dPanel; } };
+window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, geojsonLoader, get view3dPanel() { return view3dPanel; }, get swipePanel() { return swipePanel; } };

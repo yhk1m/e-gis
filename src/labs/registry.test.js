@@ -34,6 +34,14 @@ describe('EXPERIMENTS', () => {
     expect(EXPERIMENT_IDS.indexOf('class-fill')).toBe(EXPERIMENT_IDS.indexOf('glass') + 1);
   });
 
+  it('3단계에는 swipe 가 들어 있다', () => {
+    expect(EXPERIMENT_IDS).toContain('swipe');
+  });
+
+  it('swipe 는 class-fill 뒤에 있다 (설계의 순서: glass, class-fill, globe, swipe, time-series)', () => {
+    expect(EXPERIMENT_IDS.indexOf('swipe')).toBeGreaterThan(EXPERIMENT_IDS.indexOf('class-fill'));
+  });
+
   it('FEEDBACK_URL 은 비어 있거나 https 주소다', () => {
     expect(FEEDBACK_URL === '' || /^https:\/\//.test(FEEDBACK_URL)).toBe(true);
   });
