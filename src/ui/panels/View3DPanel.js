@@ -10,10 +10,11 @@ import { FLAT, ALL } from '../../view3d/terrainSource.js';
 import { isStaleModuleError } from '../../view3d/staleModule.js';
 
 export class View3DPanel {
-  constructor({ mapManager, layerManager, onMessage }) {
+  constructor({ mapManager, layerManager, onMessage, beforeEnter }) {
     this.mapManager = mapManager;
     this.layerManager = layerManager;
     this.onMessage = onMessage || (() => {});
+    this.beforeEnter = beforeEnter || (() => {});   // 3D 를 켜기 전에 지구본을 끈다 (둘은 배타)
     this.controller = null;
   }
 
@@ -70,6 +71,7 @@ export class View3DPanel {
 
     this.toggleButton.disabled = true;
     try {
+      await this.beforeEnter();
       const { View3DController } = await import('../../view3d/View3DController.js');
       this.controller = new View3DController({
         mapManager: this.mapManager,
