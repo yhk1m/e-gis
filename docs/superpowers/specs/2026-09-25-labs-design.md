@@ -123,7 +123,7 @@ export const FEEDBACK_URL = '';   // 구글 폼 주소. 비어 있으면 링크�
   `prefers-reduced-transparency` 는 **무시한다**(v2): 실험을 직접 켠 사용자에게만 적용되는데 Windows 는 "투명 효과" 가 꺼진 게 흔해, 따르면 유리가 아예 안 보인다(v1 이 "그냥 음영만" 으로 보인 원인).
 - 내보내기 예외: `[data-surface="glass"] body.exporting .choropleth-legend …` 은 블러 없이 불투명 배경(html2canvas 는 backdrop-filter 를 못 그린다).
   **알려진 한계(v2)**: 지도가 패널·막대 아래까지 이어지므로 `html2canvas(mapElement)` 내보내기에 가려진 지도 영역까지 찍힌다. 실험 범위에서는 고치지 않고 사용설명서에 "내보내기 전 끄기" 로 안내한다.
-- 글자 색 토큰은 손대지 않는다. 검증: 하네스 캡처로 육안 확인(다크에서 밝은 배경지도 위 `--text-secondary` 는 4.5:1 에 못 미친다 — 실험 한계로 둔다).
+- 글자(2026-09-26 v2.1, 사용자 보고 "글씨가 잘 안 보임"): 유리 위에서는 글자 토큰을 덮어쓴다 — 라이트는 진한 글자(`#0f172a`·`#334155`·`#475569`) + 흰 광채 `text-shadow`, 다크는 흰 글자(`#ffffff`·`#e2e8f0`·`#cbd5e1`) + 검은 그림자. 폼 컨트롤·단색 버튼·배지·불투명 팝오버는 광채 제외. 순수 흰 글자를 라이트에도 쓰지 않는 이유: 42% 흰 유리 위에서는 더 안 보인다.
 - (v2, 2026-09-26) 데스크톱(`@media (min-width: 1025px) and (pointer: fine)`)에서 글래스가 켜지면 `#app` 을 relative, `#main-container` 를 static 으로 두고 `#map-container` 를 `#app` 전체에 absolute `inset:0` 으로 깐다. 메뉴바·툴바·상태줄·왼쪽 패널은 모두 가장자리에서 `--glass-gap`(4px) 띄운 12px 라운드 유리 카드다(사용자 요청, 2026-09-26). 유리 위 버튼·메뉴·탭·OL 컨트롤은 호버 시 밝아지고 누르면 안쪽 그림자와 함께 1px 내려간다(`:active`, 접근성 `prefers-reduced-motion` 이면 전환 없음).
   `#menubar`·`#toolbar`(자기 z-index 유지 — 드롭다운이 패널 위에 뜬다)·`#statusbar`·`#left-panel`·`.panel-resizer` 는 relative 로 지도 위에. 왼쪽 패널은 `margin: 8px 0 8px 8px; border-radius: 12px` 카드.
   부유 요소는 `#map-container` 의 세 변수만큼 민다 — 왼쪽(`--glass-panel-offset`: 사이드바 토글·왼쪽 범례·피처 카드·축척), 위(`--glass-top-offset`: `.ol-zoom`·나침반·GPS·배경지도 버튼·`.view3d-controls`·피처 카드), 아래(`--glass-bottom-offset`: 범례들·축척·`.ol-attribution`). 사이드바 토글은 보이는 띠의 세로 가운데.
