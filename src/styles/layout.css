@@ -30,11 +30,6 @@
   flex-shrink: 0;
 }
 
-/* 휴대폰 전용 요소(햄버거·검색·레이어 버튼, 검색 줄)는 기본으로 숨긴다 — mobile.css 가 휴대폰에서 켠다 */
-.mobile-only {
-  display: none;
-}
-
 .menu-left {
   display: flex;
   align-items: center;
@@ -748,42 +743,13 @@
  * 모바일 최적화 (휴대폰, ≤768px)
  * ============================================ */
 @media (max-width: 768px) {
-  /* --- 메뉴바: 줄바꿈 허용 (드롭다운이 잘리지 않도록 스크롤 대신 wrap) --- */
-  #menubar {
-    height: auto;
-    min-height: var(--menubar-height);
-    flex-wrap: wrap;
-    padding: 2px var(--spacing-sm);
-    row-gap: 2px;
-  }
-
-  /* e-GIS 로고 줄 제거 */
-  .menu-left {
-    display: none;
-  }
-
-  /* 줄 순서: 이메일/로그인 줄 위, 메뉴 아이콘 줄 아래 */
-  .menu-right {
-    order: 1;
-    width: 100%;
-  }
-
-/* 로그인/마이페이지/로그아웃: 줄바꿈 방지를 위해 영문 라벨 사용 */
+  /* 헤더 한 줄·서랍·툴바 격자·검색 줄·상태줄은 mobile.css 가 맡는다. 로그인/마이페이지/로그아웃은 영문 라벨 */
   .auth-label-ko {
     display: none;
   }
 
   .auth-label-en {
     display: inline;
-  }
-
-  .menu-center {
-    order: 2;
-    width: 100%;
-  }
-
-  .menu-center .menu-items {
-    flex-wrap: wrap;
   }
 
   /* 로그인 이메일이 길어도 넘치지 않게: 끝부분을 …로 줄임 (줄바꿈 없음) */
@@ -797,77 +763,6 @@
 
   .header-auth {
     min-width: 0;
-  }
-
-  /* 메뉴 버튼: 한글 라벨 대신 아이콘 표시 */
-  .menu-button {
-    font-size: 17px !important;
-    padding: 5px 9px !important;
-    line-height: 1;
-  }
-
-  .menu-btn-icon {
-    display: inline;
-  }
-
-  .menu-btn-label {
-    display: none;
-  }
-
-  /* 드롭다운이 화면 밖으로 나가지 않도록 */
-  .menu-item .dropdown-menu {
-    max-width: calc(100vw - 16px);
-  }
-
-  /* 부가 링크는 공간 확보를 위해 숨김 */
-  .header-privacy-link,
-  .btn-community {
-    display: none;
-  }
-
-  /* 데이터 불러오기는 핵심 진입점이라 휴대폰에서도 아이콘만 남긴다 */
-  .btn-community.btn-community-primary {
-    display: flex;
-    padding: 5px 9px;
-  }
-
-  .btn-community-primary svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .btn-community-primary .btn-community-label {
-    display: none;
-  }
-
-  /* --- 툴바: 줄바꿈 허용 --- */
-  #toolbar {
-    height: auto;
-    min-height: var(--toolbar-height);
-    flex-wrap: wrap;
-    padding: 4px var(--spacing-sm);
-    row-gap: 4px;
-  }
-
-  .toolbar-search {
-    flex: 1;
-    min-width: 150px;
-  }
-
-  #location-search-input {
-    width: 100%;
-  }
-
-  /* 접기 버튼·접힌 상태 규칙은 기본 스타일에 있다 (화면 크기와 무관하게 동작) */
-
-  /* --- 상태표시줄: 핵심 항목만 + 넘침 허용 --- */
-  #statusbar {
-    gap: var(--spacing-sm);
-    overflow-x: auto;
-  }
-
-  .visitor-counter {
-    display: none;
   }
 
   /* --- 왼쪽 패널: 하단에서 올라오는 시트(bottom sheet) --- */

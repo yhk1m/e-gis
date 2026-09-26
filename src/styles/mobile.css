@@ -1,0 +1,78 @@
+/* © 2026 김용현 */
+/* 휴대폰 셸 (≤768px): 헤더 한 줄, 툴바·메뉴는 왼쪽 서랍, 검색 줄, 레이어 버튼. MobileShell.js 가 노드를 옮긴 뒤의 모양. */
+
+.mobile-only { display: none; }
+
+@media (max-width: 768px) {
+  .mobile-only { display: flex; }
+
+  /* --- 헤더 한 줄 --- */
+  #menubar { height: var(--menubar-height); min-height: 0; flex-wrap: nowrap; padding: 0 var(--spacing-xs); gap: var(--spacing-xs); }
+  .menu-left { display: flex; flex: 1; min-width: 0; }
+  .menu-right { display: flex; align-items: center; gap: 2px; order: 0; width: auto; }
+  /* .btn-community 는 #menubar 안에서만 숨긴다 — 서랍으로 옮겨진 Geocoding·About 은 한 줄 항목으로 보여야 한다 */
+  .toolbar-collapse-btn, .header-privacy-link, #menubar .btn-community:not(.btn-community-primary), .header-user-mail { display: none !important; }
+  .auth-label-ko { display: none; } .auth-label-en { display: inline; }
+  .header-user-email { max-width: 28vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-menu-btn, .mobile-header-btn { position: relative; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: none; border-radius: var(--radius-md); background: transparent; color: var(--text-primary); cursor: pointer; flex-shrink: 0; }
+  .mobile-header-btn.active { color: var(--color-primary); background: var(--bg-hover); }
+  .mobile-layers-count { position: absolute; top: 4px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--color-primary); color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; }
+  .mobile-layers-count[hidden] { display: none; }
+
+  /* --- 검색 줄 (헤더 아래) ---
+     결과 목록이 아래 시트(layout.css z-index 1200) 위로 뜨도록 서랍(1300)보다 한 단계 아래에 둔다 */
+  .mobile-search-row { position: relative; padding: var(--spacing-xs) var(--spacing-sm); background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color); z-index: 1250; flex-shrink: 0; }
+  .mobile-search-row[hidden] { display: none; }
+  .mobile-search-row .toolbar-search { flex: 1; min-width: 0; margin-left: 0; }
+  .mobile-search-row #location-search-input,
+  .mobile-search-row #location-search-input:focus { width: 100%; height: 40px; font-size: 15px; }
+  /* 결과 목록은 검색 줄 폭에 맞춘다 (데스크톱은 오른쪽 정렬 350px) */
+  .mobile-search-row .search-results { left: 0; right: 0; width: auto; max-width: none; max-height: 50vh; }
+
+  /* --- 서랍 ---
+     bottom sheet(1200)·손잡이(1201) 위, 대화상자(2000) 아래 */
+  .mobile-drawer { position: fixed; inset: 0; z-index: 1300; }
+  .mobile-drawer[hidden] { display: none; }
+  .mobile-drawer-scrim { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.45); }
+  .mobile-drawer-sheet { position: absolute; top: 0; bottom: 0; left: 0; width: min(86vw, 360px); display: flex; flex-direction: column; background: var(--bg-panel); border-right: 1px solid var(--border-color); box-shadow: var(--shadow-lg); animation: mobile-drawer-in 180ms ease-out; }
+  @keyframes mobile-drawer-in { from { transform: translateX(-100%); } to { transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .mobile-drawer-sheet { animation: none; } }
+  .mobile-drawer-head { display: flex; align-items: center; justify-content: space-between; height: 48px; flex-shrink: 0; padding: 0 var(--spacing-sm) 0 var(--spacing-md); border-bottom: 1px solid var(--border-color); font-weight: 700; color: var(--text-primary); }
+  .mobile-drawer-close { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; }
+  .mobile-drawer-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: env(safe-area-inset-bottom); }
+  .mobile-drawer-heading { margin: 0; padding: var(--spacing-md) var(--spacing-md) var(--spacing-xs); font-size: var(--font-size-xs); font-weight: 600; letter-spacing: 0.04em; color: var(--text-muted); text-transform: uppercase; }
+
+  /* 서랍 안 툴바: 4열 격자, 아이콘 위 라벨 아래 */
+  .mobile-drawer #toolbar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: auto; min-height: 0; padding: 0 var(--spacing-sm); background: transparent; border: none; }
+  .mobile-drawer #toolbar .toolbar-group { display: contents; }
+  .mobile-drawer #toolbar .btn-icon, .mobile-drawer #toolbar .btn-tool-labeled { display: flex; align-items: center; width: auto; height: auto; min-height: 64px; flex-direction: column; justify-content: center; gap: 4px; padding: 6px 2px; border-radius: var(--radius-md); font-size: 11px; line-height: 1.2; }
+  .mobile-drawer #toolbar .btn-icon svg { width: 24px !important; height: 24px !important; }
+  /* #toolbar 로 좁혀 둔다 — 서랍 닫기 버튼도 .btn-icon 이다 */
+  .mobile-drawer #toolbar .btn-icon[data-label]::after { content: attr(data-label); display: block; font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+  .mobile-drawer #toolbar .btn-icon.active::after { color: var(--color-primary); }
+  .mobile-drawer #toolbar [hidden], .mobile-drawer #toolbar [style*="display:none"], .mobile-drawer #toolbar [style*="display: none"] { display: none !important; }
+  .mobile-drawer #toolbar .toolbar-copyright, .mobile-drawer #toolbar .toolbar-spacer { display: none; }
+  .mobile-drawer #toolbar .btn-tool-labeled svg { width: 24px; height: 24px; }
+
+  /* 서랍 안 메뉴: 아코디언 */
+  .mobile-drawer .menu-center { display: block; width: auto; order: 0; }
+  .mobile-drawer .menu-items { display: flex; flex-direction: column; flex-wrap: nowrap; gap: 0; padding: 0 var(--spacing-xs) var(--spacing-md); }
+  .mobile-drawer .menu-item { position: static; }
+  .mobile-drawer .menu-button, .mobile-drawer .btn-community { display: flex; align-items: center; gap: var(--spacing-sm); width: 100%; min-height: 44px; margin: 0; padding: 0 var(--spacing-md) !important; border: none; border-radius: var(--radius-md); background: transparent; font-size: 15px !important; color: var(--text-primary); text-align: left; }
+  .mobile-drawer .menu-btn-icon { display: none; }
+  .mobile-drawer .menu-btn-label, .mobile-drawer .btn-community-label { display: inline; }
+  .mobile-drawer .menu-item.dropdown > .menu-button::after, .mobile-drawer .menu-item.dropdown > .btn-community::after { content: ''; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); opacity: 0.6; transition: transform var(--transition-fast); }
+  .mobile-drawer .menu-item.dropdown.open > .menu-button::after, .mobile-drawer .menu-item.dropdown.open > .btn-community::after { transform: rotate(-135deg); }
+  .mobile-drawer .menu-item .dropdown-menu { position: static; display: none; min-width: 0; margin: 0 0 var(--spacing-xs) var(--spacing-md); padding: 0 0 0 var(--spacing-sm); border: none; border-left: 2px solid var(--border-color); border-radius: 0; box-shadow: none; background: transparent; max-width: none; }
+  .mobile-drawer .menu-item.dropdown.open .dropdown-menu { display: block; }
+  .mobile-drawer .dropdown-item { min-height: 40px; display: flex; align-items: center; font-size: 14px; }
+  .mobile-drawer .dropdown-item[hidden] { display: none; }
+  .mobile-drawer .btn-community-primary { justify-content: flex-start; }
+
+  /* --- 툴바 자리에 남는 것 없음: 서랍 밖의 #toolbar 는 (미디어 전환 중 잠깐) 숨긴다 --- */
+  body.phone-shell #app > #toolbar { display: none; }
+
+  /* 상태줄 */
+  #statusbar { gap: var(--spacing-sm); overflow-x: auto; }
+  .visitor-counter { display: none; }
+}
