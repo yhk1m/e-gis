@@ -218,6 +218,12 @@
 [data-surface="glass"] .swipe-controls { top: calc(var(--glass-top-offset) + 12px); }
 [data-surface="glass"] .globe-controls { top: calc(var(--glass-top-offset) + 12px); }
 /* .egis-basemap-panel 은 .egis-basemap 안에 top:0 으로 붙으므로 따로 밀지 않는다 */
+/* 태블릿·휴대폰은 줌 버튼이 36px 이라 main.css 의 큰 간격(100/152/204)을 그대로 오프셋에 더한다 — 위 데스크톱 값이면 겹친다 */
+@media (pointer: coarse) and (max-width: 1366px), (max-width: 1024px) {
+  [data-surface="glass"] .egis-compass { top: calc(var(--glass-top-offset) + 100px); }
+  [data-surface="glass"] .egis-geolocate { top: calc(var(--glass-top-offset) + 152px); }
+  [data-surface="glass"] .egis-basemap { top: calc(var(--glass-top-offset) + 204px); }
+}
 
 /* 아래에 붙는 요소 */
 [data-surface="glass"] .choropleth-legend,
@@ -256,10 +262,12 @@
     bottom: calc(var(--glass-bottom-offset, 0px) + var(--glass-gap));
     width: auto !important; height: 55%; margin: 0;
     border-radius: 12px 12px 0 0; border-bottom: none;
+    z-index: 1200; /* layout.css 의 시트 값 — 위 부유 규칙의 --z-panel(100)이면 축척바(110)·범례가 시트 위로 올라온다 */
   }
   [data-surface="glass"] .sidebar-toggle {
     left: 50%; top: auto; transform: translateX(-50%);
     bottom: calc(var(--glass-bottom-offset, 0px) + var(--glass-gap));
+    z-index: 1201;
   }
   [data-surface="glass"] #left-panel:not(.hidden) ~ #map-container .sidebar-toggle {
     bottom: calc(55% + var(--glass-bottom-offset, 0px) + var(--glass-gap));
