@@ -63,6 +63,23 @@ describe('make · fitScale', () => {
     expect(p.translate()).toEqual([400, 300]);
   });
 
+  it('inset 을 주면 그만큼 뺀 상자에 맞춘다 (글래스 막대·패널 밑으로 들어가지 않게)', () => {
+    const plain = make('orthographic', 800, 600);
+    const p = make('orthographic', 800, 600, { inset: { top: 100 } });
+    expect(p.translate()[1]).toBeCloseTo(plain.translate()[1] + 50, 6);
+    expect(p.translate()[0]).toBeCloseTo(400, 6);
+    expect(p.scale()).toBeLessThan(plain.scale());
+    expect(p.scale()).toBeCloseTo((600 - 100 - 2 * FIT_PAD) / 2, 6);
+    const left = make('orthographic', 800, 600, { inset: { left: 200 } });
+    expect(left.translate()[0]).toBeCloseTo(500, 6);
+    expect(fitScale('orthographic', 800, 600, { top: 100 })).toBeCloseTo(p.scale(), 6);
+  });
+
+  it('inset 의 음수·NaN 은 0 으로 본다', () => {
+    const p = make('orthographic', 800, 600, { inset: { top: -50, left: NaN } });
+    expect(p.translate()).toEqual([400, 300]);
+  });
+
   it('여백보다 작은 캔버스에서도 맞춤 배율은 양수다', () => {
     for (const { key } of PROJECTIONS) {
       const s = fitScale(key, 1, 1);

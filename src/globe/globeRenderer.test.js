@@ -4,7 +4,8 @@
  * 순서는 getAllLayers() 순서(아래→위)를 그대로 쓴다. 안 보이는 레이어는 세지도 않는다.
  */
 import { describe, it, expect } from 'vitest';
-import { buildDrawList, unsupportedReason, skippedSummary } from './globeRenderer.js';
+import { buildDrawList, unsupportedReason, skippedSummary, paint } from './globeRenderer.js';
+import { make } from './projections.js';
 
 const vec = (id, extra = {}) => ({ id, name: id, type: 'vector', geometryType: 'Polygon', visible: true, source: {}, ...extra });
 
@@ -53,5 +54,44 @@ describe('skippedSummary', () => {
     expect(skippedSummary([])).toBe('');
     expect(skippedSummary([{ name: '열지도', reason: '히트맵' }, { name: '고도', reason: 'DEM' }]))
       .toBe('지구본에 표시되지 않음: 열지도(히트맵), 고도(DEM)');
+  });
+});
+
+/** 메서드 호출을 (이름, 그때의 fillStyle) 로 적는 가짜 2D 컨텍스트 */
+function recordingCtx() {
+  const ops = [];
+  const state = { fillStyle: null };
+  const ctx = new Proxy(state, {
+    get(target, key) {
+      if (key === 'ops') return ops;
+      if (key in target) return target[key];
+      return (...args) => { ops.push({ name: key, fillStyle: target.fillStyle, args }); };
+    },
+    set(target, key, value) { target[key] = value; return true; }
+  });
+  return ctx;
+}
+
+describe('paint 배경', () => {
+  const base = () => ({
+    width: 800, height: 600, projection: make('orthographic', 800, 600),
+    items: [], collections: new Map(), land: null,
+    colors: { bg: '#eef2f7', ocean: '#dbeafe' }
+  });
+
+  it('구 밖을 colors.bg 로 먼저 칠해 오버레이가 2D 지도를 가린다', () => {
+    const ctx = recordingCtx();
+    paint(ctx, base());
+    const firstFill = ctx.ops.findIndex((op) => op.name === 'fill' || op.name === 'fillRect');
+    expect(ctx.ops[firstFill].name).toBe('fillRect');
+    expect(ctx.ops[firstFill].fillStyle).toBe('#eef2f7');
+    expect(ctx.ops[firstFill].args).toEqual([0, 0, 800, 600]);
+  });
+
+  it('transparent 면 배경을 칠하지 않는다(PNG 저장용)', () => {
+    const ctx = recordingCtx();
+    paint(ctx, { ...base(), transparent: true });
+    expect(ctx.ops.some((op) => op.name === 'fillRect')).toBe(false);
+    expect(ctx.ops.some((op) => op.name === 'fill' && op.fillStyle === '#dbeafe')).toBe(true);
   });
 });

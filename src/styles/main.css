@@ -5614,6 +5614,20 @@ body.exporting .egis-basemap-panel {
 }
 
 /* ===== 지구본 (실험실 globe) ===== */
+/* 캔버스가 2D 지도를 가린다(paint 도 구 밖을 --globe-bg 로 칠한다 — 이 배경은 그 전 한 프레임·PNG 와 무관한 보험).
+   더블클릭이 글자를 선택해 두면 다음 드래그가 네이티브 드래그앤드롭이 되므로 선택을 막는다. */
+.globe-canvas {
+  background: var(--globe-bg);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 2D 축척바는 지구본에서 틀린 값이다. 단계구분도 범례는 그대로 둔다(지구본에서도 읽는다). */
+#map-container.globe-active .map-scale-bar {
+  display: none;
+}
+
 /* 컨트롤 박스 — 3D 컨트롤과 같은 자리(지구본 캔버스가 지도와 OL 컨트롤을 덮는다). 3D 와 동시에 뜨지 않는다 */
 .globe-controls {
   position: absolute;

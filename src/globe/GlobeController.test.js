@@ -10,15 +10,21 @@ import { GlobeController } from './GlobeController.js';
 
 let frames;
 
+let ops;
+
+/** 메서드 이름만 ops 에 적는 가짜 2D 컨텍스트 */
 function fakeCtx() {
   return new Proxy({}, {
-    get(target, key) { return key in target ? target[key] : () => {}; },
+    get(target, key) { return key in target ? target[key] : () => { ops.push(key); }; },
     set(target, key, value) { target[key] = value; return true; }
   });
 }
 
 beforeEach(() => {
   frames = [];
+  ops = [];
+  delete document.documentElement.dataset.surface;
+  window.matchMedia = undefined;
   globalThis.requestAnimationFrame = (cb) => { frames.push(cb); return frames.length; };
   globalThis.cancelAnimationFrame = () => {};
   globalThis.fetch = vi.fn(async () => ({ ok: false, status: 404 }));
@@ -82,6 +88,87 @@ describe('핀치', () => {
     const before = controller.scale;
     pointer(c, 'pointermove', 3, 301, 0);      // 1px 벌림
     expect(controller.scale / before).toBeCloseTo(201 / 200, 6);
+    controller.exit();
+  });
+});
+
+describe('캔버스 위 조작이 브라우저 기본 동작으로 새지 않는다', () => {
+  it('끌 수 없는 캔버스이고 dragstart 는 막는다', () => {
+    const { controller } = makeController();
+    controller.enter();
+    expect(controller.canvas.draggable).toBe(false);
+    const e = new Event('dragstart', { cancelable: true });
+    controller.canvas.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(true);
+    controller.exit();
+  });
+
+  it('더블클릭은 처음 자세로 돌리고 생긴 글자 선택을 지운다', () => {
+    const removeAllRanges = vi.fn();
+    const spy = vi.spyOn(window, 'getSelection').mockReturnValue({ removeAllRanges });
+    const { controller } = makeController();
+    controller.enter();
+    controller.scale = controller.fit * 3;
+    const e = new Event('dblclick', { cancelable: true });
+    controller.canvas.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(true);
+    expect(removeAllRanges).toHaveBeenCalled();
+    expect(controller.scale).toBe(controller.fit);
+    controller.exit();
+    spy.mockRestore();
+  });
+
+  it('마우스 pointerdown 의 기본 동작(선택 시작)을 막는다', () => {
+    const { controller } = makeController();
+    controller.enter();
+    const e = new Event('pointerdown', { cancelable: true });
+    Object.assign(e, { pointerId: 1, clientX: 0, clientY: 0, pointerType: 'mouse', button: 0 });
+    controller.canvas.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(true);
+    controller.exit();
+  });
+});
+
+describe('2D 와의 경계', () => {
+  it('켜 있는 동안 컨테이너에 globe-active 를 둔다(축척바 숨김)', () => {
+    const { controller } = makeController();
+    controller.enter();
+    expect(controller.container.classList.contains('globe-active')).toBe(true);
+    controller.exit();
+    expect(controller.container.classList.contains('globe-active')).toBe(false);
+  });
+
+  it('PNG 는 구 밖이 투명하고, 화면은 다시 불투명 배경으로 그린다', () => {
+    const { controller } = makeController();
+    controller.enter();
+    let opsAtCapture = null;
+    controller.canvas.toDataURL = () => { opsAtCapture = ops.slice(); return 'data:image/png;base64,AA'; };
+    ops = [];
+    expect(controller.toDataURL()).toBe('data:image/png;base64,AA');
+    expect(opsAtCapture.includes('fillRect')).toBe(false);
+    expect(ops.slice(opsAtCapture.length).includes('fillRect')).toBe(true);
+    controller.exit();
+  });
+
+  it('글래스 데스크톱이면 막대·패널 오프셋만큼 뺀 상자에 맞춘다', () => {
+    document.documentElement.dataset.surface = 'glass';
+    window.matchMedia = (q) => ({ matches: q === '(min-width: 1025px) and (pointer: fine)' });
+    const { controller } = makeController();
+    controller.container.style.setProperty('--glass-top-offset', '100px');
+    controller.container.style.setProperty('--glass-bottom-offset', '20px');
+    controller.container.style.setProperty('--glass-panel-offset', '300px');
+    controller.enter();
+    expect(controller.inset).toEqual({ top: 100, right: 0, bottom: 20, left: 300 });
+    expect(controller.fit).toBeCloseTo((600 - 120 - 40) / 2, 6);
+    controller.exit();
+  });
+
+  it('글래스가 아니면 오프셋 변수가 남아 있어도 전체에 맞춘다', () => {
+    const { controller } = makeController();
+    controller.container.style.setProperty('--glass-top-offset', '100px');
+    controller.enter();
+    expect(controller.inset).toEqual({ top: 0, right: 0, bottom: 0, left: 0 });
+    expect(controller.fit).toBeCloseTo(280, 6);
     controller.exit();
   });
 });

@@ -94,6 +94,7 @@
   --map-overlay-bg: rgba(255, 255, 255, 0.9);
 
   /* 지구본 (실험실 globe) */
+  --globe-bg: #eef2f7;
   --globe-ocean: #dbeafe;
   --globe-land: #e7e5e4;
   --globe-land-stroke: #a8a29e;
@@ -144,6 +145,7 @@
   --map-overlay-bg: rgba(30, 41, 59, 0.9);
 
   /* 지구본 (실험실 globe) */
+  --globe-bg: #0b1220;
   --globe-ocean: #172554;
   --globe-land: #334155;
   --globe-land-stroke: #475569;

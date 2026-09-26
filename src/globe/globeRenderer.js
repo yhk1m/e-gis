@@ -2,7 +2,7 @@
 /**
  * 지구본 그리기 — 목록(순수)과 캔버스(paint).
  *
- * 순서: 바다(구 전체) → 경위선 10° → 육지 → 레이어(아래→위) → 구 윤곽.
+ * 순서: 구 밖 배경 → 바다(구 전체) → 경위선 10° → 육지 → 레이어(아래→위) → 구 윤곽.
  * 색은 호출자가 CSS 변수에서 읽어 넘긴다(라이트·다크). 폴리곤 채움은 1단계 fillFor 를
  * 주입받아 쓴다 — 지구본이 classFillCanvas 를 직접 import 하지 않으므로 순수 부분을
  * 노드에서 테스트할 수 있고, 1단계 시그니처가 바뀌어도 GlobeController 한 곳만 고친다.
@@ -17,6 +17,7 @@ const SPHERE = { type: 'Sphere' };
 const GRATICULE = geoGraticule10();
 
 const DEFAULT_COLORS = {
+  bg: '#eef2f7',
   ocean: '#dbe9f4',
   land: '#f2efe6',
   landStroke: '#b9b2a2',
@@ -143,7 +144,9 @@ function paintFeature(ctx, path, layerInfo, feature, fillFor, pixelScale) {
  *   items: object[],                            buildDrawList().items
  *   collections: Map<string, object>,           레이어 id → GeoJSON FeatureCollection(4326)
  *   land: object|null,                          세계 국가 FeatureCollection
- *   colors: {ocean: string, land: string, landStroke: string, graticule: string, outline: string},
+ *   colors: {bg: string, ocean: string, land: string, landStroke: string, graticule: string, outline: string},
+ *                                               bg 는 구 밖 — 오버레이가 2D 지도를 가린다(3D 처럼)
+ *   transparent: boolean,                       true 면 구 밖을 비워 둔다(PNG 저장용)
  *   showGraticule: boolean, showLand: boolean,  (기본 true)
  *   lite: boolean,                              드래그 중 느릴 때: 바다·경위선·육지·윤곽만
  *   fillFor: (spec, baseColor, fillOpacity, pixelScale) => string|CanvasPattern,  없으면 단색
@@ -154,7 +157,7 @@ export function paint(ctx, opts) {
   if (!ctx || !opts || !opts.projection) return;
   const {
     width = 0, height = 0, projection, land = null,
-    showGraticule = true, showLand = true, lite = false, fillFor = null, pixelScale = 1
+    showGraticule = true, showLand = true, lite = false, fillFor = null, pixelScale = 1, transparent = false
   } = opts;
   const items = opts.items || opts.drawList?.items || [];
   const collections = opts.collections || new Map();
@@ -167,6 +170,12 @@ export function paint(ctx, opts) {
   ctx.lineDashOffset = 0;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+
+  // 0. 구 밖 배경 — 캔버스가 투명하면 뒤의 2D 타일·폴리곤이 비친다
+  if (!transparent) {
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, width, height);
+  }
 
   // 1. 바다
   ctx.beginPath();

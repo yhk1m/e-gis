@@ -44,6 +44,7 @@ const REDRAW_EVENTS = [
 ];
 
 const FALLBACK_COLORS = {
+  bg: '#eef2f7',
   ocean: '#dbeafe', land: '#e7e5e4', landStroke: '#a8a29e', graticule: 'rgba(100, 116, 139, 0.35)', outline: '#64748b'
 };
 
@@ -85,6 +86,7 @@ export class GlobeController {
     this.width = 0;
     this.height = 0;
     this.pixelRatio = 1;
+    this.inset = { top: 0, right: 0, bottom: 0, left: 0 };   // 글래스 막대·패널에 가린 폭(px)
 
     this.projectionKey = DEFAULT_PROJECTION;
     this.rotation = [0, 0, 0];
@@ -122,7 +124,10 @@ export class GlobeController {
     this.canvas.setAttribute('aria-label', '지구본');
     this.canvas.style.touchAction = 'none';
     this.canvas.style.cursor = 'grab';
+    // 더블클릭 선택·네이티브 드래그앤드롭이 회전을 끊지 않게 (CSS user-select 와 함께)
+    this.canvas.draggable = false;
     this.container.appendChild(this.canvas);
+    this.container.classList.add('globe-active');   // 2D 축척바를 숨긴다(지구본에선 틀린 값)
     this.ctx = this.canvas.getContext('2d');
 
     let center = null;
@@ -190,6 +195,7 @@ export class GlobeController {
     this.themeObserver = null;
     this.unbindInput();
     this.canvas.remove();
+    this.container.classList.remove('globe-active');
     this.canvas = null;
     this.ctx = null;
     this.cache.clear();
@@ -228,7 +234,7 @@ export class GlobeController {
     this.projectionKey = entry.key;
     if (entry.kind === 'cylindrical') this.rotation = [this.rotation[0], 0, 0];
     else this.rotation = [this.rotation[0], Number.isFinite(this.phi) ? this.phi : 0, this.rotation[2] || 0];
-    this.fit = fitScale(this.projectionKey, this.width, this.height);
+    this.fit = fitScale(this.projectionKey, this.width, this.height, this.inset);
     this.setScale(this.fit * ratio);
     this.schedule();
   }
@@ -252,16 +258,20 @@ export class GlobeController {
     this.schedule();
   }
 
-  /** 오버레이 캔버스 그대로 PNG(data URL). 꺼져 있으면 null. */
+  /**
+   * 오버레이 캔버스 PNG(data URL). 꺼져 있으면 null.
+   * 구 밖은 투명하게 담는다 — 한 번 배경 없이 그려 찍고, 화면은 곧바로 배경까지 다시 그린다.
+   */
   toDataURL() {
     if (!this.canvas) return null;
-    // 예약된 프레임이 있으면 지금 그려서 최신 화면을 담는다
     if (this.frameId !== null) {
       cancelAnimationFrame(this.frameId);
       this.frameId = null;
-      this.draw();
     }
-    return this.canvas.toDataURL('image/png');
+    this.draw({ transparent: true });
+    const url = this.canvas.toDataURL('image/png');
+    this.draw();
+    return url;
   }
 
   // ----- 배율 -----
@@ -280,7 +290,31 @@ export class GlobeController {
 
   // ----- 크기 -----
 
+  /**
+   * 글래스 데스크톱이면 glass.js 가 컨테이너에 둔 오프셋 변수(px), 아니면 0.
+   * 글래스가 꺼지면 변수가 지워지지만, 켜진 채 태블릿 폭이면 막대가 지도 위에 뜨지 않으므로 조건을 함께 본다.
+   */
+  readInset() {
+    const none = { top: 0, right: 0, bottom: 0, left: 0 };
+    const glass = document.documentElement.dataset.surface === 'glass';
+    const desktop = typeof window.matchMedia === 'function'
+      && window.matchMedia('(min-width: 1025px) and (pointer: fine)').matches;
+    if (!glass || !desktop) return none;
+    const style = getComputedStyle(this.container);
+    const px = (name) => {
+      const value = parseFloat(style.getPropertyValue(name));
+      return Number.isFinite(value) && value > 0 ? value : 0;
+    };
+    return {
+      top: px('--glass-top-offset'),
+      right: 0,
+      bottom: px('--glass-bottom-offset'),
+      left: px('--glass-panel-offset')
+    };
+  }
+
   measure() {
+    this.inset = this.readInset();
     this.width = this.container.clientWidth || 1;
     this.height = this.container.clientHeight || 1;
     this.pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
@@ -288,7 +322,7 @@ export class GlobeController {
     this.canvas.height = Math.max(1, Math.round(this.height * this.pixelRatio));
     this.canvas.style.width = `${this.width}px`;
     this.canvas.style.height = `${this.height}px`;
-    const fit = fitScale(this.projectionKey, this.width, this.height);
+    const fit = fitScale(this.projectionKey, this.width, this.height, this.inset);
     this.fit = Number.isFinite(fit) && fit > 0 ? fit : 1;
   }
 
@@ -297,7 +331,9 @@ export class GlobeController {
     const width = this.container.clientWidth || 1;
     const height = this.container.clientHeight || 1;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
-    if (width === this.width && height === this.height && pixelRatio === this.pixelRatio) return;
+    const inset = this.readInset();
+    const sameInset = ['top', 'right', 'bottom', 'left'].every((k) => inset[k] === this.inset[k]);
+    if (width === this.width && height === this.height && pixelRatio === this.pixelRatio && sameInset) return;
     const ratio = this.zoomRatio();
     this.measure();
     this.setScale(this.fit * ratio);
@@ -322,7 +358,8 @@ export class GlobeController {
       land: read('--globe-land', FALLBACK_COLORS.land),
       landStroke: read('--globe-land-stroke', FALLBACK_COLORS.landStroke),
       graticule: read('--globe-graticule', FALLBACK_COLORS.graticule),
-      outline: read('--globe-outline', FALLBACK_COLORS.outline)
+      outline: read('--globe-outline', FALLBACK_COLORS.outline),
+      bg: read('--globe-bg', FALLBACK_COLORS.bg)
     };
   }
 
@@ -357,13 +394,14 @@ export class GlobeController {
     }
   }
 
-  draw() {
+  /** @param {{transparent?: boolean}} [options] transparent 면 구 밖을 비운다(PNG) */
+  draw({ transparent = false } = {}) {
     if (!this.active || !this.ctx) return;
     this.rotation = safeRotation(this.rotation, this.homeRotation);
     if (!(Number.isFinite(this.scale) && this.scale > 0)) this.scale = this.fit;
 
     const projection = makeProjection(this.projectionKey, this.width, this.height, {
-      rotate: this.rotation, scale: this.scale
+      rotate: this.rotation, scale: this.scale, inset: this.inset
     });
     const layers = this.layerManager?.getAllLayers?.() || [];
     const { items, skipped } = buildDrawList(layers);
@@ -384,7 +422,8 @@ export class GlobeController {
       showLand: this.showLand,
       lite: this.dragging && this.lite,
       fillFor,
-      pixelScale: this.pixelRatio
+      pixelScale: this.pixelRatio,
+      transparent
     });
     if (this.dragging && !this.lite && performance.now() - started > SLOW_FRAME_MS) {
       this.lite = true;   // 이 드래그 동안은 육지·경위선만. 놓으면 전체를 다시 그린다.
@@ -405,6 +444,7 @@ export class GlobeController {
     this.handlers = {
       pointerdown: (e) => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;   // 왼쪽 버튼만 돌린다
+        e.preventDefault();   // 글자 선택 시작 막기 — touch-action:none 이라 터치 핀치는 영향 없다
         try { c.setPointerCapture(e.pointerId); } catch { /* 합성 이벤트 등 */ }
         this.pointers.set(e.pointerId, [e.clientX, e.clientY]);
         if (this.pointers.size === 1) {
@@ -448,8 +488,10 @@ export class GlobeController {
       },
       dblclick: (e) => {
         e.preventDefault();
+        window.getSelection?.()?.removeAllRanges?.();   // 더블클릭이 옆 글자를 선택해 두면 다음 드래그가 드래그앤드롭이 된다
         this.resetView();
-      }
+      },
+      dragstart: (e) => e.preventDefault()
     };
     for (const [name, fn] of Object.entries(this.handlers)) {
       c.addEventListener(name, fn, name === 'wheel' ? { passive: false } : undefined);
