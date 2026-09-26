@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Feature from 'ol/Feature.js';
 import Polygon from 'ol/geom/Polygon.js';
 import { layerManager } from '../core/LayerManager.js';
-import { choroplethTool } from './ChoroplethTool.js';
+import { choroplethTool, swatchStyle } from './ChoroplethTool.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 
 HTMLCanvasElement.prototype.getContext = () => null;
@@ -66,6 +66,40 @@ describe('범례 색 칸', () => {
     choroplethTool.refreshLegendItems(id);
     legend.querySelectorAll('.choropleth-legend-color')[0].click();
     expect(hook).toHaveBeenCalledWith(expect.objectContaining({ classIndex: 0 }));
+  });
+});
+
+describe('swatchStyle — 범례 칸 스타일은 지도의 채움 배경을 따른다', () => {
+  const tile = 'data:image/png;base64,AAAA';
+
+  it('단색·채움 없음은 구간 색', () => {
+    expect(swatchStyle(null, '#800026', null)).toBe('background:#800026');
+    expect(swatchStyle({ kind: 'solid' }, '#800026', tile)).toBe('background:#800026');
+  });
+
+  it('배경이 구간 색인 패턴은 구간 색 위에 타일', () => {
+    expect(swatchStyle({ kind: 'dots', background: 'class' }, '#800026', tile))
+      .toBe(`background-color:#800026;background-image:url(${tile})`);
+  });
+
+  it('배경 없음 패턴은 타일만 — 지도처럼 밑이 비친다', () => {
+    expect(swatchStyle({ kind: 'hatch', background: 'none' }, '#800026', tile))
+      .toBe(`background-color:transparent;background-image:url(${tile})`);
+  });
+
+  it('배경 없음 패턴인데 타일이 없으면 투명(지도 fallback 과 같다), 그 밖의 채움은 구간 색', () => {
+    expect(swatchStyle({ kind: 'hatch', background: 'none' }, '#800026', null)).toBe('background:transparent');
+    expect(swatchStyle({ kind: 'texture', name: 'paper' }, '#800026', null)).toBe('background:#800026');
+    expect(swatchStyle({ kind: 'image', dataUrl: 'data:image/png;base64,AAAA' }, '#800026', null)).toBe('background:#800026');
+  });
+
+  it('renderLegendItems 는 배경 없음 패턴 칸에 구간 색을 깔지 않는다', () => {
+    const { id, info, legend } = makeChoropleth();
+    info._choroplethConfig.fills = [{ kind: 'solid' }, { kind: 'hatch', background: 'none' }];
+    choroplethTool.refreshLegendItems(id);
+    const sw = legend.querySelectorAll('.choropleth-legend-color');
+    expect(sw[0].style.backgroundColor).toMatch(/#ffffcc|rgb\(255, 255, 204\)/);
+    expect(sw[1].style.backgroundColor).toBe('transparent');
   });
 });
 

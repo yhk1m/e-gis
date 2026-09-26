@@ -351,9 +351,7 @@ class ChoroplethTool {
       const range = `${minVal} - ${maxVal}`;
       const fill = fills ? fills[i] : null;
       const tile = isSolid(fill) ? null : tileDataUrl(fill, colors[i], 24);
-      const style = tile
-        ? `background-color:${colors[i]};background-image:url(${tile})`
-        : `background:${colors[i]}`;
+      const style = swatchStyle(fill, colors[i], tile);
       html += `
         <div class="choropleth-legend-item">
           <span class="choropleth-legend-color" data-class="${i}" style="${style}"></span>
@@ -631,6 +629,23 @@ class ChoroplethTool {
     }
     return legend;
   }
+}
+
+/**
+ * 범례 색 칸의 인라인 스타일. 지도(planFill)의 배경 규칙을 그대로 따른다:
+ * 패턴의 배경이 '없음'이면 구간 색을 깔지 않아 타일 아래가 비치고(지도에선 배경지도가 비친다),
+ * 타일을 못 만들었을 때는 지도의 fallback 과 같이 — 없음이면 투명, 그 밖에는 구간 색.
+ * @param {Object|null} fill  채움 사양(정규화 전이어도 됨)
+ * @param {string} color      구간 색
+ * @param {string|null} tileUrl  tileDataUrl 결과
+ * @returns {string}
+ */
+export function swatchStyle(fill, color, tileUrl) {
+  if (isSolid(fill)) return `background:${color}`;
+  const f = normalizeFill(fill);
+  const noBg = (f.kind === 'hatch' || f.kind === 'dots' || f.kind === 'cross') && f.background === 'none';
+  if (!tileUrl) return `background:${noBg ? 'transparent' : color}`;
+  return `background-color:${noBg ? 'transparent' : color};background-image:url(${tileUrl})`;
 }
 
 export const choroplethTool = new ChoroplethTool();

@@ -29,7 +29,7 @@ function fakeTool(cfg) {
 function setup(fills, colors = ['#ffffcc', '#800026']) {
   document.body.innerHTML = `
     <div id="map" style="position:relative;width:800px;height:600px">
-      <div class="choropleth-legend"><div class="choropleth-legend-items">
+      <div class="choropleth-legend" id="choropleth-legend-L"><div class="choropleth-legend-items">
         <span class="choropleth-legend-color" data-class="0"></span>
         <span class="choropleth-legend-color" data-class="1"></span>
       </div></div>
@@ -207,22 +207,53 @@ describe('ClassFillPopover', () => {
   });
 
   it('Esc·바깥 클릭·닫기 버튼으로 닫힌다, 앵커 클릭은 닫지 않는다', () => {
-    const { popover, anchor } = setup();
-    popover.open({ layerId: 'L', classIndex: 0, anchor });
+    const { popover, anchor } = setup();   // anchor 는 2번째 칸(data-class="1")
+    popover.open({ layerId: 'L', classIndex: 1, anchor });
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(document.querySelector('.class-fill-popover')).toBeNull();
 
-    popover.open({ layerId: 'L', classIndex: 0, anchor });
+    popover.open({ layerId: 'L', classIndex: 1, anchor });
     pointerDown(anchor);
     expect(document.querySelector('.class-fill-popover')).not.toBeNull();
     pointerDown(document.querySelector('.class-fill-body'));
     expect(document.querySelector('.class-fill-popover')).not.toBeNull();
+    // 다른 구간의 칸은 바깥이다
+    pointerDown(document.querySelector('.choropleth-legend-color[data-class="0"]'));
+    expect(document.querySelector('.class-fill-popover')).toBeNull();
+
+    popover.open({ layerId: 'L', classIndex: 1, anchor });
     pointerDown(document.body);
     expect(document.querySelector('.class-fill-popover')).toBeNull();
 
-    popover.open({ layerId: 'L', classIndex: 0, anchor });
+    popover.open({ layerId: 'L', classIndex: 1, anchor });
     document.querySelector('.class-fill-close').click();
     expect(document.querySelector('.class-fill-popover')).toBeNull();
+  });
+
+  it('범례가 다시 그려져 앵커가 떨어져 나가도 새 색 칸을 찾아 자리 잡고, 그 칸 클릭은 닫지 않는다', () => {
+    const { popover, anchor } = setup();
+    const map = document.getElementById('map');
+    const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
+    map.getBoundingClientRect = () => rect(0, 0, 800, 600);
+    popover.open({ layerId: 'L', classIndex: 1, anchor });
+
+    // setClassFill → refreshLegendItems 가 innerHTML 을 통째로 갈아 끼우는 것과 같다
+    const items = document.querySelector('.choropleth-legend-items');
+    items.innerHTML = '<span class="choropleth-legend-color" data-class="0"></span><span class="choropleth-legend-color" data-class="1"></span>';
+    const fresh = items.querySelectorAll('.choropleth-legend-color')[1];
+    fresh.getBoundingClientRect = () => rect(20, 500, 24, 16);
+    expect(anchor.isConnected).toBe(false);
+
+    popover.switchTab('pattern');
+    const el = document.querySelector('.class-fill-popover');
+    // 새 칸 오른쪽(44 + 8), 아래로 넘치니 위로 당김(600 − 320 − 8)
+    expect(el.style.left).toBe('52px');
+    expect(el.style.top).toBe('272px');
+    expect(popover.anchor).toBe(fresh);
+
+    pointerDown(fresh);
+    expect(document.querySelector('.class-fill-popover')).not.toBeNull();
+    popover.close();
   });
 
   it('범례 몸통을 잡아 끌어도(전파가 막힌 pointerdown) 닫힌다', () => {

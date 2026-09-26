@@ -311,7 +311,8 @@ export class ClassFillPopover {
     this._onDown = (e) => {
       if (!this.el) return;
       if (this.el.contains(e.target)) return;
-      if (this.anchor && (e.target === this.anchor || this.anchor.contains(e.target))) return;
+      const anchor = this.resolveAnchor();
+      if (anchor && (e.target === anchor || anchor.contains(e.target))) return;
       this.close();
     };
     document.addEventListener('pointerdown', this._onDown, true);
@@ -344,11 +345,26 @@ export class ClassFillPopover {
     this.position(document.getElementById('map'));
   }
 
+  /**
+   * 지금 문서에 있는 색 칸을 찾는다. setClassFill → refreshLegendItems 가 범례 항목의
+   * innerHTML 을 통째로 갈아 끼우므로 open() 때 받은 anchor 는 곧 떨어져 나간 노드가 된다 —
+   * 그 노드의 rect 는 전부 0 이라 팝오버가 지도 밖으로 튀고, contains() 도 새 칸을 모른다.
+   * 못 찾으면(범례 id 규칙이 다른 호출부) 갖고 있던 앵커를 그대로 쓴다.
+   */
+  resolveAnchor() {
+    if (this.layerId == null) return this.anchor;
+    const legend = document.getElementById(`choropleth-legend-${this.layerId}`);
+    const fresh = legend && legend.querySelector(`.choropleth-legend-color[data-class="${this.classIndex}"]`);
+    if (fresh) this.anchor = fresh;
+    return this.anchor;
+  }
+
   /** 앵커(색 칸) 오른쪽에 붙이되 지도 밖으로 나가면 안쪽으로 당긴다 */
   position(map) {
-    if (!map || !this.el || !this.anchor) return;
+    const anchor = this.resolveAnchor();
+    if (!map || !this.el || !anchor) return;
     const mapRect = map.getBoundingClientRect();
-    const a = this.anchor.getBoundingClientRect();
+    const a = anchor.getBoundingClientRect();
     let left = a.right - mapRect.left + 8;
     let top = a.top - mapRect.top - 8;
     const w = this.el.offsetWidth || 280;
