@@ -85,6 +85,46 @@ describe('SwipeTool', () => {
     expect(ctx.calls[4]).toEqual(['lineTo', 800, 600]);
   });
 
+  it('붙은 레이어가 없으면 setRatio·setOrientation 은 값만 바꾸고 다시 그리지 않는다', () => {
+    const map = fakeMap();
+    const tool = new SwipeTool({ map });
+    tool.setRatio(0.3);
+    tool.setOrientation('horizontal');
+    expect(tool.ratio).toBe(0.3);
+    expect(tool.orientation).toBe('horizontal');
+    expect(map.render).not.toHaveBeenCalled();
+  });
+
+  it('같은 레이어에 다시 attach 해도 리스너는 한 쌍만 남는다', () => {
+    const map = fakeMap();
+    const counts = {};
+    const layer = {
+      on: vi.fn((type, fn) => { (counts[type] ||= new Set()).add(fn); }),
+      un: vi.fn((type, fn) => { counts[type]?.delete(fn); })
+    };
+    const tool = new SwipeTool({ map });
+    tool.attach(layer);
+    tool.attach(layer);
+    expect(counts.prerender.size).toBe(1);
+    expect(counts.postrender.size).toBe(1);
+    expect(layer.on).toHaveBeenCalledTimes(4);
+    expect(layer.un).toHaveBeenCalledTimes(2);
+  });
+
+  it('2D 캔버스가 아닌 context(WebGL 히트맵)는 클립을 건너뛰고 던지지 않는다', () => {
+    const map = fakeMap();
+    const layer = fakeLayer();
+    const tool = new SwipeTool({ map });
+    tool.attach(layer);
+    const glLike = { calls: [], drawArrays() { this.calls.push(['drawArrays']); } };
+    const event = { context: glLike, inversePixelTransform: [1, 0, 0, 1, 0, 0] };
+    expect(() => layer.handlers.prerender(event)).not.toThrow();
+    expect(() => layer.handlers.postrender(event)).not.toThrow();
+    expect(glLike.calls).toEqual([]);
+    expect(() => layer.handlers.prerender({})).not.toThrow();
+    expect(() => layer.handlers.postrender(undefined)).not.toThrow();
+  });
+
   it('모르는 방향은 무시한다', () => {
     const tool = new SwipeTool({ map: fakeMap() });
     tool.setOrientation('diagonal');
@@ -101,6 +141,9 @@ describe('SwipeTool', () => {
     tool.detach();
     expect(layer.un).toHaveBeenCalledWith('prerender', expect.any(Function));
     expect(layer.un).toHaveBeenCalledWith('postrender', expect.any(Function));
+    // on 에 건 바로 그 함수로 떼야 OL 이 실제로 리스너를 지운다
+    expect(layer.un.mock.calls[0][1]).toBe(layer.on.mock.calls[0][1]);
+    expect(layer.un.mock.calls[1][1]).toBe(layer.on.mock.calls[1][1]);
     expect(layer.handlers).toEqual({});
     expect(map.render).toHaveBeenCalledTimes(1);
     expect(tool.isActive()).toBe(false);

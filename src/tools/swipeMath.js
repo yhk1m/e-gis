@@ -60,14 +60,16 @@ export function dividerStyle(ratio, orientation) {
 /**
  * 비교 대상 select 의 항목.
  * 레이어는 화면에서 위에 있는 것(layerOrder 의 끝)부터, 배경지도는 현재 것과 hidden 묶음을 뺀다.
- * @param {{id: string, name: string}[]} layers layerManager.getAllLayers() (index 0 이 맨 아래)
+ * 히트맵(type 'heatmap', ol/layer/Heatmap)은 WebGL 로 그려서 뺀다. 렌더 이벤트의 context 가
+ * WebGLRenderingContext 라 2D save/clip 이 없다(자르려면 gl.scissor 가 필요 — 1차 범위 밖).
+ * @param {{id: string, name: string, type?: string}[]} layers layerManager.getAllLayers() (index 0 이 맨 아래)
  * @param {{key: string, label: string, group: string}[]} basemaps mapManager.getAvailableBasemaps()
  * @param {string} currentBasemap mapManager.getBasemap()
  * @returns {{value: string, label: string, group: 'layer'|'basemap'}[]}
  */
 export function swipeTargetOptions(layers, basemaps, currentBasemap) {
-  const layerOptions = layers.slice().reverse().map((l) => ({
-    value: `layer:${l.id}`, label: l.name, group: 'layer'
+  const layerOptions = layers.filter((l) => l.type !== 'heatmap').reverse().map((l) => ({
+    value: `layer:${l.id}`, label: l.name || l.id, group: 'layer'
   }));
   const basemapOptions = basemaps
     .filter((b) => b.group !== 'hidden' && b.key !== currentBasemap)

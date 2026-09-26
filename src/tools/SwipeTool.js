@@ -16,6 +16,11 @@ import { swipeClipCorners, clampRatio, ORIENTATIONS } from './swipeMath.js';
 
 export { swipeClipCorners, ratioFromPointer } from './swipeMath.js';
 
+/** 렌더 이벤트가 2D 캔버스 context 를 들고 있는가(save/restore 가 있는가). */
+function is2dContext(event) {
+  return !!(event && event.context && typeof event.context.save === 'function');
+}
+
 export class SwipeTool {
   /**
    * @param {{ map: import('ol/Map').default }} options
@@ -68,6 +73,9 @@ export class SwipeTool {
 
   /** @param {import('ol/render/Event').default} event */
   clipStart(event) {
+    // WebGL 레이어(히트맵)는 context 가 WebGLRenderingContext 라 2D clip 이 없다 → 건너뛴다.
+    // clipEnd 와 같은 조건이어야 save/restore 가 짝을 이룬다.
+    if (!is2dContext(event)) return;
     const ctx = event.context;
     const corners = swipeClipCorners(this.map.getSize(), this.ratio, this.orientation)
       .map((p) => getRenderPixel(event, p));
@@ -83,6 +91,7 @@ export class SwipeTool {
 
   /** @param {import('ol/render/Event').default} event */
   clipEnd(event) {
+    if (!is2dContext(event)) return;
     event.context.restore();
   }
 }

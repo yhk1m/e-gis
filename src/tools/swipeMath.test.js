@@ -96,6 +96,20 @@ describe('swipeTargetOptions', () => {
   it('둘 다 없으면 빈 배열', () => {
     expect(swipeTargetOptions([], [{ key: 'OSM', label: 'OSM', group: 'world' }], 'OSM')).toEqual([]);
   });
+
+  it('히트맵(WebGL) 레이어는 목록에 넣지 않는다', () => {
+    const withHeatmap = [
+      { id: 'l-1', name: '시도', type: 'vector' },
+      { id: 'l-h', name: '시도_히트맵', type: 'heatmap' }
+    ];
+    const opts = swipeTargetOptions(withHeatmap, [], 'OSM');
+    expect(opts.map((o) => o.value)).toEqual(['layer:l-1']);
+  });
+
+  it('이름이 비면 id 를 라벨로 쓴다', () => {
+    const opts = swipeTargetOptions([{ id: 'l-9', name: '' }], [], 'OSM');
+    expect(opts).toEqual([{ value: 'layer:l-9', label: 'l-9', group: 'layer' }]);
+  });
 });
 
 describe('parseTargetValue', () => {
