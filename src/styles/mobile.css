@@ -74,6 +74,13 @@
   body.phone-shell #app > #toolbar { display: none; }
 
   /* 상태줄 */
-  #statusbar { gap: var(--spacing-sm); overflow-x: auto; }
+  /* 390px 한 줄에 좌표·축척·좌표계·메시지가 들어가게 최소 폭과 라벨을 덜고, 넘치면 밀어 보되 스크롤 막대는 숨긴다 */
+  #statusbar { gap: var(--spacing-sm); padding: 0 var(--spacing-sm); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  #statusbar::-webkit-scrollbar { display: none; }
+  #statusbar .statusbar-item { flex-shrink: 0; }
+  .statusbar-item.coordinates, .statusbar-item.scale, .statusbar-item.crs { min-width: 0; }
+  .statusbar-item.crs { padding: 2px 4px; }
+  #statusbar .coord-label { display: none; }
+  #statusbar .scale-input { width: 80px; padding: 4px 2px; }
   .visitor-counter { display: none; }
 }
