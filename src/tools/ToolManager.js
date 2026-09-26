@@ -50,6 +50,7 @@ class ToolManager {
     safeCall(() => isochroneTool && isochroneTool.clear && isochroneTool.clear());
 
     this.updateToolbarUI(null);
+    eventBus.emit(Events.TOOL_CHANGED, { tool: null });
   }
 
   activateTool(toolName) {
@@ -137,6 +138,7 @@ class ToolManager {
       }
       this.deactivateCurrentTool();
       this.updateToolbarUI(null);
+      eventBus.emit(Events.TOOL_CHANGED, { tool: null });
     } else {
       this.activateTool(toolName);
     }

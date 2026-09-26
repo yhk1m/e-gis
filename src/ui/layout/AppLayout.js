@@ -255,13 +255,13 @@ export class AppLayout {
           </button>
         </div>
 
-        <div class="toolbar-group" data-group="select">
-          <button class="btn-icon" data-tool="select" data-label="선택" title="선택 (드래그로 범위 선택)">
+        <div class="toolbar-group" data-group="select" data-collapsible>
+          <button class="btn-icon toolbar-group-head" data-tool="select" data-label="선택" title="선택 (드래그로 범위 선택) — 켜면 속성 보기·합치기·자르기가 펼쳐집니다">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
             </svg>
           </button>
-          <button class="btn-icon" id="btn-feature-info" data-label="속성 보기" title="선택한 피처 속성 보기" style="display:none">
+          <button class="btn-icon toolbar-sub" id="btn-feature-info" data-label="속성 보기" title="선택한 피처 속성 보기" style="display:none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
               <circle cx="12" cy="12" r="9.6"></circle>
               <circle cx="12" cy="7" r="1.6" fill="currentColor" stroke="none"></circle>
@@ -281,14 +281,14 @@ export class AppLayout {
               <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
             </svg>
           </button>
-          <button class="btn-icon" id="btn-merge-features" data-label="합치기" title="피처 합치기 (선택한 피처들을 박음질하듯 하나로. 다른 레이어끼리 합치면 새 레이어가 생깁니다)">
+          <button class="btn-icon toolbar-sub" id="btn-merge-features" data-label="합치기" title="피처 합치기 (선택한 피처들을 박음질하듯 하나로. 다른 레이어끼리 합치면 새 레이어가 생깁니다)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="4" width="8.5" height="16" rx="1.5"/>
               <rect x="13.5" y="4" width="8.5" height="16" rx="1.5"/>
               <path d="M12 3.5 L10 7 L14 10.5 L10 14 L14 17.5 L12 20.5" fill="none"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="edit-split" data-label="자르기" title="피처 자르기 (선을 그어 분할)">
+          <button class="btn-icon toolbar-sub" data-tool="edit-split" data-label="자르기" title="피처 자르기 (선을 그어 분할)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="6" cy="6" r="3"/>
               <circle cx="6" cy="18" r="3"/>
@@ -299,38 +299,50 @@ export class AppLayout {
           </button>
         </div>
 
-        <div class="toolbar-group" data-group="draw">
-          <button class="btn-icon" data-tool="draw-point" data-label="점" title="점 그리기">
+        <div class="toolbar-group" data-group="draw" data-collapsible>
+          <!-- 묶음 머리: 꼭짓점 셋을 이은 도형 + 연필 = 점·선·면 그리기 -->
+          <button class="btn-icon toolbar-group-head" data-group-toggle="draw" data-label="그리기"
+                  title="그리기 — 점·선·면, 멀티 점·선·면" aria-expanded="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3.5 16.5 5 5l10.5-2"/>
+              <circle cx="3.5" cy="16.5" r="1.9" fill="currentColor" stroke="none"/>
+              <circle cx="5" cy="5" r="1.9" fill="currentColor" stroke="none"/>
+              <circle cx="15.5" cy="3" r="1.9" fill="currentColor" stroke="none"/>
+              <path d="M19.2 9.3a1.6 1.6 0 0 1 2.3 2.3l-7.3 7.3-3.2.9.9-3.2z"/>
+              <path d="m17.6 10.9 2.3 2.3"/>
+            </svg>
+          </button>
+          <button class="btn-icon toolbar-sub" data-tool="draw-point" data-label="점" title="점 그리기">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="4"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-line" data-label="선" title="선 그리기">
+          <button class="btn-icon toolbar-sub" data-tool="draw-line" data-label="선" title="선 그리기">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="19" x2="19" y2="5"/>
               <circle cx="5" cy="19" r="2" fill="currentColor"/>
               <circle cx="19" cy="5" r="2" fill="currentColor"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-polygon" data-label="면" title="면 그리기">
+          <button class="btn-icon toolbar-sub" data-tool="draw-polygon" data-label="면" title="면 그리기">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-multipoint" data-label="멀티포인트" title="멀티포인트 (다시 클릭하면 저장)">
+          <button class="btn-icon toolbar-sub" data-tool="draw-multipoint" data-label="멀티포인트" title="멀티포인트 (다시 클릭하면 저장)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="6" cy="12" r="3"/>
               <circle cx="12" cy="6" r="3"/>
               <circle cx="18" cy="14" r="3"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-multiline" data-label="멀티라인" title="멀티라인 (다시 클릭하면 저장)">
+          <button class="btn-icon toolbar-sub" data-tool="draw-multiline" data-label="멀티라인" title="멀티라인 (다시 클릭하면 저장)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M2 8 L8 4 L14 10"/>
               <path d="M10 20 L16 14 L22 18"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="draw-multipolygon" data-label="멀티폴리곤" title="멀티폴리곤 (다시 클릭하면 저장)">
+          <button class="btn-icon toolbar-sub" data-tool="draw-multipolygon" data-label="멀티폴리곤" title="멀티폴리곤 (다시 클릭하면 저장)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" opacity="0.5" stroke="currentColor" stroke-width="1">
               <rect x="2" y="2" width="9" height="9"/>
               <rect x="13" y="13" width="9" height="9"/>
@@ -338,19 +350,27 @@ export class AppLayout {
           </button>
         </div>
 
-        <div class="toolbar-group" data-group="measure">
-          <button class="btn-icon" data-tool="measure-distance" data-label="거리" title="거리 측정">
+        <div class="toolbar-group" data-group="measure" data-collapsible>
+          <!-- 묶음 머리: 눈금 자 = 거리·면적 측정 -->
+          <button class="btn-icon toolbar-group-head" data-group-toggle="measure" data-label="측정"
+                  title="측정 — 거리·면적, 측정 지우기" aria-expanded="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2.5 16.5 16.5 2.5l5 5-14 14z"/>
+              <path d="m5 14 2 2M8 11l3 3M11 8l2 2M14 5l3 3"/>
+            </svg>
+          </button>
+          <button class="btn-icon toolbar-sub" data-tool="measure-distance" data-label="거리" title="거리 측정">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="measure-area" data-label="면적" title="면적 측정">
+          <button class="btn-icon toolbar-sub" data-tool="measure-area" data-label="면적" title="면적 측정">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="18" height="18" rx="2"/>
               <path d="M3 9h18M9 3v18"/>
             </svg>
           </button>
-          <button class="btn-icon" data-tool="clear-measures" data-label="측정 지우기" title="측정 결과 지우기">
+          <button class="btn-icon toolbar-sub" data-tool="clear-measures" data-label="측정 지우기" title="측정 결과 지우기">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>
               <path d="M10 11v5M14 11v5"/>
@@ -381,7 +401,7 @@ export class AppLayout {
 
         <div class="toolbar-group" data-group="labs">
           <button class="btn btn-tool-labeled btn-labs" id="labs-toggle" data-tool="labs"
-                  title="실험실 — 검증 중인 기능">
+                  title="실험실 — 검증 중인 기능" aria-label="실험실">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M9 3h6"/>
               <path d="M10 3v6.5L4.6 18.2A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.7-2.8L14 9.5V3"/>
