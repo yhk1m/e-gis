@@ -5,7 +5,7 @@
  * 채움 종류 넷(단색·패턴·이미지·질감)을 탭으로 고르고, 바꾸는 즉시
  * choroplethTool.setClassFill / setClassColor 로 지도·범례에 반영한다.
  * 아래에 "모든 구간에 프리셋"과 "팔레트로 되돌리기".
- * 지도 컨테이너(#map) 안에 절대 위치로 뜨고, 바깥 클릭·Esc 로 닫힌다.
+ * 지도 컨테이너(#map) 안에 절대 위치로 뜨고, 바깥 클릭(캡처 pointerdown)·Esc 로 닫힌다.
  * 이미지 읽기 실패 같은 알림은 onMessage(상태 표시줄)로 보낸다.
  * 되돌리기(HistoryManager)는 범위 밖.
  * 설계: docs/superpowers/specs/2026-09-25-labs-design.md 「1단계」
@@ -121,9 +121,11 @@ export class ClassFillPopover {
     return { kind: 'solid' };
   }
 
+  /** 구간 기준색. 저장본은 검증 없이 펼쳐지므로 hex 가 아니면 회색으로 물러선다(속성에 실린다). */
   baseColor() {
     const cfg = this.tool.configOf(this.layerId);
-    return (cfg && cfg.colors[this.classIndex]) || '#808080';
+    const c = cfg && cfg.colors[this.classIndex];
+    return /^#[0-9a-f]{6}$/i.test(String(c)) ? c : '#808080';
   }
 
   renderBody() {
@@ -203,13 +205,14 @@ export class ClassFillPopover {
         const classIndex = this.classIndex;
         try {
           const { dataUrl, width, height } = await reencodeImageFile(file);
-          // 읽는 사이 닫혔거나 다른 칸으로 옮겨 갔으면 버린다
-          if (!this.el || this.layerId !== layerId || this.classIndex !== classIndex) return;
+          // 읽는 사이 닫혔거나, 다른 칸·다른 탭으로 옮겨 갔으면 버린다
+          if (!this.el || this.layerId !== layerId || this.classIndex !== classIndex || this.tab !== 'image') return;
           const prev = this.drafts.image && this.drafts.image.kind === 'image' ? this.drafts.image : {};
           const next = normalizeFill({ kind: 'image', dataUrl, width, height, scale: prev.scale, opacity: prev.opacity });
           this.drafts.image = next;
           this.tool.setClassFill(this.layerId, this.classIndex, next);
-          if (this.tab === 'image') this.renderBody();
+          this.renderBody();
+          this.position(document.getElementById('map'));
         } catch (err) {
           this.onMessage((err && err.message) || '이미지를 읽을 수 없습니다.');
         }
@@ -303,13 +306,15 @@ export class ClassFillPopover {
     this._onKey = (e) => { if (e.key === 'Escape') this.close(); };
     document.addEventListener('keydown', this._onKey);
 
+    // 캡처 단계 pointerdown — 범례 끌기(makeDraggable)가 버블 단계에서 preventDefault·stopPropagation
+    // 하므로 mousedown 도, 버블 pointerdown 도 여기까지 오지 않는다.
     this._onDown = (e) => {
       if (!this.el) return;
       if (this.el.contains(e.target)) return;
       if (this.anchor && (e.target === this.anchor || this.anchor.contains(e.target))) return;
       this.close();
     };
-    document.addEventListener('mousedown', this._onDown);
+    document.addEventListener('pointerdown', this._onDown, true);
 
     this._onRemoved = (data) => { if (data && data.layerId === this.layerId) this.close(); };
     eventBus.on(Events.LAYER_REMOVED, this._onRemoved);
@@ -335,10 +340,13 @@ export class ClassFillPopover {
       }
     }
     this.renderBody();
+    // 탭마다 본문 높이가 달라 아래로 넘칠 수 있다
+    this.position(document.getElementById('map'));
   }
 
   /** 앵커(색 칸) 오른쪽에 붙이되 지도 밖으로 나가면 안쪽으로 당긴다 */
   position(map) {
+    if (!map || !this.el || !this.anchor) return;
     const mapRect = map.getBoundingClientRect();
     const a = this.anchor.getBoundingClientRect();
     let left = a.right - mapRect.left + 8;
@@ -353,7 +361,7 @@ export class ClassFillPopover {
 
   close() {
     if (this._onKey) { document.removeEventListener('keydown', this._onKey); this._onKey = null; }
-    if (this._onDown) { document.removeEventListener('mousedown', this._onDown); this._onDown = null; }
+    if (this._onDown) { document.removeEventListener('pointerdown', this._onDown, true); this._onDown = null; }
     if (this._onRemoved) { eventBus.off(Events.LAYER_REMOVED, this._onRemoved); this._onRemoved = null; }
     if (this.el) { this.el.remove(); this.el = null; }
     this.anchor = null;

@@ -5,6 +5,13 @@
  * 캔버스가 없는 jsdom 에서는 질감 미리보기 타일이 단색으로 물러선다.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('../../tools/classFillCanvas.js', async (importOriginal) => {
+  const mod = await importOriginal();
+  return { ...mod, reencodeImageFile: vi.fn(mod.reencodeImageFile) };
+});
+
+import { reencodeImageFile } from '../../tools/classFillCanvas.js';
 import { ClassFillPopover } from './ClassFillPopover.js';
 
 HTMLCanvasElement.prototype.getContext = () => null;
@@ -19,7 +26,7 @@ function fakeTool(cfg) {
   };
 }
 
-function setup(fills) {
+function setup(fills, colors = ['#ffffcc', '#800026']) {
   document.body.innerHTML = `
     <div id="map" style="position:relative;width:800px;height:600px">
       <div class="choropleth-legend"><div class="choropleth-legend-items">
@@ -27,7 +34,7 @@ function setup(fills) {
         <span class="choropleth-legend-color" data-class="1"></span>
       </div></div>
     </div>`;
-  const cfg = { attribute: 'pop', breaks: [0, 50, 100], colors: ['#ffffcc', '#800026'] };
+  const cfg = { attribute: 'pop', breaks: [0, 50, 100], colors };
   if (fills) cfg.fills = fills;
   const tool = fakeTool(cfg);
   const popover = new ClassFillPopover({ tool });
@@ -36,8 +43,10 @@ function setup(fills) {
 }
 
 const change = (el, value) => { el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); };
+const pointerDown = (el) => el.dispatchEvent(new Event('pointerdown', { bubbles: true, cancelable: true }));
+const tick = () => new Promise((r) => setTimeout(r, 0));
 
-beforeEach(() => { document.body.innerHTML = ''; });
+beforeEach(() => { document.body.innerHTML = ''; reencodeImageFile.mockClear(); });
 
 describe('ClassFillPopover', () => {
   it('열면 #map 안에 뜨고 종류 탭 넷, 채움이 없으면 단색 탭', () => {
@@ -51,6 +60,18 @@ describe('ClassFillPopover', () => {
     expect(el.querySelector('.cf-color').value).toBe('#800026');
     popover.close();
     expect(document.querySelector('.class-fill-popover')).toBeNull();
+  });
+
+  it('저장본의 colors 가 hex 가 아니면 회색으로 물러서고 속성 밖으로 새지 않는다', () => {
+    const { popover, anchor } = setup(null, ['#ffffcc', '"><img src=x onerror=1>']);
+    popover.open({ layerId: 'L', classIndex: 1, anchor });
+    const el = document.querySelector('.class-fill-popover');
+    expect(el.querySelector('.cf-color').value).toBe('#808080');
+    expect(el.querySelector('img')).toBeNull();
+    document.querySelector('.class-fill-kind[data-kind="texture"]').click();
+    expect(el.querySelector('img')).toBeNull();
+    expect(el.querySelector('.cf-texture-tile').getAttribute('style')).toContain('#808080');
+    popover.close();
   });
 
   it('기존 채움이 있으면 그 탭과 값으로 연다', () => {
@@ -132,9 +153,44 @@ describe('ClassFillPopover', () => {
     const bad = new File(['hello'], 'a.txt', { type: 'text/plain' });
     Object.defineProperty(input, 'files', { value: [bad] });
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    await new Promise((r) => setTimeout(r, 0));
+    await tick();
     expect(onMessage).toHaveBeenCalledWith('이미지 파일이 아닙니다.');
     expect(tool.setClassFill).not.toHaveBeenCalled();
+    popover.close();
+  });
+
+  it('이미지를 읽는 사이 다른 탭으로 옮겼으면 결과를 버린다', async () => {
+    let resolve;
+    reencodeImageFile.mockImplementationOnce(() => new Promise((r) => { resolve = r; }));
+    const { tool, popover, anchor } = setup();
+    popover.open({ layerId: 'L', classIndex: 0, anchor });
+    document.querySelector('.class-fill-kind[data-kind="image"]').click();
+    const input = document.querySelector('.cf-file');
+    Object.defineProperty(input, 'files', { value: [new File(['x'], 'a.png', { type: 'image/png' })] });
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    document.querySelector('.class-fill-kind[data-kind="pattern"]').click();
+    tool.setClassFill.mockClear();
+    resolve({ dataUrl: 'data:image/png;base64,AAAA', width: 4, height: 4 });
+    await tick();
+    expect(tool.setClassFill).not.toHaveBeenCalled();
+    expect(document.querySelector('.cf-ptype')).not.toBeNull();
+    popover.close();
+  });
+
+  it('이미지를 읽고 나면 setClassFill(image) 와 크기 표시, 배율 입력이 풀린다', async () => {
+    let resolve;
+    reencodeImageFile.mockImplementationOnce(() => new Promise((r) => { resolve = r; }));
+    const { tool, popover, anchor } = setup();
+    popover.open({ layerId: 'L', classIndex: 0, anchor });
+    document.querySelector('.class-fill-kind[data-kind="image"]').click();
+    const input = document.querySelector('.cf-file');
+    Object.defineProperty(input, 'files', { value: [new File(['x'], 'a.png', { type: 'image/png' })] });
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    resolve({ dataUrl: 'data:image/png;base64,AAAA', width: 4, height: 4 });
+    await tick();
+    expect(tool.setClassFill).toHaveBeenLastCalledWith('L', 0, expect.objectContaining({ kind: 'image', width: 4, height: 4 }));
+    expect(document.querySelector('.cf-iscale').disabled).toBe(false);
+    expect(document.querySelector('.cf-isize').textContent).toContain('KB');
     popover.close();
   });
 
@@ -157,13 +213,25 @@ describe('ClassFillPopover', () => {
     expect(document.querySelector('.class-fill-popover')).toBeNull();
 
     popover.open({ layerId: 'L', classIndex: 0, anchor });
-    anchor.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    pointerDown(anchor);
     expect(document.querySelector('.class-fill-popover')).not.toBeNull();
-    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    pointerDown(document.querySelector('.class-fill-body'));
+    expect(document.querySelector('.class-fill-popover')).not.toBeNull();
+    pointerDown(document.body);
     expect(document.querySelector('.class-fill-popover')).toBeNull();
 
     popover.open({ layerId: 'L', classIndex: 0, anchor });
     document.querySelector('.class-fill-close').click();
+    expect(document.querySelector('.class-fill-popover')).toBeNull();
+  });
+
+  it('범례 몸통을 잡아 끌어도(전파가 막힌 pointerdown) 닫힌다', () => {
+    const { popover, anchor } = setup();
+    const legend = document.querySelector('.choropleth-legend');
+    // makeDraggable 처럼 버블 단계에서 전파를 끊는다
+    legend.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); });
+    popover.open({ layerId: 'L', classIndex: 0, anchor });
+    pointerDown(legend);
     expect(document.querySelector('.class-fill-popover')).toBeNull();
   });
 });
