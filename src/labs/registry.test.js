@@ -51,6 +51,15 @@ describe('EXPERIMENTS', () => {
     expect(EXPERIMENT_IDS.indexOf('swipe')).toBeGreaterThan(EXPERIMENT_IDS.indexOf('class-fill'));
   });
 
+  it('4단계에는 time-series 가 들어 있다', () => {
+    expect(EXPERIMENT_IDS).toContain('time-series');
+  });
+
+  it('time-series 는 맨 끝에 있다 (설계의 순서: glass, class-fill, globe, swipe, time-series)', () => {
+    expect(EXPERIMENT_IDS[EXPERIMENT_IDS.length - 1]).toBe('time-series');
+    expect(EXPERIMENT_IDS.indexOf('time-series')).toBeGreaterThan(EXPERIMENT_IDS.indexOf('swipe'));
+  });
+
   it('FEEDBACK_URL 은 비어 있거나 https 주소다', () => {
     expect(FEEDBACK_URL === '' || /^https:\/\//.test(FEEDBACK_URL)).toBe(true);
   });

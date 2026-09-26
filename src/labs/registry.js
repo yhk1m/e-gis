@@ -31,6 +31,12 @@ export const EXPERIMENTS = [
     name: '스와이프 비교',
     summary: '레이어나 배경지도 둘을 가운데 막대를 끌어 비교합니다.',
     since: '2026-09'
+  },
+  {
+    id: 'time-series',
+    name: '시계열 단계구분도',
+    summary: '연도별 열을 슬라이더로 넘기며 변화를 봅니다.',
+    since: '2026-09'
   }
 ];
 
