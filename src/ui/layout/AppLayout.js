@@ -125,6 +125,7 @@ export class AppLayout {
               <button class="menu-button" title="주제도"><span class="menu-btn-icon">🗺️</span><span class="menu-btn-label">주제도</span></button>
               <div class="dropdown-menu" id="menu-thematic-map">
                 <div class="dropdown-item" data-action="analysis-choropleth">단계구분도</div>
+                <div class="dropdown-item" data-action="analysis-time-series" data-lab="time-series" hidden>시계열 단계구분도</div>
                 <div class="dropdown-item" data-action="analysis-chart-map">도형표현도</div>
                 <div class="dropdown-item" data-action="analysis-heatmap">히트맵</div>
                 <div class="dropdown-item" data-action="analysis-cartogram">카토그램</div>

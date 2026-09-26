@@ -78,6 +78,12 @@ import { crsConfirmDialog } from './ui/dialogs/CrsConfirmDialog.js';
 import { View3DPanel } from './ui/panels/View3DPanel.js';
 import { SwipePanel } from './ui/panels/SwipePanel.js';
 import { GlobePanel } from './ui/panels/GlobePanel.js';
+import { timeSeriesPanel } from './ui/panels/TimeSeriesPanel.js';
+import { timeSeriesTool } from './tools/TimeSeriesTool.js';
+import { AnimationExportDialog } from './ui/panels/AnimationExportDialog.js';
+import { captureFrames, encodeGif, recordVideo } from './tools/animationExportCanvas.js';
+import { saveBlobAs } from './utils/saveFile.js';
+import { bindLabMenuItems } from './labs/labMenu.js';
 
 /**
  * 앱 초기화
@@ -112,6 +118,69 @@ function initApp() {
   bindGlass(labs);
   bindLabsButton(labs, document.getElementById('labs-toggle'));
   bindClassFill(labs, { mapEl: document.getElementById('map'), tool: choroplethTool, popover: classFillPopover });
+
+  // 실험 메뉴 항목(data-lab) 숨김/표시 — 켜고 끄면 바로 반영
+  bindLabMenuItems(labs);
+
+  // 시계열: 실험을 켜면 이미 있는 시계열 레이어의 컨트롤을 되살리고, 끄면 컨트롤만 걷는다
+  // (레이어는 저장된 연도의 정적 단계구분도로 남는다)
+  // 설정 창 안내는 기본 alert 그대로 — 같은 모달 규약의 ChoroplethPanel 도 alert 이고,
+  // 모달이 열린 동안 상태표시줄 문구는 눈에 띄지 않는다
+  labs.onChange((id, on) => {
+    if (id !== 'time-series') return;
+    if (on) timeSeriesTool.restoreControls();
+    else {
+      animationDialog?.cancel();   // 만들던 애니메이션은 버린다
+      timeSeriesTool.detach();
+    }
+  });
+  // 복원 뒤(프로젝트 열기·자동 복원 완료) 컨트롤 되살리기.
+  // 이 리스너는 restoreState/loadProject 의 try 안에서 불리므로 여기서 던지면 복원 전체가
+  // 실패로 찍힌다 — 스스로 잡는다. (autoSaveManager.init 보다 앞이라 STATE_RESTORED 를 놓치지 않는다)
+  const restoreTimeSeries = () => {
+    if (!labs.isOn('time-series')) return;
+    try {
+      timeSeriesTool.restoreControls();
+    } catch (e) {
+      console.error('시계열 컨트롤 복원 실패:', e);
+    }
+  };
+  eventBus.on(Events.PROJECT_LOADED, restoreTimeSeries);
+  eventBus.on(Events.STATE_RESTORED, restoreTimeSeries);
+  eventBus.on(Events.PROJECT_NEW, () => {
+    animationDialog?.cancel();   // 레이어가 곧 사라진다 — 캡처 중이면 중단
+    timeSeriesTool.detach();
+  });
+
+  // 슬라이더의 「저장」 → 애니메이션 저장 대화상자. 찍기 전에 재생을 멈추고, 3D·지구본·
+  // 스와이프가 켜져 있으면 먼저 끈다(지도 캔버스가 평면 2D 그대로여야 프레임이 맞다).
+  // view3dPanel·globePanel·swipePanel 은 아래에서 대입된다 — 버튼을 누를 때는 이미 있다.
+  timeSeriesTool.onSave = (layerId) => {
+    const cfg = timeSeriesTool.config(layerId);
+    const info = layerManager.getLayer(layerId);
+    if (!cfg || !info) return;
+    animationDialog?.cancel();
+    const dialog = new AnimationExportDialog({
+      layerName: info.name,
+      fields: cfg.timeSeries.fields,
+      speed: timeSeriesTool.speed,
+      hasMediaRecorder: typeof window.MediaRecorder === 'function',
+      isTypeSupported: (m) => window.MediaRecorder.isTypeSupported(m),
+      beforeCapture: async () => {
+        timeSeriesTool.pause();
+        swipePanel?.close();
+        globePanel?.exitIfActive();
+        if (view3dPanel?.controller) await view3dPanel.toggle();
+      },
+      captureFrames: (opts) => captureFrames({ tool: timeSeriesTool, layerId, ...opts }),
+      encodeGif,
+      recordVideo,
+      saveBlobAs,
+      onMessage: showStatusMessage
+    });
+    animationDialog = dialog;
+    dialog.show();
+  };
 
   // 4. 지도 초기화
   mapManager.init('map', {
@@ -858,6 +927,10 @@ function handleMenuAction(action) {
     case 'analysis-choropleth':
       choroplethPanel.show();
       break;
+    case 'analysis-time-series':
+      if (!labs.isOn('time-series')) break;   // 메뉴가 숨겨져 있어도 단축 경로로 올 수 있다
+      timeSeriesPanel.show();
+      break;
     case 'analysis-grid':
       gridPanel.show();
       break;
@@ -1281,6 +1354,9 @@ let swipePanel = null;
 /** 지구본·투영법 보기 패널(실험실 globe) — 진단 훅에서도 쓴다 */
 let globePanel = null;
 
+/** 열려 있는 애니메이션 저장 대화상자 — 새 프로젝트·실험 끄기 때 캡처를 중단한다 */
+let animationDialog = null;
+
 // 최근 파일 관리 (최대 5개)
 const RECENT_FILES_KEY = 'egis_recent_files';
 const MAX_RECENT_FILES = 5;
@@ -1406,4 +1482,4 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // 진단용 훅 — 헤드리스 재현 테스트(버그 리포트 검증)에서 내부 상태 접근용.
 // 클라이언트 앱이라 보안 경계 아님(모든 코드·키가 이미 번들에 공개).
-window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, geojsonLoader, get view3dPanel() { return view3dPanel; }, get swipePanel() { return swipePanel; }, get globePanel() { return globePanel; } };
+window.__egisDebug = { projectManager, layerManager, exportPanel, isochroneTool, roadNetwork, measureTool, selectTool, historyManager, mapManager, labs, choroplethTool, builtinDataManager, classFillPopover, geojsonLoader, timeSeriesTool, timeSeriesPanel, get view3dPanel() { return view3dPanel; }, get swipePanel() { return swipePanel; }, get globePanel() { return globePanel; } };

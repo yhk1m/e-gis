@@ -81,11 +81,12 @@
 [data-surface="glass"] .view3d-panel,
 [data-surface="glass"] .swipe-panel,
 [data-surface="glass"] .globe-panel,
+[data-surface="glass"] .time-series-controls,
 [data-surface="glass"] .map-scale-bar {
   text-shadow: var(--glass-text-halo);
 }
 /* 버튼은 브라우저 기본 스타일이 text-shadow 를 없애므로 다시 준다 */
-[data-surface="glass"] :is(#menubar .menu-button, #toolbar .btn, .btn-community, .theme-toggle, .panel-tab, .sidebar-toggle, .toolbar-collapse-btn, #left-panel .btn-icon, .swipe-close, .globe-close) {
+[data-surface="glass"] :is(#menubar .menu-button, #toolbar .btn, .btn-community, .theme-toggle, .panel-tab, .sidebar-toggle, .toolbar-collapse-btn, #left-panel .btn-icon, .swipe-close, .globe-close, .time-series-controls .btn) {
   text-shadow: var(--glass-text-halo);
 }
 [data-surface="glass"] :is(input, select, textarea, .btn-primary, .btn-community-primary, .labs-badge, .dropdown-menu, .crs-dropdown-menu, .layer-context-menu, .search-results) {
@@ -115,6 +116,7 @@
 [data-surface="glass"] .view3d-panel,
 [data-surface="glass"] .swipe-panel,
 [data-surface="glass"] .globe-panel,
+[data-surface="glass"] .time-series-controls,
 [data-surface="glass"] .chart-map-legend,
 [data-surface="glass"] .isochrone-legend,
 [data-surface="glass"] .raster-analysis-legend,
@@ -170,6 +172,7 @@
   [data-surface="glass"] .view3d-panel,
   [data-surface="glass"] .swipe-panel,
   [data-surface="glass"] .globe-panel,
+  [data-surface="glass"] .time-series-controls,
   [data-surface="glass"] .chart-map-legend,
   [data-surface="glass"] .isochrone-legend,
   [data-surface="glass"] .raster-analysis-legend,
@@ -257,6 +260,12 @@
   [data-surface="glass"] .raster-analysis-legend,
   [data-surface="glass"] .cartogram-legend { bottom: calc(var(--glass-bottom-offset) + 40px); }
   [data-surface="glass"] .ol-attribution { bottom: calc(var(--glass-bottom-offset) + 0.5em); }
+  /* 시계열 슬라이더 — 보이는 지도 칸(왼쪽 패널 오른쪽)의 가운데 */
+  [data-surface="glass"] .time-series-controls {
+    bottom: calc(var(--glass-bottom-offset) + 40px);
+    left: calc(50% + var(--glass-panel-offset) / 2);
+    max-width: calc(100% - var(--glass-panel-offset) - 32px);
+  }
 
   /* 스와이프 막대 — 지도는 창 전체지만 막대는 보이는 지도 칸 안에만 그린다.
      top/left 는 JS 가 비율(%)로 인라인에 쓰므로 여백·크기로 민다.

@@ -15,7 +15,7 @@ import { cartogramTool } from '../tools/CartogramTool.js';
 import { heatmapTool } from '../tools/HeatmapTool.js';
 import { flowTool } from '../tools/FlowTool.js';
 import { saveTextAs } from '../utils/saveFile.js';
-import { serializeChoroplethConfig } from '../tools/choroplethConfigSerial.js';
+import { serializeChoroplethConfig, restoreChoroplethConfig } from '../tools/choroplethConfigSerial.js';
 import GeoJSON from 'ol/format/GeoJSON';
 
 const PROJECT_VERSION = '1.0';
@@ -303,7 +303,7 @@ export class ProjectManager {
 
           // 단계구분도 복원 — 분류 설정 + 스타일 함수 + 범례 (AutoSaveManager.restoreLayer 규약)
           if (layerData.type === 'choropleth' && layerData.choroplethConfig) {
-            layerInfo._choroplethConfig = { ...layerData.choroplethConfig, tool: choroplethTool };
+            layerInfo._choroplethConfig = restoreChoroplethConfig(layerData.choroplethConfig, choroplethTool);
             choroplethTool.sourceByDerived.set(layerId, null);
             choroplethTool.createLegend(
               layerId,

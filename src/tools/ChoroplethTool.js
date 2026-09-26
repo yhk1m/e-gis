@@ -190,7 +190,13 @@ class ChoroplethTool {
   }
 
   apply(layerId, attribute, colorRamp, method, numClasses, options = {}) {
-    const { reverse = false, customColors = null } = options;
+    const {
+      reverse = false,
+      customColors = null,
+      breaks: presetBreaks = null,   // 시계열: 연도 사이에 공유할, 미리 계산한 구간(길이 = 계급 수 + 1)
+      name = null,                    // 파생 레이어 이름(없으면 원본_단계구분_속성)
+      title = null                    // 범례 제목(없으면 원본 (속성))
+    } = options;
 
     const sourceLayer = layerManager.getLayer(layerId);
     if (!sourceLayer) return false;
@@ -201,9 +207,13 @@ class ChoroplethTool {
     this.currentMethod = method;
     this.numClasses = numClasses;
 
+    // 미리 계산한 구간은 모양이 맞을 때만 쓴다(아니면 예전처럼 값에서 계산)
+    const usePreset = Array.isArray(presetBreaks)
+      && presetBreaks.length === numClasses + 1
+      && presetBreaks.every((b) => typeof b === 'number' && Number.isFinite(b));
     const values = this.getAttributeValues(layerId, attribute);
-    if (values.length === 0) return false;
-    const breaks = this.calculateBreaks(values, numClasses, method);
+    if (values.length === 0 && !usePreset) return false;
+    const breaks = usePreset ? presetBreaks.slice() : this.calculateBreaks(values, numClasses, method);
 
     // 커스텀 색상 또는 팔레트 색상 사용
     let colors;
@@ -231,7 +241,7 @@ class ChoroplethTool {
     const newOlLayer = new VectorLayer({ source: newSource });
 
     const newLayerId = layerManager.addLayer({
-      name: `${sourceLayer.name}_단계구분_${attribute}`,
+      name: name || `${sourceLayer.name}_단계구분_${attribute}`,
       type: 'choropleth',
       geometryType: sourceLayer.geometryType,
       olLayer: newOlLayer,
@@ -251,7 +261,7 @@ class ChoroplethTool {
         breaks,
         colors: selectedColors,
         tool: this,
-        title: `${sourceLayer.name} (${attribute})`,
+        title: title || `${sourceLayer.name} (${attribute})`,
         unit: '',
         format: 'comma',
         rounding: 0

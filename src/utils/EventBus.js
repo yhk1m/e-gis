@@ -95,6 +95,8 @@ export const Events = {
   PROJECT_SAVED: 'project:saved',
   PROJECT_LOADED: 'project:loaded',
   PROJECT_NEW: 'project:new',
+  // 자동 저장 복원이 모든 레이어를 되살린 뒤 (실험 기능이 컨트롤을 되살릴 때 듣는다)
+  STATE_RESTORED: 'state:restored',
 
   // CRS 관련
   CRS_CHANGED: 'crs:changed',

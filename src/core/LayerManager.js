@@ -687,7 +687,12 @@ class LayerManager {
     this.updateLayerStyle(layerId);
   }
 
-  updateLayerStyle(layerId) {
+  /**
+   * @param {string} layerId
+   * @param {{silent?: boolean}} [options] silent: 다시 그리기만 하고 LAYER_STYLE_CHANGED 를 내지 않는다
+   *   (시계열 재생 틱 — 틱마다 자동 저장·레이어 패널 다시 그리기를 깨우지 않게. 멈출 때 한 번 낸다)
+   */
+  updateLayerStyle(layerId, { silent = false } = {}) {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
 
@@ -737,7 +742,7 @@ class LayerManager {
       } else if (olLayer) {
         olLayer.setStyle(styleFn);
       }
-      eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
+      if (!silent) eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
       return;
     }
 
@@ -763,7 +768,7 @@ class LayerManager {
       } else if (olLayer) {
         olLayer.setStyle(styleFn);
       }
-      eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
+      if (!silent) eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
       return;
     }
 
@@ -795,7 +800,7 @@ class LayerManager {
       } else if (olLayer) {
         olLayer.setStyle(styleFn);
       }
-      eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
+      if (!silent) eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId });
       return;
     }
 
@@ -862,7 +867,7 @@ class LayerManager {
       layerInfo.source.changed();
     }
 
-    eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId: layerId });
+    if (!silent) eventBus.emit(Events.LAYER_STYLE_CHANGED, { layerId: layerId });
     eventBus.emit(Events.LAYER_ADDED, { layer: layerInfo });
   }
 

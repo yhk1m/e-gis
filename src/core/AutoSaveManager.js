@@ -9,6 +9,7 @@ import { eventBus, Events } from '../utils/EventBus.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import VectorSource from 'ol/source/Vector';
 import { choroplethTool } from '../tools/ChoroplethTool.js';
+import { restoreChoroplethConfig } from '../tools/choroplethConfigSerial.js';
 import { chartMapTool } from '../tools/ChartMapTool.js';
 import { cartogramTool } from '../tools/CartogramTool.js';
 import { heatmapTool } from '../tools/HeatmapTool.js';
@@ -258,6 +259,7 @@ class AutoSaveManager {
       }
 
       console.log('상태 복원 완료');
+      eventBus.emit(Events.STATE_RESTORED, { layerCount: savedLayers.length });
     } catch (e) {
       console.error('상태 복원 실패:', e);
     } finally {
@@ -307,10 +309,8 @@ class AutoSaveManager {
 
       if (layerData.type === 'choropleth' && layerData.choroplethConfig) {
         // 단계구분도 — 분류 설정 + 범례 + 분류색 스타일 함수
-        restoredLayer._choroplethConfig = {
-          ...layerData.choroplethConfig,
-          tool: choroplethTool
-        };
+        // (timeSeries 는 정돈해서 붙인다 — 저장된 인덱스의 정적 단계구분도로 선다)
+        restoredLayer._choroplethConfig = restoreChoroplethConfig(layerData.choroplethConfig, choroplethTool);
         // ChoroplethTool 내부 맵에도 등록 (범례 갱신 등 대응)
         choroplethTool.sourceByDerived.set(layerId, null);
         choroplethTool.createLegend(
