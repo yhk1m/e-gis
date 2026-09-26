@@ -10,6 +10,7 @@ import { fromLonLat } from 'ol/proj';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { mapManager } from './MapManager.js';
 import { strokeWidthOf, makeStroke } from '../utils/strokeStyle.js';
+import { cloneChoroplethConfig } from '../tools/choroplethConfigSerial.js';
 
 /**
  * 레이어별 스타일 메타데이터 필드.
@@ -569,7 +570,7 @@ class LayerManager {
       const customized = STYLE_FIELDS.some((k) => info[k] !== undefined && info[k] !== copy[k]);
       STYLE_FIELDS.forEach((k) => { if (info[k] !== undefined) copy[k] = info[k]; });
       // 주제도 설정 유지(분류색 스타일·.egis 저장용). 범례는 원본 것을 공유하므로 중복 생성 안 함.
-      if (info._choroplethConfig) copy._choroplethConfig = { ...info._choroplethConfig };
+      if (info._choroplethConfig) copy._choroplethConfig = cloneChoroplethConfig(info._choroplethConfig);
       if (info._cartogramConfig) copy._cartogramConfig = { ...info._cartogramConfig };
       // 주제도 복제본은 분류색 스타일을 다시 걸어야 한다. customized에 기대면 안 된다 —
       // 기본값이 우연히 일치하는 순간 조용히 단색으로 떨어진다.
