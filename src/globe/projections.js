@@ -49,9 +49,12 @@ export function findProjection(key) {
  */
 export function make(key, width, height, { rotate = [0, 0, 0], scale = null } = {}) {
   const entry = findProjection(key);
+  // 여백보다 작은 캔버스(접힌 창·숨은 컨테이너)에서도 맞춤 상자가 뒤집히지 않게 — 배율이 0 이하가 되면 안 된다
+  const right = Math.max(FIT_PAD + 1, width - FIT_PAD);
+  const bottom = Math.max(FIT_PAD + 1, height - FIT_PAD);
   const projection = entry.factory()
     .rotate(rotate)
-    .fitExtent([[FIT_PAD, FIT_PAD], [width - FIT_PAD, height - FIT_PAD]], SPHERE);
+    .fitExtent([[FIT_PAD, FIT_PAD], [right, bottom]], SPHERE);
   if (scale) projection.scale(scale);
   return projection;
 }

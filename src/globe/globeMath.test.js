@@ -58,6 +58,15 @@ describe('rotationAfterDrag', () => {
   it('λ 는 접히고 γ 는 유지된다', () => {
     expect(rotationAfterDrag([175, 0, 3], 10, 0, 75, 'azimuthal')).toEqual([-175, 0, 3]);
   });
+
+  it('배율이 0 이하·NaN 이거나 이동량이 유한하지 않으면 회전을 그대로 둔다 (NaN 이 퍼지지 않게)', () => {
+    const rot = [10, 20, 0];
+    expect(rotationAfterDrag(rot, 10, 10, 0, 'azimuthal')).toEqual(rot);
+    expect(rotationAfterDrag(rot, 10, 10, -5, 'azimuthal')).toEqual(rot);
+    expect(rotationAfterDrag(rot, 10, 10, NaN, 'azimuthal')).toEqual(rot);
+    expect(rotationAfterDrag(rot, NaN, 0, 75, 'azimuthal')).toEqual(rot);
+    expect(rotationAfterDrag(rot, 0, Infinity, 75, 'azimuthal')).toEqual(rot);
+  });
 });
 
 describe('clampScale · scaleAfterWheel', () => {

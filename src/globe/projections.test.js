@@ -62,4 +62,12 @@ describe('make · fitScale', () => {
     expect(p.scale()).toBe(560);
     expect(p.translate()).toEqual([400, 300]);
   });
+
+  it('여백보다 작은 캔버스에서도 맞춤 배율은 양수다', () => {
+    for (const { key } of PROJECTIONS) {
+      const s = fitScale(key, 1, 1);
+      expect(Number.isFinite(s)).toBe(true);
+      expect(s).toBeGreaterThan(0);
+    }
+  });
 });

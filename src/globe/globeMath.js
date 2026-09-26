@@ -42,6 +42,8 @@ export function centerFromRotation([lambda, phi]) {
  * @param {'azimuthal'|'cylindrical'} kind cylindrical 은 λ 만
  */
 export function rotationAfterDrag(rotation, dx, dy, scale, kind) {
+  // 배율이 0 이하·NaN 이거나 이동량이 유한하지 않으면 돌리지 않는다 — NaN 이 회전에 스며들면 지구본이 사라진다
+  if (!(scale > 0) || !Number.isFinite(dx + dy)) return rotation;
   const degPerPx = DRAG_DEG_PER_PX / scale;
   const lambda = normalizeLon(rotation[0] + dx * degPerPx);
   const phi = kind === 'azimuthal' ? clampLat(rotation[1] - dy * degPerPx) : rotation[1];
