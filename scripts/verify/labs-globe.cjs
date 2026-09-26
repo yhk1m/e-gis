@@ -13,7 +13,7 @@
  * 끌기·휠·더블클릭은 CDP Input.dispatchMouseEvent 로 한다 — webContents.sendInputEvent 의
  * 포인터는 pointerType 이 '' 이고 setPointerCapture 가 잡히지 않는다(labs-swipe.cjs 참고).
  */
-const { app, BrowserWindow, session } = require('electron');
+const { app, BrowserWindow, session, nativeImage } = require('electron');
 app.disableHardwareAcceleration(); // 이 PC 는 GPU 드라이버 블루스크린 이력이 있다
 const fs = require('fs');
 const path = require('path');
@@ -98,6 +98,23 @@ const PAGE_HELPERS = `(() => {
       if (Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]) > 30) n++;
     }
     return n;
+  };
+  /** 캔버스에서 --globe-bg 와 다른 픽셀의 상자(CSS px) — 구(와 윤곽)가 차지한 자리 */
+  window.__gbox = () => {
+    const c = canvas(); if (!c) return null;
+    const pr = __egisDebug.globePanel.controller.pixelRatio;
+    const bg = window.__hex('--globe-bg');
+    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+    for (let y = 0; y < c.height; y++) {
+      for (let x = 0; x < c.width; x++) {
+        const i = (y * c.width + x) * 4;
+        if (Math.abs(d[i] - bg[0]) + Math.abs(d[i + 1] - bg[1]) + Math.abs(d[i + 2] - bg[2]) > 24) {
+          if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }
+      }
+    }
+    return { left: minX / pr, top: minY / pr, right: (maxX + 1) / pr, bottom: (maxY + 1) / pr, width: c.width / pr, height: c.height / pr };
   };
   window.__hex = (name) => {
     const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -218,6 +235,7 @@ app.whenReady().then(async () => {
   })()`);
   check('globe canvas mounted in #map-container', !!geom.canvas);
   check('canvas covers #map-container', !!geom.canvas && ['left', 'top', 'width', 'height'].every((k) => Math.abs(geom.canvas[k] - geom.container[k]) <= 1));
+  check('2D scale bar hidden while globe is on', await js(`(() => { const b = document.querySelector('#map-container .map-scale-bar'); return !!b && getComputedStyle(b).display === 'none'; })()`));
   check('controls visible', await js(`!document.getElementById('globe-controls').hidden && getComputedStyle(document.getElementById('globe-controls')).display !== 'none'`));
   check('toggle pressed', await js(`document.getElementById('globe-toggle').getAttribute('aria-pressed') === 'true' && document.getElementById('globe-toggle').classList.contains('active')`));
   check('projection options = 6, default orthographic', await js(`document.querySelectorAll('#globe-projection option').length === 6 && document.getElementById('globe-projection').value === 'orthographic'`));
@@ -253,6 +271,10 @@ app.whenReady().then(async () => {
   for (let i = 0; i < ra.length; i += 4) { if (Math.abs(ra[i] - rb[i]) + Math.abs(ra[i + 1] - rb[i + 1]) + Math.abs(ra[i + 2] - rb[i + 2]) > 30) changed++; }
   console.log('  outside-sphere region vs 2D', JSON.stringify({ canvasAlpha: outside && outside[3], changed, of: ra.length / 4 }));
   check('2D map hidden outside the sphere (overlay covers #map-container)', changed > ra.length / 4 * 0.5);
+  const globeBg = await js(`__hex('--globe-bg')`);
+  const corner = await js(`__gpx(5, 5)`);
+  console.log('  outside-sphere canvas pixel', JSON.stringify({ globeBg, corner }));
+  check('outside the sphere is opaque --globe-bg on screen', !!corner && corner[3] === 255 && near(corner, globeBg, 3));
   check('lite frame flag off at rest', await ctl('c.lite === false'));
 
   // 5. 다크 테마 — 바다색이 바뀌고 다시 그린다
@@ -337,7 +359,6 @@ app.whenReady().then(async () => {
   const dragLog = await js(`window.__dragLog`);
   console.log('  drag after dblclick', JSON.stringify({ dl: after[0] - before[0], expectDl, events: dragLog }));
   check('drag right after a double-click rotates the full +150px', Math.abs((after[0] - before[0]) - expectDl) < 1.5 && dragLog.length === 0);
-  await js(`getSelection().removeAllRanges(); 0`);   // 위 결함이 뒤 단계로 번지지 않게
   await dblclick(cxAbs, cyAbs);
   for (let i = 0; i < 15; i++) await wheel(cxAbs, cyAbs, 400);
   check('zoom clamps at 0.5x fit', Math.abs((await ctl('c.scale')) - 0.5 * fit) < 1e-6);
@@ -401,11 +422,23 @@ app.whenReady().then(async () => {
   console.log('  download', JSON.stringify(download), savedSize);
   check('PNG saved as 지구본.png', !!download && download.filename === '지구본.png' && download.state === 'completed');
   check('PNG larger than 10 KB', savedSize > 10 * 1024);
+  if (savedSize > 0) {
+    const png = nativeImage.createFromPath(download.savePath);
+    const { width: pw, height: ph } = png.getSize();
+    const bmp = png.toBitmap();   // BGRA
+    const alphaAt = (x, y) => bmp[(y * pw + x) * 4 + 3];
+    const corners = [alphaAt(0, 0), alphaAt(pw - 1, 0), alphaAt(0, ph - 1), alphaAt(pw - 1, ph - 1)];
+    const mid = alphaAt(Math.floor(pw / 2), Math.floor(ph / 2));
+    console.log('  png alpha', JSON.stringify({ pw, ph, corners, mid }));
+    check('PNG corners transparent, sphere opaque', corners.every((a) => a === 0) && mid === 255);
+  }
+  check('screen stays opaque after PNG save', await js(`__gpx(5, 5)[3]`) === 255);
 
   // 12. 닫기(끌기 없이 더블클릭으로 제자리) → 2D 중심이 들어오기 전 그대로
   await clickEl('globe-close');
   await sleep(800);
   check('close removes canvas', await js(`!document.querySelector('#map-container canvas.globe-canvas')`));
+  check('2D scale bar visible again after exit', await js(`(() => { const b = document.querySelector('#map-container .map-scale-bar'); return !!b && getComputedStyle(b).display !== 'none'; })()`));
   check('close hides controls and unpresses toggle', await js(`document.getElementById('globe-controls').hidden && document.getElementById('globe-toggle').getAttribute('aria-pressed') === 'false' && !document.getElementById('globe-toggle').classList.contains('active')`));
   check('globePanel inactive', !(await isOn()));
   let c2 = await center2d();
@@ -417,7 +450,6 @@ app.whenReady().then(async () => {
   for (let i = 0; i < 20 && !(await isOn()); i++) await sleep(250);
   await sleep(800);
   const sc = await ctl('c.scale');
-  await js(`getSelection().removeAllRanges(); 0`);   // 앞 단계 더블클릭이 남긴 선택(결함, 8단계 참고)을 걷는다
   await drag(cxAbs, cyAbs, cxAbs + 150, cyAbs);
   const facing = await ctl('c.currentCenter()');
   await clickEl('globe-toggle');
@@ -477,6 +509,11 @@ app.whenReady().then(async () => {
   console.log('  glass', JSON.stringify(glass));
   if (glass.attr === 'glass' && glass.desktop && glass.offTop > 0) {
     check('glass: globe box top == --glass-top-offset + 12', Math.abs(glass.boxTop - (glass.offTop + 12)) < 0.5);
+    const gbox = await js(`__gbox()`);
+    const offPanel = await js(`parseFloat(getComputedStyle(document.getElementById('map-container')).getPropertyValue('--glass-panel-offset')) || 0`);
+    console.log('  glass sphere box', JSON.stringify({ gbox, offTop: glass.offTop, offPanel }));
+    check('glass: sphere top >= --glass-top-offset + 20', gbox.top >= glass.offTop + 20 - 1);
+    check('glass: sphere left >= --glass-panel-offset + 20', gbox.left >= offPanel + 20 - 1);
     await capture(win, 'globe-10-glass');
   } else {
     skip('glass interplay', `glass not active on desktop (attr=${glass.attr}, desktop=${glass.desktop}, offTop=${glass.offTop})`);
@@ -484,6 +521,9 @@ app.whenReady().then(async () => {
   check('globe still active across glass toggle', await isOn());
   await js(`__egisDebug.labs.set('glass', false)`);
   await sleep(1000);
+  const gboxOff = await js(`__gbox()`);
+  console.log('  sphere box after glass off', JSON.stringify(gboxOff));
+  check('glass off: sphere fitted with 20px margin again', Math.abs(Math.min(gboxOff.top, gboxOff.height - gboxOff.bottom) - 20) <= 1.5);
   check('glass off: box top back to 12px', await js(`parseFloat(getComputedStyle(document.getElementById('globe-controls')).top) === 12`));
   await js(`__egisDebug.labs.set('swipe', false)`);
   await sleep(300);
