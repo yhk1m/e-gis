@@ -35,7 +35,7 @@ export const EXPERIMENTS = [
   {
     id: 'time-series',
     name: '시계열 단계구분도',
-    summary: '연도별 열을 슬라이더로 넘기며 변화를 봅니다.',
+    summary: '연도별 열을 슬라이더로 넘기며 변화를 보고, GIF·동영상으로 저장합니다.',
     since: '2026-09'
   }
 ];

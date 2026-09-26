@@ -105,6 +105,9 @@ export async function captureFrames({ tool, layerId, scale = 1, includeLegend = 
   const fields = cfg.timeSeries.fields.slice();
   const startIndex = cfg.timeSeries.index;
   const pixelRatio = (window.devicePixelRatio || 1) * scale;
+  // 크기는 첫 프레임을 그린 뒤 한 번만 잡는다(3D 를 막 끈 직후면 그 전엔 크기가 덜 맞을 수 있다).
+  // 모든 프레임이 같은 크기여야 GIF·동영상이 깨지지 않는다
+  let size = null;
   const frames = [];
 
   try {
@@ -114,13 +117,19 @@ export async function captureFrames({ tool, layerId, scale = 1, includeLegend = 
       await waitRender(map);
       throwIfAborted(signal);
 
-      const size = map.getSize();
+      const now = map.getSize();
+      if (!size) {
+        if (!now || !(now[0] > 0) || !(now[1] > 0)) throw new Error('지도 크기를 알 수 없습니다');
+        size = now.slice();
+      } else if (!now || now[0] !== size[0] || now[1] !== size[1]) {
+        throw new Error('캡처 중 지도 크기가 바뀌었습니다');
+      }
       const canvas = composeMapCanvas(mapEl, { size, pixelRatio, maxSize: MAX_FRAME_SIZE });
       if (!canvas) throw new Error('지도 캔버스를 합칠 수 없습니다');
       assertReadable(canvas);
 
       // 상한(MAX_FRAME_SIZE)에 걸려 줄었을 수 있으니 실제 배율(캔버스 픽셀 / CSS 픽셀)로 그린다
-      const k = size && size[0] > 0 ? canvas.width / size[0] : pixelRatio;
+      const k = canvas.width / size[0];
       const ctx = canvas.getContext('2d');
       if (includeLegend) {
         const model = buildLegendModel(layerInfo);
@@ -188,24 +197,27 @@ export async function recordVideo(frames, delayMs, mimeType, { signal, onProgres
   if (typeof canvas.captureStream !== 'function') throw new Error('이 브라우저는 캔버스 녹화를 지원하지 않습니다');
   const stream = canvas.captureStream(0);
   const track = stream.getVideoTracks()[0];
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
-  const chunks = [];
-  recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-  const stopped = new Promise((resolve, reject) => {
-    recorder.onstop = resolve;
-    recorder.onerror = (e) => reject(e.error || new Error('녹화에 실패했습니다'));
-  });
-  stopped.catch(() => {});   // 취소로 먼저 빠져나가면 아무도 기다리지 않는다 — 미처리 거부 경고 막기
-
   const paint = (frame) => {
     ctx.drawImage(frame, 0, 0);
     if (track && track.requestFrame) track.requestFrame();
   };
 
-  // 첫 프레임을 먼저 그려 둔다 — 녹화 시작 직후의 빈(검은) 화면을 막는다
-  paint(frames[0]);
-  recorder.start();
+  // 녹화기 만들기·시작도 try 안에서 — mime 을 거절(NotSupportedError)해도 캡처 트랙은 멈춘다
+  let recorder = null;
+  let stopped = null;
+  const chunks = [];
   try {
+    recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+    recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+    stopped = new Promise((resolve, reject) => {
+      recorder.onstop = resolve;
+      recorder.onerror = (e) => reject(e.error || new Error('녹화에 실패했습니다'));
+    });
+    stopped.catch(() => {});   // 취소로 먼저 빠져나가면 아무도 기다리지 않는다 — 미처리 거부 경고 막기
+
+    // 첫 프레임을 먼저 그려 둔다 — 녹화 시작 직후의 빈(검은) 화면을 막는다
+    paint(frames[0]);
+    recorder.start();
     for (let i = 0; i < frames.length; i++) {
       throwIfAborted(signal);
       paint(frames[i]);
@@ -216,7 +228,7 @@ export async function recordVideo(frames, delayMs, mimeType, { signal, onProgres
     paint(frames[frames.length - 1]);
     await sleep(150);
   } finally {
-    if (recorder.state !== 'inactive') recorder.stop();
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
     if (track) track.stop();
   }
   await stopped;

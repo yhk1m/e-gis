@@ -10,6 +10,9 @@ import { escapeHtml } from '../../utils/escapeHtml.js';
 import { pickMimeType, extensionFor, animationFilename, frameDelayMs } from '../../tools/animationExport.js';
 import { BASE_INTERVAL_MS } from '../../tools/TimeSeriesTool.js';
 
+/** 프레임 유지 상한 (입력 max 와 같다) */
+const MAX_HOLD_MS = 10000;
+
 export class AnimationExportDialog {
   /**
    * @param {{layerName: string, fields: string[], speed: number,
@@ -104,7 +107,8 @@ export class AnimationExportDialog {
     if (!this.modal || this.controller) return;
     const format = this.format();
     const scale = parseInt(this.modal.querySelector('#anim-scale').value, 10) || 1;
-    const delayMs = frameDelayMs(this.modal.querySelector('#anim-hold').value);
+    // 입력 max 는 강제되지 않는다 — GIF 지연은 16비트 센티초라 10초로 막는다
+    const delayMs = Math.min(MAX_HOLD_MS, frameDelayMs(this.modal.querySelector('#anim-hold').value));
     const includeLabel = this.modal.querySelector('#anim-label').checked;
     const includeLegend = this.modal.querySelector('#anim-legend').checked;
     const ext = format === 'video' ? extensionFor(this.mime) : 'gif';

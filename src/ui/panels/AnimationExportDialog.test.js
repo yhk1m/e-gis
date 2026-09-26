@@ -50,7 +50,19 @@ describe('AnimationExportDialog', () => {
   });
 
   it('만들기: beforeCapture → captureFrames → encodeGif → saveBlobAs, 진행률 표시', async () => {
-    const p = deps();
+    const seen = [];
+    const progressText = () => document.querySelector('#anim-progress').textContent;
+    const p = deps({
+      captureFrames: vi.fn(async ({ onProgress }) => {
+        onProgress(2, 3); seen.push(progressText());
+        onProgress(3, 3); seen.push(progressText());
+        return ['f1', 'f2', 'f3'];
+      }),
+      encodeGif: vi.fn(async (frames, delay, { onProgress }) => {
+        onProgress(3, 3); seen.push(progressText());
+        return new Blob(['gif'], { type: 'image/gif' });
+      })
+    });
     const d = new AnimationExportDialog(p);
     d.show();
     document.querySelector('#anim-scale').value = '2';
@@ -60,7 +72,17 @@ describe('AnimationExportDialog', () => {
     expect(p.captureFrames).toHaveBeenCalledWith(expect.objectContaining({ scale: 2, includeLabel: false, includeLegend: true }));
     expect(p.encodeGif).toHaveBeenCalledWith(['f1', 'f2', 'f3'], 1200, expect.anything());
     expect(p.saveBlobAs).toHaveBeenCalledWith('구_시계열_2015~2025_시계열.gif', expect.any(Blob));
+    expect(seen).toEqual(['2/3 프레임', '3/3 프레임', 'GIF 만드는 중… 3/3']);
     expect(document.querySelector('.anim-export-modal')).toBeNull();   // 끝나면 닫힌다
+  });
+
+  it('프레임 유지는 10초로 막는다 (GIF 지연은 16비트 센티초)', async () => {
+    const p = deps();
+    const d = new AnimationExportDialog(p);
+    d.show();
+    document.querySelector('#anim-hold').value = '999';
+    await d.run();
+    expect(p.encodeGif).toHaveBeenCalledWith(['f1', 'f2', 'f3'], 10000, expect.anything());
   });
 
   it('동영상은 recordVideo 와 실제 확장자', async () => {
