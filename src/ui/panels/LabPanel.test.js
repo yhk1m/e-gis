@@ -46,7 +46,7 @@ describe('LabPanel', () => {
     panel.close();
   });
 
-  it('의견 링크는 주소가 있을 때만 보인다', () => {
+  it('의견 링크는 주소가 있을 때만, 카드마다가 아니라 창에 하나만 보인다', () => {
     const labs = makeLabs();
     let panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: '' });
     panel.show();
@@ -55,6 +55,8 @@ describe('LabPanel', () => {
 
     panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: 'https://forms.gle/abc' });
     panel.show();
+    expect(document.querySelectorAll('.labs-feedback')).toHaveLength(1);
+    expect(document.querySelector('.labs-card .labs-feedback')).toBeNull();
     const link = document.querySelector('.labs-feedback');
     expect(link.getAttribute('href')).toBe('https://forms.gle/abc');
     expect(link.getAttribute('target')).toBe('_blank');

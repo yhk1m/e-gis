@@ -58,6 +58,7 @@ export class LabPanel {
           <div class="labs-cards">
             ${this.experiments.map((e) => this.cardHtml(e)).join('')}
           </div>
+          ${this.feedbackHtml()}
           <div class="labs-share">
             <label for="labs-share-url">켜진 상태로 여는 링크</label>
             <div class="labs-share-row">
@@ -73,17 +74,24 @@ export class LabPanel {
     this.bindEvents();
   }
 
+  /** 의견 보내기 — 실험 전체에 하나(어느 기능인지는 구글 폼에서 고른다). 주소가 비어 있으면 안 그린다. */
+  feedbackHtml() {
+    if (!this.feedbackUrl) return '';
+    return `
+      <a class="labs-feedback" href="${escapeHtml(this.feedbackUrl)}" target="_blank" rel="noopener noreferrer">
+        <span class="labs-feedback-text"><b>의견 보내기</b><span>써 본 기능에 대한 소감·불편한 점을 알려 주세요</span></span>
+        ${EXTERNAL_ICON}
+      </a>`;
+  }
+
   cardHtml(exp) {
     const on = this.labs.isOn(exp.id);
-    const feedback = this.feedbackUrl
-      ? `<a class="labs-feedback" href="${escapeHtml(this.feedbackUrl)}" target="_blank" rel="noopener noreferrer">의견 보내기 ${EXTERNAL_ICON}</a>`
-      : '';
     return `
       <div class="labs-card" data-id="${escapeHtml(exp.id)}">
         <div class="labs-card-text">
           <div class="labs-card-name">${escapeHtml(exp.name)}</div>
           <div class="labs-card-summary">${escapeHtml(exp.summary)}</div>
-          <div class="labs-card-meta"><span class="labs-since">${escapeHtml(exp.since)} 실험 시작</span>${feedback}</div>
+          <div class="labs-card-meta"><span class="labs-since">${escapeHtml(exp.since)} 실험 시작</span></div>
         </div>
         <button type="button" class="labs-switch" role="switch" data-id="${escapeHtml(exp.id)}"
                 aria-checked="${on ? 'true' : 'false'}" aria-label="${escapeHtml(exp.name)} 켜기/끄기">

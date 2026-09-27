@@ -5036,18 +5036,37 @@ body.exporting .egis-basemap-panel {
   color: var(--text-muted);
 }
 
+/* 의견 보내기 — 카드 목록 아래 한 줄 (실험 전체에 하나) */
 .labs-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  padding: 10px var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   color: var(--color-primary);
   text-decoration: none;
 }
 
 .labs-feedback:hover {
-  text-decoration: underline;
+  background: var(--bg-hover);
+}
+
+.labs-feedback-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.labs-feedback-text span {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
 }
 
 .labs-feedback svg {
-  vertical-align: -2px;
-  margin-left: 2px;
+  flex-shrink: 0;
 }
 
 /* 스위치 */
