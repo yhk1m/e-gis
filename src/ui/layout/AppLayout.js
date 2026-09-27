@@ -726,20 +726,19 @@ export class AppLayout {
         background: var(--bg-hover);
       }
 
-      /* 테마 아이콘 전환 */
+      /* 테마 아이콘 전환 — 기본(라이트)은 해, 다크는 달.
+         (예전엔 ":root .icon-sun" 기본값이 다크 규칙과 우선순위가 같고 뒤에 있어 다크에서도 해가 보였다) */
+      .icon-sun {
+        display: block;
+      }
+      .icon-moon {
+        display: none;
+      }
       [data-theme="dark"] .icon-sun {
         display: none !important;
       }
       [data-theme="dark"] .icon-moon {
         display: block !important;
-      }
-      [data-theme="light"] .icon-sun,
-      :root .icon-sun {
-        display: block !important;
-      }
-      [data-theme="light"] .icon-moon,
-      :root .icon-moon {
-        display: none !important;
       }
 
       /* 툴바 스타일 */
