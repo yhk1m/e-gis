@@ -329,6 +329,33 @@ input:focus, select:focus, textarea:focus {
   display: none;
 }
 
+/* 데이터 불러오기: 데스크톱은 닫힌 폴더 + 글자, 태블릿 이하는 열린 폴더 아이콘만 */
+.btn-community .icon-folder-open {
+  display: none;
+}
+
+/* 태블릿 이하(터치 태블릿·1024px 이하 창): Geocoding 은 아이콘만, 데이터 불러오기는 열린 폴더 아이콘만 */
+@media (pointer: coarse) and (max-width: 1366px), (max-width: 1024px) {
+  #toolbar .btn-geocoding .btn-tool-label {
+    display: none;
+  }
+  #menubar .btn-community-primary .icon-folder-closed,
+  #menubar .btn-community-primary .btn-community-label {
+    display: none;
+  }
+  #menubar .btn-community-primary .icon-folder-open {
+    display: block;
+  }
+}
+
+/* 휴대폰 서랍: Geocoding 타일은 글자를 보인다, 데이터 불러오기 줄은 원래(닫힌 폴더 + 글자) */
+.mobile-drawer #toolbar .btn-geocoding .btn-tool-label {
+  display: inline;
+}
+.mobile-drawer .btn-community-primary .icon-folder-open {
+  display: none;
+}
+
 /* 실험실 버튼은 아이콘만 — 글자는 휴대폰 서랍 타일에서만 보인다 */
 #toolbar .btn-labs .btn-tool-label {
   display: none;

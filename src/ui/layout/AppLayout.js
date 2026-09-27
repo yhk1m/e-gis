@@ -135,19 +135,13 @@ export class AppLayout {
                 <div class="dropdown-item" data-action="analysis-flow">흐름도</div>
               </div>
             </div>
-            <div class="menu-item" data-menu="geocoding">
-              <button class="btn-community" data-action="geocoding" title="주소를 좌표로 (Geocoding)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                Geocoding
-              </button>
-            </div>
             <div class="menu-item" data-menu="builtin-data">
               <button class="btn-community btn-community-primary" data-action="builtin-data" title="데이터 불러오기">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon-folder-closed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <svg class="icon-folder-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"></path>
                 </svg>
                 <span class="btn-community-label">데이터 불러오기</span>
               </button>
@@ -385,6 +379,21 @@ export class AppLayout {
               <circle cx="8.5" cy="8.5" r="1.5"/>
               <polyline points="21 15 16 10 5 21"/>
             </svg>
+          </button>
+        </div>
+
+        <div class="toolbar-group" data-group="geocoding">
+          <button class="btn btn-tool-labeled btn-geocoding" id="geocoding-toggle" data-tool="geocoding"
+                  title="주소를 좌표로 (Geocoding)" aria-label="Geocoding">
+            <!-- 지도 위에 찍힌 핀 + 양옆 위·아래 화살표 (주소 ↔ 좌표) -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 22 6 17h12l4 5z"/>
+              <path d="M12 19s-4.5-4.2-4.5-8.5a4.5 4.5 0 0 1 9 0c0 4.3-4.5 8.5-4.5 8.5z"/>
+              <circle cx="12" cy="10.5" r="1.5"/>
+              <path d="M3 13V4M1 6l2-2 2 2"/>
+              <path d="M21 4v9M19 11l2 2 2-2"/>
+            </svg>
+            <span class="btn-tool-label">Geocoding</span>
           </button>
         </div>
 

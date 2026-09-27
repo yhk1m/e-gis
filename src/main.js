@@ -583,6 +583,9 @@ function initToolbar() {
       case 'labs':
         labPanel.show();
         return;
+      case 'geocoding':
+        geocodingPanel.show();
+        return;
       case 'swipe':
         swipePanel?.toggle();
         return;
