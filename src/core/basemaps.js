@@ -31,8 +31,8 @@ export const DEFAULT_BASEMAP = 'OSM';
 export const VWORLD_KEY = import.meta.env.VITE_VWORLD_KEY || '';
 
 export const BASEMAP_GROUPS = [
-  { id: 'korea', label: '한국 (VWorld)' },
-  { id: 'world', label: '세계' }
+  { id: 'korea', label: '한국 (VWorld)', tabLabel: '한국' },
+  { id: 'world', label: '세계', tabLabel: '세계' }
 ];
 
 /** VWorld WMTS 타일 주소. 경로가 z/y/x 순서라 OL 기본({z}/{x}/{y})과 다르다. */

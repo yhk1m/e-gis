@@ -285,7 +285,8 @@ class GeolocateControl extends Control {
 }
 
 /**
- * 배경지도 선택 컨트롤 - 일반/위성/위성+라벨 드롭다운
+ * 배경지도 선택 컨트롤 - 한국/세계 탭 + 그 묶음의 지도 목록
+ * (휴대폰에서 두 묶음을 한꺼번에 펼치면 팝업이 화면 아래로 넘쳐 세계 지도를 고를 수 없었다 — 2026-09-27)
  */
 class BasemapControl extends Control {
   constructor(mapManager) {
@@ -294,9 +295,9 @@ class BasemapControl extends Control {
     button.title = '배경지도 선택';
     button.innerHTML = `
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-        <polyline points="2 17 12 22 22 17"/>
-        <polyline points="2 12 12 17 22 12"/>
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+        <line x1="8" y1="2" x2="8" y2="18"/>
+        <line x1="16" y1="6" x2="16" y2="22"/>
       </svg>
     `;
 
@@ -322,6 +323,13 @@ class BasemapControl extends Control {
       this.togglePanel();
     });
 
+    panel.querySelectorAll('.egis-basemap-tab').forEach((tab) => {
+      tab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.showGroup(tab.dataset.group);
+      });
+    });
+
     panel.querySelectorAll('.egis-basemap-option').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -337,23 +345,44 @@ class BasemapControl extends Control {
     this.updateActive();
   }
 
-  /** 묶음 제목 + 항목 버튼. 키가 없어 한국 묶음이 비면 그 제목도 안 그린다. */
+  /** 묶음 탭(한국/세계) + 묶음별 항목 목록. 키가 없어 한국 묶음이 비면 탭 없이 세계 목록만 그린다. */
   static panelHTML() {
     const catalog = getBasemapCatalog();
-    return BASEMAP_GROUPS.map((group) => {
-      const items = catalog.filter((b) => b.group === group.id);
-      if (!items.length) return '';
-      return `
-        <div class="egis-basemap-group-title">${group.label}</div>
-        ${items.map((b) =>
+    const groups = BASEMAP_GROUPS
+      .map((group) => ({ ...group, items: catalog.filter((b) => b.group === group.id) }))
+      .filter((group) => group.items.length);
+    const tabs = groups.length > 1
+      ? `<div class="egis-basemap-tabs" role="tablist">${groups.map((g) =>
+          `<button type="button" class="egis-basemap-tab" role="tab" data-group="${g.id}">${g.tabLabel || g.label}</button>`
+        ).join('')}</div>`
+      : '';
+    return tabs + groups.map((g) => `
+      <div class="egis-basemap-list" data-group="${g.id}" role="tabpanel">
+        ${g.items.map((b) =>
           `<button type="button" class="egis-basemap-option" data-key="${b.key}">${b.label}</button>`
         ).join('')}
-      `;
-    }).join('');
+      </div>
+    `).join('');
+  }
+
+  /** 한 묶음의 목록만 펼친다 */
+  showGroup(groupId) {
+    this.panel.querySelectorAll('.egis-basemap-tab').forEach((tab) => {
+      const on = tab.dataset.group === groupId;
+      tab.classList.toggle('active', on);
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    const lists = this.panel.querySelectorAll('.egis-basemap-list');
+    lists.forEach((list) => { list.hidden = lists.length > 1 && list.dataset.group !== groupId; });
   }
 
   togglePanel() {
     this.panel.hidden = !this.panel.hidden;
+    // 열 때는 지금 배경지도가 든 묶음을 펼친다
+    if (!this.panel.hidden) {
+      const current = findBasemap(this.mapManager.getBasemap());
+      this.showGroup(current ? current.group : BASEMAP_GROUPS[0].id);
+    }
   }
 
   closePanel() {
