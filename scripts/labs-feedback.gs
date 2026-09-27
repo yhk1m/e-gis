@@ -4,8 +4,9 @@
  * e-GIS 실험실 의견 저장 — Google Apps Script 웹앱
  *
  * e-GIS 실험실 창의 「의견 보내기」(src/ui/panels/LabFeedbackPanel.js)가 보낸 답을
- * 이 스크립트가 붙어 있는 스프레드시트의 「의견」 탭에 한 줄씩 쌓는다.
- * 첨부 이미지는 내 드라이브의 「e-GIS 실험실 의견 이미지」 폴더에 저장하고 시트에는 링크를 남긴다
+ * 이 스크립트가 붙어 있는 스프레드시트의 「의견」 탭에 쌓는다. 고른 기능(항목)마다 한 줄이고,
+ * 한 번에 함께 보낸 줄들은 「묶음」 번호가 같다.
+ * 항목에 붙인 이미지는 내 구글 드라이브의 「e-GIS 실험실 의견 이미지」 폴더에 저장하고, 그 줄에 링크를 남긴다
  * (파일은 나만 볼 수 있다 — 공유 설정을 바꾸지 않는다).
  *
  * ── 설치 (한 번만) ──────────────────────────────────────────────
@@ -19,15 +20,16 @@
  *
  * ── 받는 형식 ──────────────────────────────────────────────────
  * POST, 본문은 JSON 문자열(Content-Type text/plain):
- *   { experiments: string[], message: string, role: string, email: string,
- *     image?: { name, type, data(base64) }, page, ua, labsOn: string[], website(봇 막이 — 비어 있어야 함) }
+ *   { items: [{ experiment: string, message: string, image?: { name, type, data(base64) } }],
+ *     role: string, email: string, page, ua, labsOn: string[], website(봇 막이 — 비어 있어야 함) }
  * 응답: { ok: true } 또는 { ok: false, error: '사용자에게 보일 문장' }
  */
 
 const SHEET_NAME = '의견';
 const FOLDER_NAME = 'e-GIS 실험실 의견 이미지';
 const TIMEZONE = 'Asia/Seoul';
-const HEADERS = ['받은 시각', '실험 기능', '의견', '역할', '이메일', '첨부 이미지', '켜져 있던 실험', '페이지', '브라우저'];
+const HEADERS = ['받은 시각', '묶음', '실험 기능', '의견', '첨부 이미지', '역할', '이메일', '켜져 있던 실험', '페이지', '브라우저'];
+const MAX_ITEMS = 10;
 
 const MAX_MESSAGE = 3000;
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
@@ -42,29 +44,36 @@ function doPost(e) {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     if (body.website) return json({ ok: true }); // 봇 — 저장하지 않고 성공처럼 돌려준다
 
-    const message = clip(body.message, MAX_MESSAGE).trim();
-    if (!message) return json({ ok: false, error: '의견을 적어 주세요.' });
+    const items = (Array.isArray(body.items) ? body.items : []).slice(0, MAX_ITEMS)
+      .map((it) => ({ experiment: clip(it && it.experiment, 60), message: clip(it && it.message, MAX_MESSAGE).trim(), image: it && it.image }))
+      .filter((it) => it.message);
+    if (!items.length) return json({ ok: false, error: '의견을 적어 주세요.' });
     if (!rateOk()) return json({ ok: false, error: '보내는 사람이 많습니다. 잠시 뒤에 다시 보내 주세요.' });
 
-    const experiments = (Array.isArray(body.experiments) ? body.experiments : []).slice(0, 10).map((x) => clip(x, 60));
-    const labsOn = (Array.isArray(body.labsOn) ? body.labsOn : []).slice(0, 20).map((x) => clip(x, 40));
+    const labsOn = (Array.isArray(body.labsOn) ? body.labsOn : []).slice(0, 20).map((x) => clip(x, 40)).join(', ');
+    const role = clip(body.role, 20);
     const email = clip(body.email, 200).trim();
+    const now = new Date();
+    const time = Utilities.formatDate(now, TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
+    const batch = Utilities.formatDate(now, TIMEZONE, 'MMddHHmmss') + '-' + Math.floor(Math.random() * 1000); // 함께 보낸 줄 묶음
 
     const lock = LockService.getScriptLock();
     lock.waitLock(15000);
     try {
-      const imageUrl = saveImage(body.image);
-      getSheet().appendRow([
-        Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss'),
-        safe(experiments.join(', ')),
-        safe(message),
-        safe(clip(body.role, 20)),
+      const rows = items.map((it) => [
+        time,
+        batch,
+        safe(it.experiment),
+        safe(it.message),
+        saveImage(it.image, it.experiment),
+        safe(role),
         safe(email),
-        imageUrl,
-        safe(labsOn.join(', ')),
+        safe(labsOn),
         safe(clip(body.page, 300)),
         safe(clip(body.ua, 300)),
       ]);
+      const sheet = getSheet();
+      sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, HEADERS.length).setValues(rows);
     } finally {
       lock.releaseLock();
     }
@@ -76,13 +85,13 @@ function doPost(e) {
 }
 
 /** 첨부 이미지를 드라이브 폴더에 저장하고 링크를 돌려준다. 없거나 잘못되면 '' */
-function saveImage(image) {
+function saveImage(image, experiment) {
   if (!image || !image.data) return '';
   const type = /^image\/(png|jpeg|webp|gif)$/.test(image.type) ? image.type : 'image/jpeg';
   const bytes = Utilities.base64Decode(String(image.data));
   if (bytes.length > MAX_IMAGE_BYTES) return '(이미지가 너무 커서 저장하지 않음)';
   const stamp = Utilities.formatDate(new Date(), TIMEZONE, 'yyyyMMdd-HHmmss');
-  const name = stamp + '-' + clip(image.name, 80).replace(/[\\/:*?"<>|]/g, '_');
+  const name = (stamp + '-' + clip(experiment, 30) + '-' + clip(image.name, 60)).replace(/[\\/:*?"<>|]/g, '_');
   const file = getFolder().createFile(Utilities.newBlob(bytes, type, name));
   return file.getUrl();
 }

@@ -5197,9 +5197,61 @@ button.labs-feedback {
   margin-top: 6px;
 }
 
+/* 고른 기능마다 하나씩 생기는 의견 카드 */
+.lab-fb-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.lab-fb-items:empty {
+  display: none;
+}
+
+.lab-fb-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-app);
+}
+
+.lab-fb-item-title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.lab-fb-on {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-selected);
+  font-style: normal;
+  font-size: 11px;
+  color: var(--color-primary);
+}
+
+.lab-fb-chip input:checked + span .lab-fb-on {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
 .lab-fb-image-row {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--spacing-sm);
+}
+
+@media (pointer: coarse) {
+  .lab-fb-paste-hint {
+    display: none; /* 터치 기기엔 Ctrl+V 가 없다 */
+  }
 }
 
 .lab-fb-image-row .btn {
