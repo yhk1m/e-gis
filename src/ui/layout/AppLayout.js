@@ -137,10 +137,7 @@ export class AppLayout {
             </div>
             <div class="menu-item" data-menu="builtin-data">
               <button class="btn-community btn-community-primary" data-action="builtin-data" title="데이터 불러오기">
-                <svg class="icon-folder-closed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                </svg>
-                <svg class="icon-folder-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg class="icon-folder-open" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"></path>
                 </svg>
                 <span class="btn-community-label">데이터 불러오기</span>
@@ -183,7 +180,7 @@ export class AppLayout {
                 <!-- 홈 화면에 추가 — 태블릿·휴대폰(터치)에서만 installPrompt.js 가 보인다 -->
                 <button type="button" class="dropdown-item dropdown-link install-btn" id="install-app" title="홈 화면에 추가 — 앱처럼 꽉 찬 화면으로 열기" hidden>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>
-                  홈 화면에 추가
+                  <span class="install-label">홈 화면에 추가</span>
                 </button>
               </div>
             </div>

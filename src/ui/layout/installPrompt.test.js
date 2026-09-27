@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // © 2026 김용현
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initInstallPrompt, detectPlatform } from './installPrompt.js';
+import { initInstallPrompt, detectPlatform, detectBrowser, tipHtml } from './installPrompt.js';
 
 /** matchMedia·navigator 를 흉내 낸 가짜 창 */
 function fakeWin({ coarse = true, standalone = false, ua = 'Mozilla/5.0 (Linux; Android 14) Chrome/130', platform = 'Linux', touchPoints = 5 } = {}) {
@@ -20,8 +20,24 @@ describe('detectPlatform', () => {
     expect(detectPlatform({ userAgent: 'Macintosh Safari', platform: 'MacIntel', maxTouchPoints: 5 })).toBe('ios');
   });
   it('진짜 Mac 과 안드로이드는 ios 가 아니다', () => {
-    expect(detectPlatform({ userAgent: 'Macintosh', platform: 'MacIntel', maxTouchPoints: 0 })).toBe('other');
+    expect(detectPlatform({ userAgent: 'Macintosh', platform: 'MacIntel', maxTouchPoints: 0 })).toBe('mac');
     expect(detectPlatform({ userAgent: 'Android', platform: 'Linux', maxTouchPoints: 5 })).toBe('android');
+  });
+});
+
+describe('detectBrowser·tipHtml', () => {
+  it('엣지·크롬 UA 에 Safari 가 섞여 있어도 가린다', () => {
+    expect(detectBrowser({ userAgent: 'Mozilla/5.0 (Windows NT 10.0) Chrome/130 Safari/537.36 Edg/130' })).toBe('edge');
+    expect(detectBrowser({ userAgent: 'Mozilla/5.0 (Windows NT 10.0) Chrome/130 Safari/537.36' })).toBe('chrome');
+    expect(detectBrowser({ userAgent: 'Mozilla/5.0 (Macintosh) Version/18 Safari/605' })).toBe('safari');
+    expect(detectBrowser({ userAgent: 'Mozilla/5.0 Firefox/130' })).toBe('firefox');
+  });
+  it('데스크톱은 바탕화면, 브라우저별 방법', () => {
+    expect(tipHtml('other', 'chrome', false)).toContain('바탕화면');
+    expect(tipHtml('other', 'chrome', false)).toContain('바로가기 만들기');
+    expect(tipHtml('other', 'edge', false)).toContain('앱으로 설치');
+    expect(tipHtml('mac', 'safari', false)).toContain('Dock');
+    expect(tipHtml('ios', 'safari', true)).toContain('홈 화면');
   });
 });
 
@@ -30,19 +46,26 @@ describe('initInstallPrompt', () => {
   const tip = () => document.querySelector('.install-tip');
   let menuClicks;
   beforeEach(() => {
-    document.body.innerHTML = `<div class="dropdown-menu" id="menu-about"><button id="install-app" class="dropdown-item install-btn" hidden></button></div>`;
+    document.body.innerHTML = `<div class="dropdown-menu" id="menu-about"><button id="install-app" class="dropdown-item install-btn" hidden><span class="install-label">홈 화면에 추가</span></button></div>`;
     menuClicks = 0;
     document.getElementById('menu-about').addEventListener('click', () => { menuClicks++; });
   });
 
-  it('태블릿·휴대폰(터치)에서만 About 메뉴 항목이 보인다', () => {
+  it('터치 기기는 "홈 화면에 추가"로 보인다', () => {
     initInstallPrompt(document, fakeWin({ coarse: true }));
     expect(btn().hidden).toBe(false);
+    expect(btn().textContent).toContain('홈 화면에 추가');
   });
 
-  it('데스크톱(마우스)이나 이미 홈 화면 앱으로 열었으면 숨긴다', () => {
-    expect(initInstallPrompt(document, fakeWin({ coarse: false }))).toBeNull();
-    expect(btn().hidden).toBe(true);
+  it('데스크톱도 보이고 "바탕화면에 추가"라고 부른다', () => {
+    initInstallPrompt(document, fakeWin({ coarse: false, ua: 'Mozilla/5.0 (Windows NT 10.0) Chrome/130 Safari/537.36', platform: 'Win32', touchPoints: 0 }));
+    expect(btn().hidden).toBe(false);
+    expect(btn().textContent).toContain('바탕화면에 추가');
+    btn().click();
+    expect(tip().textContent).toContain('바로가기 만들기');
+  });
+
+  it('이미 추가한 아이콘(앱)으로 열었으면 숨긴다', () => {
     expect(initInstallPrompt(document, fakeWin({ standalone: true }))).toBeNull();
     expect(btn().hidden).toBe(true);
   });
