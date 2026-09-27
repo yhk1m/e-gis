@@ -5312,6 +5312,17 @@ button.labs-feedback {
   display: none;
 }
 
+.lab-fb-privacy {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.lab-fb-privacy a {
+  color: var(--color-primary);
+}
+
 .lab-fb-hp {
   position: absolute;
   left: -9999px;
