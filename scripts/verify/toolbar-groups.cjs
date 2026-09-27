@@ -87,6 +87,19 @@ app.whenReady().then(async () => {
       labs: document.getElementById('labs-toggle').getBoundingClientRect().height }; })()`);
   check('T1 태블릿 툴바가 작아졌다(줄 44·버튼 34·아이콘 19)', size.toolbar <= 45 && size.btn === 34 && size.svg === 19 && size.labs === 34, size);
   await capture('toolbar-tablet-1-collapsed');
+
+  // 카피라이트: 태블릿은 ⓒ 버튼 → 말풍선
+  check('C1 태블릿: 카피라이트 글자는 숨고 ⓒ 버튼이 보인다', (await visible('#toolbar-copyright-btn')) && !(await visible('#toolbar-copyright-text')));
+  await click('#toolbar-copyright-btn');
+  const pop = await js(`(() => { const e = document.getElementById('toolbar-copyright-text'); const r = e.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    return { w: r.width, inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0, onTop: e.contains(hit), text: e.textContent.trim(),
+      below: r.top >= document.getElementById('toolbar-copyright-btn').getBoundingClientRect().bottom }; })()`);
+  check('C2 ⓒ 를 누르면 버튼 아래 말풍선이 화면 안에, 가려지지 않고 뜬다', pop.w > 0 && pop.inView && pop.onTop && pop.below && pop.text.includes('김용현'), pop);
+  await capture('toolbar-tablet-copyright');
+  await js(`document.getElementById('map').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); 0`);
+  await sleep(200);
+  check('C3 바깥을 누르면 닫힌다', !(await visible('#toolbar-copyright-text')));
   await captureToolbar('toolbar-strip-collapsed');
 
   await click('[data-tool="select"]');
@@ -123,6 +136,7 @@ app.whenReady().then(async () => {
   await load(null);
   check('D1 데스크톱도 접힌 상태로 시작', !(await visible('[data-tool="draw-point"]')) && (await visible('[data-group-toggle="draw"]')));
   check('D1 실험실 글자 숨김', (await labsLabel()) === 0);
+  check('C4 데스크톱: 카피라이트 글자 그대로, ⓒ 버튼 없음', (await visible('#toolbar-copyright-text')) && !(await visible('#toolbar-copyright-btn')));
   const dsize = await js(`document.querySelector('#toolbar [data-tool="zoom-in"]').getBoundingClientRect().width`);
   check('D1 데스크톱 버튼 크기는 그대로 28px', dsize === 28, dsize);
   await click('[data-group-toggle="draw"]');
@@ -141,6 +155,7 @@ app.whenReady().then(async () => {
   check('M1 서랍에서는 묶음 없이 도구가 전부 보인다', drawer.draw && drawer.measure && drawer.merge, drawer);
   check('M1 서랍에서는 머리 버튼이 숨는다', !drawer.head, drawer);
   check('M1 서랍 실험실 타일에는 글자가 남는다', drawer.labsLabel, drawer);
+  check('C5 휴대폰 서랍에는 카피라이트·ⓒ 둘 다 없다', !(await visible('#toolbar-copyright-btn')) && !(await visible('#toolbar-copyright-text')));
   const tile = await js(`document.querySelector('#mobile-drawer [data-tool="zoom-in"] svg').getBoundingClientRect().width`);
   check('M1 휴대폰 서랍 아이콘은 그대로 24px', tile === 24, tile);
   await capture('toolbar-phone-drawer');

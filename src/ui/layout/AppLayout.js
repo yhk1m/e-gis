@@ -434,8 +434,17 @@ export class AppLayout {
 
         <div class="toolbar-spacer"></div>
 
-        <!-- 카피라이트 -->
-        <span class="toolbar-copyright">ⓒ 2025 양정고등학교 김용현T | bgnlkim@gmail.com</span>
+        <!-- 카피라이트 — 데스크톱은 글자 그대로, 태블릿은 ⓒ 버튼을 누르면 말풍선으로 (copyrightToggle.js) -->
+        <div class="toolbar-copyright-wrap">
+          <button type="button" class="btn-icon toolbar-copyright-btn" id="toolbar-copyright-btn"
+                  aria-expanded="false" aria-controls="toolbar-copyright-text" title="저작권 정보" aria-label="저작권 정보">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.5"/>
+              <path d="M15.2 9.2a4.2 4.2 0 1 0 0 5.6"/>
+            </svg>
+          </button>
+          <span class="toolbar-copyright" id="toolbar-copyright-text" role="note">ⓒ 2025 양정고등학교 김용현T | bgnlkim@gmail.com</span>
+        </div>
 
         <!-- 위치 검색 -->
         <div class="toolbar-search" id="toolbar-search">

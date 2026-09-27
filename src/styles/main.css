@@ -272,6 +272,63 @@ input:focus, select:focus, textarea:focus {
   display: none;
 }
 
+/* ===== 카피라이트 (copyrightToggle.js) =====
+   데스크톱: 글자 그대로, ⓒ 버튼 없음.
+   태블릿: 글자를 숨기고 ⓒ 버튼 — 누르면 버튼 아래 말풍선으로 뜬다.
+   휴대폰 서랍: 둘 다 숨긴다(예전과 같다). */
+.toolbar-copyright-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#toolbar .toolbar-copyright-btn {
+  display: none;
+}
+
+@media (pointer: coarse) and (max-width: 1366px),
+       (max-width: 1024px) {
+  #toolbar .toolbar-copyright-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    margin-right: var(--spacing-sm);
+  }
+
+  #toolbar .toolbar-copyright-wrap .toolbar-copyright {
+    display: none;
+  }
+
+  #toolbar .toolbar-copyright-wrap.is-open .toolbar-copyright-btn {
+    background: var(--bg-selected);
+    color: var(--color-primary);
+  }
+
+  #toolbar .toolbar-copyright-wrap.is-open .toolbar-copyright {
+    display: block;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 1200;
+    margin: 0;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--glass-popover-bg, var(--bg-panel));
+    box-shadow: var(--shadow-lg);
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    text-shadow: none;
+  }
+}
+
+.mobile-drawer #toolbar .toolbar-copyright-wrap {
+  display: none;
+}
+
 /* 실험실 버튼은 아이콘만 — 글자는 휴대폰 서랍 타일에서만 보인다 */
 #toolbar .btn-labs .btn-tool-label {
   display: none;
