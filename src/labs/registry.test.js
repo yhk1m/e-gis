@@ -5,7 +5,7 @@
  * 쉼표·공백 없는 소문자 kebab-case 여야 한다.
  */
 import { describe, it, expect } from 'vitest';
-import { EXPERIMENTS, EXPERIMENT_IDS, FEEDBACK_URL } from './registry.js';
+import { EXPERIMENTS, EXPERIMENT_IDS, FEEDBACK_URL, FEEDBACK_ENDPOINT } from './registry.js';
 
 describe('EXPERIMENTS', () => {
   it('항목마다 id·name·summary·since 가 있다', () => {
@@ -71,6 +71,10 @@ describe('EXPERIMENTS', () => {
         expect(t.trim().length).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('FEEDBACK_ENDPOINT 는 비어 있거나 Apps Script 웹앱(/exec) 주소다', () => {
+    expect(FEEDBACK_ENDPOINT === '' || /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(FEEDBACK_ENDPOINT)).toBe(true);
   });
 
   it('FEEDBACK_URL 은 비어 있거나 https 주소다', () => {

@@ -151,4 +151,4 @@ export const FEEDBACK_URL = 'https://forms.gle/qwo8HJPCupahHU4T8';
  * 의견 저장 웹앱(Apps Script, scripts/labs-feedback.gs 를 배포한 /exec 주소).
  * 있으면 「의견 보내기」가 구글 폼 대신 e-GIS 안의 의견 창(LabFeedbackPanel)을 열고, 답은 스프레드시트에 쌓인다.
  */
-export const FEEDBACK_ENDPOINT = '';
+export const FEEDBACK_ENDPOINT = 'https://script.google.com/macros/s/AKfycby67a3zL4G1PzDdmgJCjRLNXXOlK-iByjzDDCYnHMMxjQtR22zAaVUvaD-cu2-GuKpdtQ/exec';
