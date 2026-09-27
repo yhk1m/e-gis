@@ -352,10 +352,13 @@
   }
 }
 
-/* 실험실 사용 안내 창 — 배경막(검정 50%) 위라 밝은 유리가 회색으로 흐려져 진한 글자가 잘 안 보였다
+/* 실험실 창·사용 안내 창 — 배경막(검정 50%) 위라 밝은 유리가 회색으로 흐려져 진한 글자가 잘 안 보였다
    (사용자 보고 2026-09-27). 테마와 상관없이 어두운 유리 + 흰 글자로 둔다. */
-[data-surface="glass"] .labs-guide-content {
+[data-surface="glass"] :is(.labs-content, .labs-guide-content) {
   --bg-panel: rgba(15, 23, 42, 0.55);
+  --bg-app: rgba(255, 255, 255, 0.06);
+  --bg-input: rgba(255, 255, 255, 0.1);
+  --border-color-strong: rgba(255, 255, 255, 0.35);
   --bg-hover: rgba(255, 255, 255, 0.12);
   --bg-selected: rgba(255, 255, 255, 0.2);
   --border-color: rgba(255, 255, 255, 0.2);
@@ -368,8 +371,17 @@
   color: var(--text-primary);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
-[data-surface="glass"] .labs-guide-content :is(.labs-guide-tab, .modal-close) {
+[data-surface="glass"] :is(.labs-content, .labs-guide-content) :is(.labs-guide-tab, .labs-guide-btn, .modal-close) {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+[data-surface="glass"] .labs-content :is(input, .btn-outline) {
+  text-shadow: none;
+}
+[data-surface="glass"] .labs-content :is(.labs-guide-btn, .labs-share-row .btn-outline, .labs-feedback) {
+  color: #ffffff;
+}
+[data-surface="glass"] .labs-content .labs-share-row .btn-outline {
+  border-color: rgba(255, 255, 255, 0.6);
 }
 [data-surface="glass"] .labs-guide-content .labs-guide-tab.active {
   color: #ffffff;
