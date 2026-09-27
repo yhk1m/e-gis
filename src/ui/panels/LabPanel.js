@@ -8,9 +8,10 @@
  * 설계: docs/superpowers/specs/2026-09-25-labs-design.md
  */
 import { labs as defaultLabs } from '../../labs/labs.js';
-import { EXPERIMENTS, FEEDBACK_URL } from '../../labs/registry.js';
+import { EXPERIMENTS, FEEDBACK_URL, FEEDBACK_ENDPOINT } from '../../labs/registry.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
 import { labGuidePanel as defaultGuide } from './LabGuidePanel.js';
+import { labFeedbackPanel as defaultFeedback } from './LabFeedbackPanel.js';
 
 // 속성 보기 버튼과 같은 모양의 i — 누르면 실험실 사용 안내 창이 따로 뜬다
 const INFO_ICON = `
@@ -27,10 +28,21 @@ const EXTERNAL_ICON = `
     <line x1="10" y1="14" x2="21" y2="3"/>
   </svg>`;
 
+// 의견 창 열기 — 말풍선
+const CHAT_ICON = `
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>`;
+
 export class LabPanel {
-  constructor({ labs = defaultLabs, experiments = EXPERIMENTS, feedbackUrl = FEEDBACK_URL, guide = defaultGuide } = {}) {
+  constructor({
+    labs = defaultLabs, experiments = EXPERIMENTS, feedbackUrl = FEEDBACK_URL, guide = defaultGuide,
+    feedbackEndpoint = FEEDBACK_ENDPOINT, feedback = defaultFeedback,
+  } = {}) {
     this.labs = labs;
     this.guide = guide;
+    this.feedback = feedback;
+    this.feedbackEndpoint = feedbackEndpoint;
     this.experiments = experiments;
     this.feedbackUrl = feedbackUrl;
     this.modal = null;
@@ -74,13 +86,19 @@ export class LabPanel {
     this.bindEvents();
   }
 
-  /** 의견 보내기 — 실험 전체에 하나(어느 기능인지는 구글 폼에서 고른다). 주소가 비어 있으면 안 그린다. */
+  /**
+   * 의견 보내기 — 실험 전체에 하나.
+   * 저장 웹앱(feedbackEndpoint)이 있으면 e-GIS 안의 의견 창을 열고, 없으면 구글 폼 링크(feedbackUrl), 둘 다 없으면 안 그린다.
+   */
   feedbackHtml() {
+    const text = '<span class="labs-feedback-text"><b>의견 보내기</b><span>써 본 기능에 대한 소감·불편한 점을 알려 주세요</span></span>';
+    if (this.feedbackEndpoint) {
+      return `<button type="button" class="labs-feedback" id="labs-feedback-open">${text}${CHAT_ICON}</button>`;
+    }
     if (!this.feedbackUrl) return '';
     return `
       <a class="labs-feedback" href="${escapeHtml(this.feedbackUrl)}" target="_blank" rel="noopener noreferrer">
-        <span class="labs-feedback-text"><b>의견 보내기</b><span>써 본 기능에 대한 소감·불편한 점을 알려 주세요</span></span>
-        ${EXTERNAL_ICON}
+        ${text}${EXTERNAL_ICON}
       </a>`;
   }
 
@@ -103,6 +121,7 @@ export class LabPanel {
   bindEvents() {
     this.modal.querySelector('#labs-close').addEventListener('click', () => this.close());
     this.modal.querySelector('#labs-guide-open').addEventListener('click', () => this.guide?.show());
+    this.modal.querySelector('#labs-feedback-open')?.addEventListener('click', () => this.feedback?.show());
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.close();
     });
@@ -117,7 +136,8 @@ export class LabPanel {
     this.modal.querySelector('#labs-share-copy').addEventListener('click', () => this.copyShareUrl());
 
     // 안내 창이 위에 떠 있으면 Esc 는 안내 창만 닫는다
-    this._escHandler = (e) => { if (e.key === 'Escape' && !this.guide?.isOpen()) this.close(); };
+    // 안내 창·의견 창이 위에 떠 있으면 Esc 는 그 창만 닫는다
+    this._escHandler = (e) => { if (e.key === 'Escape' && !this.guide?.isOpen() && !this.feedback?.isOpen()) this.close(); };
     document.addEventListener('keydown', this._escHandler);
   }
 

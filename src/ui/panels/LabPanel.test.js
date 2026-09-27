@@ -4,7 +4,7 @@
  * 실험실 창: 카드마다 스위치, 스위치는 labs 상태를 그대로 비추고 누르면 뒤집는다.
  * 의견 링크는 주소가 있을 때만, 공유 주소는 켜진 실험을 반영한다.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LabPanel } from './LabPanel.js';
 import { Labs } from '../../labs/labs.js';
 
@@ -61,6 +61,17 @@ describe('LabPanel', () => {
     expect(link.getAttribute('href')).toBe('https://forms.gle/abc');
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toContain('noopener');
+    panel.close();
+  });
+
+  it('저장 웹앱 주소가 있으면 구글 폼 링크 대신 의견 창을 여는 버튼', () => {
+    const labs = makeLabs();
+    const feedback = { show: vi.fn(), isOpen: () => false };
+    const panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: 'https://forms.gle/abc', feedbackEndpoint: 'https://script.google.com/x/exec', feedback });
+    panel.show();
+    expect(document.querySelector('a.labs-feedback')).toBeNull();
+    document.querySelector('#labs-feedback-open').click();
+    expect(feedback.show).toHaveBeenCalled();
     panel.close();
   });
 

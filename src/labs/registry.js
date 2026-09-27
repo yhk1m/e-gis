@@ -146,3 +146,9 @@ export const EXPERIMENT_IDS = EXPERIMENTS.map((e) => e.id);
 
 /** 의견 보내기(구글 폼) 주소 — 실험 전체에 하나, 어느 기능인지는 폼에서 고른다. 비어 있으면 실험실 창에 링크가 안 보인다. */
 export const FEEDBACK_URL = 'https://forms.gle/qwo8HJPCupahHU4T8';
+
+/**
+ * 의견 저장 웹앱(Apps Script, scripts/labs-feedback.gs 를 배포한 /exec 주소).
+ * 있으면 「의견 보내기」가 구글 폼 대신 e-GIS 안의 의견 창(LabFeedbackPanel)을 열고, 답은 스프레드시트에 쌓인다.
+ */
+export const FEEDBACK_ENDPOINT = '';

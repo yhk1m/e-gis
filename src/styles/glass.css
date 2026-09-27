@@ -355,7 +355,7 @@
 
 /* 실험실 창·사용 안내 창 — 배경막(검정 50%) 위라 옅은 유리는 회색으로 흐려져 글자가 잘 안 보였다(사용자 보고 2026-09-27).
    테마를 따른다: 라이트는 거의 불투명한 밝은 머티리얼 + 진한 글자, 다크는 어두운 머티리얼 + 흰 글자. */
-[data-surface="glass"] :is(.labs-content, .labs-guide-content) {
+[data-surface="glass"] :is(.labs-content, .labs-guide-content, .labs-feedback-content) {
   --bg-panel: rgba(250, 250, 252, 0.92);
   --bg-app: rgba(0, 0, 0, 0.035);
   --bg-input: rgba(255, 255, 255, 0.85);
@@ -366,7 +366,7 @@
   color: var(--text-primary);
   text-shadow: none;
 }
-[data-theme="dark"][data-surface="glass"] :is(.labs-content, .labs-guide-content) {
+[data-theme="dark"][data-surface="glass"] :is(.labs-content, .labs-guide-content, .labs-feedback-content) {
   --bg-panel: rgba(28, 28, 30, 0.82);
   --bg-app: rgba(255, 255, 255, 0.06);
   --bg-input: rgba(255, 255, 255, 0.1);
@@ -381,7 +381,7 @@
   --glass-highlight: rgba(255, 255, 255, 0.10);
   --glass-switch-on: #30d158;
 }
-[data-surface="glass"] :is(.labs-content, .labs-guide-content) :is(.labs-guide-tab, .labs-guide-btn, .modal-close, input, .btn-outline) {
+[data-surface="glass"] :is(.labs-content, .labs-guide-content, .labs-feedback-content) :is(.labs-guide-tab, .labs-guide-btn, .modal-close, input, textarea, .btn-outline, button) {
   text-shadow: none;
 }
 [data-theme="dark"][data-surface="glass"] .labs-content :is(.labs-guide-btn, .labs-share-row .btn-outline, .labs-feedback) {

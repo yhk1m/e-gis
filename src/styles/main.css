@@ -5054,6 +5054,276 @@ body.exporting .egis-basemap-panel {
   background: var(--bg-hover);
 }
 
+button.labs-feedback {
+  width: 100%;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* ===== 실험실 의견 보내기 창 (LabFeedbackPanel) ===== */
+.labs-feedback-modal .labs-feedback-content {
+  width: 560px;
+  max-width: 94vw;
+  max-height: 88vh;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-panel);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.lab-fb-form {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.lab-fb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.lab-fb-field legend,
+.lab-fb-field > label,
+.lab-fb-two label,
+.lab-fb-label {
+  padding: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lab-fb-hint {
+  margin-left: 4px;
+  font-weight: 400;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.lab-fb-req {
+  margin-left: 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-danger, #dc2626);
+}
+
+.lab-fb-exp,
+.lab-fb-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.lab-fb-chip {
+  position: relative;
+  cursor: pointer;
+}
+
+.lab-fb-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lab-fb-chip span {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  background: var(--bg-app);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.lab-fb-chip input:checked + span {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.lab-fb-chip input:focus-visible + span {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.lab-fb-form textarea,
+.lab-fb-form input[type="email"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+}
+
+.lab-fb-form textarea {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.6;
+}
+
+.lab-fb-two {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.lab-fb-two fieldset {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.lab-fb-two input[type="email"] {
+  margin-top: 6px;
+}
+
+.lab-fb-image-row {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.lab-fb-image-row .btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.lab-fb-image-row .btn:hover {
+  background: var(--bg-hover);
+}
+
+.lab-fb-preview {
+  position: relative;
+  align-self: flex-start;
+}
+
+.lab-fb-preview[hidden] {
+  display: none;
+}
+
+.lab-fb-preview img {
+  display: block;
+  max-width: 220px;
+  max-height: 140px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.lab-fb-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lab-fb-error {
+  min-height: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-danger, #dc2626);
+}
+
+.lab-fb-error:empty {
+  display: none;
+}
+
+.lab-fb-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.lab-fb-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
+}
+
+.lab-fb-status {
+  margin-right: auto;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.lab-fb-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 40px var(--spacing-lg);
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.lab-fb-done strong {
+  font-size: 18px;
+}
+
+.lab-fb-done p {
+  margin: 0 0 var(--spacing-sm);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .labs-feedback-modal.modal-overlay {
+    align-items: flex-end;
+  }
+  .labs-feedback-modal .labs-feedback-content {
+    width: 100%;
+    max-width: 100% !important;
+    max-height: 88vh;
+    max-height: 88dvh;
+    border-radius: 20px 20px 0 0 !important;
+  }
+  .labs-feedback-modal .modal-header {
+    padding: 12px 16px;
+  }
+  .lab-fb-form {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+  .lab-fb-two {
+    grid-template-columns: 1fr;
+  }
+}
+
 .labs-feedback-text {
   display: flex;
   flex-direction: column;
