@@ -352,6 +352,29 @@
   }
 }
 
+/* 실험실 사용 안내 창 — 배경막(검정 50%) 위라 밝은 유리가 회색으로 흐려져 진한 글자가 잘 안 보였다
+   (사용자 보고 2026-09-27). 테마와 상관없이 어두운 유리 + 흰 글자로 둔다. */
+[data-surface="glass"] .labs-guide-content {
+  --bg-panel: rgba(15, 23, 42, 0.55);
+  --bg-hover: rgba(255, 255, 255, 0.12);
+  --bg-selected: rgba(255, 255, 255, 0.2);
+  --border-color: rgba(255, 255, 255, 0.2);
+  --text-primary: #ffffff;
+  --text-secondary: #f1f5f9;
+  --text-muted: #e2e8f0;
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+[data-surface="glass"] .labs-guide-content :is(.labs-guide-tab, .modal-close) {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+[data-surface="glass"] .labs-guide-content .labs-guide-tab.active {
+  color: #ffffff;
+}
+
 /* 내보내기 중: 범례는 불투명·블러 없음 (html2canvas 가 backdrop-filter 를 못 그린다)
    data-surface 는 <html>, exporting 은 <body> 에 붙으므로 선택자 순서는 이쪽이다. */
 [data-surface="glass"] body.exporting .choropleth-legend,
