@@ -1,10 +1,10 @@
 /**
  * © 2026 김용현
  *
- * 글래스 UI (실험실 `glass`) — v2
+ * 글래스 UI (실험실 `glass`) — v3 (iOS 머티리얼 풍, 2026-09-27)
  *
  * documentElement 에 data-surface="glass" 가 붙었을 때만 산다.
- * 색 토큰을 반투명으로 바꾸고, 지도 위에 얹히는 면에 backdrop-filter + 광택 그라디언트를 건다.
+ * 색 토큰을 반투명으로 바꾸고, 지도 위에 얹히는 면에 backdrop-filter 를 건다. 글자 토큰은 iOS label 계열로 바꾼다.
  * 글자 색 토큰은 손대지 않는다 — 대비는 배경 불투명도로 지킨다.
  *
  * 모든 폭에서 지도를 창(#app) 전체에 깔아 메뉴바·툴바·상태줄·왼쪽 패널 카드가 전부 지도 위에 뜬다
@@ -19,51 +19,53 @@
  */
 
 [data-surface="glass"] {
-  --glass-gap: 4px;
-  --glass-blur: 18px;
-  --glass-blur-float: 12px;
-  --glass-border: rgba(255, 255, 255, 0.75);
-  --glass-highlight: rgba(255, 255, 255, 0.85);
-  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.08));
-  --glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.14);
-  --glass-popover-bg: rgba(255, 255, 255, 0.82); /* 메뉴·컨텍스트 메뉴·검색 결과 — 패널 위에 겹치므로 더 진하게 */
+  /* iOS 머티리얼 풍 (2026-09-27): 우윳빛 반투명 + 강한 블러·채도, 광택 그라디언트 대신 머리카락 테두리와 넓고 옅은 그림자 */
+  --glass-gap: 6px;
+  --glass-blur: 30px;
+  --glass-blur-float: 20px;
+  --glass-saturate: 190%;
+  --glass-radius: 16px;
+  --glass-radius-lg: 20px;
+  --glass-border: rgba(0, 0, 0, 0.07);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-sheen: none;
+  --glass-shadow: 0 10px 36px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.05);
+  --glass-popover-bg: rgba(250, 250, 252, 0.86); /* 메뉴·컨텍스트 메뉴·검색 결과 — iOS 두꺼운 머티리얼 */
   --bg-solid-fallback: #ffffff;
 
-  --bg-panel: rgba(255, 255, 255, 0.42);
-  --bg-menubar: rgba(255, 255, 255, 0.42);
-  --bg-toolbar: rgba(255, 255, 255, 0.42);
-  --bg-statusbar: rgba(255, 255, 255, 0.42);
-  --map-overlay-bg: rgba(255, 255, 255, 0.5);
+  --bg-panel: rgba(250, 250, 252, 0.64);
+  --bg-menubar: rgba(250, 250, 252, 0.64);
+  --bg-toolbar: rgba(250, 250, 252, 0.64);
+  --bg-statusbar: rgba(250, 250, 252, 0.64);
+  --map-overlay-bg: rgba(250, 250, 252, 0.7);
 
-  /* 글자: 유리 너머 지도가 비치므로 보조 글자를 한 단계 진하게 하고 흰 광채로 지도 무늬와 떼어 놓는다.
-     (사용자 보고 2026-09-26: 보조 글자가 지도 위에서 잘 안 보임. 흰 글자는 밝은 유리 위에선 더 안 보여 다크에서만 쓴다) */
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #475569;
-  --glass-text-halo: 0 0 3px rgba(255, 255, 255, 0.95), 0 1px 2px rgba(255, 255, 255, 0.8);
+  /* 글자: iOS label 계열. 머티리얼이 충분히 불투명해 광채 없이도 읽힌다 */
+  --text-primary: #1c1c1e;
+  --text-secondary: #3a3a3c;
+  --text-muted: #636366;
+  --glass-text-halo: none;
+  --glass-switch-on: #34c759;
 }
 
 [data-theme="dark"][data-surface="glass"] {
-  --glass-border: rgba(255, 255, 255, 0.22);
-  --glass-highlight: rgba(255, 255, 255, 0.18);
-  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --glass-popover-bg: rgba(15, 23, 42, 0.85);
-  --bg-solid-fallback: #1e293b;
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-highlight: rgba(255, 255, 255, 0.10);
+  --glass-sheen: none;
+  --glass-shadow: 0 10px 36px rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.3);
+  --glass-popover-bg: rgba(44, 44, 46, 0.88);
+  --bg-solid-fallback: #1c1c1e;
 
-  /* 막대는 밝은 배경지도 위에서 밝은 글자·아이콘(--text-secondary)이 씻겨 나가므로 패널보다 진하게.
-     .6 에서는 툴바 아이콘이 거의 안 보였다(하네스 labs-04). */
-  --bg-panel: rgba(15, 23, 42, 0.45);
-  --bg-menubar: rgba(15, 23, 42, 0.72);
-  --bg-toolbar: rgba(15, 23, 42, 0.72);
-  --bg-statusbar: rgba(15, 23, 42, 0.72);
-  --map-overlay-bg: rgba(15, 23, 42, 0.5);
+  --bg-panel: rgba(28, 28, 30, 0.64);
+  --bg-menubar: rgba(28, 28, 30, 0.7);
+  --bg-toolbar: rgba(28, 28, 30, 0.7);
+  --bg-statusbar: rgba(28, 28, 30, 0.7);
+  --map-overlay-bg: rgba(28, 28, 30, 0.7);
 
-  /* 다크 유리 위 글자는 흰색, 검은 그림자로 밝은 배경지도와 떼어 놓는다 */
   --text-primary: #ffffff;
-  --text-secondary: #e2e8f0;
-  --text-muted: #cbd5e1;
-  --glass-text-halo: 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 3px rgba(0, 0, 0, 0.5);
+  --text-secondary: #ebebf5;
+  --text-muted: #aeaeb2;
+  --glass-text-halo: none;
+  --glass-switch-on: #30d158;
 }
 
 /* 유리 면의 글자에 광채(halo) — 폼 컨트롤과 단색 버튼·배지·불투명 팝오버는 제외 */
@@ -105,8 +107,8 @@
 [data-surface="glass"] .mobile-search-row,
 [data-surface="glass"] .modal,
 [data-surface="glass"] .modal-content {
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
-  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   background-image: var(--glass-sheen);
   border-color: var(--glass-border);
   box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
@@ -126,8 +128,8 @@
 [data-surface="glass"] .isochrone-legend,
 [data-surface="glass"] .raster-analysis-legend,
 [data-surface="glass"] .map-scale-bar {
-  -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(170%);
-  backdrop-filter: blur(var(--glass-blur-float)) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-float)) saturate(var(--glass-saturate));
   background-image: var(--glass-sheen);
   border: 1px solid var(--glass-border);
   box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
@@ -139,8 +141,8 @@
 [data-surface="glass"] .crs-dropdown-menu,
 [data-surface="glass"] .layer-context-menu,
 [data-surface="glass"] .search-results {
-  -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(170%);
-  backdrop-filter: blur(var(--glass-blur-float)) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--glass-blur-float)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-float)) saturate(var(--glass-saturate));
   background-color: var(--glass-popover-bg);
   background-image: var(--glass-sheen);
   border-color: var(--glass-border);
@@ -149,7 +151,7 @@
 
 /* 휴대폰: 블러는 살리되 조금 낮춘다 (GPU) */
 @media (max-width: 768px) {
-  [data-surface="glass"] { --glass-blur: 14px; }
+  [data-surface="glass"] { --glass-blur: 20px; --glass-blur-float: 16px; }
 }
 
 /* 모든 폭: 지도를 창 전체에 깔고 메뉴바·툴바·상태줄·패널 카드를 그 위에 띄운다.
@@ -184,7 +186,7 @@
 [data-surface="glass"] #statusbar,
 [data-surface="glass"] #left-panel {
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--glass-radius);
 }
 [data-surface="glass"] #menubar,
 [data-surface="glass"] #toolbar,
@@ -267,7 +269,7 @@
     position: absolute; top: auto; left: var(--glass-gap); right: var(--glass-gap);
     bottom: calc(var(--glass-bottom-offset, 0px) + var(--glass-gap));
     width: auto !important; height: 55%; margin: 0;
-    border-radius: 12px 12px 0 0; border-bottom: none;
+    border-radius: var(--glass-radius-lg) var(--glass-radius-lg) 0 0; border-bottom: none;
     z-index: 1200; /* layout.css 의 시트 값 — 위 부유 규칙의 --z-panel(100)이면 축척바(110)·범례가 시트 위로 올라온다 */
   }
   [data-surface="glass"] .sidebar-toggle {
@@ -301,20 +303,20 @@
 /* 유리 위 조작 요소 — 호버는 살짝 밝아지고, 누르면 유리를 누른 듯 안으로 들어간다.
    OL 컨트롤 버튼은 원래 규칙이 !important 라 여기서도 !important 로 맞춘다. */
 [data-surface="glass"] {
-  --glass-press-hover: rgba(255, 255, 255, 0.55);
-  --glass-press-down: rgba(15, 23, 42, 0.10);
-  --glass-press-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  --glass-press-lift: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(15, 23, 42, 0.10);
+  --glass-press-hover: rgba(120, 120, 128, 0.12);
+  --glass-press-down: rgba(120, 120, 128, 0.24);
+  --glass-press-shadow: none;
+  --glass-press-lift: none;
 }
 [data-theme="dark"][data-surface="glass"] {
-  --glass-press-hover: rgba(255, 255, 255, 0.12);
-  --glass-press-down: rgba(0, 0, 0, 0.38);
-  --glass-press-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --glass-press-lift: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --glass-press-hover: rgba(120, 120, 128, 0.24);
+  --glass-press-down: rgba(120, 120, 128, 0.36);
+  --glass-press-shadow: none;
+  --glass-press-lift: none;
 }
 [data-surface="glass"] :is(#toolbar .btn-icon, #toolbar .btn-tool-labeled, .toolbar-collapse-btn, #menubar .menu-button,
   .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon, .mobile-menu-btn, .mobile-header-btn, .mobile-drawer-close, .mobile-drawer .menu-button, .ol-control button) {
-  transition: background-color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
 }
 @media (hover: hover) {
   [data-surface="glass"] :is(#toolbar .btn-icon, #toolbar .btn-tool-labeled, .toolbar-collapse-btn, #menubar .menu-button,
@@ -338,12 +340,12 @@
   .btn-community:not(.btn-community-primary), .theme-toggle, .panel-tab, .sidebar-toggle, #left-panel .btn-icon, .mobile-menu-btn, .mobile-header-btn, .mobile-drawer-close, .mobile-drawer .menu-button):not(.active):hover:active {
   background-color: var(--glass-press-down);
   box-shadow: var(--glass-press-shadow);
-  transform: translateY(1px);
+  transform: scale(0.96);
 }
 [data-surface="glass"] .ol-control button:active {
   background: var(--glass-press-down) !important;
   box-shadow: var(--glass-press-shadow);
-  transform: translateY(1px);
+  transform: scale(0.96);
 }
 @media (prefers-reduced-motion: reduce) {
   [data-surface="glass"] :is(#toolbar .btn-icon, #toolbar .btn-tool-labeled, .toolbar-collapse-btn, #menubar .menu-button,
@@ -355,7 +357,7 @@
 /* 실험실 창·사용 안내 창 — 배경막(검정 50%) 위라 밝은 유리가 회색으로 흐려져 진한 글자가 잘 안 보였다
    (사용자 보고 2026-09-27). 테마와 상관없이 어두운 유리 + 흰 글자로 둔다. */
 [data-surface="glass"] :is(.labs-content, .labs-guide-content) {
-  --bg-panel: rgba(15, 23, 42, 0.55);
+  --bg-panel: rgba(28, 28, 30, 0.72);
   --bg-app: rgba(255, 255, 255, 0.06);
   --bg-input: rgba(255, 255, 255, 0.1);
   --border-color-strong: rgba(255, 255, 255, 0.35);
@@ -365,9 +367,9 @@
   --text-primary: #ffffff;
   --text-secondary: #f1f5f9;
   --text-muted: #e2e8f0;
-  --glass-border: rgba(255, 255, 255, 0.22);
-  --glass-highlight: rgba(255, 255, 255, 0.18);
-  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.10);
+  --glass-switch-on: #30d158;
   color: var(--text-primary);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
@@ -386,6 +388,35 @@
 [data-surface="glass"] .labs-guide-content .labs-guide-tab.active {
   color: #ffffff;
 }
+
+/* iOS 모양 — 대화상자·팝오버 모서리, 스위치 초록, 부유 카드 모서리 */
+[data-surface="glass"] :is(.modal, .modal-content) { border-radius: var(--glass-radius-lg); }
+[data-surface="glass"] :is(.dropdown-menu, .crs-dropdown-menu, .layer-context-menu, .search-results) { border-radius: 14px; }
+[data-surface="glass"] :is(.choropleth-legend, .cartogram-legend, .heatmap-legend, .chart-map-legend, .isochrone-legend,
+  .raster-analysis-legend, .feature-info-card, .egis-basemap-panel, .view3d-panel, .swipe-panel, .globe-panel, .time-series-controls) {
+  border-radius: 14px;
+}
+[data-surface="glass"] .map-scale-bar { border-radius: 10px; }
+[data-surface="glass"] .labs-switch[aria-checked="true"] { background: var(--glass-switch-on); }
+[data-surface="glass"] .labs-card { border-radius: 12px; }
+
+/* 배경지도 한국/세계 탭 — iOS 분할 컨트롤 */
+[data-surface="glass"] .egis-basemap-panel .egis-basemap-tabs { background: rgba(120, 120, 128, 0.14); border-radius: 9px; }
+[data-surface="glass"] .egis-basemap-panel .egis-basemap-tab { border-radius: 7px !important; }
+[data-surface="glass"] .egis-basemap-panel .egis-basemap-tab.active { background: #ffffff !important; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.04); }
+[data-theme="dark"][data-surface="glass"] .egis-basemap-panel .egis-basemap-tabs { background: rgba(118, 118, 128, 0.24); }
+[data-theme="dark"][data-surface="glass"] .egis-basemap-panel .egis-basemap-tab.active { background: #636366 !important; }
+
+/* 장소 검색창 — 툴바와 같은 모서리, 더 투명한 유리 */
+[data-surface="glass"] #location-search-input {
+  border-radius: var(--glass-radius);
+  background: rgba(255, 255, 255, 0.32);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+[data-theme="dark"][data-surface="glass"] #location-search-input { background: rgba(255, 255, 255, 0.08); }
+[data-surface="glass"] #location-search-input:focus { background: rgba(255, 255, 255, 0.5); }
+[data-theme="dark"][data-surface="glass"] #location-search-input:focus { background: rgba(255, 255, 255, 0.14); }
 
 /* 내보내기 중: 범례는 불투명·블러 없음 (html2canvas 가 backdrop-filter 를 못 그린다)
    data-surface 는 <html>, exporting 은 <body> 에 붙으므로 선택자 순서는 이쪽이다. */
