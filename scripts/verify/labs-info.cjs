@@ -1,6 +1,6 @@
 // © 2026 김용현
 /**
- * 실험실 창 자세히 보기(i) 화면 검증 — 데스크톱 1600×900, 휴대폰 390×844.
+ * 실험실 사용 안내 창(i) 화면 검증 — 데스크톱 1600×900, 휴대폰 390×844.
  * 실행: & "C:/Users/김용현/Desktop/vibecoding/eGIS/eStoryMap/node_modules/.bin/electron.cmd" scripts/verify/labs-info.cjs
  *   (vite preview 가 http://localhost:4173 에 떠 있어야 한다. EGIS_URL 로 바꿀 수 있다)
  * 결과: scripts/verify/out/labs-info-*.png 와 PASS/FAIL, 끝에 SUMMARY.
@@ -55,32 +55,34 @@ app.whenReady().then(async () => {
   // ── 데스크톱 ──
   await load(null);
   await click('#labs-toggle');
-  const n = await js(`document.querySelectorAll('.labs-modal .labs-info').length`);
-  check('카드 다섯 장 모두 i 버튼', n === 5, n);
-  await capture('labs-info-1-closed');
+  const heads = await js(`({ cardInfo: document.querySelectorAll('.labs-card .labs-info, .labs-card .labs-guide-btn').length, headerInfo: document.querySelectorAll('.labs-modal .modal-header #labs-guide-open').length })`);
+  check('카드에는 i 가 없고 제목 옆에만 하나', heads.cardInfo === 0 && heads.headerInfo === 1, heads);
+  await capture('labs-info-1-labs');
 
-  await click('.labs-info[data-id="time-series"]');
-  const st = await js(`(() => {
-    const d = document.getElementById('labs-detail-time-series');
-    const r = d.getBoundingClientRect();
-    const content = document.querySelector('.labs-content').getBoundingClientRect();
-    return { shown: !d.hidden, heads: [...d.querySelectorAll('h4')].map(h => h.textContent), steps: d.querySelectorAll('ol li').length,
-      visibleTop: r.top < innerHeight && r.bottom > 0, contentFits: content.bottom <= innerHeight + 1 && content.top >= -1,
-      switchOff: document.querySelector('.labs-switch[data-id="time-series"]').getAttribute('aria-checked') === 'false' };
-  })()`);
-  check('시계열 안내가 펼쳐진다(소개·사용 방법·알아 두기)', st.shown && st.heads.join() === '소개,사용 방법,알아 두기' && st.steps === 6, st);
-  check('펼친 안내가 화면 안에 보이고 창이 화면을 넘지 않는다', st.visibleTop && st.contentFits, st);
-  check('i 를 눌러도 실험은 꺼진 그대로', st.switchOff, st);
-  await capture('labs-info-2-time-series');
+  await click('#labs-guide-open');
+  const g = await js(`(() => { const c = document.querySelector('.labs-guide-content').getBoundingClientRect();
+    return { open: !!document.querySelector('.labs-guide-modal'), tabs: [...document.querySelectorAll('.labs-guide-tab')].map(t => t.textContent.trim()),
+      title: document.querySelector('.labs-guide-title').textContent, w: c.width, h: c.height, fits: c.bottom <= innerHeight + 1 && c.top >= -1,
+      onTop: getComputedStyle(document.querySelector('.labs-guide-modal')).zIndex >= getComputedStyle(document.querySelector('.labs-modal')).zIndex }; })()`);
+  check('i 를 누르면 안내 창이 뜨고 실험실이란? 부터 보인다', g.open && g.title === '실험실이란?' && g.tabs.length === 6, g);
+  check('안내 창은 넓고 화면 높이를 넘지 않는다', g.w >= 800 && g.fits, g);
+  await capture('labs-info-2-overview');
 
-  await click('.labs-info[data-id="glass"]');
-  const one = await js(`[...document.querySelectorAll('.labs-card-detail')].filter(d => !d.hidden).map(d => d.id)`);
-  check('한 번에 하나만 펼쳐진다', one.length === 1 && one[0] === 'labs-detail-glass', one);
-  await js(`document.querySelector('.labs-modal .modal-body').scrollTop = 0; 0`);
-  await capture('labs-info-3-glass');
+  await click('.labs-guide-tab[data-id="time-series"]');
+  const ts = await js(`(() => { const b = document.querySelector('.labs-guide-body'); const c = document.querySelector('.labs-guide-content').getBoundingClientRect();
+    return { title: b.querySelector('.labs-guide-title').textContent, heads: [...b.querySelectorAll('h4')].map(h => h.textContent), sameH: Math.round(c.height),
+      scrolls: b.scrollHeight > b.clientHeight, pageNoScroll: document.documentElement.scrollHeight <= innerHeight }; })()`);
+  check('시계열을 고르면 그 안내만 보이고 창 크기는 그대로', ts.title === '시계열 단계구분도' && ts.heads.join() === '소개,사용 방법,알아 두기' && ts.sameH === Math.round(g.h), ts);
+  await capture('labs-info-3-time-series');
 
-  // 다크 테마
+  await js(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); 0`);
+  await sleep(300);
+  const esc = await js(`({ guide: !!document.querySelector('.labs-guide-modal'), labs: !!document.querySelector('.labs-modal') })`);
+  check('Esc 는 안내 창만 닫고 실험실 창은 남는다', !esc.guide && esc.labs, esc);
+
+  await click('#labs-guide-open');
   await js(`document.documentElement.setAttribute('data-theme', 'dark'); 0`);
+  await click('.labs-guide-tab[data-id="globe"]');
   await capture('labs-info-4-dark');
   await js(`document.documentElement.setAttribute('data-theme', 'light'); 0`);
 
@@ -89,11 +91,12 @@ app.whenReady().then(async () => {
   await load({ width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await js(`document.getElementById('labs-toggle').click(); 0`);
   await sleep(500);
-  await click('.labs-info[data-id="globe"]');
-  const ph = await js(`(() => { const c = document.querySelector('.labs-content').getBoundingClientRect(); const b = document.querySelector('.labs-info[data-id="globe"]').getBoundingClientRect();
-    return { w: c.width, fits: c.right <= innerWidth + 1 && c.left >= -1, noHScroll: document.documentElement.scrollWidth <= innerWidth, btn: b.width }; })()`);
-  check('휴대폰에서 창이 화면 폭 안에 들어간다', ph.fits && ph.noHScroll, ph);
-  check('휴대폰에서 i 버튼이 손가락 크기(36px)', ph.btn >= 36, ph);
+  await click('#labs-guide-open');
+  await click('.labs-guide-tab[data-id="swipe"]');
+  const ph = await js(`(() => { const c = document.querySelector('.labs-guide-content').getBoundingClientRect(); const nav = document.querySelector('.labs-guide-nav').getBoundingClientRect();
+    return { fits: c.right <= innerWidth + 1 && c.left >= -1 && c.bottom <= innerHeight + 1, noHScroll: document.documentElement.scrollWidth <= innerWidth,
+      navOnTop: nav.width > nav.height, title: document.querySelector('.labs-guide-title').textContent }; })()`);
+  check('휴대폰: 안내 창이 화면 안, 목록은 위쪽 가로 줄', ph.fits && ph.noHScroll && ph.navOnTop && ph.title === '스와이프 비교', ph);
   await capture('labs-info-5-phone');
 
   console.log(`SUMMARY ${passed} passed, ${failed} failed`);

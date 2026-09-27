@@ -10,6 +10,15 @@
 import { labs as defaultLabs } from '../../labs/labs.js';
 import { EXPERIMENTS, FEEDBACK_URL } from '../../labs/registry.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
+import { labGuidePanel as defaultGuide } from './LabGuidePanel.js';
+
+// 속성 보기 버튼과 같은 모양의 i — 누르면 실험실 사용 안내 창이 따로 뜬다
+const INFO_ICON = `
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9.6"></circle>
+    <circle cx="12" cy="7" r="1.6" fill="currentColor" stroke="none"></circle>
+    <line x1="12" y1="10.8" x2="12" y2="17.4" stroke-width="3.2"></line>
+  </svg>`;
 
 const EXTERNAL_ICON = `
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -18,31 +27,10 @@ const EXTERNAL_ICON = `
     <line x1="10" y1="14" x2="21" y2="3"/>
   </svg>`;
 
-// 속성 보기 버튼과 같은 모양의 i
-const INFO_ICON = `
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="9.6"></circle>
-    <circle cx="12" cy="7" r="1.6" fill="currentColor" stroke="none"></circle>
-    <line x1="12" y1="10.8" x2="12" y2="17.4" stroke-width="3.2"></line>
-  </svg>`;
-
-/** 카드 아래로 펼쳐지는 자세한 안내 — 소개·사용 방법·알아 두기 */
-export function detailHtml(exp) {
-  const d = exp.details;
-  if (!d) return '';
-  const list = (items, tag) => `<${tag}>${items.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</${tag}>`;
-  const intro = (d.intro || []).map((t) => `<p>${escapeHtml(t)}</p>`).join('');
-  const steps = d.steps?.length ? `<h4>사용 방법</h4>${list(d.steps, 'ol')}` : '';
-  const notes = d.notes?.length ? `<h4>알아 두기</h4>${list(d.notes, 'ul')}` : '';
-  return `
-    <div class="labs-card-detail" id="labs-detail-${escapeHtml(exp.id)}" hidden>
-      <h4>소개</h4>${intro}${steps}${notes}
-    </div>`;
-}
-
 export class LabPanel {
-  constructor({ labs = defaultLabs, experiments = EXPERIMENTS, feedbackUrl = FEEDBACK_URL } = {}) {
+  constructor({ labs = defaultLabs, experiments = EXPERIMENTS, feedbackUrl = FEEDBACK_URL, guide = defaultGuide } = {}) {
     this.labs = labs;
+    this.guide = guide;
     this.experiments = experiments;
     this.feedbackUrl = feedbackUrl;
     this.modal = null;
@@ -58,7 +46,11 @@ export class LabPanel {
     this.modal.innerHTML = `
       <div class="modal-content labs-content" role="dialog" aria-labelledby="labs-title">
         <div class="modal-header">
-          <h3 id="labs-title">실험실</h3>
+          <div class="labs-title-row">
+            <h3 id="labs-title">실험실</h3>
+            <button type="button" class="labs-guide-btn" id="labs-guide-open" title="실험실 사용 안내 — 기능별 소개와 사용 방법"
+                    aria-label="실험실 사용 안내">${INFO_ICON}</button>
+          </div>
           <button class="modal-close" id="labs-close" aria-label="닫기">&times;</button>
         </div>
         <div class="modal-body">
@@ -86,19 +78,10 @@ export class LabPanel {
     const feedback = this.feedbackUrl
       ? `<a class="labs-feedback" href="${escapeHtml(this.feedbackUrl)}" target="_blank" rel="noopener noreferrer">의견 보내기 ${EXTERNAL_ICON}</a>`
       : '';
-    const info = exp.details
-      ? `<button type="button" class="labs-info" data-id="${escapeHtml(exp.id)}" aria-expanded="false"
-                 aria-controls="labs-detail-${escapeHtml(exp.id)}" title="자세한 소개와 사용 방법"
-                 aria-label="${escapeHtml(exp.name)} 자세히 보기">${INFO_ICON}</button>`
-      : '';
     return `
       <div class="labs-card" data-id="${escapeHtml(exp.id)}">
-       <div class="labs-card-row">
         <div class="labs-card-text">
-          <div class="labs-card-title">
-            <span class="labs-card-name">${escapeHtml(exp.name)}</span>
-            ${info}
-          </div>
+          <div class="labs-card-name">${escapeHtml(exp.name)}</div>
           <div class="labs-card-summary">${escapeHtml(exp.summary)}</div>
           <div class="labs-card-meta"><span class="labs-since">${escapeHtml(exp.since)} 실험 시작</span>${feedback}</div>
         </div>
@@ -106,13 +89,12 @@ export class LabPanel {
                 aria-checked="${on ? 'true' : 'false'}" aria-label="${escapeHtml(exp.name)} 켜기/끄기">
           <span class="labs-switch-knob"></span>
         </button>
-       </div>
-       ${detailHtml(exp)}
       </div>`;
   }
 
   bindEvents() {
     this.modal.querySelector('#labs-close').addEventListener('click', () => this.close());
+    this.modal.querySelector('#labs-guide-open').addEventListener('click', () => this.guide?.show());
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.close();
     });
@@ -121,30 +103,14 @@ export class LabPanel {
       sw.addEventListener('click', () => this.labs.toggle(sw.dataset.id));
     });
 
-    this.modal.querySelectorAll('.labs-info').forEach((btn) => {
-      btn.addEventListener('click', () => this.toggleDetail(btn.dataset.id));
-    });
-
     // 상태가 어디서 바뀌든(스위치·하네스·다른 창) 스위치와 공유 주소를 맞춘다
     this._offChange = this.labs.onChange(() => this.refresh());
 
     this.modal.querySelector('#labs-share-copy').addEventListener('click', () => this.copyShareUrl());
 
-    this._escHandler = (e) => { if (e.key === 'Escape') this.close(); };
+    // 안내 창이 위에 떠 있으면 Esc 는 안내 창만 닫는다
+    this._escHandler = (e) => { if (e.key === 'Escape' && !this.guide?.isOpen()) this.close(); };
     document.addEventListener('keydown', this._escHandler);
-  }
-
-  /** 안내를 펼치거나 접는다. 한 번에 하나만 펼쳐 창이 길어지지 않게 한다 */
-  toggleDetail(id) {
-    if (!this.modal) return;
-    this.modal.querySelectorAll('.labs-info').forEach((btn) => {
-      const open = btn.dataset.id === id && btn.getAttribute('aria-expanded') !== 'true';
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      const detail = this.modal.querySelector(`[id="labs-detail-${btn.dataset.id}"]`);
-      if (detail) detail.hidden = !open;
-      btn.closest('.labs-card')?.classList.toggle('is-expanded', open);
-      if (open && detail?.scrollIntoView) detail.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    });
   }
 
   refresh() {

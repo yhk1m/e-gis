@@ -82,6 +82,10 @@ app.whenReady().then(async () => {
     (await visible('[data-group-toggle="draw"]')) && !(await visible('[data-tool="draw-point"]'))
     && (await visible('[data-group-toggle="measure"]')) && !(await visible('[data-tool="measure-distance"]')));
   check('T1 실험실 글자 숨김', (await labsLabel()) === 0);
+  const size = await js(`(() => { const b = document.querySelector('#toolbar [data-tool="zoom-in"]'); const svg = b.querySelector('svg');
+    return { toolbar: document.getElementById('toolbar').getBoundingClientRect().height, btn: b.getBoundingClientRect().width, svg: svg.getBoundingClientRect().width,
+      labs: document.getElementById('labs-toggle').getBoundingClientRect().height }; })()`);
+  check('T1 태블릿 툴바가 작아졌다(줄 44·버튼 34·아이콘 19)', size.toolbar <= 45 && size.btn === 34 && size.svg === 19 && size.labs === 34, size);
   await capture('toolbar-tablet-1-collapsed');
   await captureToolbar('toolbar-strip-collapsed');
 
@@ -119,6 +123,8 @@ app.whenReady().then(async () => {
   await load(null);
   check('D1 데스크톱도 접힌 상태로 시작', !(await visible('[data-tool="draw-point"]')) && (await visible('[data-group-toggle="draw"]')));
   check('D1 실험실 글자 숨김', (await labsLabel()) === 0);
+  const dsize = await js(`document.querySelector('#toolbar [data-tool="zoom-in"]').getBoundingClientRect().width`);
+  check('D1 데스크톱 버튼 크기는 그대로 28px', dsize === 28, dsize);
   await click('[data-group-toggle="draw"]');
   await captureToolbar('toolbar-strip-desktop-draw');
 
@@ -135,6 +141,8 @@ app.whenReady().then(async () => {
   check('M1 서랍에서는 묶음 없이 도구가 전부 보인다', drawer.draw && drawer.measure && drawer.merge, drawer);
   check('M1 서랍에서는 머리 버튼이 숨는다', !drawer.head, drawer);
   check('M1 서랍 실험실 타일에는 글자가 남는다', drawer.labsLabel, drawer);
+  const tile = await js(`document.querySelector('#mobile-drawer [data-tool="zoom-in"] svg').getBoundingClientRect().width`);
+  check('M1 휴대폰 서랍 아이콘은 그대로 24px', tile === 24, tile);
   await capture('toolbar-phone-drawer');
 
   console.log(`SUMMARY ${passed} passed, ${failed} failed`);
