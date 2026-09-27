@@ -4539,9 +4539,24 @@ body.exporting .egis-basemap-panel {
 .labs-modal .labs-content {
   width: 520px;
   max-width: 92vw;
+  /* 안내를 펼치면 길어진다 — 창은 화면 안에 두고 본문만 스크롤 */
+  max-height: 88vh;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--bg-panel);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
+}
+
+.labs-modal .modal-header {
+  flex-shrink: 0;
+}
+
+.labs-modal .modal-body {
+  min-height: 0;
+  overscroll-behavior: contain;
 }
 
 .labs-intro {
@@ -4557,20 +4572,106 @@ body.exporting .egis-basemap-panel {
 }
 
 .labs-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
   padding: var(--spacing-md);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--bg-app);
 }
 
+.labs-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.labs-card.is-expanded {
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--border-color));
+}
+
+.labs-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .labs-card-name {
   font-size: var(--font-size-md);
   font-weight: 600;
   color: var(--text-primary);
+}
+
+/* 자세히 보기(i) — 누르면 카드 아래로 안내가 펼쳐진다 */
+.labs-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.labs-info:hover {
+  background: var(--bg-hover);
+  color: var(--color-primary);
+}
+
+.labs-info[aria-expanded="true"] {
+  background: var(--bg-selected);
+  color: var(--color-primary);
+}
+
+.labs-info:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.labs-card-detail {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  font-size: var(--font-size-sm);
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.labs-card-detail[hidden] {
+  display: none;
+}
+
+.labs-card-detail h4 {
+  margin: var(--spacing-md) 0 4px;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.labs-card-detail h4:first-child {
+  margin-top: 0;
+}
+
+.labs-card-detail p {
+  margin: 0 0 6px;
+}
+
+.labs-card-detail ol,
+.labs-card-detail ul {
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.labs-card-detail li + li {
+  margin-top: 3px;
+}
+
+@media (pointer: coarse) {
+  .labs-info { width: 36px; height: 36px; }
+  .labs-info svg { width: 20px; height: 20px; }
 }
 
 .labs-card-summary {

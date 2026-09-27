@@ -60,6 +60,19 @@ describe('EXPERIMENTS', () => {
     expect(EXPERIMENT_IDS.indexOf('time-series')).toBeGreaterThan(EXPERIMENT_IDS.indexOf('swipe'));
   });
 
+  it('실험마다 자세한 안내(소개·사용 방법)가 있다', () => {
+    for (const e of EXPERIMENTS) {
+      expect(e.details, e.id).toBeTruthy();
+      expect(e.details.intro.length, e.id).toBeGreaterThan(0);
+      expect(e.details.steps.length, e.id).toBeGreaterThanOrEqual(3);
+      expect(Array.isArray(e.details.notes), e.id).toBe(true);
+      for (const t of [...e.details.intro, ...e.details.steps, ...e.details.notes]) {
+        expect(typeof t).toBe('string');
+        expect(t.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
   it('FEEDBACK_URL 은 비어 있거나 https 주소다', () => {
     expect(FEEDBACK_URL === '' || /^https:\/\//.test(FEEDBACK_URL)).toBe(true);
   });
