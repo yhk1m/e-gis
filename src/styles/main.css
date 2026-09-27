@@ -443,6 +443,18 @@ input:focus, select:focus, textarea:focus {
   color: var(--text-primary);
 }
 
+/* 전체화면 버튼 — 테마 버튼과 같은 모양. .theme-toggle 의 display:flex 가 hidden 을 이기므로 따로 숨긴다 */
+.fullscreen-toggle[hidden] {
+  display: none;
+}
+.fullscreen-toggle .icon-fs-exit,
+.fullscreen-toggle.is-fullscreen .icon-fs-enter {
+  display: none;
+}
+.fullscreen-toggle.is-fullscreen .icon-fs-exit {
+  display: block;
+}
+
 /* 휴대폰 헤더: 검색·레이어 버튼(.mobile-header-btn)과 같은 40px 칸, 아이콘 24px */
 @media (max-width: 768px) {
   .theme-toggle {

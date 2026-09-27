@@ -8,6 +8,7 @@ import { AppLayout } from './ui/layout/AppLayout.js';
 import { initMobileShell } from './ui/layout/MobileShell.js';
 import { initToolbarGroups } from './ui/layout/toolbarGroups.js';
 import { initCopyrightToggle } from './ui/layout/copyrightToggle.js';
+import { initFullscreenToggle } from './ui/layout/fullscreenToggle.js';
 import { mapManager } from './core/MapManager.js';
 import { layerManager } from './core/LayerManager.js';
 import { themeManager } from './utils/ThemeManager.js';
@@ -629,6 +630,9 @@ function initToolbar() {
 
   // 태블릿에서 카피라이트는 ⓒ 버튼 → 말풍선
   initCopyrightToggle(document);
+
+  // 전체화면 버튼 (iPad 등 지원 기기에서만 보인다)
+  initFullscreenToggle(document);
 
   // 선택 액션 버튼 (선택 취소 / 선택 피처 삭제) — 선택 도구의 선택 집합에 따라 표시
   const btnClearSel = document.getElementById('btn-clear-selection');
