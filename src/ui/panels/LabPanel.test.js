@@ -24,7 +24,7 @@ beforeEach(() => { document.body.innerHTML = ''; });
 describe('LabPanel', () => {
   it('실험마다 카드와 스위치를 만들고 상태를 비춘다', () => {
     const labs = makeLabs('?lab=globe');
-    const panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: '' });
+    const panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: '', feedbackEndpoint: '' });
     panel.show();
     const switches = document.querySelectorAll('.labs-switch');
     expect(switches).toHaveLength(2);
@@ -36,7 +36,7 @@ describe('LabPanel', () => {
 
   it('스위치를 누르면 labs 가 바뀌고 aria-checked 와 공유 주소가 따라온다', () => {
     const labs = makeLabs();
-    const panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: '' });
+    const panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: '', feedbackEndpoint: '' });
     panel.show();
     const sw = document.querySelector('.labs-switch[data-id="glass"]');
     sw.click();
@@ -48,12 +48,12 @@ describe('LabPanel', () => {
 
   it('의견 링크는 주소가 있을 때만, 카드마다가 아니라 창에 하나만 보인다', () => {
     const labs = makeLabs();
-    let panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: '' });
+    let panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: '', feedbackEndpoint: '' });
     panel.show();
     expect(document.querySelector('.labs-feedback')).toBeNull();
     panel.close();
 
-    panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: 'https://forms.gle/abc' });
+    panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: 'https://forms.gle/abc', feedbackEndpoint: '' });
     panel.show();
     expect(document.querySelectorAll('.labs-feedback')).toHaveLength(1);
     expect(document.querySelector('.labs-card .labs-feedback')).toBeNull();
@@ -77,7 +77,7 @@ describe('LabPanel', () => {
 
   it('닫기 버튼·Esc·바깥 클릭으로 닫힌다', () => {
     const labs = makeLabs();
-    const panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: '' });
+    const panel = new LabPanel({ labs, experiments: EXPS, feedbackUrl: '', feedbackEndpoint: '' });
     panel.show();
     document.querySelector('#labs-close').click();
     expect(document.querySelector('.labs-modal')).toBeNull();
