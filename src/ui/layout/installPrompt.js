@@ -6,8 +6,8 @@
  * - 안드로이드 크롬 등: beforeinstallprompt 를 붙잡아 두었다가 버튼을 누르면 설치 창을 띄운다.
  * - iPad·iPhone: 애플이 설치 API 를 주지 않아 "공유 → 홈 화면에 추가" 안내 말풍선을 띄운다.
  * - 이미 홈 화면 앱으로 열었으면(display-mode: standalone) 숨긴다.
- * 버튼(.install-btn)은 두 곳 — 태블릿은 메뉴바 오른쪽, 휴대폰은 서랍 맨 아래. 어느 쪽이 보일지는 CSS 가 정한다.
- * 안내 말풍선은 누른 버튼의 부모(.install-anchor) 안에 붙는다.
+ * 버튼(.install-btn)은 About e-GIS 메뉴의 항목 — 휴대폰에서는 그 메뉴가 서랍 안에 있다.
+ * 메뉴·서랍은 항목을 누르면 닫히므로, 안내는 body 에 붙는 떠 있는 카드로 띄운다.
  */
 
 /** 'ios' | 'android' | 'other' — iPadOS 는 기본이 데스크톱 모드라 Mac 인 척하므로 터치 여부로 가린다 */
@@ -44,23 +44,20 @@ export function initInstallPrompt(root = document, win = window) {
   const platform = detectPlatform(win.navigator);
   let deferred = null;
   let tip = null;
-  let tipBtn = null;
 
   const closeTip = () => {
     tip?.remove();
     tip = null;
-    tipBtn?.setAttribute('aria-expanded', 'false');
-    tipBtn = null;
   };
-  const openTip = (btn) => {
+  const openTip = () => {
+    closeTip();
     tip = document.createElement('div');
     tip.className = 'install-tip';
     tip.setAttribute('role', 'dialog');
     tip.setAttribute('aria-label', '홈 화면에 추가하는 방법');
-    tip.innerHTML = tipHtml(platform);
-    (btn.closest('.install-anchor') || btn.parentElement).appendChild(tip);
-    btn.setAttribute('aria-expanded', 'true');
-    tipBtn = btn;
+    tip.innerHTML = `${tipHtml(platform)}<button type="button" class="install-tip-close">확인</button>`;
+    tip.querySelector('.install-tip-close').addEventListener('click', closeTip);
+    document.body.appendChild(tip);
   };
 
   win.addEventListener('beforeinstallprompt', (e) => {
@@ -74,8 +71,8 @@ export function initInstallPrompt(root = document, win = window) {
 
   btns.forEach((btn) => {
     btn.hidden = false;
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
+    // 전파는 막지 않는다 — 메뉴·서랍이 평소처럼 닫혀야 한다
+    btn.addEventListener('click', () => {
       if (deferred) {
         const ev = deferred;
         deferred = null; // 설치 창은 한 번만 띄울 수 있다
@@ -83,13 +80,11 @@ export function initInstallPrompt(root = document, win = window) {
         Promise.resolve(ev.userChoice).catch(() => {});
         return;
       }
-      const same = tipBtn === btn;
-      closeTip();
-      if (!same) openTip(btn);
+      openTip();
     });
   });
   document.addEventListener('pointerdown', (e) => {
-    if (tip && !tip.contains(e.target) && !tipBtn?.contains(e.target)) closeTip();
+    if (tip && !tip.contains(e.target)) closeTip();
   }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && tip) closeTip();
