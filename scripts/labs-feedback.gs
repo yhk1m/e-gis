@@ -31,6 +31,10 @@ const TIMEZONE = 'Asia/Seoul';
 const HEADERS = ['받은 시각', '묶음', '실험 기능', '의견', '첨부 이미지', '역할', '이메일', '켜져 있던 실험', '페이지', '브라우저'];
 const MAX_ITEMS = 10;
 
+// 의견이 들어오면 알림 메일을 받을 주소 — 비우면 메일을 보내지 않는다.
+// (처음 배포할 때와 메일 기능을 넣은 뒤 다시 배포할 때, 「메일 보내기」 권한을 허용해야 한다)
+const NOTIFY_EMAIL = 'fkv777@gmail.com';
+
 const MAX_MESSAGE = 3000;
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 const MAX_PER_MINUTE = 20; // 전체 기준 — 공개 주소라 폭주만 막는다
@@ -74,14 +78,57 @@ function doPost(e) {
       ]);
       const sheet = getSheet();
       sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, HEADERS.length).setValues(rows);
+      // 알림 메일에 쓸 값: 항목 이름·의견·이미지 링크(시트에 쓴 것 그대로)
+      items.forEach((it, i) => { it.imageUrl = rows[i][4]; });
     } finally {
       lock.releaseLock();
     }
+    notify(items, { time, batch, role, email, labsOn, page: clip(body.page, 300) });
     return json({ ok: true });
   } catch (err) {
     console.error(err);
     return json({ ok: false, error: '저장하지 못했습니다. 잠시 뒤에 다시 보내 주세요.' });
   }
+}
+
+/**
+ * 알림 메일 — 저장이 끝난 뒤 보낸다. 메일이 실패해도 저장은 이미 됐으므로 사용자에게는 성공으로 돌려준다.
+ * 의견을 보낸 사람이 이메일을 적었으면 답장(Reply-To)이 그 주소로 가게 한다.
+ */
+function notify(items, meta) {
+  if (!NOTIFY_EMAIL) return;
+  try {
+    const names = items.map((it) => it.experiment || '(기능 없음)');
+    const subject = '[e-GIS 실험실 의견] ' + names[0] + (names.length > 1 ? ' 외 ' + (names.length - 1) + '건' : '');
+    const sheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl();
+
+    const text = items.map((it) =>
+      '■ ' + it.experiment + '\n' + it.message + (it.imageUrl ? '\n첨부 이미지: ' + it.imageUrl : '')
+    ).join('\n\n') +
+      '\n\n역할: ' + (meta.role || '-') + ' / 이메일: ' + (meta.email || '-') +
+      '\n켜져 있던 실험: ' + (meta.labsOn || '-') + '\n받은 시각: ' + meta.time + ' (묶음 ' + meta.batch + ')' +
+      '\n\n스프레드시트: ' + sheetUrl;
+
+    const html = items.map((it) =>
+      '<h3 style="margin:16px 0 4px;font-size:15px">' + esc(it.experiment) + '</h3>' +
+      '<p style="margin:0;white-space:pre-wrap">' + esc(it.message) + '</p>' +
+      (it.imageUrl && /^https:/.test(it.imageUrl) ? '<p style="margin:4px 0 0"><a href="' + esc(it.imageUrl) + '">첨부 이미지 보기</a></p>' : '')
+    ).join('') +
+      '<hr style="margin:16px 0;border:none;border-top:1px solid #ddd">' +
+      '<p style="margin:0;color:#555;font-size:13px">역할: ' + esc(meta.role || '-') + ' · 이메일: ' + esc(meta.email || '-') + '<br>' +
+      '켜져 있던 실험: ' + esc(meta.labsOn || '-') + '<br>받은 시각: ' + esc(meta.time) + ' (묶음 ' + esc(meta.batch) + ')</p>' +
+      '<p style="margin:12px 0 0"><a href="' + esc(sheetUrl) + '">스프레드시트에서 보기</a></p>';
+
+    const options = { name: 'e-GIS 실험실', htmlBody: html };
+    if (meta.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(meta.email)) options.replyTo = meta.email;
+    MailApp.sendEmail(NOTIFY_EMAIL, subject, text, options);
+  } catch (err) {
+    console.error('알림 메일 실패', err);
+  }
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 /** 첨부 이미지를 드라이브 폴더에 저장하고 링크를 돌려준다. 없거나 잘못되면 '' */

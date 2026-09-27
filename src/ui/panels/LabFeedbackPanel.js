@@ -95,7 +95,7 @@ export class LabFeedbackPanel {
           <!-- 봇 막이: 사람에게는 안 보이는 칸 -->
           <input type="text" id="lab-fb-website" name="website" class="lab-fb-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
 
-          <p class="lab-fb-privacy">보낸 내용은 기능 개선에만 쓰고 2년간 보관합니다. 이메일은 답장할 때만 씁니다.
+          <p class="lab-fb-privacy">보낸 내용은 기능 개선에만 쓰고 1년간 보관합니다. 이메일은 답장할 때만 씁니다.
             <a href="/privacy" target="_blank" rel="noopener">개인정보 처리방침</a></p>
 
           <div class="lab-fb-actions">
