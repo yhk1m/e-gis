@@ -440,7 +440,7 @@ export class AppLayout {
                   aria-expanded="false" aria-controls="toolbar-copyright-text" title="저작권 정보" aria-label="저작권 정보">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
               <circle cx="12" cy="12" r="9.5"/>
-              <path d="M15.2 9.2a4.2 4.2 0 1 0 0 5.6"/>
+              <path d="M15.41 9.17A4 4 0 1 0 15.41 14.83"/>
             </svg>
           </button>
           <span class="toolbar-copyright" id="toolbar-copyright-text" role="note">ⓒ 2025 양정고등학교 김용현T | bgnlkim@gmail.com</span>

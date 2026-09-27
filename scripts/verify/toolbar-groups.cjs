@@ -90,6 +90,11 @@ app.whenReady().then(async () => {
 
   // 카피라이트: 태블릿은 ⓒ 버튼 → 말풍선
   check('C1 태블릿: 카피라이트 글자는 숨고 ⓒ 버튼이 보인다', (await visible('#toolbar-copyright-btn')) && !(await visible('#toolbar-copyright-text')));
+  const glyph = await js(`(() => { const svg = document.querySelector('#toolbar-copyright-btn svg'); const b = svg.querySelector('path').getBBox();
+    const sr = svg.getBoundingClientRect(), br = document.getElementById('toolbar-copyright-btn').getBoundingClientRect();
+    return { cx: +(b.x + b.width / 2).toFixed(2), cy: +(b.y + b.height / 2).toFixed(2),
+      svgDx: +((sr.x + sr.width / 2) - (br.x + br.width / 2)).toFixed(2), svgDy: +((sr.y + sr.height / 2) - (br.y + br.height / 2)).toFixed(2) }; })()`);
+  check('C1b ⓒ 의 C 가 원 한가운데(12,12), 아이콘이 버튼 한가운데', Math.abs(glyph.cx - 12) < 0.1 && Math.abs(glyph.cy - 12) < 0.1 && Math.abs(glyph.svgDx) < 0.6 && Math.abs(glyph.svgDy) < 0.6, glyph);
   await click('#toolbar-copyright-btn');
   const pop = await js(`(() => { const e = document.getElementById('toolbar-copyright-text'); const r = e.getBoundingClientRect();
     const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
