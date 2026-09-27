@@ -145,4 +145,4 @@ export const EXPERIMENTS = [
 export const EXPERIMENT_IDS = EXPERIMENTS.map((e) => e.id);
 
 /** 의견 보내기(구글 폼) 주소 — 실험 전체에 하나, 어느 기능인지는 폼에서 고른다. 비어 있으면 실험실 창에 링크가 안 보인다. */
-export const FEEDBACK_URL = '';
+export const FEEDBACK_URL = 'https://forms.gle/qwo8HJPCupahHU4T8';
