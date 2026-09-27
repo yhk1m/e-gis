@@ -443,6 +443,86 @@ input:focus, select:focus, textarea:focus {
   color: var(--text-primary);
 }
 
+/* 홈 화면에 추가 — 태블릿은 메뉴바 버튼(테마 버튼 모양), 휴대폰은 서랍 맨 아래 줄 */
+.install-btn[hidden] {
+  display: none !important;
+}
+.install-anchor {
+  position: relative;
+}
+@media (max-width: 768px) {
+  .install-btn-header {
+    display: none !important;
+  }
+}
+.mobile-drawer-install {
+  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  margin-top: var(--spacing-sm);
+}
+.install-btn-drawer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-size: 15px;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+.install-btn-drawer svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+}
+/* 안내 말풍선 — 메뉴바에서는 버튼 아래 오른쪽 정렬, 서랍에서는 줄 아래 */
+.install-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 2100;
+  width: 280px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  color: var(--text-primary);
+  text-align: left;
+  text-shadow: none;
+}
+.install-tip strong {
+  display: block;
+  margin-bottom: 6px;
+}
+.install-tip ol {
+  margin: 0;
+  padding-left: 1.3em;
+}
+.install-tip-icon {
+  display: inline-flex;
+  vertical-align: -2px;
+  color: var(--color-primary);
+}
+.mobile-drawer-install .install-tip {
+  position: static;
+  width: auto;
+  margin-top: var(--spacing-sm);
+  box-shadow: none;
+}
+[data-surface="glass"] .install-tip {
+  background: var(--glass-popover-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
 /* 전체화면 버튼 — 테마 버튼과 같은 모양. .theme-toggle 의 display:flex 가 hidden 을 이기므로 따로 숨긴다 */
 .fullscreen-toggle[hidden] {
   display: none;

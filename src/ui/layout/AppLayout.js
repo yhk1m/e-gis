@@ -184,7 +184,7 @@ export class AppLayout {
             </div>
           </div>
         </div>
-        <div class="menu-right">
+        <div class="menu-right install-anchor">
           <a href="/privacy" class="header-privacy-link" target="_blank" title="개인정보 처리방침">개인정보 처리방침</a>
           <button class="mobile-only mobile-header-btn" id="mobile-search-btn" title="장소 검색" aria-label="장소 검색" aria-expanded="false" aria-controls="mobile-search-row">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -196,6 +196,10 @@ export class AppLayout {
           <div class="header-auth" id="header-auth">
             <button class="btn btn-sm btn-primary" id="header-login-btn"><span class="auth-label-ko">로그인</span><span class="auth-label-en">Login</span></button>
           </div>
+          <!-- 홈 화면에 추가 — 태블릿에서만(휴대폰은 서랍 맨 아래 줄), installPrompt.js 가 터치 기기에서만 보인다 -->
+          <button class="theme-toggle install-btn install-btn-header" id="install-toggle" title="홈 화면에 추가" aria-label="홈 화면에 추가" aria-expanded="false" hidden>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>
+          </button>
           <!-- 전체화면 — 지원하는 기기(iPad·Android·데스크톱)에서만 fullscreenToggle.js 가 보인다 -->
           <button id="fullscreen-toggle" class="theme-toggle fullscreen-toggle" title="전체화면" aria-label="전체화면" aria-pressed="false" hidden>
             <svg class="icon-fs-enter" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -661,6 +665,12 @@ export class AppLayout {
             <div class="mobile-drawer-tools" id="mobile-drawer-tools"></div>
             <h3 class="mobile-drawer-heading">메뉴</h3>
             <div class="mobile-drawer-menus" id="mobile-drawer-menus"></div>
+            <div class="mobile-drawer-install install-anchor">
+              <button class="install-btn install-btn-drawer" id="install-drawer" aria-expanded="false" hidden>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>
+                <span>홈 화면에 추가</span>
+              </button>
+            </div>
           </div>
         </aside>
       </div>
