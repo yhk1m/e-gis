@@ -813,7 +813,7 @@ export class AppLayout {
         align-items: center;
         gap: var(--spacing-sm);
         padding: var(--spacing-sm);
-        border-radius: var(--radius-sm);
+        border-radius: 0;
         cursor: pointer;
         transition: background var(--transition-fast);
       }

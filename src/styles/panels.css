@@ -22,7 +22,7 @@
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-sm);
-  border-radius: var(--radius-sm);
+  border-radius: 0; /* 각진 줄: 선택 표시 파란 줄이 양 끝에서 휘지 않고 일자로 */
   cursor: pointer;
   transition: background var(--transition-fast);
   user-select: none;
