@@ -24,13 +24,22 @@ class HeatmapTool {
    * 이벤트 리스너 초기화
    */
   initEventListeners() {
-    // 레이어 삭제 시 범례도 함께 제거
     eventBus.on(Events.LAYER_REMOVED, (data) => {
-      const { layerId } = data;
+      const { layerId } = data || {};
+      if (!layerId) return;
+      // 히트맵 레이어 자체가 지워짐 → 기록과 범례만 정리
       if (this.heatmapLayers.has(layerId)) {
         this.heatmapLayers.delete(layerId);
         this.removeLegend(layerId);
+        return;
       }
+      // 원본 포인트 레이어가 지워짐 → 그 레이어로 만든 히트맵도 함께 지운다
+      // (히트맵은 피처를 복제한 별도 레이어라 그냥 두면 지도에 계속 남는다)
+      const derivedIds = [];
+      for (const [heatmapId, info] of this.heatmapLayers) {
+        if (info.sourceLayerId === layerId) derivedIds.push(heatmapId);
+      }
+      derivedIds.forEach(id => this.removeHeatmap(id));
     });
 
     // 레이어 이름 변경 → 히트맵 범례 제목 동기화
