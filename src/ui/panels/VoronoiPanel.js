@@ -9,13 +9,17 @@
 
 import { voronoiTool } from '../../tools/VoronoiTool.js';
 import { layerManager } from '../../core/LayerManager.js';
-import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import {
+  buildLayerOptions, resolveInitialLayerValue, resolveMultiLayerIds, MULTI_LAYER_VALUE
+} from '../../utils/layerSelect.js';
 import { showAlert } from '../../utils/dialogs.js';
+import { runForEachLayer, reportBatch } from '../../utils/layerBatch.js';
 
 class VoronoiPanel {
   constructor() {
     this.modal = null;
     this.selectedLayerId = '';
+    this.multiIds = [];
   }
 
   show() {
@@ -31,7 +35,10 @@ class VoronoiPanel {
     this.close();
 
     // 현재 선택된 레이어가 포인트면 기본값으로 고른다.
-    this.selectedLayerId = resolveInitialLayerId(pointLayers, layerManager.getSelectedLayerId());
+    // 여러 개를 골라 두었으면 「선택한 레이어 N개 모두」를 미리 고른다.
+    const selectedIds = layerManager.getSelectedLayerIds();
+    this.multiIds = resolveMultiLayerIds(pointLayers, selectedIds);
+    this.selectedLayerId = resolveInitialLayerValue(pointLayers, layerManager.getSelectedLayerId(), selectedIds);
 
     this.modal = document.createElement('div');
     this.modal.className = 'modal-overlay voronoi-modal active';
@@ -44,7 +51,8 @@ class VoronoiPanel {
   getModalHTML(pointLayers, polygonLayers) {
     const layerOptions = buildLayerOptions(pointLayers, {
       selectedId: this.selectedLayerId,
-      showCount: true
+      showCount: true,
+      multiIds: this.multiIds
     });
 
     const boundaryOptions =
@@ -98,6 +106,11 @@ class VoronoiPanel {
     const boundaryLayerId = document.getElementById('voronoi-boundary').value || null;
     const color = document.getElementById('voronoi-color').value;
 
+    if (layerId === MULTI_LAYER_VALUE) {
+      this.applyToMany({ boundaryLayerId, color });
+      return;
+    }
+
     try {
       const result = voronoiTool.createVoronoi(layerId, { boundaryLayerId, color });
 
@@ -122,6 +135,16 @@ class VoronoiPanel {
     } catch (error) {
       showAlert('보로노이 생성 실패: ' + error.message);
     }
+  }
+
+  /** 「선택한 레이어 N개 모두」: 레이어마다 따로 보로노이를 만든다 */
+  async applyToMany(options) {
+    const ids = this.multiIds.slice();
+    this.close();
+    const result = await runForEachLayer(ids,
+      id => voronoiTool.createVoronoi(id, options),
+      { getName: id => (layerManager.getLayer(id) || {}).name });
+    await reportBatch(result, '보로노이 만들기');
   }
 
   close() {

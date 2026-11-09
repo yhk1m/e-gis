@@ -8,18 +8,23 @@
  */
 
 import { layerManager } from '../../core/LayerManager.js';
-import { buildLayerOptions, resolveInitialLayerId, isVectorLayer } from '../../utils/layerSelect.js';
+import {
+  buildLayerOptions, resolveInitialLayerValue, resolveMultiLayerIds, isVectorLayer,
+  commonFields, MULTI_LAYER_VALUE
+} from '../../utils/layerSelect.js';
 import { createGridLayer } from '../../tools/gridLayer.js';
 import {
   featuresToPoints, resolveCellSize, numericFields, CELL_SIZE_OPTIONS
 } from '../../tools/gridPoints.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
 import { showAlert } from '../../utils/dialogs.js';
+import { runForEachLayer, reportBatch } from '../../utils/layerBatch.js';
 
 class GridPanel {
   constructor() {
     this.modal = null;
     this.currentLayerId = null;
+    this.multiIds = [];
   }
 
   /** 격자로 묶을 수 있는 레이어 — 점이 있는 벡터 레이어만 */
@@ -37,7 +42,10 @@ class GridPanel {
       return;
     }
 
-    this.currentLayerId = resolveInitialLayerId(layers, layerId || layerManager.getSelectedLayerId()) || null;
+    // 여러 개를 골라 두었으면 「선택한 레이어 N개 모두」를 미리 고른다.
+    const selectedIds = layerId ? [] : layerManager.getSelectedLayerIds();
+    this.multiIds = resolveMultiLayerIds(layers, selectedIds);
+    this.currentLayerId = resolveInitialLayerValue(layers, layerId || layerManager.getSelectedLayerId(), selectedIds) || null;
     this.render(layers);
   }
 
@@ -54,7 +62,7 @@ class GridPanel {
   }
 
   getModalHTML(layers) {
-    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId });
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId, multiIds: this.multiIds });
     const sizeOptions = CELL_SIZE_OPTIONS.map(option =>
       `<option value="${option.value}"${option.value === '1000' ? ' selected' : ''}>${option.label}</option>`
     ).join('');
@@ -107,9 +115,19 @@ class GridPanel {
       </div>`;
   }
 
+  /** 「선택한 레이어 N개 모두」가 골라져 있는지 */
+  isMulti() {
+    return this.currentLayerId === MULTI_LAYER_VALUE;
+  }
+
   /** 지금 고른 레이어의 점들 */
   points() {
-    const layerInfo = this.currentLayerId ? layerManager.getLayer(this.currentLayerId) : null;
+    return this.isMulti() ? [] : this.pointsOf(this.currentLayerId);
+  }
+
+  /** 레이어 하나의 점들 */
+  pointsOf(layerId) {
+    const layerInfo = layerId ? layerManager.getLayer(layerId) : null;
     if (!layerInfo || !layerInfo.source) return [];
     return featuresToPoints(layerInfo.source.getFeatures());
   }
@@ -128,10 +146,13 @@ class GridPanel {
     fieldRow.style.display = needsField ? '' : 'none';
 
     if (needsField) {
-      const fields = numericFields(this.points());
+      // 여러 레이어면 모든 레이어에 있는 숫자 속성만 고를 수 있다
+      const fields = this.isMulti()
+        ? commonFields(this.multiIds.map(id => numericFields(this.pointsOf(id))))
+        : numericFields(this.points());
       fieldSelect.innerHTML = fields.length
         ? fields.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')
-        : '<option value="">(숫자 속성 없음)</option>';
+        : `<option value="">${this.isMulti() ? '(모든 레이어에 있는 숫자 속성 없음)' : '(숫자 속성 없음)'}</option>`;
     }
 
     this.syncName();
@@ -140,15 +161,28 @@ class GridPanel {
   /** 레이어 이름 기본값 — 사용자가 손대면 건드리지 않는다 */
   syncName() {
     const nameInput = document.getElementById('grid-name');
+
+    // 여러 레이어면 이름은 레이어마다 자동으로 붙는다
+    nameInput.disabled = this.isMulti();
+    if (this.isMulti()) {
+      nameInput.value = '';
+      nameInput.placeholder = '레이어마다 「레이어 이름 격자 크기」로 붙습니다';
+      return;
+    }
+    nameInput.placeholder = '';
     if (nameInput.dataset.touched === '1') return;
 
     const layerInfo = this.currentLayerId ? layerManager.getLayer(this.currentLayerId) : null;
+    const label = this.sizeLabel();
+    nameInput.value = layerInfo ? `${layerInfo.name} 격자 ${label}` : `격자 ${label}`;
+  }
+
+  /** 격자 크기 글자 (예: 1km) */
+  sizeLabel() {
     const sizeSelect = document.getElementById('grid-size');
-    const label = sizeSelect.value === ''
+    return sizeSelect.value === ''
       ? `${document.getElementById('grid-size-custom').value}m`
       : (CELL_SIZE_OPTIONS.find(o => o.value === sizeSelect.value) || {}).label || '';
-
-    nameInput.value = layerInfo ? `${layerInfo.name} 격자 ${label}` : `격자 ${label}`;
   }
 
   bindEvents() {
@@ -194,11 +228,17 @@ class GridPanel {
       return;
     }
 
+    const includeEmpty = document.getElementById('grid-empty').checked;
+
+    if (this.isMulti()) {
+      this.applyToMany({ cellSize: size.cellSize, method, field, includeEmpty });
+      return;
+    }
+
     const name = (document.getElementById('grid-name').value || '').trim() || '격자';
 
     try {
       const points = this.points();
-      const includeEmpty = document.getElementById('grid-empty').checked;
       const layerId = createGridLayer(name, points, {
         cellSize: size.cellSize, method, field, includeEmpty
       });
@@ -209,6 +249,20 @@ class GridPanel {
     } catch (error) {
       showAlert('격자 만들기 실패: ' + error.message);
     }
+  }
+
+  /** 「선택한 레이어 N개 모두」: 레이어마다 따로 격자를 만든다 */
+  async applyToMany(options) {
+    const ids = this.multiIds.slice();
+    const label = this.sizeLabel();
+    this.close();
+    const result = await runForEachLayer(ids, id => {
+      const layerInfo = layerManager.getLayer(id);
+      const points = this.pointsOf(id);
+      if (points.length === 0) throw new Error('점 피처가 없습니다.');
+      return createGridLayer(`${layerInfo.name} 격자 ${label}`, points, options);
+    }, { getName: id => (layerManager.getLayer(id) || {}).name });
+    await reportBatch(result, '격자 만들기');
   }
 
   close() {

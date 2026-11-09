@@ -4,13 +4,17 @@
 
 import { bufferTool } from '../../tools/BufferTool.js';
 import { layerManager } from '../../core/LayerManager.js';
-import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import {
+  buildLayerOptions, resolveInitialLayerValue, resolveMultiLayerIds, MULTI_LAYER_VALUE
+} from '../../utils/layerSelect.js';
 import { showAlert } from '../../utils/dialogs.js';
+import { runForEachLayer, reportBatch } from '../../utils/layerBatch.js';
 
 class BufferPanel {
   constructor() {
     this.modal = null;
     this.currentLayerId = null;
+    this.multiIds = [];
   }
 
   /**
@@ -24,7 +28,10 @@ class BufferPanel {
     }
 
     // 선택 중인 레이어가 버퍼를 지원하면 미리 골라 준다.
-    this.currentLayerId = resolveInitialLayerId(layers, layerId || layerManager.getSelectedLayerId()) || null;
+    // 레이어 패널에서 여러 개를 골라 두었으면 「선택한 레이어 N개 모두」를 미리 고른다.
+    const selectedIds = layerId ? [] : layerManager.getSelectedLayerIds();
+    this.multiIds = resolveMultiLayerIds(layers, selectedIds);
+    this.currentLayerId = resolveInitialLayerValue(layers, layerId || layerManager.getSelectedLayerId(), selectedIds) || null;
     this.render(layers);
   }
 
@@ -48,7 +55,7 @@ class BufferPanel {
    * 모달 HTML 생성
    */
   getModalHTML(layers, units) {
-    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId });
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId, multiIds: this.multiIds });
     const unitOptions = units.map(u =>
       '<option value="' + u.value + '">' + u.label + '</option>'
     ).join('');
@@ -125,6 +132,11 @@ class BufferPanel {
       return;
     }
 
+    if (this.currentLayerId === MULTI_LAYER_VALUE) {
+      this.applyToMany(distance, unit, { color, dissolve });
+      return;
+    }
+
     try {
       // 투명도는 레이어 패널의 스타일 편집이 담당한다. 여기서 중복 제공하지 않는다.
       const result = bufferTool.createBuffer(this.currentLayerId, distance, unit, {
@@ -137,6 +149,16 @@ class BufferPanel {
     } catch (error) {
       showAlert('버퍼 생성 실패: ' + error.message);
     }
+  }
+
+  /** 「선택한 레이어 N개 모두」: 레이어마다 따로 버퍼를 만든다 */
+  async applyToMany(distance, unit, options) {
+    const ids = this.multiIds.slice();
+    this.close();
+    const result = await runForEachLayer(ids,
+      id => bufferTool.createBuffer(id, distance, unit, options),
+      { getName: id => (layerManager.getLayer(id) || {}).name });
+    await reportBatch(result, '버퍼 만들기');
   }
 
   /**

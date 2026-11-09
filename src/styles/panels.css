@@ -566,9 +566,10 @@
 
 .layer-multi-select-info {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  gap: 4px var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-sm);
   background: var(--color-primary);
   color: white;
   font-size: var(--font-size-xs);
@@ -592,40 +593,126 @@
   box-shadow: inset 0 0 0 1px var(--color-primary);
 }
 
-.layer-multi-select-info span {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
+.multi-select-count {
+  flex: 1 1 100%;
+  font-weight: 600;
 }
 
+/* 작업 버튼: 아이콘 위, 짧은 글자 아래. 폭이 좁으면 다음 줄로 넘어간다 */
 .multi-select-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
+  flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 4px;
 }
 
-.clear-selection-btn,
-.delete-selection-btn {
+.multi-select-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  justify-content: center;
+  gap: 2px;
+  min-height: 40px;
+  padding: 4px 2px;
   border: none;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.18);
   color: white;
-  font-size: var(--font-size-xs);
+  font-size: 11px;
+  line-height: 1.2;
   white-space: nowrap;
   cursor: pointer;
   transition: background var(--transition-fast);
 }
 
-.clear-selection-btn:hover {
+.multi-select-btn span {
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.multi-select-btn:hover,
+.multi-select-btn:focus-visible {
   background: rgba(255, 255, 255, 0.35);
 }
 
-.delete-selection-btn:hover {
+.multi-select-btn.danger:hover,
+.multi-select-btn.danger:focus-visible {
   background: rgba(220, 53, 69, 0.85);
+}
+
+/* 머리줄 「여러 개 선택」 토글 */
+.layer-select-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.layer-select-mode-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.layer-select-mode-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+/* 선택 모드의 둥근 선택 칸. 네모난 표시 체크박스와 헷갈리지 않게 동그라미로 */
+.layer-select-check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--text-muted);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: white;
+}
+
+.layer-select-check svg {
+  visibility: hidden;
+}
+
+.layer-select-check[aria-checked="true"] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.layer-select-check[aria-checked="true"] svg {
+  visibility: visible;
+}
+
+/* 선택 모드에서는 손가락으로 누르기 쉽게 줄을 조금 키운다 */
+.layer-list.select-mode .layer-item {
+  min-height: 36px;
+}
+
+.layer-list.select-mode .layer-item.selected:not(.primary-selected) {
+  opacity: 1;
+}
+
+/* 여러 개 스타일 팝업: 뺀 레이어 수 */
+.style-excluded-note {
+  margin: -4px 0 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 
 /* 컨텍스트 메뉴 헤더 (다중 선택용) */

@@ -4,13 +4,17 @@
 
 import { heatmapTool } from '../../tools/HeatmapTool.js';
 import { layerManager } from '../../core/LayerManager.js';
-import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import {
+  buildLayerOptions, resolveInitialLayerValue, resolveMultiLayerIds, commonFields, MULTI_LAYER_VALUE
+} from '../../utils/layerSelect.js';
 import { showAlert } from '../../utils/dialogs.js';
+import { runForEachLayer, reportBatch } from '../../utils/layerBatch.js';
 
 class HeatmapPanel {
   constructor() {
     this.modal = null;
     this.selectedLayerId = null;
+    this.multiIds = [];
   }
 
   /**
@@ -35,7 +39,10 @@ class HeatmapPanel {
     }
 
     // 선택 중인 레이어가 포인트 레이어면 미리 골라 준다.
-    this.selectedLayerId = resolveInitialLayerId(pointLayers, layerManager.getSelectedLayerId()) || null;
+    // 여러 개를 골라 두었으면 「선택한 레이어 N개 모두」를 미리 고른다.
+    const selectedIds = layerManager.getSelectedLayerIds();
+    this.multiIds = resolveMultiLayerIds(pointLayers, selectedIds);
+    this.selectedLayerId = resolveInitialLayerValue(pointLayers, layerManager.getSelectedLayerId(), selectedIds) || null;
 
     this.modal = document.createElement('div');
     this.modal.className = 'modal-overlay heatmap-modal active';
@@ -50,7 +57,7 @@ class HeatmapPanel {
    * 모달 HTML 생성
    */
   getModalHTML(layers, gradients) {
-    const layerOptions = buildLayerOptions(layers, { selectedId: this.selectedLayerId, showCount: true });
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.selectedLayerId, showCount: true, multiIds: this.multiIds });
 
     const gradientOptions = gradients.map((g, i) =>
       '<option value="' + i + '">' + g.name + '</option>'
@@ -158,7 +165,13 @@ class HeatmapPanel {
    */
   updateWeightFields() {
     const weightSelect = document.getElementById('heatmap-weight');
-    const fields = this.selectedLayerId ? heatmapTool.getNumericFields(this.selectedLayerId) : [];
+    // 여러 레이어면 모든 레이어에 있는 숫자 필드만 가중치로 고를 수 있다
+    let fields = [];
+    if (this.selectedLayerId === MULTI_LAYER_VALUE) {
+      fields = commonFields(this.multiIds.map(id => heatmapTool.getNumericFields(id)));
+    } else if (this.selectedLayerId) {
+      fields = heatmapTool.getNumericFields(this.selectedLayerId);
+    }
 
     let options = '<option value="">없음</option>';
     fields.forEach(field => {
@@ -213,18 +226,19 @@ class HeatmapPanel {
       gradient = [...gradient].reverse();
     }
 
+    const options = { radius, blur, gradient, weight: weight || null, hideSource };
+
+    if (layerId === MULTI_LAYER_VALUE) {
+      this.applyToMany(options);
+      return;
+    }
+
     const applyBtn = document.getElementById('heatmap-apply');
     applyBtn.disabled = true;
     applyBtn.textContent = '생성 중...';
 
     try {
-      const heatmapLayerId = heatmapTool.createHeatmap(layerId, {
-        radius,
-        blur,
-        gradient,
-        weight: weight || null,
-        hideSource
-      });
+      heatmapTool.createHeatmap(layerId, options);
 
       showAlert('히트맵이 생성되었습니다.');
       this.close();
@@ -233,6 +247,16 @@ class HeatmapPanel {
       applyBtn.disabled = false;
       applyBtn.textContent = '히트맵 생성';
     }
+  }
+
+  /** 「선택한 레이어 N개 모두」: 레이어마다 따로 히트맵을 만든다 */
+  async applyToMany(options) {
+    const ids = this.multiIds.slice();
+    this.close();
+    const result = await runForEachLayer(ids,
+      id => heatmapTool.createHeatmap(id, { ...options }),
+      { getName: id => (layerManager.getLayer(id) || {}).name });
+    await reportBatch(result, '히트맵 만들기');
   }
 
   /**

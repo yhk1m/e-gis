@@ -34,19 +34,67 @@ export function resolveInitialLayerId(layers, selectedLayerId) {
 }
 
 /**
- * 레이어 <option> 목록 HTML을 만든다. 첫 항목은 항상 플레이스홀더다.
+ * 레이어 패널에서 여러 레이어를 골랐을 때 드롭다운 맨 위에 붙는 「선택한 레이어 N개 모두」의 값.
+ * 이 값이 골라져 있으면 패널은 그 레이어들에 하나씩 차례로 실행한다.
+ */
+export const MULTI_LAYER_VALUE = '__selected__';
+
+/**
+ * 다중 선택 중 이 기능이 지원하는 레이어만 선택 순서대로 남긴다.
+ * @param {Array} layers 이 기능이 지원하는 레이어 목록
+ * @param {string[]} selectedIds layerManager.getSelectedLayerIds()
+ * @returns {string[]} 2개 이상이면 그 id 들, 아니면 빈 배열
+ */
+export function resolveMultiLayerIds(layers, selectedIds) {
+  if (!Array.isArray(layers) || !Array.isArray(selectedIds)) return [];
+  const supported = new Set(layers.filter(Boolean).map(l => l.id));
+  const ids = selectedIds.filter(id => supported.has(id));
+  return ids.length >= 2 ? ids : [];
+}
+
+/**
+ * 다중 선택까지 따져 드롭다운의 초기 선택값을 정한다.
+ * 지원 레이어가 2개 이상 골라져 있으면 MULTI_LAYER_VALUE, 아니면 resolveInitialLayerId 규칙.
+ */
+export function resolveInitialLayerValue(layers, selectedLayerId, selectedIds) {
+  if (resolveMultiLayerIds(layers, selectedIds).length >= 2) return MULTI_LAYER_VALUE;
+  return resolveInitialLayerId(layers, selectedLayerId);
+}
+
+/**
+ * 여러 필드 목록에 모두 들어 있는 필드만 첫 목록 순서대로 돌려준다.
+ * @param {string[][]} lists
+ */
+export function commonFields(lists) {
+  if (!Array.isArray(lists) || lists.length === 0) return [];
+  const rest = lists.slice(1).map(list => new Set(list || []));
+  return (lists[0] || []).filter(name => rest.every(set => set.has(name)));
+}
+
+/**
+ * 레이어 <option> 목록 HTML을 만든다. 첫 항목은 플레이스홀더다.
+ * multiIds 가 2개 이상이면 그 앞에 「선택한 레이어 N개 모두」가 붙는다.
  * @param {Array} layers
  * @param {Object} [options]
- * @param {string} [options.selectedId] 미리 고를 레이어 id ('' 이면 플레이스홀더가 선택됨)
+ * @param {string} [options.selectedId] 미리 고를 레이어 id ('' 이면 플레이스홀더가 선택됨, MULTI_LAYER_VALUE 면 「모두」)
  * @param {string} [options.placeholder]
  * @param {boolean} [options.showCount] 이름 뒤에 피처 수 표시
+ * @param {string[]} [options.multiIds] 다중 선택 중 지원되는 레이어 id
  */
 export function buildLayerOptions(layers, options = {}) {
-  const selectedId = options.selectedId || '';
+  const multiIds = Array.isArray(options.multiIds) && options.multiIds.length >= 2 ? options.multiIds : null;
+  let selectedId = options.selectedId || '';
+  if (selectedId === MULTI_LAYER_VALUE && !multiIds) selectedId = '';
   const placeholder = options.placeholder || LAYER_PLACEHOLDER;
   const showCount = options.showCount === true;
 
-  const head = '<option value=""' + (selectedId ? '' : ' selected') + '>' +
+  const multi = multiIds
+    ? '<option value="' + MULTI_LAYER_VALUE + '"' +
+      (selectedId === MULTI_LAYER_VALUE ? ' selected' : '') + '>' +
+      '선택한 레이어 ' + multiIds.length + '개 모두</option>'
+    : '';
+
+  const head = multi + '<option value=""' + (selectedId ? '' : ' selected') + '>' +
     escapeHtml(placeholder) + '</option>';
 
   const body = (layers || []).map(l => {

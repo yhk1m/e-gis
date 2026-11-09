@@ -13,7 +13,135 @@ import { swatchSpec, swatchHTML } from './layerSwatch.js';
 import { flowPanel } from './FlowPanel.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import { applyLegendVisibility } from '../../tools/legendVisibility.js';
-import { showConfirm } from '../../utils/dialogs.js';
+import { showConfirm, showAlert } from '../../utils/dialogs.js';
+import { fieldCalculatorPanel } from './FieldCalculatorPanel.js';
+import { partitionStyleTargets, commonStyleControls, applyStyleToAll, geometryKind } from './batchStyle.js';
+
+/** 선 아이콘(SVG). 화면 글자에 이모지를 쓰지 않는다 */
+const ICON_PATHS = {
+  selectMode: '<polyline points="3 7 5 9 9 5"/><line x1="13" y1="7" x2="21" y2="7"/><polyline points="3 16 5 18 9 14"/><line x1="13" y1="16" x2="21" y2="16"/>',
+  check: '<polyline points="5 12 10 17 19 7"/>',
+  style: '<path d="M12 2.7l5.7 5.7a8 8 0 1 1-11.3 0z"/>',
+  duplicate: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  export: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  fieldCalc: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="16" y2="15"/><line x1="8" y1="19" x2="16" y2="19"/>',
+  zoom: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>',
+  eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M17.9 17.9A10.1 10.1 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.1-5.9"/><path d="M9.9 4.2A9.1 9.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.2 3.2"/><line x1="1" y1="1" x2="23" y2="23"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  close: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+};
+function icon(name, size = 14) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[name]}</svg>`;
+}
+
+/**
+ * 슬라이더 + 숫자 입력 한 줄.
+ * 대충 맞추는 건 슬라이더가 빠르고, 정확한 값은 숫자로 적는 게 빠르다. 둘 다 준다.
+ * @param {string} label - 항목 이름 (예: "면 불투명도")
+ * @param {string} cls - 컨트롤 식별 클래스 (예: "fill-opacity")
+ * @param {number} value - 현재 값
+ * @param {string} unit - 단위 표시 ("%" 또는 "px")
+ * @param {number} min - 최솟값
+ * @param {number} max - 최댓값
+ * @param {number} step - 슬라이더 눈금 (숫자 입력은 자유롭게 받는다)
+ */
+function sliderRow(label, cls, value, unit, min, max, step) {
+  return "<div class=\"style-section\"><label>" + label + ":</label>" +
+    "<div class=\"slider-row\">" +
+    "<input type=\"range\" class=\"range-slider " + cls + "-slider\"" +
+    " min=\"" + min + "\" max=\"" + max + "\" step=\"" + step + "\" value=\"" + value + "\">" +
+    "<input type=\"number\" class=\"slider-number " + cls + "-number\"" +
+    " min=\"" + min + "\" max=\"" + max + "\" step=\"any\" value=\"" + value + "\">" +
+    "<span class=\"slider-unit\">" + unit + "</span>" +
+    "</div></div>";
+}
+
+/**
+ * 슬라이더와 숫자 입력을 한 값으로 묶는다.
+ * 어느 쪽을 건드려도 나머지 하나가 따라오고 apply가 불린다.
+ *
+ * 숫자 입력은 타이핑 도중에도 input이 온다. 지우는 중('')이나 '-'만 친 상태에서
+ * 값을 강제로 되돌리면 글자를 못 지운다. 그래서 그때는 넘기고,
+ * 포커스를 뗄 때(change) 범위 안으로 정리한다.
+ *
+ * @param {HTMLElement} picker - 스타일 팝업
+ * @param {string} cls - sliderRow에 넘긴 식별 클래스
+ * @param {function(number)} apply - 확정된 값으로 실제 스타일을 바꾸는 함수
+ */
+function bindSliderRow(picker, cls, apply) {
+  var slider = picker.querySelector("." + cls + "-slider");
+  var number = picker.querySelector("." + cls + "-number");
+  if (!slider || !number) return;
+
+  var min = parseFloat(slider.min);
+  var max = parseFloat(slider.max);
+  var clamp = function(v) { return Math.min(max, Math.max(min, v)); };
+
+  slider.addEventListener("input", function() {
+    var v = parseFloat(slider.value);
+    number.value = v;
+    apply(v);
+  });
+
+  number.addEventListener("input", function() {
+    if (number.value.trim() === "") return;
+    var v = parseFloat(number.value);
+    if (isNaN(v)) return;
+    v = clamp(v);
+    slider.value = v;
+    apply(v);
+  });
+
+  // 범위를 벗어났거나 비어 있는 채로 떠나면 마지막 유효값으로 되돌린다
+  number.addEventListener("change", function() {
+    var v = parseFloat(number.value);
+    v = isNaN(v) ? parseFloat(slider.value) : clamp(v);
+    number.value = v;
+    slider.value = v;
+    apply(v);
+  });
+}
+
+/** 선 스타일(실선, 파선, 점선, 일점쇄선) 버튼 줄 */
+function strokeDashHTML(current) {
+  const opts = [['solid', '실선', '━━━'], ['dashed', '파선', '┅┅┅'], ['dotted', '점선', '┈┈┈'], ['dash-dot', '일점쇄선', '━┅━']];
+  return "<div class=\"style-section\"><label>선 스타일:</label><div class=\"stroke-style-options\">" +
+    opts.map(function(o) {
+      return "<button class=\"stroke-btn" + (current === o[0] ? " active" : "") + "\" data-stroke=\"" + o[0] + "\" title=\"" + o[1] + "\">" + o[2] + "</button>";
+    }).join("") +
+    "</div></div>";
+}
+
+/**
+ * 팝업 밖을 누르면 닫는다. 연 직후의 클릭(여는 버튼 자체)은 무시한다.
+ * @param {HTMLElement} picker
+ */
+function closeOnOutsideClick(picker) {
+  // 피커 생성 시간 기록
+  var pickerCreatedAt = Date.now();
+
+  setTimeout(function() {
+    var closePicker = function(ev) {
+      // 피커가 DOM에서 제거되었으면 리스너도 제거
+      if (!document.body.contains(picker)) {
+        document.removeEventListener("click", closePicker);
+        return;
+      }
+
+      // 생성 후 300ms 이내 클릭은 무시
+      if (Date.now() - pickerCreatedAt < 300) {
+        return;
+      }
+
+      if (!picker.contains(ev.target)) {
+        picker.remove();
+        document.removeEventListener("click", closePicker);
+      }
+    };
+    document.addEventListener("click", closePicker);
+  }, 50);
+}
 
 export class LayerPanel {
   constructor(containerId = 'layer-list') {
@@ -21,6 +149,7 @@ export class LayerPanel {
     this.scrollEl = this.container ? this.container.parentElement : null; // .panel-content
     this.draggedItem = null;
     this.marquee = null; // 드래그 선택 상태
+    this.selectMode = false; // 「여러 개 선택」 모드: 줄을 누르면 선택에 더하거나 뺀다 (태블릿용)
     this.init();
   }
 
@@ -67,6 +196,48 @@ export class LayerPanel {
     if (this.selectAllCheckbox) {
       this.selectAllCheckbox.addEventListener('change', (e) => this.handleSelectAll(e.target.checked));
     }
+
+    // 「여러 개 선택」 토글 버튼. 머리줄 마크업(AppLayout)은 그대로 두고 여기서 끼워 넣는다
+    this.mountSelectModeButton();
+
+    // Esc 로 선택 모드 끄기
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.selectMode) this.setSelectMode(false);
+    });
+  }
+
+  /** 레이어 패널 머리줄 오른쪽 버튼 묶음에 선택 모드 버튼을 넣는다 */
+  mountSelectModeButton() {
+    const tab = this.container && this.container.parentElement && this.container.parentElement.parentElement;
+    const actions = tab && tab.querySelector('.panel-header-actions');
+    if (!actions || actions.querySelector('.layer-select-mode-btn')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'layer-select-mode-btn';
+    btn.title = '레이어 여러 개를 눌러서 고르기 (Esc 로 끄기)';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.innerHTML = `${icon('selectMode')}<span>여러 개 선택</span>`;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.setSelectMode(!this.selectMode);
+    });
+    actions.insertBefore(btn, actions.firstChild);
+    this.selectModeBtn = btn;
+  }
+
+  /**
+   * 선택 모드 켜고 끄기. 끄면 선택이 하나(마지막으로 고른 것) 또는 없음으로 줄어든다.
+   */
+  setSelectMode(on) {
+    const next = !!on;
+    if (next === this.selectMode) return;
+    this.selectMode = next;
+    if (!next) {
+      const keep = layerManager.getSelectedLayerId();
+      if (keep && layerManager.getLayer(keep)) layerManager.selectLayer(keep); // render 를 부른다
+      else layerManager.clearSelection();
+    }
+    this.render();
   }
 
   /**
@@ -200,6 +371,13 @@ export class LayerPanel {
     // 전체 표시/숨김 체크박스 상태 동기화
     this.updateSelectAllState();
 
+    // 선택 모드 표시 (버튼 눌림 상태, 목록 클래스)
+    this.container.classList.toggle('select-mode', this.selectMode);
+    if (this.selectModeBtn) {
+      this.selectModeBtn.classList.toggle('active', this.selectMode);
+      this.selectModeBtn.setAttribute('aria-pressed', String(this.selectMode));
+    }
+
     if (layers.length === 0) {
       this.container.innerHTML = `
         <li class="layer-empty">
@@ -219,11 +397,16 @@ export class LayerPanel {
       let className = 'layer-item';
       if (isSelected) className += ' selected';
       if (isPrimary) className += ' primary-selected';
+      // 선택 모드에서만 보이는 둥근 선택 칸 (네모난 표시 체크박스와 모양을 다르게)
+      const selectCheck = this.selectMode
+        ? `<span class="layer-select-check" role="checkbox" aria-checked="${isSelected}" title="고르기">${icon('check', 12)}</span>`
+        : '';
 
       return `
         <li class="${className}"
             data-layer-id="${layer.id}"
             draggable="true">
+          ${selectCheck}
           <input type="checkbox"
                  class="layer-visibility"
                  ${layer.visible ? 'checked' : ''}
@@ -271,26 +454,120 @@ export class LayerPanel {
       const tab = panelContent.parentElement;
       tab.insertBefore(infoEl, panelContent);
     }
+    const ids = layerManager.getSelectedLayerIds();
+    const anyVisible = ids.some(id => (layerManager.getLayer(id) || {}).visible);
+    const btn = (action, iconName, label, title, extra = '') =>
+      `<button type="button" class="multi-select-btn${extra}" data-batch="${action}" title="${title}">${icon(iconName)}<span>${label}</span></button>`;
     infoEl.innerHTML = `
-      <span>${count}개 레이어 선택됨</span>
+      <span class="multi-select-count">${count}개 레이어 선택됨</span>
       <div class="multi-select-actions">
-        <button class="clear-selection-btn" title="선택 해제하고 돌아가기">↩ 선택 해제</button>
-        <button class="delete-selection-btn" title="선택한 레이어 삭제">🗑 삭제</button>
+        ${btn('style', 'style', '스타일', '고른 레이어의 색과 선을 한꺼번에 바꾸기')}
+        ${btn('duplicate', 'duplicate', '복사', '고른 레이어를 하나씩 복사하기')}
+        ${btn('export', 'export', '내보내기', '고른 레이어를 zip 파일 하나로 내보내기')}
+        ${btn('field-calc', 'fieldCalc', '속성 계산', '고른 레이어 모두에 필드 계산하기')}
+        ${btn('zoom', 'zoom', '이동', '고른 레이어가 모두 보이게 지도 옮기기')}
+        ${btn('visibility', anyVisible ? 'eyeOff' : 'eye', anyVisible ? '숨기기' : '보이기', anyVisible ? '고른 레이어 모두 숨기기' : '고른 레이어 모두 보이기')}
+        ${btn('remove', 'trash', '삭제', '고른 레이어 삭제', ' danger')}
+        ${btn('clear', 'close', '선택 해제', '선택을 풀고 돌아가기')}
       </div>
     `;
 
-    const clearBtn = infoEl.querySelector('.clear-selection-btn');
-    clearBtn.onclick = () => layerManager.clearSelection();
-
-    const deleteBtn = infoEl.querySelector('.delete-selection-btn');
-    deleteBtn.onclick = async () => {
-      const selectedIds = Array.from(layerManager.selectedLayerIds);
-      if (selectedIds.length === 0) return;
-      if (await showConfirm(`${selectedIds.length}개의 레이어를 삭제하시겠습니까?`, { danger: true, okText: '삭제' })) {
-        selectedIds.forEach(id => layerManager.removeLayer(id));
-        layerManager.clearSelection();
-      }
+    infoEl.onclick = (e) => {
+      const b = e.target.closest('[data-batch]');
+      if (!b) return;
+      e.stopPropagation();
+      // 스타일 팝업은 작업 줄 오른쪽(패널 바깥)에 붙인다. 버튼에 붙이면 패널을 가린다
+      this.runBatchAction(b.dataset.batch, layerManager.getSelectedLayerIds(), infoEl);
     };
+  }
+
+  /**
+   * 고른 레이어 여러 개에 한꺼번에 하는 일. 작업 줄과 다중 우클릭 메뉴가 같이 쓴다.
+   * @param {string} action
+   * @param {string[]} ids - 고른 순서대로
+   */
+  async runBatchAction(action, ids, anchorEl = null) {
+    if (!ids || ids.length === 0) return;
+    switch (action) {
+      case 'style':
+        this.showColorPicker(ids, anchorEl);
+        break;
+      case 'duplicate':
+        this.duplicateLayers(ids);
+        break;
+      case 'export':
+        try {
+          // jszip 을 쓰는 무거운 모듈이라 누를 때 불러온다
+          const { exportLayersZip } = await import('../../utils/exportLayersZip.js');
+          await exportLayersZip(ids);
+        } catch (err) {
+          console.error('[LayerPanel] 내보내기 실패', err);
+          showAlert('내보내기에 실패했습니다.\n' + (err && err.message ? err.message : ''));
+        }
+        break;
+      case 'field-calc':
+        // 선택은 그대로 둔다. 2개 이상이면 패널이 「선택한 레이어 N개 모두」를 미리 고른다
+        fieldCalculatorPanel.show();
+        break;
+      case 'zoom':
+        this.zoomToSelectedLayers(ids);
+        break;
+      case 'visibility': {
+        const anyVisible = ids.some(id => (layerManager.getLayer(id) || {}).visible);
+        this.setLayersVisible(ids, !anyVisible);
+        break;
+      }
+      case 'show':
+        this.setLayersVisible(ids, true);
+        break;
+      case 'hide':
+        this.setLayersVisible(ids, false);
+        break;
+      case 'remove':
+        if (await showConfirm(`${ids.length}개의 레이어를 삭제하시겠습니까?`, { danger: true, okText: '삭제' })) {
+          ids.forEach(id => layerManager.removeLayer(id));
+          layerManager.clearSelection();
+        }
+        break;
+      case 'clear':
+        layerManager.clearSelection();
+        this.setSelectMode(false);
+        break;
+    }
+  }
+
+  /** 여러 레이어를 모두 보이거나 모두 숨긴다 */
+  setLayersVisible(ids, visible) {
+    ids.forEach(id => {
+      const layer = layerManager.getLayer(id);
+      if (layer && layer.visible !== visible) layerManager.toggleVisibility(id);
+    });
+  }
+
+  /** 레이어 하나 복사. 복사본 id, 복사할 수 없으면 null */
+  duplicateOne(layerId) {
+    const newId = layerManager.duplicateLayer(layerId);
+    if (newId) {
+      const copy = layerManager.getLayer(newId);
+      // 복제본에 도구 참조(_cartogramConfig.tool)를 다시 심고 분류색 스타일을 건다.
+      // applyCartogramStyle은 updateLayerStyle에 위임한다 — 지우지 말 것.
+      if (copy && copy._cartogramConfig) cartogramTool.applyCartogramStyle(newId);
+    }
+    return newId;
+  }
+
+  /** 고른 순서대로 하나씩 복사. 복사할 수 없는 레이어(래스터, 도형표현도 등)는 건너뛰고 한 번만 알린다 */
+  duplicateLayers(ids) {
+    const skipped = [];
+    ids.forEach(id => {
+      if (!this.duplicateOne(id)) {
+        const l = layerManager.getLayer(id);
+        if (l) skipped.push(l.name);
+      }
+    });
+    if (skipped.length > 0) {
+      showAlert(`${skipped.length}개 레이어는 복사할 수 없어 건너뛰었습니다.\n${skipped.join(', ')}`);
+    }
   }
 
   /**
@@ -338,6 +615,12 @@ export class LayerPanel {
       return;
     }
 
+    // 선택 모드: 줄을 누르면 선택에 더하거나 뺀다 (Ctrl 클릭과 같음). Shift 는 범위 그대로
+    if (this.selectMode && !e.shiftKey) {
+      layerManager.toggleLayerSelection(layerId);
+      return;
+    }
+
     // 레이어 선택 (Ctrl/Shift 키 지원)
     layerManager.selectLayerWithModifier(layerId, e.ctrlKey || e.metaKey, e.shiftKey);
   }
@@ -348,6 +631,9 @@ export class LayerPanel {
   handleDoubleClick(e) {
     const item = e.target.closest('.layer-item');
     if (!item) return;
+
+    // 선택 모드에서는 빠르게 두 번 눌러 고르고 빼는 일이 잦다. 지도가 움직이지 않게 한다
+    if (this.selectMode) return;
 
     const layerId = item.dataset.layerId;
     layerManager.zoomToLayer(layerId);
@@ -371,9 +657,15 @@ export class LayerPanel {
       // 다중 선택 메뉴
       menu.innerHTML = `
         <div class="context-menu-header">${selectedIds.length}개 레이어 선택됨</div>
+        <div class="context-menu-item" data-action="style-all">스타일 한꺼번에 바꾸기</div>
+        <div class="context-menu-item" data-action="duplicate-all">선택 레이어 복사</div>
+        <div class="context-menu-item" data-action="export-all">내보내기 (zip)</div>
+        <div class="context-menu-item" data-action="field-calc-all">속성 계산</div>
+        <div class="context-menu-divider"></div>
         <div class="context-menu-item" data-action="zoom-all">선택 레이어로 이동</div>
         <div class="context-menu-item" data-action="show-all">모두 표시</div>
         <div class="context-menu-item" data-action="hide-all">모두 숨기기</div>
+        <div class="context-menu-item" data-action="clear-all">선택 해제</div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item danger" data-action="remove-all">선택 레이어 삭제</div>
       `;
@@ -473,16 +765,9 @@ export class LayerPanel {
       case 'rename':
         this.promptRename(layerId);
         break;
-      case 'duplicate': {
-        const newId = layerManager.duplicateLayer(layerId);
-        if (newId) {
-          const copy = layerManager.getLayer(newId);
-          // 복제본에 도구 참조(_cartogramConfig.tool)를 다시 심고 분류색 스타일을 건다.
-          // applyCartogramStyle은 updateLayerStyle에 위임한다 — 지우지 말 것.
-          if (copy && copy._cartogramConfig) cartogramTool.applyCartogramStyle(newId);
-        }
+      case 'duplicate':
+        this.duplicateOne(layerId);
         break;
-      }
       case 'export': {
         const info = layerManager.getLayer(layerId);
         if (!info || !info.source) break;
@@ -506,38 +791,22 @@ export class LayerPanel {
           layerManager.removeLayer(layerId);
         }
         break;
-      // 다중 선택 액션
+      // 다중 선택 액션 (작업 줄과 같은 곳으로 보낸다)
+      case 'style-all':
+      case 'duplicate-all':
+      case 'export-all':
+      case 'field-calc-all':
       case 'zoom-all':
-        if (selectedIds) {
-          this.zoomToSelectedLayers(selectedIds);
-        }
-        break;
       case 'show-all':
-        if (selectedIds) {
-          selectedIds.forEach(id => {
-            const layer = layerManager.getLayer(id);
-            if (layer && !layer.visible) {
-              layerManager.toggleVisibility(id);
-            }
-          });
-        }
-        break;
       case 'hide-all':
-        if (selectedIds) {
-          selectedIds.forEach(id => {
-            const layer = layerManager.getLayer(id);
-            if (layer && layer.visible) {
-              layerManager.toggleVisibility(id);
-            }
-          });
-        }
+      case 'clear-all':
+      case 'remove-all': {
+        const batch = { 'style-all': 'style', 'duplicate-all': 'duplicate', 'export-all': 'export',
+          'field-calc-all': 'field-calc', 'zoom-all': 'zoom', 'show-all': 'show', 'hide-all': 'hide',
+          'clear-all': 'clear', 'remove-all': 'remove' }[action];
+        if (selectedIds) await this.runBatchAction(batch, selectedIds);
         break;
-      case 'remove-all':
-        if (selectedIds && await showConfirm(`${selectedIds.length}개의 레이어를 삭제하시겠습니까?`, { danger: true, okText: '삭제' })) {
-          selectedIds.forEach(id => layerManager.removeLayer(id));
-          layerManager.clearSelection();
-        }
-        break;
+      }
     }
   }
 
@@ -612,7 +881,198 @@ export class LayerPanel {
     if (el) el.innerHTML = this.swatchMarkup(layerInfo);
   }
 
-  showColorPicker(layerId) {
+  /**
+   * 스타일 편집 팝업.
+   * @param {string|string[]} layerIdOrIds - 레이어 id 하나, 또는 여러 개(한꺼번에 바꾸기)
+   * @param {HTMLElement} [anchorEl] - 여러 개일 때 팝업을 붙일 자리(작업 줄 버튼 등)
+   */
+  showColorPicker(layerIdOrIds, anchorEl = null) {
+    if (Array.isArray(layerIdOrIds)) {
+      const ids = layerIdOrIds.filter(Boolean);
+      if (ids.length === 0) return;
+      if (ids.length === 1) return this.showSingleColorPicker(ids[0]);
+      return this.showMultiColorPicker(ids, anchorEl);
+    }
+    return this.showSingleColorPicker(layerIdOrIds);
+  }
+
+  /** 색 견본 한 줄. data 속성 이름만 바꿔 가며 재사용한다 */
+  swatchItems(dataAttr, current) {
+    return layerManager.getColorSwatches().map(function(s) {
+      return "<div class=\"color-item" + (s.color === current ? " active" : "") + "\"" +
+        " " + dataAttr + "=\"" + s.color + "\" title=\"" + s.name + "\"" +
+        " style=\"background-color: " + s.color + "\"></div>";
+    }).join("");
+  }
+
+  /** 빈 스타일 팝업 상자 (기존 것은 닫는다) */
+  createPickerShell() {
+    const existingPicker = document.querySelector(".color-picker-popup");
+    if (existingPicker) existingPicker.remove();
+    const picker = document.createElement("div");
+    picker.className = "color-picker-popup";
+    // 강제 인라인 스타일 적용 (기본 위치 포함)
+    picker.style.cssText = "position: fixed; left: 300px; top: 100px; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; min-width: 200px; z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);";
+    return picker;
+  }
+
+  /**
+   * 팝업 위치 조정 (화면 밖으로 나가지 않도록).
+   * 데스크톱은 기준 요소 오른쪽, 휴대폰은 화면 가운데.
+   */
+  placePicker(picker, anchorEl) {
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      // 모바일: 화면 중앙 팝업 (하단 시트에서 좌우 어느 쪽도 공간이 없음)
+      picker.style.left = "50%";
+      picker.style.top = "50%";
+      picker.style.transform = "translate(-50%, -50%)";
+      picker.style.maxWidth = "calc(100vw - 24px)";
+      picker.style.maxHeight = "80vh";
+      picker.style.overflowY = "auto";
+    } else if (anchorEl) {
+      const rect = anchorEl.getBoundingClientRect();
+      const pickerRect = picker.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      picker.style.position = "fixed";
+      picker.style.left = (rect.right + 10) + "px";
+      picker.style.top = rect.top + "px";
+
+      // 아래로 잘리면 위로 조정
+      if (rect.top + pickerRect.height > viewportHeight - 10) {
+        picker.style.top = Math.max(10, viewportHeight - pickerRect.height - 10) + "px";
+      }
+
+      // 오른쪽으로 잘리면 왼쪽에 표시
+      if (rect.right + 10 + pickerRect.width > viewportWidth) {
+        picker.style.left = (rect.left - pickerRect.width - 10) + "px";
+      }
+    }
+  }
+
+  /**
+   * 여러 레이어 스타일을 한꺼번에 바꾸는 팝업.
+   * 창은 첫 레이어 값을 보여 주고, 바꾸는 값은 고른 레이어 모두에 setLayer* 로 건다.
+   * 지오메트리가 섞이면 모든 종류에 의미 있는 항목만 보인다(batchStyle.js).
+   * 흐름, 도형표현도, 래스터, 히트맵은 건너뛰고 몇 개를 뺐는지 한 줄로 알린다.
+   */
+  showMultiColorPicker(ids, anchorEl = null) {
+    const self = this;
+    const { eligible, excluded } = partitionStyleTargets(ids.map(id => layerManager.getLayer(id)));
+    const targetIds = eligible.map(l => l.id);
+    const controls = commonStyleControls(eligible);
+    const has = (c) => controls.includes(c);
+    const first = eligible[0] || {};
+    const allPoints = eligible.length > 0 && eligible.every(l => geometryKind(l) === 'point');
+
+    const picker = this.createPickerShell();
+    picker.classList.add("multi");
+
+    let html = "<div class=\"color-picker-header\">스타일 편집 (레이어 " + eligible.length + "개)</div>";
+    if (excluded.length > 0) {
+      html += "<div class=\"style-excluded-note\">" + excluded.length + "개 레이어는 스타일을 바꿀 수 없어 뺐습니다.</div>";
+    }
+    if (eligible.length === 0) {
+      html += "<div class=\"style-section\" style=\"font-size:12px;color:var(--text-secondary,#888)\">고른 레이어 중에 스타일을 바꿀 수 있는 레이어가 없습니다.</div>";
+    }
+
+    const currentFillColor = first.fillColor || first.color;
+    const currentStrokeColor = geometryKind(first) === 'line' ? first.color : (first.strokeColor || first.color);
+
+    if (has('fillColor')) {
+      const classified = eligible.filter(l => layerManager.isClassified(l));
+      if (classified.length === eligible.length) {
+        html += "<div class=\"style-section\" style=\"font-size:12px;color:var(--text-secondary,#888)\">면 색상은 분류 설정이 결정합니다.</div>";
+      } else {
+        html += "<div class=\"style-section\"><label>면 색상:</label><div class=\"color-picker-grid\">" + this.swatchItems("data-fill-color", currentFillColor) + "</div>";
+        html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentFillColor + "\" class=\"fill-color-input\"></div>";
+        if (classified.length > 0) {
+          html += "<div style=\"font-size:12px;color:var(--text-secondary,#888);margin-top:4px\">분류 레이어 " + classified.length + "개는 면 색상이 그대로입니다.</div>";
+        }
+        html += "</div>";
+      }
+    }
+    if (has('fillOpacity')) {
+      const v = first.fillOpacity !== undefined ? first.fillOpacity : 0.3;
+      html += sliderRow("면 불투명도", "fill-opacity", Math.round(v * 100), "%", 0, 100, 1);
+    }
+    if (has('strokeColor')) {
+      html += "<div class=\"style-section\"><label>" + (allPoints ? "테두리 색상" : "선 색상") + ":</label><div class=\"color-picker-grid\">" + this.swatchItems("data-stroke-color", currentStrokeColor) + "</div>";
+      html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentStrokeColor + "\" class=\"stroke-color-input\"></div></div>";
+    }
+    if (has('strokeOpacity')) {
+      const v = first.strokeOpacity !== undefined ? first.strokeOpacity : 1.0;
+      html += sliderRow("선 투명도", "stroke-opacity", Math.round(v * 100), "%", 0, 100, 1);
+    }
+    if (has('strokeWidth')) {
+      const v = first.strokeWidth !== undefined ? first.strokeWidth : 2;
+      html += sliderRow(allPoints ? "테두리 두께" : "선 두께", "stroke-width", v, "px", 0, 10, 0.5);
+    }
+    if (has('strokeDash')) {
+      html += strokeDashHTML(first.strokeDash || "solid");
+    }
+
+    picker.innerHTML = html;
+    document.body.appendChild(picker);
+
+    const anchor = anchorEl
+      || document.querySelector('.layer-multi-select-info')
+      || (targetIds[0] && this.container.querySelector("[data-layer-id=\"" + targetIds[0] + "\"]"));
+    this.placePicker(picker, anchor);
+
+    const applyAll = function(key, value) {
+      applyStyleToAll(targetIds, key, value, layerManager);
+      targetIds.forEach(function(id) { self.refreshSwatch(id); });
+    };
+
+    picker.addEventListener("click", function(e) {
+      const fillItem = e.target.closest(".color-item[data-fill-color]");
+      if (fillItem) {
+        picker.querySelectorAll(".color-item[data-fill-color]").forEach(function(i) { i.classList.remove("active"); });
+        fillItem.classList.add("active");
+        const input = picker.querySelector(".fill-color-input");
+        if (input) input.value = fillItem.dataset.fillColor;
+        applyAll('fillColor', fillItem.dataset.fillColor);
+      }
+      const strokeItem = e.target.closest(".color-item[data-stroke-color]");
+      if (strokeItem) {
+        picker.querySelectorAll(".color-item[data-stroke-color]").forEach(function(i) { i.classList.remove("active"); });
+        strokeItem.classList.add("active");
+        const input = picker.querySelector(".stroke-color-input");
+        if (input) input.value = strokeItem.dataset.strokeColor;
+        applyAll('strokeColor', strokeItem.dataset.strokeColor);
+      }
+      const dashBtn = e.target.closest(".stroke-btn");
+      if (dashBtn) {
+        picker.querySelectorAll(".stroke-btn").forEach(function(b) { b.classList.remove("active"); });
+        dashBtn.classList.add("active");
+        applyAll('strokeDash', dashBtn.dataset.stroke);
+      }
+    });
+
+    const fillInput = picker.querySelector(".fill-color-input");
+    if (fillInput) {
+      fillInput.addEventListener("input", function(e) {
+        picker.querySelectorAll(".color-item[data-fill-color]").forEach(function(i) { i.classList.remove("active"); });
+        applyAll('fillColor', e.target.value);
+      });
+    }
+    const strokeInput = picker.querySelector(".stroke-color-input");
+    if (strokeInput) {
+      strokeInput.addEventListener("input", function(e) {
+        picker.querySelectorAll(".color-item[data-stroke-color]").forEach(function(i) { i.classList.remove("active"); });
+        applyAll('strokeColor', e.target.value);
+      });
+    }
+    bindSliderRow(picker, "fill-opacity", function(pct) { applyAll('fillOpacity', pct / 100); });
+    bindSliderRow(picker, "stroke-opacity", function(pct) { applyAll('strokeOpacity', pct / 100); });
+    bindSliderRow(picker, "stroke-width", function(w) { applyAll('strokeWidth', w); });
+
+    closeOnOutsideClick(picker);
+  }
+
+  showSingleColorPicker(layerId) {
     // 아래 팝업 핸들러들은 function(e) 형태라 this가 패널이 아니다
     const self = this;
     const layer = layerManager.getLayer(layerId);
@@ -624,43 +1084,8 @@ export class LayerPanel {
       return;
     }
 
-    const existingPicker = document.querySelector(".color-picker-popup");
-    if (existingPicker) existingPicker.remove();
-
-    const swatches = layerManager.getColorSwatches();
-    /** 색 견본 한 줄 — data 속성 이름만 바꿔 가며 재사용한다 */
-    const swatchItems = (dataAttr, current) => swatches.map(function(s) {
-      return "<div class=\"color-item" + (s.color === current ? " active" : "") + "\"" +
-        " " + dataAttr + "=\"" + s.color + "\" title=\"" + s.name + "\"" +
-        " style=\"background-color: " + s.color + "\"></div>";
-    }).join("");
-
-    /**
-     * 슬라이더 + 숫자 입력 한 줄.
-     * 대충 맞추는 건 슬라이더가 빠르고, 정확한 값은 숫자로 적는 게 빠르다. 둘 다 준다.
-     * @param {string} label - 항목 이름 (예: "면 불투명도")
-     * @param {string} cls - 컨트롤 식별 클래스 (예: "fill-opacity")
-     * @param {number} value - 현재 값
-     * @param {string} unit - 단위 표시 ("%" 또는 "px")
-     * @param {number} min - 최솟값
-     * @param {number} max - 최댓값
-     * @param {number} step - 슬라이더 눈금 (숫자 입력은 자유롭게 받는다)
-     */
-    const sliderRow = (label, cls, value, unit, min, max, step) => {
-      return "<div class=\"style-section\"><label>" + label + ":</label>" +
-        "<div class=\"slider-row\">" +
-        "<input type=\"range\" class=\"range-slider " + cls + "-slider\"" +
-        " min=\"" + min + "\" max=\"" + max + "\" step=\"" + step + "\" value=\"" + value + "\">" +
-        "<input type=\"number\" class=\"slider-number " + cls + "-number\"" +
-        " min=\"" + min + "\" max=\"" + max + "\" step=\"any\" value=\"" + value + "\">" +
-        "<span class=\"slider-unit\">" + unit + "</span>" +
-        "</div></div>";
-    };
-    const picker = document.createElement("div");
-    picker.className = "color-picker-popup";
-
-    // 강제 인라인 스타일 적용 (기본 위치 포함)
-    picker.style.cssText = "position: fixed; left: 300px; top: 100px; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; min-width: 200px; z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);";
+    const swatchItems = (dataAttr, current) => this.swatchItems(dataAttr, current);
+    const picker = this.createPickerShell();
 
     const isRaster = layer.type === "raster";
     const isPoint = layer.geometryType === "Point" || layer.geometryType === "MultiPoint";
@@ -731,12 +1156,7 @@ export class LayerPanel {
       html += sliderRow("선 두께", "stroke-width", currentStrokeWidth, "px", 0, 10, 0.5);
 
       // 선 스타일
-      html += "<div class=\"style-section\"><label>선 스타일:</label><div class=\"stroke-style-options\">";
-      html += "<button class=\"stroke-btn" + (currentStrokeDash === "solid" ? " active" : "") + "\" data-stroke=\"solid\" title=\"실선\">━━━</button>";
-      html += "<button class=\"stroke-btn" + (currentStrokeDash === "dashed" ? " active" : "") + "\" data-stroke=\"dashed\" title=\"파선\">┅┅┅</button>";
-      html += "<button class=\"stroke-btn" + (currentStrokeDash === "dotted" ? " active" : "") + "\" data-stroke=\"dotted\" title=\"점선\">┈┈┈</button>";
-      html += "<button class=\"stroke-btn" + (currentStrokeDash === "dash-dot" ? " active" : "") + "\" data-stroke=\"dash-dot\" title=\"일점쇄선\">━┅━</button>";
-      html += "</div></div>";
+      html += strokeDashHTML(currentStrokeDash);
     }
  else if (isLine) {
       const colorItems = swatchItems("data-color", layer.color);
@@ -748,12 +1168,7 @@ export class LayerPanel {
       html += sliderRow("선 두께", "stroke-width", currentStrokeWidth, "px", 0, 10, 0.5);
 
       // 선 스타일
-      html += "<div class=\"style-section\"><label>선 스타일:</label><div class=\"stroke-style-options\">";
-      html += "<button class=\"stroke-btn" + (currentStrokeDash === "solid" ? " active" : "") + "\" data-stroke=\"solid\" title=\"실선\">━━━</button>";
-      html += "<button class=\"stroke-btn" + (currentStrokeDash === "dashed" ? " active" : "") + "\" data-stroke=\"dashed\" title=\"파선\">┅┅┅</button>";
-      html += "<button class=\"stroke-btn" + (currentStrokeDash === "dotted" ? " active" : "") + "\" data-stroke=\"dotted\" title=\"점선\">┈┈┈</button>";
-      html += "<button class=\"stroke-btn" + (currentStrokeDash === "dash-dot" ? " active" : "") + "\" data-stroke=\"dash-dot\" title=\"일점쇄선\">━┅━</button>";
-      html += "</div></div>";
+      html += strokeDashHTML(currentStrokeDash);
     } else {
       // 포인트: 면 색상 / 테두리 색상 따로 설정
       const fillColorItems = swatchItems("data-fill-color", currentFillColor);
@@ -778,37 +1193,7 @@ export class LayerPanel {
     document.body.appendChild(picker);
 
     // 팝업 위치 조정 (화면 밖으로 나가지 않도록)
-    if (window.matchMedia("(max-width: 768px)").matches) {
-      // 모바일: 화면 중앙 팝업 (하단 시트에서 좌우 어느 쪽도 공간이 없음)
-      picker.style.left = "50%";
-      picker.style.top = "50%";
-      picker.style.transform = "translate(-50%, -50%)";
-      picker.style.maxWidth = "calc(100vw - 24px)";
-      picker.style.maxHeight = "80vh";
-      picker.style.overflowY = "auto";
-    } else {
-      const layerItem = this.container.querySelector("[data-layer-id=\"" + layerId + "\"]");
-      if (layerItem) {
-        const rect = layerItem.getBoundingClientRect();
-        const pickerRect = picker.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        const viewportWidth = window.innerWidth;
-
-        picker.style.position = "fixed";
-        picker.style.left = (rect.right + 10) + "px";
-        picker.style.top = rect.top + "px";
-
-        // 아래로 잘리면 위로 조정
-        if (rect.top + pickerRect.height > viewportHeight - 10) {
-          picker.style.top = Math.max(10, viewportHeight - pickerRect.height - 10) + "px";
-        }
-
-        // 오른쪽으로 잘리면 왼쪽에 표시
-        if (rect.right + 10 + pickerRect.width > viewportWidth) {
-          picker.style.left = (rect.left - pickerRect.width - 10) + "px";
-        }
-      }
-    }
+    this.placePicker(picker, this.container.querySelector("[data-layer-id=\"" + layerId + "\"]"));
 
     // 이벤트 핸들러
     picker.addEventListener("click", function(e) {
@@ -893,64 +1278,19 @@ export class LayerPanel {
       });
     }
 
-    /**
-     * 슬라이더와 숫자 입력을 한 값으로 묶는다.
-     * 어느 쪽을 건드려도 나머지 하나가 따라오고 apply가 불린다.
-     *
-     * 숫자 입력은 타이핑 도중에도 input이 온다. 지우는 중('')이나 '-'만 친 상태에서
-     * 값을 강제로 되돌리면 글자를 못 지운다. 그래서 그때는 넘기고,
-     * 포커스를 뗄 때(change) 범위 안으로 정리한다.
-     *
-     * @param {string} cls - sliderRow에 넘긴 식별 클래스
-     * @param {function(number)} apply - 확정된 값으로 실제 스타일을 바꾸는 함수
-     */
-    var bindSliderRow = function(cls, apply) {
-      var slider = picker.querySelector("." + cls + "-slider");
-      var number = picker.querySelector("." + cls + "-number");
-      if (!slider || !number) return;
-
-      var min = parseFloat(slider.min);
-      var max = parseFloat(slider.max);
-      var clamp = function(v) { return Math.min(max, Math.max(min, v)); };
-
-      slider.addEventListener("input", function() {
-        var v = parseFloat(slider.value);
-        number.value = v;
-        apply(v);
-      });
-
-      number.addEventListener("input", function() {
-        if (number.value.trim() === "") return;
-        var v = parseFloat(number.value);
-        if (isNaN(v)) return;
-        v = clamp(v);
-        slider.value = v;
-        apply(v);
-      });
-
-      // 범위를 벗어났거나 비어 있는 채로 떠나면 마지막 유효값으로 되돌린다
-      number.addEventListener("change", function() {
-        var v = parseFloat(number.value);
-        v = isNaN(v) ? parseFloat(slider.value) : clamp(v);
-        number.value = v;
-        slider.value = v;
-        apply(v);
-      });
-    };
-
-    bindSliderRow("fill-opacity", function(pct) {
+    bindSliderRow(picker, "fill-opacity", function(pct) {
       layerManager.setLayerFillOpacity(layerId, pct / 100);
     });
 
-    bindSliderRow("stroke-opacity", function(pct) {
+    bindSliderRow(picker, "stroke-opacity", function(pct) {
       layerManager.setLayerStrokeOpacity(layerId, pct / 100);
     });
 
-    bindSliderRow("stroke-width", function(width) {
+    bindSliderRow(picker, "stroke-width", function(width) {
       layerManager.setLayerStrokeWidth(layerId, width);
     });
 
-    bindSliderRow("raster-opacity", function(pct) {
+    bindSliderRow(picker, "raster-opacity", function(pct) {
       layerManager.setRasterOpacity(layerId, pct / 100);
     });
 
@@ -962,29 +1302,7 @@ export class LayerPanel {
       });
     }
 
-    // 피커 생성 시간 기록
-    var pickerCreatedAt = Date.now();
-
-    setTimeout(function() {
-      var closePicker = function(ev) {
-        // 피커가 DOM에서 제거되었으면 리스너도 제거
-        if (!document.body.contains(picker)) {
-          document.removeEventListener("click", closePicker);
-          return;
-        }
-
-        // 생성 후 300ms 이내 클릭은 무시
-        if (Date.now() - pickerCreatedAt < 300) {
-          return;
-        }
-
-        if (!picker.contains(ev.target)) {
-          picker.remove();
-          document.removeEventListener("click", closePicker);
-        }
-      };
-      document.addEventListener("click", closePicker);
-    }, 50);
+    closeOnOutsideClick(picker);
   }
 
   /**

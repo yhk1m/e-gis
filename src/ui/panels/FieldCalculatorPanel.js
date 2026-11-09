@@ -4,13 +4,17 @@
 
 import { fieldCalculatorTool } from '../../tools/FieldCalculatorTool.js';
 import { layerManager } from '../../core/LayerManager.js';
-import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import {
+  buildLayerOptions, resolveInitialLayerValue, resolveMultiLayerIds, commonFields, MULTI_LAYER_VALUE
+} from '../../utils/layerSelect.js';
 import { showAlert } from '../../utils/dialogs.js';
+import { runForEachLayer, reportBatch } from '../../utils/layerBatch.js';
 
 class FieldCalculatorPanel {
   constructor() {
     this.modal = null;
     this.currentLayerId = null;
+    this.multiIds = [];
   }
 
   /**
@@ -24,7 +28,10 @@ class FieldCalculatorPanel {
     }
 
     // 선택 중인 레이어가 필드 계산을 지원하면 미리 골라 준다.
-    this.currentLayerId = resolveInitialLayerId(layers, layerId || layerManager.getSelectedLayerId()) || null;
+    // 여러 개를 골라 두었으면 「선택한 레이어 N개 모두」를 미리 고른다.
+    const selectedIds = layerId ? [] : layerManager.getSelectedLayerIds();
+    this.multiIds = resolveMultiLayerIds(layers, selectedIds);
+    this.currentLayerId = resolveInitialLayerValue(layers, layerId || layerManager.getSelectedLayerId(), selectedIds) || null;
     this.render(layers);
   }
 
@@ -50,7 +57,7 @@ class FieldCalculatorPanel {
    * 모달 HTML 생성
    */
   getModalHTML(layers, functions, geoFunctions) {
-    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId });
+    const layerOptions = buildLayerOptions(layers, { selectedId: this.currentLayerId, multiIds: this.multiIds });
 
     const funcButtons = functions.map(f =>
       '<button class="func-btn" data-func="' + f.name + '" title="' + f.desc + '">' + f.name.split('(')[0] + '</button>'
@@ -191,14 +198,22 @@ class FieldCalculatorPanel {
     const existingSelect = document.getElementById('field-calc-existing');
     if (!buttonsEl || !existingSelect) return;
 
-    const fields = this.currentLayerId ? fieldCalculatorTool.getLayerFields(this.currentLayerId) : [];
+    // 여러 레이어면 모든 레이어에 있는 필드만 보여 준다
+    let fields = [];
+    if (this.currentLayerId === MULTI_LAYER_VALUE) {
+      fields = commonFields(this.multiIds.map(id => fieldCalculatorTool.getLayerFields(id)));
+    } else if (this.currentLayerId) {
+      fields = fieldCalculatorTool.getLayerFields(this.currentLayerId);
+    }
 
     if (!this.currentLayerId) {
       buttonsEl.innerHTML = '<span class="no-fields">먼저 레이어를 선택하세요</span>';
     } else {
       buttonsEl.innerHTML = fields.map(f =>
         '<button class="field-btn" data-field="' + f + '">[' + f + ']</button>'
-      ).join('') || '<span class="no-fields">필드 없음</span>';
+      ).join('') || (this.currentLayerId === MULTI_LAYER_VALUE
+        ? '<span class="no-fields">모든 레이어에 있는 필드 없음</span>'
+        : '<span class="no-fields">필드 없음</span>');
     }
 
     // 필드 버튼은 레이어가 바뀔 때마다 새로 만들어지므로 여기서 다시 묶는다.
@@ -249,6 +264,11 @@ class FieldCalculatorPanel {
       return;
     }
 
+    if (this.currentLayerId === MULTI_LAYER_VALUE) {
+      this.calculateMany(fieldName, expression, !updateExisting);
+      return;
+    }
+
     try {
       const result = fieldCalculatorTool.calculate(
         this.currentLayerId,
@@ -265,6 +285,21 @@ class FieldCalculatorPanel {
     } catch (error) {
       showAlert('계산 오류: ' + error.message);
     }
+  }
+
+  /**
+   * 「선택한 레이어 N개 모두」: 레이어마다 같은 식을 계산해 같은 이름의 필드를 넣는다.
+   * 한 피처도 계산하지 못한 레이어는 실패로 센다.
+   */
+  async calculateMany(fieldName, expression, isNewField) {
+    const ids = this.multiIds.slice();
+    this.close();
+    const result = await runForEachLayer(ids, id => {
+      const r = fieldCalculatorTool.calculate(id, fieldName, expression, isNewField);
+      if (r.success === 0) throw new Error(`피처 ${r.total}개 모두 계산하지 못했습니다.`);
+      return r;
+    }, { getName: id => (layerManager.getLayer(id) || {}).name });
+    await reportBatch(result, '필드 계산');
   }
 
   /**
