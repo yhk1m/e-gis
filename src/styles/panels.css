@@ -640,9 +640,19 @@
   background: rgba(220, 53, 69, 0.85);
 }
 
-/* 머리줄 「여러 개 선택」 토글 */
+/* 머리줄 「여러 개 선택」 토글 — 터치 기기(태블릿·휴대폰)에서만 보인다.
+   PC 는 드래그 박스와 Ctrl/Shift 클릭으로 고르므로, 버튼까지 있으면 고르는 방법이 겹쳐 헷갈린다. */
 .layer-select-mode-btn {
-  display: inline-flex;
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .layer-select-mode-btn {
+    display: inline-flex;
+  }
+}
+
+.layer-select-mode-btn {
   align-items: center;
   gap: 4px;
   height: 24px;
@@ -694,6 +704,11 @@
 
 .layer-select-check[aria-checked="true"] svg {
   visibility: visible;
+}
+
+/* 선택 모드에선 표시/숨김 체크박스를 감춘다 (동그란 선택 칸과 겹쳐 헷갈림) */
+.layer-list.select-mode .layer-visibility {
+  display: none;
 }
 
 /* 선택 모드에서는 손가락으로 누르기 쉽게 줄을 조금 키운다 */

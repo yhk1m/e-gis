@@ -373,6 +373,9 @@ export class LayerPanel {
 
     // 선택 모드 표시 (버튼 눌림 상태, 목록 클래스)
     this.container.classList.toggle('select-mode', this.selectMode);
+    // 선택 모드에선 켜고 끄는 네모 체크박스(줄마다, 머리줄 전체)를 감춘다. 동그란 선택 칸과 겹쳐 헷갈리므로
+    const allBox = document.querySelector('.layer-select-all');
+    if (allBox) allBox.style.display = this.selectMode ? 'none' : '';
     if (this.selectModeBtn) {
       this.selectModeBtn.classList.toggle('active', this.selectMode);
       this.selectModeBtn.setAttribute('aria-pressed', String(this.selectMode));
