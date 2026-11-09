@@ -14,6 +14,7 @@ import { mapManager } from './core/MapManager.js';
 import { layerManager } from './core/LayerManager.js';
 import { themeManager } from './utils/ThemeManager.js';
 import { askText } from './utils/askText.js';
+import { showConfirm } from './utils/dialogs.js';
 import { escapeHtml } from './utils/escapeHtml.js';
 import { eventBus, Events } from './utils/EventBus.js';
 import { LayerPanel } from './ui/panels/LayerPanel.js';
@@ -332,10 +333,11 @@ function initApp() {
           ? `"${layerNames}" 레이어를 삭제하시겠습니까?`
           : `${selectedIds.length}개 레이어를 삭제하시겠습니까?\n(${layerNames})`;
 
-        if (confirm(message)) {
+        showConfirm(message, { danger: true, okText: '삭제' }).then((ok) => {
+          if (!ok) return;
           selectedIds.forEach(id => layerManager.removeLayer(id));
           showStatusMessage(`${selectedIds.length}개 레이어가 삭제되었습니다.`);
-        }
+        });
       }
     }
   });
@@ -651,9 +653,10 @@ function initToolbar() {
         showStatusMessage('삭제할 피처를 먼저 선택하세요.');
         return;
       }
-      // deleteSelectedFeatures()가 확인창을 띄운다. 취소하면 false 반환.
-      const deleted = toolManager.deleteSelectedFeatures();
-      if (deleted) showStatusMessage('선택된 피처가 삭제되었습니다.');
+      // deleteSelectedFeatures()가 확인창을 띄운다(비동기). 취소하면 false 로 풀린다.
+      Promise.resolve(toolManager.deleteSelectedFeatures()).then((deleted) => {
+        if (deleted) showStatusMessage('선택된 피처가 삭제되었습니다.');
+      });
     });
   }
 
@@ -767,10 +770,11 @@ function handleMenuAction(action) {
   switch (action) {
     case 'project-new':
       if (projectManager.hasDirty()) {
-        if (confirm('저장하지 않은 변경사항이 있습니다. 새 프로젝트를 시작하시겠습니까?')) {
+        showConfirm('저장하지 않은 변경사항이 있습니다. 새 프로젝트를 시작하시겠습니까?', { danger: true, okText: '새로 시작' }).then((ok) => {
+          if (!ok) return;
           projectManager.newProject();
           showStatusMessage('새 프로젝트가 생성되었습니다.');
-        }
+        });
       } else {
         projectManager.newProject();
         showStatusMessage('새 프로젝트가 생성되었습니다.');
@@ -816,11 +820,10 @@ function handleMenuAction(action) {
         showStatusMessage('삭제할 피처를 먼저 선택하세요.');
         break;
       }
-      // deleteSelectedFeatures()가 확인창을 띄운다. 취소하면 false 반환(메시지 없음).
-      const deleted = toolManager.deleteSelectedFeatures();
-      if (deleted) {
-        showStatusMessage('선택된 피처가 삭제되었습니다.');
-      }
+      // deleteSelectedFeatures()가 확인창을 띄운다(비동기). 취소하면 false 로 풀린다(메시지 없음).
+      Promise.resolve(toolManager.deleteSelectedFeatures()).then((deleted) => {
+        if (deleted) showStatusMessage('선택된 피처가 삭제되었습니다.');
+      });
       break;
     }
     case 'edit-select-all': {
@@ -887,10 +890,11 @@ function handleMenuAction(action) {
       const selectedLayerId = layerManager.getSelectedLayerId();
       if (selectedLayerId) {
         const layer = layerManager.getLayer(selectedLayerId);
-        if (confirm('"' + layer.name + '" 레이어를 삭제하시겠습니까?')) {
+        showConfirm('"' + layer.name + '" 레이어를 삭제하시겠습니까?', { danger: true, okText: '삭제' }).then((ok) => {
+          if (!ok) return;
           layerManager.removeLayer(selectedLayerId);
           showStatusMessage('레이어가 삭제되었습니다.');
-        }
+        });
       } else {
         showStatusMessage('먼저 레이어를 선택해주세요.');
       }
@@ -940,10 +944,11 @@ function handleMenuAction(action) {
       layerExportPanel.show();
       break;
     case 'layer-clear-all':
-      if (confirm('모든 레이어를 삭제하시겠습니까?')) {
+      showConfirm('모든 레이어를 삭제하시겠습니까?', { danger: true, okText: '삭제' }).then((ok) => {
+        if (!ok) return;
         layerManager.clear();
         showStatusMessage('모든 레이어가 삭제되었습니다.');
-      }
+      });
       break;
 
     // ===== 분석 메뉴 =====

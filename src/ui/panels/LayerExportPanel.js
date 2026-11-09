@@ -9,6 +9,7 @@ import KML from 'ol/format/KML';
 import GPX from 'ol/format/GPX';
 import WKB from 'ol/format/WKB';
 import shpwrite from '@mapbox/shp-write';
+import { showAlert } from '../../utils/dialogs.js';
 
 class LayerExportPanel {
   constructor() {
@@ -24,19 +25,19 @@ class LayerExportPanel {
     const targetLayerId = layerId || layerManager.selectedLayerId;
 
     if (!targetLayerId) {
-      alert('내보낼 레이어를 먼저 선택해주세요.');
+      showAlert('내보낼 레이어를 먼저 선택해주세요.');
       return;
     }
 
     const layer = layerManager.getLayer(targetLayerId);
     if (!layer) {
-      alert('레이어를 찾을 수 없습니다.');
+      showAlert('레이어를 찾을 수 없습니다.');
       return;
     }
 
     // 래스터 레이어는 내보내기 불가
     if (layer.type === 'raster') {
-      alert('래스터 레이어는 내보내기가 지원되지 않습니다.');
+      showAlert('래스터 레이어는 내보내기가 지원되지 않습니다.');
       return;
     }
 
@@ -178,7 +179,7 @@ class LayerExportPanel {
     const features = layer.source ? layer.source.getFeatures() : [];
 
     if (features.length === 0) {
-      alert('내보낼 객체가 없습니다.');
+      showAlert('내보낼 객체가 없습니다.');
       return;
     }
 
@@ -487,7 +488,7 @@ ${waypoints}${tracks}</gpx>`;
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Shapefile 내보내기 실패:', error);
-      alert('Shapefile 내보내기에 실패했습니다. ' + error.message);
+      showAlert('Shapefile 내보내기에 실패했습니다. ' + error.message);
     }
   }
 
@@ -656,7 +657,7 @@ ${waypoints}${tracks}</gpx>`;
       db.close();
     } catch (error) {
       console.error('GeoPackage 내보내기 실패:', error);
-      alert('GeoPackage 내보내기에 실패했습니다. ' + error.message);
+      showAlert('GeoPackage 내보내기에 실패했습니다. ' + error.message);
     }
   }
 

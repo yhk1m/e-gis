@@ -6,6 +6,7 @@ import { layerManager } from '../../core/LayerManager.js';
 import { cartogramTool } from '../../tools/CartogramTool.js';
 import { eventBus, Events } from '../../utils/EventBus.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class CartogramPanel {
   constructor() {
@@ -23,7 +24,7 @@ class CartogramPanel {
     );
 
     if (layers.length === 0) {
-      alert('카토그램을 생성하려면 폴리곤 레이어가 필요합니다.');
+      showAlert('카토그램을 생성하려면 폴리곤 레이어가 필요합니다.');
       return;
     }
 
@@ -227,7 +228,7 @@ class CartogramPanel {
    */
   createCartogram() {
     if (!this.selectedLayerId || !this.selectedAttribute) {
-      alert('레이어와 속성을 선택해주세요.');
+      showAlert('레이어와 속성을 선택해주세요.');
       return;
     }
 
@@ -274,7 +275,7 @@ class CartogramPanel {
       eventBus.on(Events.LAYER_VISIBILITY_CHANGED, visibilityHandler);
 
     } catch (error) {
-      alert('카토그램 생성 실패: ' + error.message);
+      showAlert('카토그램 생성 실패: ' + error.message);
     }
   }
 

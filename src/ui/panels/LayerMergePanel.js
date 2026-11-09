@@ -7,6 +7,7 @@
 
 import { layerCombineTool, SOURCE_FIELD } from '../../tools/LayerCombineTool.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 const GEOMETRY_LABEL = {
   Point: '점', MultiPoint: '점',
@@ -22,7 +23,7 @@ class LayerMergePanel {
   show() {
     const layers = layerCombineTool.getCompatibleLayers();
     if (layers.length < 2) {
-      alert('합칠 레이어가 2개 이상 필요합니다.\n(객체가 있는 벡터 레이어만 합칠 수 있습니다)');
+      showAlert('합칠 레이어가 2개 이상 필요합니다.\n(객체가 있는 벡터 레이어만 합칠 수 있습니다)');
       return;
     }
     this.render(layers);
@@ -139,7 +140,7 @@ class LayerMergePanel {
   apply() {
     const layerIds = this.getSelected();
     if (layerIds.length < 2) {
-      alert('레이어를 2개 이상 선택해주세요.');
+      showAlert('레이어를 2개 이상 선택해주세요.');
       return;
     }
 
@@ -162,10 +163,10 @@ class LayerMergePanel {
           + '스타일은 한 종류 기준으로 적용됩니다.';
       }
 
-      alert(message);
+      showAlert(message);
       this.close();
     } catch (error) {
-      alert('합치기 실패: ' + error.message);
+      showAlert('합치기 실패: ' + error.message);
     }
   }
 

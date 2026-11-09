@@ -7,6 +7,7 @@ import { supabaseManager } from '../../core/SupabaseManager.js';
 import { consentManager } from '../../core/ConsentManager.js';
 import { privacyPolicyPanel, PRIVACY_POLICY_CONTENT } from './PrivacyPolicyPanel.js';
 import { REGIONS, normalizeRegion } from './regions.js';
+import { showAlert, showConfirm } from '../../utils/dialogs.js';
 
 class MyPagePanel {
   constructor() {
@@ -26,7 +27,7 @@ class MyPagePanel {
    */
   async show() {
     if (!supabaseManager.isLoggedIn()) {
-      alert('로그인이 필요합니다.');
+      showAlert('로그인이 필요합니다.');
       return;
     }
     await this.render();
@@ -295,11 +296,11 @@ class MyPagePanel {
   /**
    * Supabase 설정 초기화 (관리자 전용)
    */
-  resetSupabase() {
-    if (confirm('정말로 Supabase 설정을 초기화하시겠습니까?\n초기화 후 다시 URL과 Key를 입력해야 합니다.')) {
+  async resetSupabase() {
+    if (await showConfirm('정말로 Supabase 설정을 초기화하시겠습니까?\n초기화 후 다시 URL과 Key를 입력해야 합니다.', { danger: true, okText: '초기화' })) {
       localStorage.removeItem('eGIS_supabaseUrl');
       localStorage.removeItem('eGIS_supabaseKey');
-      alert('Supabase 설정이 초기화되었습니다. 페이지를 새로고침합니다.');
+      await showAlert('Supabase 설정이 초기화되었습니다. 페이지를 새로고침합니다.');
       window.location.reload();
     }
   }
@@ -352,17 +353,17 @@ class MyPagePanel {
     const school = document.getElementById('profile-school').value.trim();
 
     if (school && !region) {
-      alert('학교를 등록하려면 지역을 선택해주세요.');
+      showAlert('학교를 등록하려면 지역을 선택해주세요.');
       return;
     }
 
     try {
       await supabaseManager.saveProfile({ name, nickname, region, school });
-      alert('프로필이 저장되었습니다.');
+      showAlert('프로필이 저장되었습니다.');
       this.profile = { name, nickname, region, school };
       this.render(); // 화면 갱신
     } catch (error) {
-      alert('프로필 저장 실패: ' + error.message);
+      showAlert('프로필 저장 실패: ' + error.message);
     }
   }
 
@@ -374,22 +375,22 @@ class MyPagePanel {
     const confirmPassword = document.getElementById('confirm-password').value;
 
     if (!newPassword || newPassword.length < 6) {
-      alert('비밀번호는 6자 이상이어야 합니다.');
+      showAlert('비밀번호는 6자 이상이어야 합니다.');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
+      showAlert('비밀번호가 일치하지 않습니다.');
       return;
     }
 
     try {
       await supabaseManager.updatePassword(newPassword);
-      alert('비밀번호가 변경되었습니다.');
+      showAlert('비밀번호가 변경되었습니다.');
       document.getElementById('new-password').value = '';
       document.getElementById('confirm-password').value = '';
     } catch (error) {
-      alert('비밀번호 변경 실패: ' + error.message);
+      showAlert('비밀번호 변경 실패: ' + error.message);
     }
   }
 
@@ -690,7 +691,7 @@ class MyPagePanel {
       const school = overlay.querySelector('#edit-member-school').value.trim();
 
       if (school && !region) {
-        alert('학교를 입력하려면 지역을 선택해주세요.');
+        showAlert('학교를 입력하려면 지역을 선택해주세요.');
         return;
       }
 
@@ -701,7 +702,7 @@ class MyPagePanel {
         close();
         await this.loadMembers();
       } catch (err) {
-        alert('수정 실패: ' + (err.message || ''));
+        showAlert('수정 실패: ' + (err.message || ''));
         saveBtn.disabled = false;
         saveBtn.textContent = '저장';
       }
@@ -753,7 +754,7 @@ class MyPagePanel {
     const doDelete = async () => {
       const pw = pwInput.value;
       if (!pw) {
-        alert('관리자 비밀번호를 입력하세요.');
+        showAlert('관리자 비밀번호를 입력하세요.');
         return;
       }
 
@@ -762,7 +763,7 @@ class MyPagePanel {
       try {
         const ok = await supabaseManager.verifyPassword(pw);
         if (!ok) {
-          alert('관리자 비밀번호가 일치하지 않습니다.');
+          await showAlert('관리자 비밀번호가 일치하지 않습니다.');
           confirmBtn.disabled = false;
           confirmBtn.textContent = '영구 삭제';
           pwInput.value = '';
@@ -774,9 +775,9 @@ class MyPagePanel {
         await supabaseManager.deleteMember(member.user_id);
         close();
         await this.loadMembers();
-        alert('회원이 완전히 삭제되었습니다.');
+        showAlert('회원이 완전히 삭제되었습니다.');
       } catch (err) {
-        alert('삭제 실패: ' + (err.message || ''));
+        showAlert('삭제 실패: ' + (err.message || ''));
         confirmBtn.disabled = false;
         confirmBtn.textContent = '영구 삭제';
       }
@@ -977,7 +978,7 @@ class MyPagePanel {
     const doWithdraw = async () => {
       const pw = pwInput.value;
       if (!pw) {
-        alert('비밀번호를 입력하세요.');
+        showAlert('비밀번호를 입력하세요.');
         return;
       }
 
@@ -986,17 +987,18 @@ class MyPagePanel {
       try {
         const ok = await supabaseManager.verifyPassword(pw);
         if (!ok) {
-          alert('비밀번호가 일치하지 않습니다.');
+          await showAlert('비밀번호가 일치하지 않습니다.');
           resetButton();
           pwInput.value = '';
           pwInput.focus();
           return;
         }
 
-        const confirmLast = confirm(
+        const confirmLast = await showConfirm(
           '마지막 확인입니다.\n\n' +
           '회원 탈퇴를 진행하면 모든 데이터가 영구적으로 삭제됩니다.\n' +
-          '정말로 진행하시겠습니까?'
+          '정말로 진행하시겠습니까?',
+          { danger: true, okText: '탈퇴' }
         );
         if (!confirmLast) {
           resetButton();
@@ -1006,11 +1008,11 @@ class MyPagePanel {
         confirmBtn.textContent = '삭제 중...';
         await consentManager.withdrawConsent();
         close();
-        alert('회원 탈퇴가 완료되었습니다.\n이용해주셔서 감사합니다.');
+        await showAlert('회원 탈퇴가 완료되었습니다.\n이용해주셔서 감사합니다.');
         this.close();
         window.location.reload();
       } catch (error) {
-        alert('회원 탈퇴 처리 중 오류가 발생했습니다: ' + error.message);
+        showAlert('회원 탈퇴 처리 중 오류가 발생했습니다: ' + error.message);
         resetButton();
       }
     };

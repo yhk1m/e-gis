@@ -15,13 +15,14 @@ import { detectYearFields, MAX_TIME_SERIES_FIELDS } from '../../tools/timeSeries
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId, isVectorLayer } from '../../utils/layerSelect.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 const DEFAULT_CUSTOM = ['#ffffcc', '#fd8d3c', '#800026'];
 const MIN_CUSTOM_COLORS = 2;
 const MAX_CUSTOM_COLORS = 8;
 
 function defaultMessage(msg) {
-  window.alert(msg);
+  showAlert(msg);
 }
 
 function isPolygonLayer(layer) {

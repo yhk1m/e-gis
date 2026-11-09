@@ -14,6 +14,7 @@ import {
   featuresToPoints, resolveCellSize, numericFields, CELL_SIZE_OPTIONS
 } from '../../tools/gridPoints.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class GridPanel {
   constructor() {
@@ -32,7 +33,7 @@ class GridPanel {
   show(layerId = null) {
     const layers = this.getCompatibleLayers();
     if (layers.length === 0) {
-      alert('격자로 묶을 수 있는 레이어가 없습니다.\n(점 피처가 있는 벡터 레이어가 필요합니다)');
+      showAlert('격자로 묶을 수 있는 레이어가 없습니다.\n(점 피처가 있는 벡터 레이어가 필요합니다)');
       return;
     }
 
@@ -173,7 +174,7 @@ class GridPanel {
 
   apply() {
     if (!this.currentLayerId) {
-      alert('먼저 포인트 레이어를 선택해주세요.');
+      showAlert('먼저 포인트 레이어를 선택해주세요.');
       return;
     }
 
@@ -182,14 +183,14 @@ class GridPanel {
       document.getElementById('grid-size-custom').value
     );
     if (size.error) {
-      alert(size.error);
+      showAlert(size.error);
       return;
     }
 
     const method = document.getElementById('grid-method').value;
     const field = document.getElementById('grid-field').value;
     if ((method === 'sum' || method === 'avg') && !field) {
-      alert('합계·평균으로 묶으려면 숫자 속성이 필요합니다.\n개수로 만들거나 다른 레이어를 골라 주세요.');
+      showAlert('합계·평균으로 묶으려면 숫자 속성이 필요합니다.\n개수로 만들거나 다른 레이어를 골라 주세요.');
       return;
     }
 
@@ -203,10 +204,10 @@ class GridPanel {
       });
       const cells = layerManager.getLayer(layerId).source.getFeatures().length;
 
-      alert(`격자를 만들었습니다.\n레이어: ${name}\n점 ${points.length.toLocaleString()}개 → ${cells.toLocaleString()}칸`);
+      showAlert(`격자를 만들었습니다.\n레이어: ${name}\n점 ${points.length.toLocaleString()}개 → ${cells.toLocaleString()}칸`);
       this.close();
     } catch (error) {
-      alert('격자 만들기 실패: ' + error.message);
+      showAlert('격자 만들기 실패: ' + error.message);
     }
   }
 

@@ -10,6 +10,7 @@
 import { voronoiTool } from '../../tools/VoronoiTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class VoronoiPanel {
   constructor() {
@@ -20,7 +21,7 @@ class VoronoiPanel {
   show() {
     const pointLayers = voronoiTool.getPointLayers();
     if (pointLayers.length === 0) {
-      alert('보로노이 다이어그램을 만들려면 포인트 레이어가 필요합니다.');
+      showAlert('보로노이 다이어그램을 만들려면 포인트 레이어가 필요합니다.');
       return;
     }
     this.render(pointLayers, voronoiTool.getPolygonLayers());
@@ -90,7 +91,7 @@ class VoronoiPanel {
   apply() {
     const layerId = document.getElementById('voronoi-layer').value;
     if (!layerId) {
-      alert('먼저 포인트 레이어를 선택해주세요.');
+      showAlert('먼저 포인트 레이어를 선택해주세요.');
       return;
     }
 
@@ -116,10 +117,10 @@ class VoronoiPanel {
         message += '\n\n' + notes.join('\n');
       }
 
-      alert(message);
+      showAlert(message);
       this.close();
     } catch (error) {
-      alert('보로노이 생성 실패: ' + error.message);
+      showAlert('보로노이 생성 실패: ' + error.message);
     }
   }
 

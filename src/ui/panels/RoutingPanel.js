@@ -8,6 +8,7 @@ import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelec
 import { LOCAL_MODES } from '../../core/localRouting.js';
 import { initialNetworkOptions, parseNetworkValue, populateNetworkSelect } from '../roadNetworkSelect.js';
 import { transform } from 'ol/proj';
+import { showAlert } from '../../utils/dialogs.js';
 
 class RoutingPanel {
   constructor() {
@@ -243,9 +244,9 @@ class RoutingPanel {
       const key = apiKeyInput.value.trim();
       if (key) {
         routingTool.setApiKey(key);
-        alert('API 키가 저장되었습니다.');
+        showAlert('API 키가 저장되었습니다.');
       } else {
-        alert('API 키를 입력해주세요.');
+        showAlert('API 키를 입력해주세요.');
       }
     });
 
@@ -555,13 +556,13 @@ class RoutingPanel {
     const engine = network.engine;
     const apiKey = document.getElementById('routing-api-key').value;
     if (engine === 'ors' && !apiKey) {
-      alert('API 키를 입력해주세요.');
+      showAlert('API 키를 입력해주세요.');
       return;
     }
 
     const state = routingTool.getState();
     if (!state.startPoint || !state.endPoint) {
-      alert('출발지와 도착지를 모두 선택해주세요.');
+      showAlert('출발지와 도착지를 모두 선택해주세요.');
       return;
     }
 
@@ -596,10 +597,10 @@ class RoutingPanel {
       document.getElementById('route-distance').textContent = result.distanceText;
       document.getElementById('route-duration').textContent = result.durationText;
 
-      alert(`경로 검색 완료!\n거리: ${result.distanceText}\n예상 시간: ${result.durationText}`);
+      showAlert(`경로 검색 완료!\n거리: ${result.distanceText}\n예상 시간: ${result.durationText}`);
 
     } catch (error) {
-      alert('경로 검색 실패: ' + error.message);
+      showAlert('경로 검색 실패: ' + error.message);
     } finally {
       analyzeBtn.disabled = false;
       analyzeBtn.textContent = '경로 검색';

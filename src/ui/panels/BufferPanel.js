@@ -5,6 +5,7 @@
 import { bufferTool } from '../../tools/BufferTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class BufferPanel {
   constructor() {
@@ -18,7 +19,7 @@ class BufferPanel {
   show(layerId = null) {
     const layers = bufferTool.getCompatibleLayers();
     if (layers.length === 0) {
-      alert('버퍼를 만들 수 있는 레이어가 없습니다.\n(피처가 있는 벡터 레이어가 필요합니다)');
+      showAlert('버퍼를 만들 수 있는 레이어가 없습니다.\n(피처가 있는 벡터 레이어가 필요합니다)');
       return;
     }
 
@@ -110,7 +111,7 @@ class BufferPanel {
    */
   apply() {
     if (!this.currentLayerId) {
-      alert('먼저 소스 레이어를 선택해주세요.');
+      showAlert('먼저 소스 레이어를 선택해주세요.');
       return;
     }
 
@@ -120,7 +121,7 @@ class BufferPanel {
     const dissolve = document.getElementById('buffer-dissolve').checked;
 
     if (isNaN(distance) || distance <= 0) {
-      alert('올바른 버퍼 거리를 입력해주세요.');
+      showAlert('올바른 버퍼 거리를 입력해주세요.');
       return;
     }
 
@@ -131,10 +132,10 @@ class BufferPanel {
         dissolve
       });
 
-      alert(`버퍼가 생성되었습니다!\n레이어: ${result.layerName}\n피처 수: ${result.featureCount}`);
+      showAlert(`버퍼가 생성되었습니다!\n레이어: ${result.layerName}\n피처 수: ${result.featureCount}`);
       this.close();
     } catch (error) {
-      alert('버퍼 생성 실패: ' + error.message);
+      showAlert('버퍼 생성 실패: ' + error.message);
     }
   }
 

@@ -12,6 +12,9 @@ import Point from 'ol/geom/Point.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { timeSeriesTool } from '../../tools/TimeSeriesTool.js';
 import { timeSeriesPanel } from './TimeSeriesPanel.js';
+import { showAlert } from '../../utils/dialogs.js';
+
+vi.mock('../../utils/dialogs.js', () => ({ showAlert: vi.fn(() => Promise.resolve()) }));
 
 function cell(props) {
   return new Feature({ geometry: new Polygon([[[0, 0], [100, 0], [100, 100], [0, 100], [0, 0]]]), ...props });
@@ -45,7 +48,8 @@ describe('TimeSeriesPanel.compatibleLayers', () => {
 
 describe('TimeSeriesPanel UI', () => {
   it('없으면 alert 만, 있으면 창과 필드 체크 목록(속성 순서)', () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const alertSpy = vi.mocked(showAlert);
+    alertSpy.mockClear();
     timeSeriesPanel.show();
     expect(alertSpy).toHaveBeenCalled();
     expect(document.querySelector('.time-series-modal')).toBeNull();
@@ -86,7 +90,8 @@ describe('TimeSeriesPanel UI', () => {
   it('필드가 2개 미만이면 alert 하고 적용하지 않는다', () => {
     polygonLayer();
     timeSeriesPanel.show();
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const alertSpy = vi.mocked(showAlert);
+    alertSpy.mockClear();
     const applySpy = vi.spyOn(timeSeriesTool, 'apply');
     document.querySelector('.ts-field-check[value="2015"]').click();
     document.getElementById('ts-apply').click();

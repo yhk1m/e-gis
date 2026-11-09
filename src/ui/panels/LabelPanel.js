@@ -7,6 +7,7 @@ import { layerManager } from '../../core/LayerManager.js';
 import { eventBus, Events } from '../../utils/EventBus.js';
 import { resolveInitialLayerId } from '../../utils/layerSelect.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class LabelPanel {
   constructor() {
@@ -22,7 +23,7 @@ class LabelPanel {
     if (!layerId) {
       const layers = layerManager.getAllLayers();
       if (layers.length === 0) {
-        alert('레이어가 없습니다. 먼저 레이어를 추가해주세요.');
+        showAlert('레이어가 없습니다. 먼저 레이어를 추가해주세요.');
         return;
       }
       layerId = resolveInitialLayerId(layers, layerManager.getSelectedLayerId()) || layers[0].id;
@@ -136,7 +137,7 @@ class LabelPanel {
    */
   toggleEditMode() {
     if (!labelTool.hasLabel(this.currentLayerId)) {
-      alert('먼저 라벨을 적용한 후 위치를 편집할 수 있습니다.');
+      showAlert('먼저 라벨을 적용한 후 위치를 편집할 수 있습니다.');
       return;
     }
 

@@ -6,6 +6,7 @@
 import { rasterAnalysisTool } from '../../tools/RasterAnalysisTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class RasterAnalysisPanel {
   constructor() {
@@ -62,7 +63,7 @@ class RasterAnalysisPanel {
     const demLayers = rasterAnalysisTool.getDEMLayers();
 
     if (demLayers.length === 0) {
-      alert('DEM 레이어가 없습니다. GeoTIFF 파일을 먼저 불러와주세요.');
+      showAlert('DEM 레이어가 없습니다. GeoTIFF 파일을 먼저 불러와주세요.');
       return;
     }
 
@@ -350,7 +351,7 @@ class RasterAnalysisPanel {
     const applyBtn = document.getElementById('raster-apply');
 
     if (!layerId) {
-      alert('먼저 DEM 레이어를 선택해주세요.');
+      showAlert('먼저 DEM 레이어를 선택해주세요.');
       return;
     }
 
@@ -397,11 +398,11 @@ class RasterAnalysisPanel {
           break;
       }
 
-      alert('분석 완료! 새 레이어가 생성되었습니다.');
+      showAlert('분석 완료! 새 레이어가 생성되었습니다.');
       this.close();
     } catch (error) {
       console.error('분석 실패:', error);
-      alert('분석 실패: ' + error.message);
+      showAlert('분석 실패: ' + error.message);
       applyBtn.disabled = false;
       applyBtn.textContent = '분석 실행';
     }

@@ -9,6 +9,7 @@ import { mapManager } from '../../core/MapManager.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLegendModel } from '../../tools/legendModel.js';
 import { applyLegendVisibility } from '../../tools/legendVisibility.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class ExportPanel {
   constructor() {
@@ -1324,7 +1325,7 @@ class ExportPanel {
     e.target.value = '';
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      alert('이미지 파일만 사용할 수 있습니다.');
+      showAlert('이미지 파일만 사용할 수 있습니다.');
       return;
     }
 
@@ -1342,10 +1343,10 @@ class ExportPanel {
         this.updateCompassImageRow();
         this.updatePreview();
       };
-      img.onerror = () => alert('이미지를 불러오지 못했습니다.');
+      img.onerror = () => showAlert('이미지를 불러오지 못했습니다.');
       img.src = dataUrl;
     };
-    reader.onerror = () => alert('파일을 읽지 못했습니다.');
+    reader.onerror = () => showAlert('파일을 읽지 못했습니다.');
     reader.readAsDataURL(file);
   }
 
@@ -1434,7 +1435,7 @@ class ExportPanel {
       this.close();
     } catch (error) {
       console.error('Export error:', error);
-      alert('내보내기 실패: ' + error.message);
+      showAlert('내보내기 실패: ' + error.message);
       applyBtn.disabled = false;
       applyBtn.textContent = '내보내기';
     }

@@ -6,6 +6,7 @@ import proj4 from 'proj4';
 import { tableLoader } from '../../loaders/TableLoader.js';
 import { coordinateSystem } from '../../core/CoordinateSystem.js';
 import { detectCrs } from '../../core/CrsDetector.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class CoordinateImportPanel {
   constructor() {
@@ -250,7 +251,7 @@ class CoordinateImportPanel {
       this.updatePreview();
 
     } catch (error) {
-      alert('파일 로드 실패: ' + error.message);
+      showAlert('파일 로드 실패: ' + error.message);
     }
   }
 
@@ -344,7 +345,7 @@ class CoordinateImportPanel {
     const sourceCrs = this.selectedCrs();
 
     if (!latCol || !lonCol) {
-      alert('위도와 경도 컬럼을 선택해주세요.');
+      showAlert('위도와 경도 컬럼을 선택해주세요.');
       return;
     }
 
@@ -355,12 +356,12 @@ class CoordinateImportPanel {
     try {
       const result = tableLoader.createPointLayer(latCol, lonCol, layerName, sourceCrs);
 
-      alert(`레이어 생성 완료!\n- 레이어: ${result.layerName}\n- 포인트 수: ${result.featureCount}\n- 제외된 행: ${result.skippedCount}`);
+      showAlert(`레이어 생성 완료!\n- 레이어: ${result.layerName}\n- 포인트 수: ${result.featureCount}\n- 제외된 행: ${result.skippedCount}`);
 
       tableLoader.clear();
       this.close();
     } catch (error) {
-      alert('레이어 생성 실패: ' + error.message);
+      showAlert('레이어 생성 실패: ' + error.message);
       applyBtn.disabled = false;
       applyBtn.textContent = '레이어 생성';
     }

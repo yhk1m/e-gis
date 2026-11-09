@@ -5,6 +5,7 @@
 import { spatialOperationsTool } from '../../tools/SpatialOperationsTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class SpatialOperationsPanel {
   constructor() {
@@ -32,7 +33,7 @@ class SpatialOperationsPanel {
     const canCountPoints = polygonLayers.length >= 1 && pointLayers.length >= 1;
 
     if (!canDoPolygonOps && !canCountPoints) {
-      alert('공간 연산을 수행하려면 폴리곤 레이어 2개,\n또는 폴리곤·포인트 레이어가 각각 1개 이상 필요합니다.');
+      showAlert('공간 연산을 수행하려면 폴리곤 레이어 2개,\n또는 폴리곤·포인트 레이어가 각각 1개 이상 필요합니다.');
       return;
     }
 
@@ -339,7 +340,7 @@ class SpatialOperationsPanel {
 
     // 폴리곤↔폴리곤 연산은 서로 다른 레이어여야 함 (포인트 추출은 타입이 달라 허용)
     if (operation !== 'pointsInPolygon' && layerId1 === layerId2) {
-      alert('서로 다른 레이어를 선택해주세요.');
+      showAlert('서로 다른 레이어를 선택해주세요.');
       return;
     }
 
@@ -377,17 +378,17 @@ class SpatialOperationsPanel {
         const dropped = result.outside ? result.insidePoints : result.outsidePoints;
         const where = result.outside ? '폴리곤 밖' : '폴리곤 내';
         const other = result.outside ? '폴리곤 안' : '폴리곤 밖';
-        alert(
+        showAlert(
           `포인트 추출 완료!\n새 레이어: ${result.layerName}\n` +
           `${where} 포인트 ${kept}개 / 전체 ${result.totalPoints}개` +
           (dropped > 0 ? `\n(${other} 포인트 ${dropped}개 제외)` : '')
         );
       } else {
-        alert(`연산 완료!\n새 레이어: ${result.layerName}\n피처 수: ${result.featureCount}`);
+        showAlert(`연산 완료!\n새 레이어: ${result.layerName}\n피처 수: ${result.featureCount}`);
       }
       this.close();
     } catch (error) {
-      alert('연산 실패: ' + error.message);
+      showAlert('연산 실패: ' + error.message);
       applyBtn.disabled = false;
       applyBtn.textContent = '연산 실행';
     }

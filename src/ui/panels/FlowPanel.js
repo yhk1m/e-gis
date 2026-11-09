@@ -18,6 +18,7 @@ import {
 } from '../../flow/flowModel.js';
 import { DEFAULT_FLOW_STYLE } from '../../flow/FlowRenderer.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 const RAMP_LABELS = { teal: '청록', blue: '파랑', orange: '주황', purple: '보라' };
 
@@ -329,7 +330,7 @@ class FlowPanel {
         this.columns = null;
         this._parseTable();
         this._rebuild();
-      } catch (err) { alert(err.message); }
+      } catch (err) { showAlert(err.message); }
     });
     const file = $('flow-file');
     if (file) file.addEventListener('change', async (e) => {
@@ -343,7 +344,7 @@ class FlowPanel {
         this.columns = null;
         this._parseTable();
         this._rebuild();
-      } catch (err) { alert(err.message); }
+      } catch (err) { showAlert(err.message); }
     });
     const shape = $('flow-shape');
     if (shape) shape.addEventListener('change', (e) => { this.shape = e.target.value; this._parseTable(); this._rebuild(); });
@@ -375,7 +376,7 @@ class FlowPanel {
       const f = e.target.files[0];
       if (!f) return;
       try { this.locationTable = locationsFromTable(await readFlowFile(f)); this.manualMap = {}; this._rebuild(); }
-      catch (err) { alert(err.message); }
+      catch (err) { showAlert(err.message); }
     });
 
     // 3. 손 매칭

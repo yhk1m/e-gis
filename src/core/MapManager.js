@@ -10,6 +10,7 @@ import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
+import { showAlert } from '../utils/dialogs.js';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import Control from 'ol/control/Control';
 import { defaults as defaultControls, Attribution } from 'ol/control';
@@ -249,7 +250,7 @@ class GeolocateControl extends Control {
     }
 
     if (!navigator.geolocation) {
-      alert('이 브라우저에서는 위치 서비스를 지원하지 않습니다.');
+      showAlert('이 브라우저에서는 위치 서비스를 지원하지 않습니다.');
       return;
     }
 
@@ -277,7 +278,7 @@ class GeolocateControl extends Control {
           2: '위치를 확인할 수 없습니다.',
           3: '위치 요청이 시간 초과되었습니다.'
         };
-        alert(messages[err.code] || '위치를 가져올 수 없습니다.');
+        showAlert(messages[err.code] || '위치를 가져올 수 없습니다.');
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );

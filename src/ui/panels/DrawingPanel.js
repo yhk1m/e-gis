@@ -5,6 +5,7 @@
 import { drawingTool } from '../../tools/DrawingTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { eventBus } from '../../utils/EventBus.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class DrawingPanel {
   constructor() {
@@ -230,7 +231,7 @@ class DrawingPanel {
     const layerId = drawingTool.finishDrawing();
     if (layerId) {
       const count = drawingTool.lastAddedCount || 1;
-      alert(count > 1
+      showAlert(count > 1
         ? `${count}개의 도형이 각각 개별 객체로 추가되었습니다.`
         : '도형이 추가되었습니다.');
     }

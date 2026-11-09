@@ -8,6 +8,7 @@
 import { layerCombineTool, MAX_SPLIT_LAYERS } from '../../tools/LayerCombineTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class LayerSplitPanel {
   constructor() {
@@ -18,7 +19,7 @@ class LayerSplitPanel {
   show(layerId = null) {
     const layers = layerCombineTool.getCompatibleLayers();
     if (layers.length === 0) {
-      alert('나눌 수 있는 레이어가 없습니다.\n(객체가 있는 벡터 레이어가 필요합니다)');
+      showAlert('나눌 수 있는 레이어가 없습니다.\n(객체가 있는 벡터 레이어가 필요합니다)');
       return;
     }
 
@@ -167,7 +168,7 @@ class LayerSplitPanel {
 
   apply() {
     if (!this.currentLayerId) {
-      alert('먼저 레이어를 선택해주세요.');
+      showAlert('먼저 레이어를 선택해주세요.');
       return;
     }
 
@@ -186,10 +187,10 @@ class LayerSplitPanel {
           { removeSource }
         );
 
-      alert(`레이어를 나눴습니다.\n- 만들어진 레이어: ${result.groupCount}개`);
+      showAlert(`레이어를 나눴습니다.\n- 만들어진 레이어: ${result.groupCount}개`);
       this.close();
     } catch (error) {
-      alert('나누기 실패: ' + error.message);
+      showAlert('나누기 실패: ' + error.message);
     }
   }
 

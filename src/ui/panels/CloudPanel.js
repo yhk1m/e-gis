@@ -7,6 +7,7 @@ import { supabaseManager } from '../../core/SupabaseManager.js';
 import { eventBus } from '../../utils/EventBus.js';
 import { privacyPolicyPanel } from './PrivacyPolicyPanel.js';
 import { consentManager } from '../../core/ConsentManager.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class CloudPanel {
   constructor() {
@@ -258,7 +259,7 @@ class CloudPanel {
     const key = document.getElementById('supabase-key').value.trim();
 
     if (!url || !key) {
-      alert('URL과 Key를 모두 입력해주세요.');
+      showAlert('URL과 Key를 모두 입력해주세요.');
       return;
     }
 
@@ -274,7 +275,7 @@ class CloudPanel {
     const password = document.getElementById('login-password').value;
 
     if (!email || !password) {
-      alert('이메일과 비밀번호를 입력해주세요.');
+      showAlert('이메일과 비밀번호를 입력해주세요.');
       return;
     }
 
@@ -283,7 +284,7 @@ class CloudPanel {
       eventBus.emit('auth:login');
       this.close();
     } catch (error) {
-      alert('로그인 실패: ' + error.message);
+      showAlert('로그인 실패: ' + error.message);
     }
   }
 
@@ -297,23 +298,23 @@ class CloudPanel {
     const privacyConsent = document.getElementById('privacy-consent-check')?.checked;
 
     if (!email || !password) {
-      alert('이메일과 비밀번호를 입력해주세요.');
+      showAlert('이메일과 비밀번호를 입력해주세요.');
       return;
     }
 
     if (password.length < 6) {
-      alert('비밀번호는 6자 이상이어야 합니다.');
+      showAlert('비밀번호는 6자 이상이어야 합니다.');
       return;
     }
 
     if (password !== passwordConfirm) {
-      alert('비밀번호가 일치하지 않습니다.');
+      showAlert('비밀번호가 일치하지 않습니다.');
       return;
     }
 
     // 개인정보 동의 확인
     if (!privacyConsent) {
-      alert('개인정보 수집·이용에 동의해주세요.');
+      showAlert('개인정보 수집·이용에 동의해주세요.');
       return;
     }
 
@@ -322,12 +323,12 @@ class CloudPanel {
     const hasGuardianConsent = document.getElementById('guardian-consent-check')?.checked;
 
     if (!isOver14 && !hasGuardianConsent) {
-      alert('나이 확인이 필요합니다.\n만 14세 이상이거나, 만 14세 미만이면 법정대리인 동의를 받았는지 선택해주세요.');
+      showAlert('나이 확인이 필요합니다.\n만 14세 이상이거나, 만 14세 미만이면 법정대리인 동의를 받았는지 선택해주세요.');
       return;
     }
 
     if (isOver14 && hasGuardianConsent) {
-      alert('만 14세 이상과 만 14세 미만 중 하나만 선택해주세요.');
+      showAlert('만 14세 이상과 만 14세 미만 중 하나만 선택해주세요.');
       return;
     }
 
@@ -335,10 +336,10 @@ class CloudPanel {
       // 동의 정보와 함께 회원가입
       const consentData = consentManager.createConsentData({ isOver14, hasGuardianConsent });
       await supabaseManager.signUpWithConsent(email, password, consentData);
-      alert('회원가입 완료! 로그인해주세요.');
+      showAlert('회원가입 완료! 로그인해주세요.');
       this.switchTab('login');
     } catch (error) {
-      alert('회원가입 실패: ' + error.message);
+      showAlert('회원가입 실패: ' + error.message);
     }
   }
 

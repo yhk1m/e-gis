@@ -5,6 +5,7 @@
 import { heatmapTool } from '../../tools/HeatmapTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class HeatmapPanel {
   constructor() {
@@ -29,7 +30,7 @@ class HeatmapPanel {
     const gradients = heatmapTool.getGradients();
 
     if (pointLayers.length === 0) {
-      alert('히트맵을 생성하려면 포인트 레이어가 필요합니다.');
+      showAlert('히트맵을 생성하려면 포인트 레이어가 필요합니다.');
       return;
     }
 
@@ -193,7 +194,7 @@ class HeatmapPanel {
   createHeatmap() {
     const layerId = document.getElementById('heatmap-layer').value;
     if (!layerId) {
-      alert('먼저 포인트 레이어를 선택해주세요.');
+      showAlert('먼저 포인트 레이어를 선택해주세요.');
       return;
     }
 
@@ -225,10 +226,10 @@ class HeatmapPanel {
         hideSource
       });
 
-      alert('히트맵이 생성되었습니다.');
+      showAlert('히트맵이 생성되었습니다.');
       this.close();
     } catch (error) {
-      alert('히트맵 생성 실패: ' + error.message);
+      showAlert('히트맵 생성 실패: ' + error.message);
       applyBtn.disabled = false;
       applyBtn.textContent = '히트맵 생성';
     }

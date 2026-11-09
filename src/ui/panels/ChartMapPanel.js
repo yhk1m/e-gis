@@ -5,6 +5,7 @@
 import { chartMapTool } from '../../tools/ChartMapTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class ChartMapPanel {
   constructor() {
@@ -30,7 +31,7 @@ class ChartMapPanel {
     const layers = chartMapTool.getCompatibleLayers();
 
     if (layers.length === 0) {
-      alert('도형표현도를 생성하려면 레이어가 필요합니다.');
+      showAlert('도형표현도를 생성하려면 레이어가 필요합니다.');
       return;
     }
 
@@ -262,7 +263,7 @@ class ChartMapPanel {
     const maxSize = parseInt(document.getElementById('chart-max-size').value);
 
     if (this.selectedFields.length < 1) {
-      alert('최소 1개 이상의 필드를 선택해주세요.');
+      showAlert('최소 1개 이상의 필드를 선택해주세요.');
       return;
     }
 
@@ -283,10 +284,10 @@ class ChartMapPanel {
         showValues: document.getElementById('chart-show-values').checked
       });
 
-      alert(`도형표현도 생성 완료!\n차트 수: ${result.chartCount}`);
+      showAlert(`도형표현도 생성 완료!\n차트 수: ${result.chartCount}`);
       this.close();
     } catch (error) {
-      alert('도형표현도 생성 실패: ' + error.message);
+      showAlert('도형표현도 생성 실패: ' + error.message);
       applyBtn.disabled = false;
       applyBtn.textContent = '적용';
     }
@@ -297,12 +298,12 @@ class ChartMapPanel {
    */
   clearCharts() {
     if (!this.selectedLayerId) {
-      alert('먼저 레이어를 선택해주세요.');
+      showAlert('먼저 레이어를 선택해주세요.');
       return;
     }
 
     const removed = chartMapTool.removeChartMap(this.selectedLayerId);
-    alert(removed > 0
+    showAlert(removed > 0
       ? `이 레이어로 만든 도형표현도 ${removed}개를 제거했습니다.`
       : '이 레이어로 만든 도형표현도가 없습니다.');
   }

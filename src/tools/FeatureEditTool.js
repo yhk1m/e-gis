@@ -18,6 +18,7 @@ import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
 import { selectTool } from './SelectTool.js';
 import { eventBus, Events } from '../utils/EventBus.js';
+import { showAlert } from '../utils/dialogs.js';
 import {
   mergeGeoJSON,
   mergedLayerName,
@@ -53,7 +54,7 @@ class FeatureEditTool {
   mergeSelected() {
     const selected = selectTool.getSelectedFeatures();
     if (selected.length < 2) {
-      alert('합칠 피처를 2개 이상 선택하세요.\n(선택 도구로 Shift+클릭 또는 드래그)');
+      showAlert('합칠 피처를 2개 이상 선택하세요.\n(선택 도구로 Shift+클릭 또는 드래그)');
       return;
     }
 
@@ -62,7 +63,7 @@ class FeatureEditTool {
     for (const f of selected) {
       const layerInfo = this.getLayerOfFeature(f);
       if (!layerInfo) {
-        alert('피처가 속한 레이어를 찾을 수 없습니다.');
+        showAlert('피처가 속한 레이어를 찾을 수 없습니다.');
         return;
       }
       if (!layers.includes(layerInfo)) layers.push(layerInfo);
@@ -73,11 +74,11 @@ class FeatureEditTool {
     // 타입 호환성 검사 (폴리곤끼리 또는 라인끼리)
     const family = this.geometryFamily(gjs[0]);
     if (family === 'point') {
-      alert('포인트는 합칠 수 없습니다. 폴리곤 또는 라인을 선택하세요.');
+      showAlert('포인트는 합칠 수 없습니다. 폴리곤 또는 라인을 선택하세요.');
       return;
     }
     if (!gjs.every((g) => this.geometryFamily(g) === family)) {
-      alert('같은 종류의 피처(폴리곤끼리 또는 라인끼리)만 합칠 수 있습니다.');
+      showAlert('같은 종류의 피처(폴리곤끼리 또는 라인끼리)만 합칠 수 있습니다.');
       return;
     }
 
@@ -91,7 +92,7 @@ class FeatureEditTool {
         this.addMergedLayer(layers, newFeature, selected.length);
       }
     } catch (e) {
-      alert('합치기 실패: ' + e.message);
+      showAlert('합치기 실패: ' + e.message);
     }
   }
 

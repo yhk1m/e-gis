@@ -6,6 +6,7 @@
 import { eventBus, Events } from '../../utils/EventBus.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
 import { layerManager } from '../../core/LayerManager.js';
+import { showAlert, showConfirm } from '../../utils/dialogs.js';
 import { mapManager } from '../../core/MapManager.js';
 import Select from 'ol/interaction/Select';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
@@ -69,7 +70,7 @@ export class AttributeTable {
     const layerInfo = layerManager.getLayer(layerId);
     if (!layerInfo) return;
     if (!layerInfo.source) {
-      alert('이 레이어에는 속성 테이블이 없습니다. (흐름·래스터 레이어)');
+      showAlert('이 레이어에는 속성 테이블이 없습니다. (흐름·래스터 레이어)');
       return;
     }
 
@@ -310,15 +311,15 @@ export class AttributeTable {
       const input = overlay.querySelector('#attr-mobile-newcol');
       const name = (input ? input.value : '').trim();
       if (!name) {
-        alert('추가할 열 이름을 입력하세요.');
+        showAlert('추가할 열 이름을 입력하세요.');
         return;
       }
       if (columns.includes(name) || name === 'geometry') {
-        alert('이미 존재하는 열 이름입니다.');
+        showAlert('이미 존재하는 열 이름입니다.');
         return;
       }
       if (featureMap.size === 0) {
-        alert('피처가 없어 열을 추가할 수 없습니다.');
+        showAlert('피처가 없어 열을 추가할 수 없습니다.');
         return;
       }
       // 모든 피처에 빈 값 속성 추가 후 시트 재구성 (새 열 반영)
@@ -347,14 +348,14 @@ export class AttributeTable {
     }
 
     // 열 삭제
-    overlay.querySelector('#attr-mobile-delcol-btn').addEventListener('click', () => {
+    overlay.querySelector('#attr-mobile-delcol-btn').addEventListener('click', async () => {
       finishEditing(true);
       const name = delColSel ? delColSel.value : '';
       if (!name) {
-        alert('삭제할 열을 선택하세요.');
+        showAlert('삭제할 열을 선택하세요.');
         return;
       }
-      if (!confirm(`'${name}' 열을 삭제하시겠습니까? 이 열의 모든 값이 사라집니다.`)) return;
+      if (!(await showConfirm(`'${name}' 열을 삭제하시겠습니까? 이 열의 모든 값이 사라집니다.`, { danger: true, okText: '삭제' }))) return;
       // 모든 피처에서 속성 제거 후 시트 재구성
       featureMap.forEach(f => f.unset(name));
       this.openMobileSheet(layerId, layerInfo);
@@ -386,13 +387,13 @@ export class AttributeTable {
     });
 
     // ----- 선택 피처 삭제 -----
-    deleteBtn.addEventListener('click', () => {
+    deleteBtn.addEventListener('click', async () => {
       if (selected.size === 0) return;
       const count = selected.size;
       const message = count === 1
         ? '선택한 피처를 삭제하시겠습니까?'
         : `선택한 ${count}개의 피처를 삭제하시겠습니까?`;
-      if (!confirm(message)) return;
+      if (!(await showConfirm(message, { danger: true, okText: '삭제' }))) return;
 
       selected.forEach(fid => {
         const f = featureMap.get(fid);
@@ -525,7 +526,7 @@ export class AttributeTable {
     const features = layerInfo.source.getFeatures();
     const columns = this.extractColumns(features);
     if (features.length === 0 || columns.length === 0) {
-      alert('내보낼 속성 데이터가 없습니다.');
+      showAlert('내보낼 속성 데이터가 없습니다.');
       return;
     }
 

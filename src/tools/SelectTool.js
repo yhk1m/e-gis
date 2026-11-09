@@ -12,6 +12,7 @@ import { mapManager } from '../core/MapManager.js';
 import { layerManager } from '../core/LayerManager.js';
 import { eventBus, Events } from '../utils/EventBus.js';
 import { pickOrphanFeatures } from './selectionCleanup.js';
+import { showConfirm } from '../utils/dialogs.js';
 
 // 선택 스타일
 const SELECT_STYLE = new Style({
@@ -303,7 +304,7 @@ class SelectTool {
   /**
    * 선택된 피처 삭제
    */
-  deleteSelectedFeatures() {
+  async deleteSelectedFeatures() {
     if (!this.selectedFeatures || this.selectedFeatures.getLength() === 0) {
       return false;
     }
@@ -311,11 +312,11 @@ class SelectTool {
     const features = this.selectedFeatures.getArray().slice();
 
     // 삭제 확인 (실수로 지우는 것을 방지)
-    if (!confirm(`선택한 피처 ${features.length}개를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.`)) {
+    if (!(await showConfirm(`선택한 피처 ${features.length}개를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.`, { danger: true, okText: '삭제' }))) {
       return false;
     }
 
-    features.forEach(feature => {
+    for (const feature of features) {
       // 해당 피처가 속한 레이어 찾기
       const layers = layerManager.getAllLayers();
 
@@ -330,7 +331,7 @@ class SelectTool {
 
           // 피처가 0개면 레이어 삭제 확인
           if (layerInfo.featureCount === 0) {
-            if (confirm(`"${layerInfo.name}" 레이어에 피처가 없습니다. 레이어를 삭제할까요?`)) {
+            if (await showConfirm(`"${layerInfo.name}" 레이어에 피처가 없습니다. 레이어를 삭제할까요?`, { danger: true, okText: '삭제' })) {
               layerManager.removeLayer(layerInfo.id);
             }
           }
@@ -342,7 +343,7 @@ class SelectTool {
           break;
         }
       }
-    });
+    }
 
     // 선택 해제
     this.selectedFeatures.clear();

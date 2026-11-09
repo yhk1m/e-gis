@@ -5,6 +5,7 @@
 import { tableJoinTool } from "../../tools/TableJoinTool.js";
 import { layerManager } from "../../core/LayerManager.js";
 import { buildLayerOptions, resolveInitialLayerId } from "../../utils/layerSelect.js";
+import { showAlert } from "../../utils/dialogs.js";
 
 class TableJoinPanel {
   constructor() {
@@ -17,7 +18,7 @@ class TableJoinPanel {
   show(layerId = null) {
     const layers = tableJoinTool.getCompatibleLayers();
     if (layers.length === 0) {
-      alert("테이블을 결합할 수 있는 레이어가 없습니다.\n(속성 필드가 있는 벡터 레이어가 필요합니다)");
+      showAlert("테이블을 결합할 수 있는 레이어가 없습니다.\n(속성 필드가 있는 벡터 레이어가 필요합니다)");
       return;
     }
 
@@ -185,7 +186,7 @@ class TableJoinPanel {
     const isCSV = fileName.endsWith(".csv") || fileName.endsWith(".txt");
 
     if (!isExcel && !isCSV) {
-      alert("CSV, TXT, XLSX, XLS 파일만 지원됩니다.");
+      showAlert("CSV, TXT, XLSX, XLS 파일만 지원됩니다.");
       return;
     }
 
@@ -202,7 +203,7 @@ class TableJoinPanel {
         this.csvHeaders = result.headers;
         this.onCSVLoaded(file.name);
       } catch (error) {
-        alert("파일 파싱 오류: " + error.message);
+        showAlert("파일 파싱 오류: " + error.message);
       }
     };
 
@@ -302,7 +303,7 @@ class TableJoinPanel {
 
   executeJoin() {
     if (!this.currentLayerId) {
-      alert("먼저 대상 레이어를 선택해주세요.");
+      showAlert("먼저 대상 레이어를 선택해주세요.");
       return;
     }
 
@@ -311,7 +312,7 @@ class TableJoinPanel {
     const selectedFields = this.getSelectedFields();
 
     if (selectedFields.length === 0) {
-      alert("조인할 필드를 선택해주세요.");
+      showAlert("조인할 필드를 선택해주세요.");
       return;
     }
 
@@ -324,7 +325,7 @@ class TableJoinPanel {
         selectedFields
       );
 
-      alert(
+      showAlert(
         "테이블 결합 완료!\n" +
         "- 조인된 피처: " + result.joinedCount + "/" + result.totalFeatures + "\n" +
         "- 추가된 필드: " + result.fieldsAdded.join(", ")
@@ -332,7 +333,7 @@ class TableJoinPanel {
 
       this.close();
     } catch (error) {
-      alert("조인 실패: " + error.message);
+      showAlert("조인 실패: " + error.message);
     }
   }
 

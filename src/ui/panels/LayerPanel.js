@@ -13,6 +13,7 @@ import { swatchSpec, swatchHTML } from './layerSwatch.js';
 import { flowPanel } from './FlowPanel.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import { applyLegendVisibility } from '../../tools/legendVisibility.js';
+import { showConfirm } from '../../utils/dialogs.js';
 
 export class LayerPanel {
   constructor(containerId = 'layer-list') {
@@ -282,10 +283,10 @@ export class LayerPanel {
     clearBtn.onclick = () => layerManager.clearSelection();
 
     const deleteBtn = infoEl.querySelector('.delete-selection-btn');
-    deleteBtn.onclick = () => {
+    deleteBtn.onclick = async () => {
       const selectedIds = Array.from(layerManager.selectedLayerIds);
       if (selectedIds.length === 0) return;
-      if (confirm(`${selectedIds.length}개의 레이어를 삭제하시겠습니까?`)) {
+      if (await showConfirm(`${selectedIds.length}개의 레이어를 삭제하시겠습니까?`, { danger: true, okText: '삭제' })) {
         selectedIds.forEach(id => layerManager.removeLayer(id));
         layerManager.clearSelection();
       }
@@ -464,7 +465,7 @@ export class LayerPanel {
   /**
    * 메뉴 액션 처리
    */
-  handleMenuAction(action, layerId, selectedIds = null) {
+  async handleMenuAction(action, layerId, selectedIds = null) {
     switch (action) {
       case 'zoom':
         layerManager.zoomToLayer(layerId);
@@ -501,7 +502,7 @@ export class LayerPanel {
         this.showColorPicker(layerId);
         break;
       case 'remove':
-        if (confirm('이 레이어를 삭제하시겠습니까?')) {
+        if (await showConfirm('이 레이어를 삭제하시겠습니까?', { danger: true, okText: '삭제' })) {
           layerManager.removeLayer(layerId);
         }
         break;
@@ -532,7 +533,7 @@ export class LayerPanel {
         }
         break;
       case 'remove-all':
-        if (selectedIds && confirm(`${selectedIds.length}개의 레이어를 삭제하시겠습니까?`)) {
+        if (selectedIds && await showConfirm(`${selectedIds.length}개의 레이어를 삭제하시겠습니까?`, { danger: true, okText: '삭제' })) {
           selectedIds.forEach(id => layerManager.removeLayer(id));
           layerManager.clearSelection();
         }
@@ -576,7 +577,7 @@ export class LayerPanel {
     const layer = layerManager.getLayer(layerId);
     if (!layer) return;
 
-    // Electron webview는 prompt() 미지원 → askText(데스크톱=모달, 브라우저=prompt)
+    // 기본 대화상자 대신 askText(e-GIS 안의 입력 창)
     askText('새 레이어 이름:', layer.name).then((newName) => {
       if (newName && newName.trim()) {
         layerManager.renameLayer(layerId, newName.trim());

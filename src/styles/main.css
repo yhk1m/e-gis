@@ -7167,3 +7167,22 @@ body.exporting .flow-tooltip { display: none; }
 .flow-unmatched { max-height: 160px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; }
 .flow-unmatched-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
 .flow-unmatched-row select { max-width: 55%; }
+
+/* ===== e-GIS 알림·확인·입력 창 (utils/dialogs.js) — 기본 alert/confirm 대신, 전체화면 유지 ===== */
+.egis-dialog {
+  width: min(400px, calc(100vw - 32px));
+}
+.egis-dialog-message {
+  margin: 0;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+.egis-dialog-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: var(--spacing-sm);
+  padding: 6px 8px;
+  font: inherit;
+}

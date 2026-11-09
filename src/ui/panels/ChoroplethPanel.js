@@ -6,6 +6,7 @@ import { choroplethTool } from "../../tools/ChoroplethTool.js";
 import { layerManager } from "../../core/LayerManager.js";
 import { eventBus, Events } from "../../utils/EventBus.js";
 import { buildLayerOptions, resolveInitialLayerId } from "../../utils/layerSelect.js";
+import { showAlert } from '../../utils/dialogs.js';
 
 class ChoroplethPanel {
   constructor() {
@@ -17,7 +18,7 @@ class ChoroplethPanel {
   show(layerId = null) {
     const layers = choroplethTool.getCompatibleLayers();
     if (layers.length === 0) {
-      alert("단계구분도를 적용할 수 있는 레이어가 없습니다.\n(숫자형 속성이 있는 벡터 레이어가 필요합니다)");
+      showAlert("단계구분도를 적용할 수 있는 레이어가 없습니다.\n(숫자형 속성이 있는 벡터 레이어가 필요합니다)");
       return;
     }
 
@@ -241,13 +242,13 @@ class ChoroplethPanel {
 
   apply() {
     if (!this.currentLayerId) {
-      alert("먼저 레이어를 선택해주세요.");
+      showAlert("먼저 레이어를 선택해주세요.");
       return;
     }
 
     const attribute = document.getElementById("choropleth-attr").value;
     if (!attribute) {
-      alert("속성 필드를 선택해주세요.");
+      showAlert("속성 필드를 선택해주세요.");
       return;
     }
 
@@ -269,7 +270,7 @@ class ChoroplethPanel {
       this.legendData = choroplethTool.getLegendData(result.breaks, result.colors);
       this.renderLegend();
     } else {
-      alert("단계구분도 적용에 실패했습니다.");
+      showAlert("단계구분도 적용에 실패했습니다.");
     }
   }
 

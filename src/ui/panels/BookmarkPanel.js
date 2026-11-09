@@ -4,6 +4,7 @@
 
 import { bookmarkManager } from '../../core/BookmarkManager.js';
 import { eventBus } from '../../utils/EventBus.js';
+import { showAlert, showConfirm } from '../../utils/dialogs.js';
 
 class BookmarkPanel {
   constructor() {
@@ -161,8 +162,7 @@ class BookmarkPanel {
     const name = nameInput.value.trim();
 
     if (!name) {
-      alert('북마크 이름을 입력해주세요.');
-      nameInput.focus();
+      showAlert('북마크 이름을 입력해주세요.').then(() => nameInput.focus());
       return;
     }
 
@@ -171,7 +171,7 @@ class BookmarkPanel {
       nameInput.value = '';
       nameInput.focus();
     } catch (error) {
-      alert('북마크 저장 실패: ' + error.message);
+      showAlert('북마크 저장 실패: ' + error.message);
     }
   }
 
@@ -182,15 +182,15 @@ class BookmarkPanel {
     try {
       bookmarkManager.goToBookmark(bookmarkId);
     } catch (error) {
-      alert(error.message);
+      showAlert(error.message);
     }
   }
 
   /**
    * 북마크 삭제
    */
-  deleteBookmark(bookmarkId) {
-    if (confirm('이 북마크를 삭제하시겠습니까?')) {
+  async deleteBookmark(bookmarkId) {
+    if (await showConfirm('이 북마크를 삭제하시겠습니까?', { danger: true, okText: '삭제' })) {
       bookmarkManager.removeBookmark(bookmarkId);
     }
   }
@@ -201,7 +201,7 @@ class BookmarkPanel {
   exportBookmarks() {
     const bookmarks = bookmarkManager.getAllBookmarks();
     if (bookmarks.length === 0) {
-      alert('내보낼 북마크가 없습니다.');
+      showAlert('내보낼 북마크가 없습니다.');
       return;
     }
 
@@ -232,9 +232,9 @@ class BookmarkPanel {
       try {
         const text = await file.text();
         const count = bookmarkManager.importBookmarks(text);
-        alert(`${count}개의 북마크를 가져왔습니다.`);
+        showAlert(`${count}개의 북마크를 가져왔습니다.`);
       } catch (error) {
-        alert(error.message);
+        showAlert(error.message);
       }
     };
 

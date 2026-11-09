@@ -5,6 +5,7 @@
 import { fieldCalculatorTool } from '../../tools/FieldCalculatorTool.js';
 import { layerManager } from '../../core/LayerManager.js';
 import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelect.js';
+import { showAlert } from '../../utils/dialogs.js';
 
 class FieldCalculatorPanel {
   constructor() {
@@ -18,7 +19,7 @@ class FieldCalculatorPanel {
   show(layerId = null) {
     const layers = fieldCalculatorTool.getCompatibleLayers();
     if (layers.length === 0) {
-      alert('필드를 계산할 수 있는 레이어가 없습니다.\n(피처가 있는 벡터 레이어가 필요합니다)');
+      showAlert('필드를 계산할 수 있는 레이어가 없습니다.\n(피처가 있는 벡터 레이어가 필요합니다)');
       return;
     }
 
@@ -230,7 +231,7 @@ class FieldCalculatorPanel {
    */
   calculate() {
     if (!this.currentLayerId) {
-      alert('먼저 레이어를 선택해주세요.');
+      showAlert('먼저 레이어를 선택해주세요.');
       return;
     }
 
@@ -239,12 +240,12 @@ class FieldCalculatorPanel {
     const updateExisting = document.getElementById('field-calc-update').checked;
 
     if (!fieldName) {
-      alert('결과 필드명을 입력해주세요.');
+      showAlert('결과 필드명을 입력해주세요.');
       return;
     }
 
     if (!expression) {
-      alert('계산 표현식을 입력해주세요.');
+      showAlert('계산 표현식을 입력해주세요.');
       return;
     }
 
@@ -256,13 +257,13 @@ class FieldCalculatorPanel {
         !updateExisting
       );
 
-      alert(`계산 완료!\n성공: ${result.success}개\n실패: ${result.error}개`);
+      showAlert(`계산 완료!\n성공: ${result.success}개\n실패: ${result.error}개`);
 
       if (result.success > 0) {
         this.close();
       }
     } catch (error) {
-      alert('계산 오류: ' + error.message);
+      showAlert('계산 오류: ' + error.message);
     }
   }
 

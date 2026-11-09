@@ -8,6 +8,7 @@ import { buildLayerOptions, resolveInitialLayerId } from '../../utils/layerSelec
 import { LOCAL_MODES } from '../../core/localRouting.js';
 import { initialNetworkOptions, parseNetworkValue, populateNetworkSelect } from '../roadNetworkSelect.js';
 import { transform } from 'ol/proj';
+import { showAlert } from '../../utils/dialogs.js';
 
 class IsochronePanel {
   constructor() {
@@ -349,7 +350,7 @@ class IsochronePanel {
    */
   async analyze() {
     if (!this.selectedPoint) {
-      alert('시작점을 선택해주세요.');
+      showAlert('시작점을 선택해주세요.');
       return;
     }
 
@@ -357,7 +358,7 @@ class IsochronePanel {
 
     const intervals = this.getSelectedIntervals();
     if (intervals.length === 0) {
-      alert('최소 하나의 간격을 선택해주세요.');
+      showAlert('최소 하나의 간격을 선택해주세요.');
       return;
     }
 
@@ -393,10 +394,10 @@ class IsochronePanel {
         }
       });
 
-      alert(`등시선 분석 완료!\n생성된 영역: ${result.featureCount}개`);
+      showAlert(`등시선 분석 완료!\n생성된 영역: ${result.featureCount}개`);
 
     } catch (error) {
-      alert('분석 실패: ' + error.message);
+      showAlert('분석 실패: ' + error.message);
     } finally {
       analyzeBtn.disabled = false;
       analyzeBtn.textContent = '분석 실행';
