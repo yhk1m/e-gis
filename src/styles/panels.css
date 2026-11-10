@@ -679,31 +679,37 @@
   color: white;
 }
 
-/* 선택 모드의 둥근 선택 칸. 네모난 표시 체크박스와 헷갈리지 않게 동그라미로 */
+/* 선택 모드의 둥근 선택 칸. 선만 있는 동그라미, 고르면 테두리가 진해지고 가운데 점이 찬다.
+   색을 꽉 채우고 흰 체크를 넣으면 이모지처럼 보여서 쓰지 않는다 */
 .layer-select-check {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--text-muted);
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--text-muted);
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  color: white;
+  background: transparent;
 }
 
-.layer-select-check svg {
-  visibility: hidden;
+.layer-select-check::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  transform: scale(0);
+  transition: transform var(--transition-fast);
 }
 
 .layer-select-check[aria-checked="true"] {
-  background: var(--color-primary);
   border-color: var(--color-primary);
 }
 
-.layer-select-check[aria-checked="true"] svg {
-  visibility: visible;
+.layer-select-check[aria-checked="true"]::after {
+  transform: scale(1);
 }
 
 /* 선택 모드에선 표시/숨김 체크박스를 감춘다 (동그란 선택 칸과 겹쳐 헷갈림) */

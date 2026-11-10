@@ -19,8 +19,7 @@ import { partitionStyleTargets, commonStyleControls, applyStyleToAll, geometryKi
 
 /** 선 아이콘(SVG). 화면 글자에 이모지를 쓰지 않는다 */
 const ICON_PATHS = {
-  selectMode: '<polyline points="3 7 5 9 9 5"/><line x1="13" y1="7" x2="21" y2="7"/><polyline points="3 16 5 18 9 14"/><line x1="13" y1="16" x2="21" y2="16"/>',
-  check: '<polyline points="5 12 10 17 19 7"/>',
+  selectMode: '<rect x="3" y="4" width="6" height="6" rx="1"/><line x1="13" y1="7" x2="21" y2="7"/><rect x="3" y="14" width="6" height="6" rx="1"/><line x1="13" y1="17" x2="21" y2="17"/>',
   style: '<path d="M12 2.7l5.7 5.7a8 8 0 1 1-11.3 0z"/>',
   duplicate: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   export: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
@@ -400,9 +399,9 @@ export class LayerPanel {
       let className = 'layer-item';
       if (isSelected) className += ' selected';
       if (isPrimary) className += ' primary-selected';
-      // 선택 모드에서만 보이는 둥근 선택 칸 (네모난 표시 체크박스와 모양을 다르게)
+      // 선택 모드에서만 보이는 둥근 선택 칸. 고르면 가운데 점이 찬다 (체크 표시를 넣으면 이모지처럼 보여서 뺐다)
       const selectCheck = this.selectMode
-        ? `<span class="layer-select-check" role="checkbox" aria-checked="${isSelected}" title="고르기">${icon('check', 12)}</span>`
+        ? `<span class="layer-select-check" role="checkbox" aria-checked="${isSelected}" title="고르기"></span>`
         : '';
 
       return `
