@@ -4,6 +4,7 @@
  */
 
 import './styles/main.css';
+import './styles/dangto.css'; // 당토 디자인 덮어쓰기 (이 줄을 빼면 예전 모습)
 import { AppLayout } from './ui/layout/AppLayout.js';
 import { initMobileShell } from './ui/layout/MobileShell.js';
 import { initToolbarGroups } from './ui/layout/toolbarGroups.js';

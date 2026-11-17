@@ -1,0 +1,479 @@
+/* © 2026 김용현 */
+/**
+ * 당토 디자인 덮어쓰기 (dangto-design 스킬, 밀도 촘촘, 개성 담백)
+ * - 기존 CSS 를 고치지 않고 맨 마지막에 얹는다. 이 파일 import 한 줄을 빼면 예전 모습으로 돌아간다.
+ * - 회색은 남색 기운 10단계, 바탕 연회색 위 흰 면, 강조색(e-GIS 파랑)은 주요 행동과 선택 상태에만.
+ * - 글자는 12px 아래로 내리지 않는다. 그림자는 떠 있는 것에만, 옅게.
+ */
+
+/* ===== 값 (라이트) ===== */
+:root,
+[data-theme="light"] {
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 15px;
+  --font-size-xl: 17px;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --transition-fast: 150ms cubic-bezier(0.35, 0, 0.35, 1);
+  --transition-normal: 250ms cubic-bezier(0.35, 0, 0.35, 1);
+  --transition-slow: 400ms cubic-bezier(0.35, 0, 0.35, 1);
+
+  --menubar-height: 44px;
+  --toolbar-height: 44px;
+  --statusbar-height: 28px;
+  --panel-width: 280px;
+
+  --color-primary: #0066cc;
+  --color-primary-hover: #0057ad;
+  --color-primary-light: #eaf1fb;
+  --color-accent: #0b7a52;
+  --color-warning: #a0560a;
+  --color-danger: #c8293a;
+
+  --bg-app: #f1f3f6;
+  --bg-panel: #ffffff;
+  --bg-menubar: #ffffff;
+  --bg-toolbar: #ffffff;
+  --bg-statusbar: #ffffff;
+  --bg-hover: #f1f3f6;
+  --bg-active: #e4e7ec;
+  --bg-selected: #f1f3f6;
+  --bg-input: #ffffff;
+  --bg-button: #f1f3f6;
+  --bg-button-hover: #e4e7ec;
+
+  --text-primary: #1a1e25;
+  --text-secondary: #4a5260;
+  --text-muted: #646d7a;
+  --text-disabled: #a9b1bd;
+  --text-inverse: #ffffff;
+
+  --border-color: #e4e7ec;
+  --border-color-strong: #d0d5dd;
+
+  --shadow-sm: 0 1px 4px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 16px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12);
+
+  --map-overlay-bg: rgba(255, 255, 255, 0.94);
+}
+
+/* ===== 값 (다크): 라이트를 뒤집지 않고, 올라온 면일수록 밝게 ===== */
+[data-theme="dark"] {
+  --color-primary: #6aafff;
+  --color-primary-hover: #8cc2ff;
+  --color-primary-light: #1d2840;
+  --color-accent: #3ccf8e;
+  --color-warning: #f0a24a;
+  --color-danger: #ff6b74;
+
+  --bg-app: #121418;
+  --bg-panel: #1b1e24;
+  --bg-menubar: #1b1e24;
+  --bg-toolbar: #1b1e24;
+  --bg-statusbar: #1b1e24;
+  --bg-hover: #252930;
+  --bg-active: #2f343c;
+  --bg-selected: #252930;
+  --bg-input: #121418;
+  --bg-button: #252930;
+  --bg-button-hover: #2f343c;
+
+  --text-primary: #eef0f3;
+  --text-secondary: #c4cad3;
+  --text-muted: #8e97a4;
+  --text-disabled: #5d6571;
+  --text-inverse: #04182e;
+
+  --border-color: #2a2e36;
+  --border-color-strong: #3a3f48;
+
+  --shadow-sm: none;
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  --map-overlay-bg: rgba(37, 41, 48, 0.94);
+}
+
+html, body, #app {
+  word-break: keep-all;
+}
+
+/* ===== 머리 줄: 메뉴와 도구를 한 덩어리로, 사이는 옅은 선 하나 ===== */
+#menubar {
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 var(--spacing-md);
+}
+
+#menubar .menu-btn,
+#menubar .menu-item > button {
+  border-radius: var(--radius-sm);
+}
+
+/* 주요 버튼은 화면에 하나만: 로그인은 회색 버튼으로 */
+#header-login-btn.btn-primary {
+  background: var(--bg-button);
+  color: var(--text-primary) !important; /* .header-auth .btn-primary 의 흰 글자(!important)를 이긴다 */
+  height: 32px;
+  padding: 0 var(--spacing-md);
+  font-weight: 600;
+}
+
+#header-login-btn.btn-primary:hover {
+  background: var(--bg-button-hover);
+}
+
+#toolbar {
+  padding: 0 var(--spacing-sm);
+}
+
+/* 도구 묶음은 세로 구분선 대신 여백으로 나눈다 */
+.toolbar-group {
+  border-right: none;
+  padding: 0 var(--spacing-sm);
+}
+
+.toolbar-group + .toolbar-group {
+  margin-left: var(--spacing-sm);
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-tool-labeled {
+  height: 32px;
+  border-radius: var(--radius-sm);
+  font-weight: 400;
+}
+
+.btn-tool-label {
+  letter-spacing: 0;
+}
+
+/* 켜진 도구: 강조색 바탕 대신 회색 바탕 + 진한 글자 */
+.btn-icon.active,
+.btn-tool-labeled.active {
+  background: var(--bg-active);
+  color: var(--text-primary);
+}
+
+/* ===== 왼쪽 패널 ===== */
+#left-panel {
+  border-right: 1px solid var(--border-color);
+}
+
+/* 레이어 / 브라우저 탭: 밑줄 탭 대신 회색 바탕 위 흰 칸(세그먼트) */
+#left-panel .panel-tabs {
+  margin: var(--spacing-md) var(--spacing-md) var(--spacing-xs);
+  padding: 3px;
+  gap: 2px;
+  border-radius: var(--radius-md);
+  background: var(--bg-button);
+  border-bottom: none;
+}
+
+#left-panel .panel-tab {
+  height: 30px;
+  padding: 0 var(--spacing-sm);
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+#left-panel .panel-tab:hover {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+#left-panel .panel-tab.active {
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] #left-panel .panel-tab.active {
+  background: var(--bg-active);
+}
+
+/* 패널 머리줄: 선 없이 여백으로 */
+.panel-header {
+  height: 40px;
+  background: transparent;
+  border-bottom: none;
+  padding: 0 var(--spacing-md) 0 var(--spacing-lg);
+  font-size: var(--font-size-md);
+}
+
+.panel-content {
+  padding: 0 0 var(--spacing-sm);
+}
+
+/* 레이어 줄: 40px, 한 줄, 고른 줄은 회색 바탕 + 모서리 없는 왼쪽 일자 막대 */
+.layer-item {
+  min-height: 40px;
+  padding: 0 var(--spacing-sm) 0 var(--spacing-lg);
+  gap: 10px;
+}
+
+.layer-item.selected,
+.layer-item.primary-selected {
+  background: var(--bg-selected);
+}
+
+.layer-item.primary-selected {
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.layer-item.primary-selected .layer-name {
+  font-weight: 600;
+}
+
+.layer-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.layer-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.layer-name {
+  font-size: var(--font-size-md);
+  color: var(--text-primary);
+}
+
+.layer-count {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.layer-menu-btn {
+  width: 28px;
+  height: 28px;
+}
+
+.layer-empty {
+  font-size: var(--font-size-sm);
+}
+
+/* ===== 떠 있는 것: 메뉴, 대화상자, 범례 ===== */
+.dropdown-menu,
+.layer-context-menu,
+.context-menu {
+  border: none;
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+}
+
+[data-theme="dark"] .dropdown-menu,
+[data-theme="dark"] .layer-context-menu,
+[data-theme="dark"] .context-menu {
+  background: var(--bg-hover);
+}
+
+.dropdown-item {
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
+}
+
+.dropdown-divider {
+  margin: 6px var(--spacing-xs);
+}
+
+.modal-overlay {
+  background: rgba(16, 20, 26, 0.48);
+}
+
+.modal {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme="dark"] .modal {
+  background: var(--bg-hover);
+}
+
+.modal-header {
+  border-bottom: none;
+}
+
+.modal-footer {
+  border-top: none;
+}
+
+/* 지도 위 범례 */
+.choropleth-legend {
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.choropleth-legend-items,
+.legend-range {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== 지도 버튼: 흰 면 + 옅은 그림자, 테두리 없음 ===== */
+.ol-control {
+  background: transparent !important;
+}
+
+.ol-control button,
+.egis-compass button,
+.egis-geolocate button,
+.egis-basemap > button {
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: var(--shadow-md);
+}
+
+.ol-zoom {
+  top: var(--spacing-md) !important;
+  right: var(--spacing-md) !important;
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+}
+
+.ol-zoom button {
+  width: 36px !important;
+  height: 36px !important;
+  margin: 0 !important;
+  box-shadow: none;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+}
+
+.ol-zoom .ol-zoom-in {
+  border-radius: 10px 10px 0 0 !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.ol-zoom .ol-zoom-out {
+  border-radius: 0 0 10px 10px !important;
+}
+
+.egis-compass,
+.egis-geolocate,
+.egis-basemap {
+  right: var(--spacing-md);
+}
+
+.egis-compass { top: 96px; }
+.egis-geolocate { top: 140px; }
+.egis-basemap { top: 184px; }
+
+.egis-compass button,
+.egis-geolocate button,
+.egis-basemap > button {
+  width: 36px;
+  height: 36px;
+}
+
+[data-theme="dark"] .ol-control button,
+[data-theme="dark"] .egis-compass button,
+[data-theme="dark"] .egis-geolocate button,
+[data-theme="dark"] .egis-basemap > button {
+  background: var(--bg-hover) !important;
+}
+
+/* ===== 아래 상태 줄: 흰 면, 숫자는 Pretendard 고정폭 숫자 ===== */
+#statusbar {
+  border-top: 1px solid var(--border-color);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.statusbar-item.coordinates,
+.scale-input {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.visitor-counter {
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== 입력 칸과 버튼 ===== */
+input[type="text"],
+input[type="number"],
+input[type="search"],
+select,
+textarea {
+  border-radius: var(--radius-sm);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+/* ===== 범례 안 설정 칸: 하드코딩된 흰 바탕 대신 입력 칸 색 ===== */
+.choropleth-legend-unit-row select,
+.choropleth-legend-unit-row input {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color-strong);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+}
+
+.choropleth-legend-unit-row {
+  font-size: var(--font-size-xs);
+}
+
+.choropleth-legend-toggle {
+  border-top: none;
+  padding: 4px 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* ===== 축척 막대: 지도 그림에 함께 담기므로 색은 그대로, 모양만 정리 ===== */
+.map-scale-bar {
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.1);
+  font-family: var(--font-family);
+  font-size: 12px;
+  color: #1a1e25;
+}
+
+.map-scale-bar-label {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}

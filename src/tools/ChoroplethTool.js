@@ -294,7 +294,7 @@ class ChoroplethTool {
     legendEl.className = 'choropleth-legend';
     legendEl.id = `choropleth-legend-${layerId}`;
 
-    const controlsHidden = !!cfg.controlsHidden;
+    const controlsHidden = cfg.controlsHidden !== false; // 처음엔 접어 둔다 (범례를 간단하게). 펼쳐 둔 기록이 있으면 그대로
 
     let html = `<div class="choropleth-legend-title" contenteditable="plaintext-only" spellcheck="false" data-field="title">${this.escapeHtml(title)}</div>`;
     html += '<div class="choropleth-legend-items"></div>';
