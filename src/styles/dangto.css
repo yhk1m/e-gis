@@ -477,3 +477,62 @@ input[type="radio"] {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
+
+/* ===== 여러 개 고르기: 고른 줄마다 왼쪽 일자 막대 ===== */
+.layer-item.selected {
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.layer-item.selected:not(.primary-selected) {
+  opacity: 1;
+}
+
+/* 다크: 고른 줄이 잘 보이게 바탕을 한 단계 밝게 (살짝 파란 기운) */
+[data-theme="dark"] .layer-item.selected,
+[data-theme="dark"] .layer-item.primary-selected {
+  background: #2b3445;
+}
+
+[data-theme="dark"] .layer-item.selected:hover {
+  background: #313b4e;
+}
+
+/* ===== 다크: 하늘색(밝은 주색) 바탕 위 글자는 어두운 색 (프로필 저장 버튼과 같게) ===== */
+[data-theme="dark"] .header-auth .btn-primary,
+[data-theme="dark"] #header-mypage-btn,
+[data-theme="dark"] .install-tip-close,
+[data-theme="dark"] .egis-geolocate button.active,
+[data-theme="dark"] .egis-basemap > button.active,
+[data-theme="dark"] .egis-basemap-panel .egis-basemap-option.active,
+[data-theme="dark"] .choropleth-footer .btn-primary,
+[data-theme="dark"] .builtin-category.open > .builtin-category-header .builtin-badge,
+[data-theme="dark"] .helper-buttons button:hover,
+[data-theme="dark"] .swap-btn:hover,
+[data-theme="dark"] .geo-type-btn.active,
+[data-theme="dark"] .admin-badge,
+[data-theme="dark"] .lab-fb-chip input:checked + span,
+[data-theme="dark"] .public-data-chip.active,
+[data-theme="dark"] .mobile-layers-count,
+[data-theme="dark"] .stroke-btn.active,
+[data-theme="dark"] .layer-multi-select-info,
+[data-theme="dark"] .layer-select-mode-btn.active,
+[data-theme="dark"] #attr-mobile-edit.active,
+[data-theme="dark"] .georef-btn.primary {
+  color: var(--text-inverse) !important;
+}
+
+/* 여러 개 선택 작업 줄 안 버튼도 다크에선 어두운 글자 */
+[data-theme="dark"] .multi-select-btn {
+  color: var(--text-inverse);
+  background: rgba(4, 24, 46, 0.12);
+}
+
+[data-theme="dark"] .multi-select-btn:hover,
+[data-theme="dark"] .multi-select-btn:focus-visible {
+  background: rgba(4, 24, 46, 0.22);
+}
+
+[data-theme="dark"] .multi-select-btn.danger:hover,
+[data-theme="dark"] .multi-select-btn.danger:focus-visible {
+  color: #ffffff;
+}
