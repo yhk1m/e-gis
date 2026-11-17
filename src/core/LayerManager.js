@@ -4,7 +4,8 @@
 
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
+import { Style, Fill, Stroke, Circle as CircleStyle, Icon } from 'ol/style';
+import { normalizePointSymbol, pointSymbolSize, imageBox, iconMarkerDataUrl } from './pointSymbol.js';
 import { createEmpty, extendCoordinate } from 'ol/extent';
 import { fromLonLat } from 'ol/proj';
 import { eventBus, Events } from '../utils/EventBus.js';
@@ -22,7 +23,7 @@ import { cloneChoroplethConfig } from '../tools/choroplethConfigSerial.js';
  */
 export const STYLE_FIELDS = [
   'strokeColor', 'fillColor', 'fillOpacity', 'strokeOpacity',
-  'strokeWidth', 'strokeDash', 'pointRadius', 'strokeSyncToFill'
+  'strokeWidth', 'strokeDash', 'pointRadius', 'strokeSyncToFill', 'pointSymbol'
 ];
 
 /**
@@ -36,6 +37,33 @@ export function pickStyleFields(layerInfo) {
   const out = {};
   for (const key of STYLE_FIELDS) out[key] = layerInfo[key];
   return out;
+}
+
+/**
+ * 포인트 레이어의 OL image 스타일. pointSymbol 이 원이 아니면 아이콘이나 그림으로 그린다.
+ * (LayerManager.updateLayerStyle 이 쓴다. 모양 정의는 pointSymbol.js)
+ */
+export function pointImageStyle(layerInfo, rgbaFill, rgbaStroke) {
+  const sym = normalizePointSymbol(layerInfo.pointSymbol);
+  const strokeWidth = strokeWidthOf(layerInfo, 2);
+  if (sym.kind === 'icon') {
+    const size = pointSymbolSize(layerInfo.pointRadius);
+    return new Icon({
+      src: iconMarkerDataUrl(sym.icon, { fill: rgbaFill, stroke: rgbaStroke, strokeWidth }, size),
+      width: size,
+      height: size
+    });
+  }
+  if (sym.kind === 'image') {
+    const box = imageBox(sym, pointSymbolSize(layerInfo.pointRadius));
+    const opacity = layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 1;
+    return new Icon({ src: sym.dataUrl, width: box.width, height: box.height, opacity });
+  }
+  return new CircleStyle({
+    radius: layerInfo.pointRadius || 6,
+    fill: new Fill({ color: rgbaFill }),
+    stroke: makeStroke({ color: rgbaStroke, width: strokeWidth })
+  });
 }
 
 /** 새 레이어에 자동으로 돌아가며 주는 색 (서로 잘 구분되는 색만) */
@@ -679,6 +707,23 @@ class LayerManager {
     this.updateLayerStyle(layerId);
   }
 
+  /** 포인트 크기 (반지름 px). 원, 아이콘, 이미지 모두 이 값으로 크기가 정해진다 */
+  setLayerPointRadius(layerId, radius) {
+    const layerInfo = this.layers.get(layerId);
+    if (!layerInfo) return;
+    layerInfo.pointRadius = radius;
+    this.updateLayerStyle(layerId);
+  }
+
+  /** 포인트 모양 (원, 아이콘, 이미지). pointSymbol.js 참고 */
+  setLayerPointSymbol(layerId, symbol) {
+    const layerInfo = this.layers.get(layerId);
+    if (!layerInfo) return;
+    const sym = normalizePointSymbol(symbol);
+    layerInfo.pointSymbol = sym.kind === 'circle' ? undefined : sym;
+    this.updateLayerStyle(layerId);
+  }
+
   setLayerStrokeWidth(layerId, strokeWidth) {
     const layerInfo = this.layers.get(layerId);
     if (!layerInfo) return;
@@ -825,13 +870,7 @@ class LayerManager {
         })
       });
     } else if (geoType === "Point" || geoType === "MultiPoint") {
-      newStyle = new Style({
-        image: new CircleStyle({
-          radius: layerInfo.pointRadius || 6,
-          fill: new Fill({ color: rgbaFill }),
-          stroke: makeStroke({ color: rgbaStroke, width: strokeWidthOf(layerInfo, 2) })
-        })
-      });
+      newStyle = new Style({ image: pointImageStyle(layerInfo, rgbaFill, rgbaStroke) });
     } else {
       newStyle = new Style({
         fill: new Fill({ color: rgbaFill }),

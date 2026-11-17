@@ -10,6 +10,8 @@ import { rasterAnalysisTool } from '../../tools/RasterAnalysisTool.js';
 import { cartogramTool } from '../../tools/CartogramTool.js';
 import { saveTextAs } from '../../utils/saveFile.js';
 import { swatchSpec, swatchHTML } from './layerSwatch.js';
+import { POINT_ICONS, POINT_IMAGE_MAX_SIDE, normalizePointSymbol, iconButtonSvg } from '../../core/pointSymbol.js';
+import { reencodeImageFile } from '../../tools/classFillCanvas.js';
 import { flowPanel } from './FlowPanel.js';
 import GeoJSON from 'ol/format/GeoJSON';
 import { applyLegendVisibility } from '../../tools/legendVisibility.js';
@@ -45,6 +47,28 @@ function icon(name, size = 14) {
  * @param {number} max - 최댓값
  * @param {number} step - 슬라이더 눈금 (숫자 입력은 자유롭게 받는다)
  */
+/** 포인트 모양 고르기 칸: 원, 아이콘 12개, 그림 올리기 */
+function pointShapeHTML(sym) {
+  var btn = function(attrs, inner, title, active) {
+    return '<button type="button" class="point-shape-btn' + (active ? ' active' : '') + '" ' + attrs +
+      ' title="' + title + '" aria-label="' + title + '" aria-pressed="' + (active ? 'true' : 'false') + '">' + inner + '</button>';
+  };
+  var circle = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="6"/></svg>';
+  var upload = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M21 16l-5-5-9 9"/></svg>';
+  var html = '<div class="style-section"><label>모양:</label><div class="point-shape-grid">';
+  html += btn('data-point-shape="circle"', circle, '원', sym.kind === 'circle');
+  POINT_ICONS.forEach(function(icon) {
+    html += btn('data-point-icon="' + icon.id + '"', iconButtonSvg(icon.id), icon.label, sym.kind === 'icon' && sym.icon === icon.id);
+  });
+  var imgInner = sym.kind === 'image'
+    ? '<img src="' + sym.dataUrl + '" alt="" width="18" height="18" style="object-fit:contain">'
+    : upload;
+  html += '<label class="point-shape-btn point-shape-upload' + (sym.kind === 'image' ? ' active' : '') + '" title="내 그림 올리기" aria-label="내 그림 올리기" tabindex="0" role="button">' + imgInner +
+    '<input type="file" class="point-image-input" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden></label>';
+  html += '</div></div>';
+  return html;
+}
+
 function sliderRow(label, cls, value, unit, min, max, step) {
   return "<div class=\"style-section\"><label>" + label + ":</label>" +
     "<div class=\"slider-row\">" +
@@ -1172,7 +1196,17 @@ export class LayerPanel {
       // 선 스타일
       html += strokeDashHTML(currentStrokeDash);
     } else {
-      // 포인트: 면 색상 / 테두리 색상 따로 설정
+      // 포인트: 모양(원, 아이콘, 그림)과 크기, 그다음 면 색상 / 테두리 색상
+      const pointSym = normalizePointSymbol(layer.pointSymbol);
+      const canShape = !layerManager.isClassified(layer);
+      if (canShape) {
+        html += pointShapeHTML(pointSym);
+        html += sliderRow("크기", "point-radius", layer.pointRadius || 6, "px", 2, 20, 1);
+      }
+      if (canShape && pointSym.kind === "image") {
+        // 그림은 색을 쓰지 않는다. 불투명도만 남긴다
+        html += sliderRow("불투명도", "fill-opacity", Math.round(currentFillOpacity * 100), "%", 0, 100, 1);
+      } else {
       const fillColorItems = swatchItems("data-fill-color", currentFillColor);
 
       html += "<div class=\"style-section\"><label>면 색상:</label><div class=\"color-picker-grid\">" + fillColorItems + "</div>";
@@ -1187,6 +1221,7 @@ export class LayerPanel {
       html += "<div class=\"color-picker-custom\"><input type=\"color\" value=\"" + currentStrokeColor + "\" class=\"stroke-color-input\"></div></div>";
 
       html += sliderRow("테두리 두께", "stroke-width", currentStrokeWidth, "px", 0, 10, 0.5);
+      }
     }
 
 
@@ -1235,6 +1270,49 @@ export class LayerPanel {
         strokeBtn.classList.add("active");
         layerManager.setLayerStrokeDash(layerId, strokeBtn.dataset.stroke);
       }
+
+      // 포인트 모양: 원이나 아이콘. 그림에서 바뀌면 색 칸이 다시 나와야 하므로 창을 새로 그린다
+      var shapeBtn = e.target.closest("button.point-shape-btn");
+      if (shapeBtn) {
+        var wasImage = normalizePointSymbol((layerManager.getLayer(layerId) || {}).pointSymbol).kind === "image";
+        var next = shapeBtn.dataset.pointIcon ? { kind: "icon", icon: shapeBtn.dataset.pointIcon } : { kind: "circle" };
+        layerManager.setLayerPointSymbol(layerId, next);
+        self.refreshSwatch(layerId);
+        if (wasImage) {
+          self.showSingleColorPicker(layerId);
+          return;
+        }
+        picker.querySelectorAll(".point-shape-btn").forEach(function(b) {
+          b.classList.toggle("active", b === shapeBtn);
+          if (b.tagName === "BUTTON") b.setAttribute("aria-pressed", b === shapeBtn ? "true" : "false");
+        });
+      }
+    });
+
+    var pointImageInput = picker.querySelector(".point-image-input");
+    var pointUpload = picker.querySelector(".point-shape-upload");
+    if (pointUpload && pointImageInput) {
+      pointUpload.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pointImageInput.click(); }
+      });
+    }
+    if (pointImageInput) {
+      pointImageInput.addEventListener("change", async function(e) {
+        var file = e.target.files && e.target.files[0];
+        if (!file) return;
+        try {
+          var img = await reencodeImageFile(file, POINT_IMAGE_MAX_SIDE);
+          layerManager.setLayerPointSymbol(layerId, { kind: "image", dataUrl: img.dataUrl, width: img.width, height: img.height });
+          self.refreshSwatch(layerId);
+          self.showSingleColorPicker(layerId);
+        } catch (err) {
+          showAlert("그림을 읽지 못했어요. PNG나 JPG 파일로 다시 올려 주세요.");
+        }
+      });
+    }
+
+    bindSliderRow(picker, "point-radius", function(r) {
+      layerManager.setLayerPointRadius(layerId, r);
     });
 
     var colorInput = picker.querySelector(".color-input");

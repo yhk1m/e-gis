@@ -9,7 +9,7 @@ import { jsPDF } from 'jspdf';
 import { mapManager } from '../core/MapManager.js';
 import { flowTool } from './FlowTool.js';
 import { planFill, isSolid } from './classFill.js';
-import { renderFillCanvas, getCachedImage } from './classFillCanvas.js';
+import { renderFillCanvas, getCachedImage, loadImage } from './classFillCanvas.js';
 
 class ExportTool {
   constructor() {
@@ -59,7 +59,8 @@ class ExportTool {
         backgroundColor: includeBasemap ? '#ffffff' : null
       }));
 
-      // 오버레이 그리기
+      // 오버레이 그리기 (포인트 아이콘 범례 그림은 먼저 읽어 둔다)
+      if (overlays.legend) await this.preloadLegendImages(overlays.legend);
       const finalCanvas = this.drawOverlays(mapCanvas, overlays, scale);
 
       // 포맷에 따라 내보내기
@@ -660,6 +661,18 @@ class ExportTool {
    * 범례 항목의 기호 하나 — 도형 종류에 맞춰 그린다.
    * 지도와 같아 보이도록 레이어 스타일(색·투명도·테두리 굵기·점선)을 그대로 쓴다.
    */
+  /** 포인트 아이콘, 그림 범례는 그리기 전에 그림을 읽어 둔다 (drawLegendSymbol 은 동기) */
+  async preloadLegendImages(options) {
+    const srcs = [];
+    for (const model of (options && options.models) || []) {
+      for (const item of (model && model.items) || []) {
+        const pi = item && item.symbol && item.symbol.pointImage;
+        if (pi && pi.src) srcs.push(pi.src);
+      }
+    }
+    await Promise.all(srcs.map((src) => loadImage(src).catch(() => null)));
+  }
+
   drawLegendSymbol(ctx, symbol, x, cy, boxW, rowH, scale) {
     const {
       kind,
@@ -689,7 +702,17 @@ class ExportTool {
     ctx.lineWidth = Math.max(0.5, Math.min(strokeWidth, 3)) * scale;
     ctx.setLineDash(this.dashPattern(strokeDash, boxW));
 
-    if (kind === 'point') {
+    const pointImage = kind === 'point' && symbol.pointImage ? symbol.pointImage : null;
+    const pointImg = pointImage ? getCachedImage(pointImage.src) : null;
+    if (pointImage && !pointImg) loadImage(pointImage.src);   // 다음 그리기(동영상 다음 장면)부터 보인다
+    if (pointImg && typeof pointImg === 'object') {
+      // 아이콘, 그림: 칸 높이에 맞춰 비율을 지켜 그린다
+      const side = Math.min(boxW, rowH * 0.9);
+      const w = pointImage.width >= pointImage.height ? side : side * pointImage.width / pointImage.height;
+      const h = pointImage.width >= pointImage.height ? side * pointImage.height / pointImage.width : side;
+      ctx.globalAlpha = pointImage.opacity !== undefined ? pointImage.opacity : 1;
+      ctx.drawImage(pointImg, x + (boxW - w) / 2, cy - h / 2, w, h);
+    } else if (kind === 'point') {
       // 실제 반지름을 쓰되 칸 안에 들어오게 줄인다.
       const r = Math.min(pointRadius * scale * 0.7, boxW / 2);
       ctx.beginPath();

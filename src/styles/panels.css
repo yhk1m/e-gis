@@ -480,6 +480,52 @@
   color: white;
 }
 
+/* 포인트 모양 고르기 (원, 아이콘, 내 그림) */
+.point-shape-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 32px);
+  gap: 4px;
+}
+
+.point-shape-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+/* .style-section label 의 block, 아래 여백을 덮는다 (그림 올리기 칸은 label) */
+.style-section label.point-shape-upload {
+  display: flex;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.point-shape-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.point-shape-btn.active {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+  color: var(--color-primary);
+}
+
+.point-shape-btn:focus-within,
+.point-shape-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
 /* 슬라이더 + 숫자 입력 한 줄 — 대충은 슬라이더로, 정확한 값은 숫자로 */
 .slider-row {
   display: flex;

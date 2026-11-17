@@ -7,6 +7,8 @@
  * 단위 테스트할 수 있고, 미리보기와 내보내기가 같은 모델을 공유한다.
  */
 
+import { normalizePointSymbol, iconMarkerDataUrl } from '../core/pointSymbol.js';
+
 /**
  * 숫자 포맷
  * - 'comma'   : 1,234,567 (정수로 반올림 후 천 단위 구분)
@@ -87,8 +89,34 @@ function makeSymbol(layerInfo, classColor, classFill = null) {
     strokeOpacity: layerInfo.strokeOpacity,
     strokeWidth: layerInfo.strokeWidth,
     strokeDash: layerInfo.strokeDash,
-    pointRadius: layerInfo.pointRadius
+    pointRadius: layerInfo.pointRadius,
+    // 분류색 없는 포인트만 아이콘, 그림 모양을 따른다 (분류 레이어 지도는 원으로 그린다)
+    pointImage: classColor ? null : pointImageOf(layerInfo, fillColor)
   };
+}
+
+/**
+ * 범례에 그릴 포인트 그림 { src, width, height } 또는 null(원).
+ * 아이콘은 지도 마커와 같은 SVG를 크게(64px) 만들어 내보내기 배율에서도 흐리지 않게 한다.
+ */
+function pointImageOf(layerInfo, fillColor) {
+  if (symbolKind(layerInfo.geometryType) !== 'point') return null;
+  const sym = normalizePointSymbol(layerInfo.pointSymbol);
+  if (sym.kind === 'icon') {
+    const src = iconMarkerDataUrl(sym.icon, {
+      fill: fillColor,
+      fillOpacity: layerInfo.fillOpacity,
+      stroke: layerInfo.strokeColor || layerInfo.color,
+      strokeOpacity: layerInfo.strokeOpacity,
+      strokeWidth: layerInfo.strokeWidth !== undefined ? layerInfo.strokeWidth : 2
+    }, 64);
+    return { src, width: 1, height: 1, opacity: 1 };
+  }
+  if (sym.kind === 'image') {
+    const opacity = layerInfo.fillOpacity !== undefined ? layerInfo.fillOpacity : 1;
+    return { src: sym.dataUrl, width: sym.width, height: sym.height, opacity };
+  }
+  return null;
 }
 
 /**

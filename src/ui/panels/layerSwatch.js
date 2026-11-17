@@ -16,6 +16,7 @@
 
 import { strokeWidthOf } from '../../utils/strokeStyle.js';
 import { COLOR_RAMPS } from '../../flow/flowModel.js';
+import { normalizePointSymbol, iconMarkerInner, imageBox } from '../../core/pointSymbol.js';
 
 /** 분류색을 스스로 정하는 레이어 — 단색 하나로는 표현할 수 없어 사각형으로 둔다 */
 const THEMATIC_TYPES = ['choropleth', 'heatmap', 'raster', 'chartmap', 'dem', 'flow'];
@@ -66,6 +67,11 @@ export function swatchSpec(layerInfo, lineDash) {
     dash: lineDash && lineDash.length ? lineDash.join(',') : null,
     radius: layerInfo.pointRadius || 6
   };
+  // 포인트 모양 (원, 아이콘, 이미지). 주제도는 분류색 사각형 그대로
+  if (spec.shape === 'point') {
+    const sym = normalizePointSymbol(layerInfo.pointSymbol);
+    if (sym.kind !== 'circle') spec.symbol = sym;
+  }
   return spec;
 }
 
@@ -101,6 +107,21 @@ function shapeMarkup(spec) {
     return `<line x1="1" y1="${BOX - 2}" x2="${BOX - 1}" y2="2" fill="none"` +
       ` stroke="${spec.stroke}" stroke-width="${width}" stroke-opacity="${spec.strokeOpacity}"${dash}` +
       ' stroke-linecap="round" pointer-events="none"/>';
+  }
+
+  if (spec.shape === 'point' && spec.symbol && spec.symbol.kind === 'icon') {
+    // 지도 마커와 같은 그림을 16칸에 맞춰 줄인다 (24칸 기준 그림)
+    return `<g transform="scale(${BOX / 24})" pointer-events="none">` +
+      iconMarkerInner(spec.symbol.icon, {
+        fill: spec.fill, fillOpacity: spec.fillOpacity,
+        stroke: spec.stroke, strokeOpacity: spec.strokeOpacity, strokeWidth: spec.strokeWidth
+      }) + '</g>';
+  }
+
+  if (spec.shape === 'point' && spec.symbol && spec.symbol.kind === 'image') {
+    const box = imageBox(spec.symbol, BOX);
+    return `<image href="${spec.symbol.dataUrl}" x="${(BOX - box.width) / 2}" y="${(BOX - box.height) / 2}"` +
+      ` width="${box.width}" height="${box.height}" pointer-events="none"/>`;
   }
 
   if (spec.shape === 'point') {
