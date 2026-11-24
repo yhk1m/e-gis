@@ -481,6 +481,13 @@
   display: block;
 }
 
+/* About e-GIS 맨 아래 패밀리 사이트 드롭다운 */
+.about-family {
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-xs) 0;
+  border-top: 1px solid var(--border-color);
+}
+
 .menu-button {
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);

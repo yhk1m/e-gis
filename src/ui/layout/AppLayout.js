@@ -182,6 +182,8 @@ export class AppLayout {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>
                   <span class="install-label">홈 화면에 추가</span>
                 </button>
+                <!-- 패밀리 사이트 드롭다운 (https://bgnl.kr/family.js 가 그린다) -->
+                <div class="about-family" data-bgnl-family></div>
               </div>
             </div>
           </div>
