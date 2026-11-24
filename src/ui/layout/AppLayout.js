@@ -182,8 +182,6 @@ export class AppLayout {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>
                   <span class="install-label">홈 화면에 추가</span>
                 </button>
-                <!-- 패밀리 사이트 드롭다운 (https://bgnl.kr/family.js 가 그린다) -->
-                <div class="about-family" data-bgnl-family></div>
               </div>
             </div>
           </div>
@@ -511,6 +509,8 @@ export class AppLayout {
               <p class="file-types" style="margin-top:6px;opacity:0.7;font-size:11px;">Shapefile은 폴더째 드래그하거나 ZIP으로 넣으면 속성(.dbf)까지 함께 불러옵니다.</p>
             </div>
           </div>
+          <!-- 사이드바 맨 아래 패밀리 사이트 드롭다운 (https://bgnl.kr/family.js 가 그린다) -->
+          <div class="panel-family" data-bgnl-family></div>
         </aside>
 
         <!-- 패널 리사이저 -->

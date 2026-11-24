@@ -167,6 +167,18 @@
   flex-shrink: 0;
 }
 
+/* 사이드바 맨 아래 패밀리 사이트 드롭다운 */
+.panel-family {
+  flex-shrink: 0;
+  padding: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
+}
+
+/* 휴대폰 아래 시트(높이 55%, overflow hidden) 안에서 목록이 잘리지 않게 */
+@media (max-width: 768px) {
+  .panel-family .bgnl-fam__list { max-height: 28vh; }
+}
+
 /* 패널 리사이저 */
 .panel-resizer {
   width: 4px;
@@ -479,13 +491,6 @@
 
 .menu-item.dropdown.open .dropdown-menu {
   display: block;
-}
-
-/* About e-GIS 맨 아래 패밀리 사이트 드롭다운 */
-.about-family {
-  margin-top: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-xs) 0;
-  border-top: 1px solid var(--border-color);
 }
 
 .menu-button {
