@@ -8,6 +8,7 @@ import { applyPageVisibility } from '../core/StoryMapRenderer.js';
 import { slideBgOf } from '../core/StoryDoc.js';
 import { applySlideColors } from '../shared/color.js';
 import { openLightbox } from './lightbox.js';
+import { iconSvg } from '../shared/icons.js';
 import { navReduce, indicatorDots, buildOverlay } from './presentationNav.js';
 
 /**
@@ -52,9 +53,9 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
   const indicator = document.createElement('div');
   indicator.className = 'pres-indicator';
 
-  const prevBtn = mkBtn('◂', 'pres-arrow pres-prev', '이전 (←)', () => go('prev'));
-  const nextBtn = mkBtn('▸', 'pres-arrow pres-next', '다음 (→)', () => go('next'));
-  const exitBtn = mkBtn('✕', 'pres-exit', '발표 종료 (Esc)', () => exit());
+  const prevBtn = mkBtn(iconSvg('chevronLeft', 28), 'pres-arrow pres-prev', '이전 (←)', () => go('prev'));
+  const nextBtn = mkBtn(iconSvg('chevronRight', 28), 'pres-arrow pres-next', '다음 (→)', () => go('next'));
+  const exitBtn = mkBtn(iconSvg('close', 20), 'pres-exit', '발표 끝내기 (Esc)', () => exit());
   if (standalone) exitBtn.style.display = 'none'; // 웹뷰어: 발표가 곧 페이지 — 종료 없음
 
   stage.append(cover, overlay, indicator, prevBtn, nextBtn, exitBtn);
@@ -88,8 +89,9 @@ export function createPresentationShell(root, { mapEl, mapHome, mapView, animato
     const b = document.createElement('button');
     b.type = 'button';
     b.className = cls;
-    b.textContent = text;
+    b.innerHTML = text;
     b.title = title;
+    b.setAttribute('aria-label', title);
     // 지도로 클릭 전파 금지(발표 중 지도는 인터랙티브하지만 버튼은 네비 전용).
     b.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
     return b;

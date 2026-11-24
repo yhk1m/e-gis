@@ -41,6 +41,7 @@ import { openLightbox } from './viewer/lightbox.js';
 import { showUpdateModal } from './editor/updateModal.js';
 import { createReportShell } from './viewer/ReportShell.js';
 import { createLegend } from './editor/Legend.js';
+import { setIconLabel } from './shared/icons.js';
 
 const mapView = new MapView('map');
 const status = document.getElementById('status');
@@ -69,12 +70,12 @@ const sourcePanel = createSourcePanel(document.getElementById('source-panel'), {
   },
   // 소스 제거: 문서(모든 페이지 가시성 포함)와 지도(OL 레이어) 양쪽에서 삭제
   async onRemoveSource(sourceId, filename) {
-    if (!(await confirmDialog(`'${filename}' 소스를 제거할까요? 모든 슬라이드에서 이 소스의 레이어가 사라집니다.`))) return;
+    if (!(await confirmDialog(`'${filename}' 소스를 뺄까요? 모든 슬라이드에서 이 소스의 레이어가 사라져요.`))) return;
     removeSource(doc, sourceId);
     registry.removeSource(sourceId);
     refresh();
     scheduleSave();
-    status.textContent = `${filename} 소스를 제거했습니다.`;
+    status.textContent = `${filename} 소스를 뺐어요.`;
   },
 });
 
@@ -149,7 +150,7 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
     applySlideBgToAll(doc, color); // 이 배경색을 모든 슬라이드에(프로젝트 기본 + override 제거)
     refresh();
     scheduleSave();
-    status.textContent = `배경색을 ${doc.pages.length}개 슬라이드 전체에 적용했습니다.`;
+    status.textContent = `배경색을 슬라이드 ${doc.pages.length}개에 모두 적용했어요.`;
   },
 });
 
@@ -226,8 +227,8 @@ const btnTheme = document.getElementById('btn-theme');
 function applyTheme(theme) {
   const t = theme === 'light' ? 'light' : 'dark';
   document.documentElement.dataset.theme = t;
-  btnTheme.textContent = t === 'light' ? '🌙' : '☀️';
-  btnTheme.title = t === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환';
+  setIconLabel(btnTheme, t === 'light' ? 'moon' : 'sun', '', t === 'light' ? '다크 모드로 바꾸기' : '라이트 모드로 바꾸기');
+  btnTheme.title = t === 'light' ? '다크 모드로 바꾸기' : '라이트 모드로 바꾸기';
 }
 applyTheme(localStorage.getItem('egis-theme') || 'dark');
 btnTheme.addEventListener('click', () => {
@@ -388,7 +389,7 @@ document.getElementById('btn-cam-all').addEventListener('click', () => {
   applyCameraToAllPages(doc, mapView.getCamera()); // 현재 지도 뷰 → 전 페이지
   refresh();
   scheduleSave();
-  status.textContent = `현재 위치를 ${doc.pages.length}개 슬라이드 전체에 적용했습니다.`;
+  status.textContent = `지금 위치를 슬라이드 ${doc.pages.length}개에 모두 적용했어요.`;
 });
 
 function closeCamSyncPop() {
@@ -417,7 +418,7 @@ camSyncBtn.addEventListener('click', (e) => {
       const page = getPage(doc, currentPageId);
       if (page && page.camera) animator.flyTo(page.camera);
       scheduleSave();
-      status.textContent = `'${p.title}'의 위치를 가져왔습니다.`;
+      status.textContent = `'${p.title}'의 위치를 가져왔어요.`;
     });
     camSyncPop.appendChild(b);
   }
@@ -436,11 +437,11 @@ async function doSaveNow() {
     saveStatus.textContent = `저장됨 ${t}`;
     // 클라우드 편승(M8): 토글 on + 로그인 시 비차단 upsert — 실패해도 로컬 저장은 유효
     if (doc.meta.cloudSync && authManager.isLoggedIn()) {
-      saveStatus.textContent = `저장됨 ${t} · 클라우드 ↑`;
+      saveStatus.textContent = `${t} 저장, 클라우드에 올리는 중`;
       cloudSync.upsert(doc)
-        .then(() => { if (seq === saveSeq) saveStatus.textContent = `저장됨 ${t} · 클라우드 ✓`; })
+        .then(() => { if (seq === saveSeq) saveStatus.textContent = `${t} 저장, 클라우드 저장 완료`; })
         .catch((e) => {
-          if (seq === saveSeq) saveStatus.textContent = `저장됨 ${t} · 클라우드 실패: ${e.message}`;
+          if (seq === saveSeq) saveStatus.textContent = `${t} 저장, 클라우드 저장 못 함: ${e.message}`;
           console.error('[cloud] upsert 실패:', e);
         });
     }
@@ -474,7 +475,7 @@ const publisher = createPublisher({ client: supabase, getUser: () => authManager
 document.getElementById('btn-publish').addEventListener('click', () => {
   if (!doc) return;
   if (!authManager.isLoggedIn()) {
-    status.textContent = '게시하려면 🗂 프로젝트 화면에서 로그인하세요.';
+    status.textContent = '게시하려면 프로젝트 화면에서 로그인해 주세요.';
     return;
   }
   openPublishDialog({
@@ -494,7 +495,7 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
     // 제목이 기존 파일을 무백업 덮어쓰는 사고를 막는다(fileService.sanitize와 동일 규칙).
     const safeName = title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 120);
     if (knownNames.includes(safeName) || knownNames.includes(title)) {
-      startScreen.showError('같은 이름의 스토리맵이 이미 있습니다. 다른 제목을 입력하세요.');
+      startScreen.showError('같은 이름의 스토리맵이 이미 있어요. 다른 제목을 입력해 주세요.');
       return;
     }
     doc = createStoryDoc(title);
@@ -625,7 +626,7 @@ async function boot() {
     startScreen.render(knownNames);
   } catch (e) {
     startScreen.render([]);
-    startScreen.showError(`목록을 불러오지 못했습니다: ${e.message}`);
+    startScreen.showError(`목록을 불러오지 못했어요: ${e.message}`);
     console.error(e);
   }
 }
@@ -657,7 +658,7 @@ function addSourceFromEgis(filename, rawJson) {
   refresh();
   scheduleSave();
   const skippedNote = skipped ? ` (복원 불가 ${skipped}개 건너뜀)` : '';
-  status.textContent = `${filename} — 레이어 ${builtLayerIds.length}개 추가${skippedNote}`;
+  status.textContent = `${filename}: 레이어 ${builtLayerIds.length}개 추가${skippedNote}`;
 }
 
 document.getElementById('btn-import').addEventListener('click', async () => {
@@ -680,7 +681,7 @@ document.getElementById('btn-capture').addEventListener('click', () => {
   if (!page) return; // 방어: 선택 불변식이 깨져도 하드 크래시 방지
   setPageCamera(doc, currentPageId, mapView.getCamera());
   scheduleSave();
-  status.textContent = `현재 화면을 "${page.title}" 카메라로 저장했습니다`;
+  status.textContent = `지금 화면을 "${page.title}" 위치로 저장했어요`;
 });
 
 boot();
