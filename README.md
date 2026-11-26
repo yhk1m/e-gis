@@ -64,7 +64,7 @@ GIS를 처음 접하는 교사와 학생을 위한 웹 GIS입니다. 설치 없�
 
 e-GIS로 만든 지도를 슬라이드로 엮어 스토리맵(발표 자료)을 만드는 Windows 프로그램입니다. e-GIS를 안에 품고 있어서 지도 작업과 발표 준비를 한 창에서 나란히(분할 모드) 할 수 있습니다. 두 프로그램은 `.egis` 프로젝트 파일로 이어집니다.
 
-- 내려받기: [GitHub Releases](https://github.com/yhk1m/e-gis/releases/latest)에서 `e-GIS-Setup-<버전>.exe` (지금 최신은 v0.3.2)
+- 내려받기: [GitHub Releases](https://github.com/yhk1m/e-gis/releases/latest)에서 `e-GIS-Setup-<버전>.exe` (지금 최신은 v0.3.3)
 - 할 수 있는 일: 페이지(슬라이드) 만들기, 지도 위치 정하기, 배경지도와 글꼴 꾸미기, 발표 모드, 발표 PDF, 웹에 게시해 공유 링크 만들기(`e-gis.kr/<아이디>/<번호>`), 클라우드 동기화
 - 소스 코드: [eStoryMap/](eStoryMap/) (Electron)
 
