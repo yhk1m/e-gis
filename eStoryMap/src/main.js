@@ -18,6 +18,7 @@ import {
   createStoryDoc, addSource, removeSource, addPage, removePage, setPageOrder, getPage, setLayerVisible, nextSourceId,
   setPageCamera, setPageContent, setPageKind, setPageAlign, setPageSplit, setPageSplitRatio, setPageBasemap, setPageTitle,
   setPageBg, slideBgOf, applySlideBgToAll, setCloudSync,
+  duplicatePage, replaceSource,
   setPresentationLayout, setPresentationPos, setSlideFont, setSlideFontCustom, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
 } from './core/StoryDoc.js';
@@ -35,6 +36,8 @@ import { CameraAnimator } from './shared/CameraAnimator.js';
 import { serializeStoryDoc, deserializeStoryDoc, createAutosaver } from './core/LocalStore.js';
 import { createStartScreen } from './editor/StartScreen.js';
 import { createHistory } from './core/History.js';
+import { loginDialog } from './editor/loginDialog.js';
+import { setImageStore } from './shared/markdown.js';
 import { createAuthManager } from './core/AuthManager.js';
 import { createSupabaseClient } from './core/supabaseClient.js';
 import { createPresentationShell } from './viewer/PresentationShell.js';
@@ -70,6 +73,37 @@ const sourcePanel = createSourcePanel(document.getElementById('source-panel'), {
     scheduleSave();
   },
   // 소스 제거: 문서(모든 페이지 가시성 포함)와 지도(OL 레이어) 양쪽에서 삭제
+  // 다른 파일로 바꾸기: 같은 자리에 새 파일을 넣고, 슬라이드마다 켜고 끈 레이어는 그대로 둔다
+  async onReplaceSource(sourceId, filename) {
+    try {
+      const picked = await window.egisFS.importEgis();
+      if (!picked) return;
+      let egis;
+      if (picked.data) {
+        const { parseGeoTiff } = await import('./core/GeoTiffLoader.js');
+        egis = await parseGeoTiff(picked.data, picked.filename);
+      } else {
+        egis = JSON.parse(picked.text);
+      }
+      const parsed = parseEgisDoc(egis);
+      registry.removeSource(sourceId);
+      const { builtLayerIds, skipped } = registry.addSource(sourceId, parsed);
+      loadedEgis.set(sourceId, egis);
+      replaceSource(doc, sourceId, { filename: picked.filename, egis }, builtLayerIds, currentPageId);
+      refresh();
+      scheduleSave();
+      const skippedNote = skipped ? ` (복원 못 한 레이어 ${skipped}개 건너뜀)` : '';
+      status.textContent = `소스 파일을 바꿨어요. 새 파일: ${picked.filename}${skippedNote}. Ctrl+Z로 되돌릴 수 있어요.`;
+    } catch (e) {
+      // 반쯤 바뀐 지도 레이어를 문서 상태로 되돌린다
+      const source = doc.sources.find((x) => x.sourceId === sourceId);
+      registry.removeSource(sourceId);
+      if (source) { registry.addSource(sourceId, parseEgisDoc(source.egis)); loadedEgis.set(sourceId, source.egis); }
+      refresh();
+      status.textContent = `파일을 바꾸지 못했어요: ${e.message}`;
+      console.error(e);
+    }
+  },
   async onRemoveSource(sourceId, filename) {
     if (!(await confirmDialog(`'${filename}' 소스를 뺄까요? 모든 슬라이드에서 이 소스의 레이어가 사라져요.`))) return;
     removeSource(doc, sourceId);
@@ -112,9 +146,29 @@ const pageList = createPageList(document.getElementById('page-list'), {
     refresh();
     scheduleSave();
   },
+  onDuplicate(pageId) {
+    const page = duplicatePage(doc, pageId); // 글, 배경, 지도 상태까지 똑같이 바로 뒤에
+    if (!page) return;
+    currentPageId = page.id;
+    refresh();
+    scheduleSave();
+    status.textContent = '슬라이드를 복제했어요.';
+  },
 });
 
 const contentEditor = createContentEditor(document.getElementById('content-panel'), {
+  // 내 컴퓨터 사진: 문서의 사진 보관함에 넣고 id를 돌려준다(본문에는 ![](img:id)로 들어간다)
+  onAddImage(dataUrl) {
+    if (!doc.images) {
+      doc.images = {};
+      setImageStore(doc.images);
+    }
+    let n = Object.keys(doc.images).length + 1;
+    while (doc.images[`img_${n}`]) n += 1;
+    const id = `img_${n}`;
+    doc.images[id] = dataUrl;
+    return id;
+  },
   onChange(field, value) {
     if (field === 'kind') {
       setPageKind(doc, currentPageId, value); // 종류 변경 → 목록 배지·발표/보고서 렌더 반영
@@ -536,7 +590,13 @@ function restoreSnapshot(s) {
   const onMap = new Set(registry.entriesList().map((e) => e.sourceId));
   for (const id of onMap) if (!inDoc.has(id)) registry.removeSource(id);
   for (const source of doc.sources) {
-    if (!onMap.has(source.sourceId)) registry.addSource(source.sourceId, parseEgisDoc(source.egis));
+    // 없는 소스는 올리고, 다른 파일로 바뀐 소스(바꾸기를 되돌린 경우)는 다시 올린다
+    const stale = onMap.has(source.sourceId) && loadedEgis.get(source.sourceId) !== source.egis;
+    if (stale) registry.removeSource(source.sourceId);
+    if (!onMap.has(source.sourceId) || stale) {
+      registry.addSource(source.sourceId, parseEgisDoc(source.egis));
+      loadedEgis.set(source.sourceId, source.egis);
+    }
   }
   if (!getPage(doc, currentPageId)) currentPageId = doc.pages[0].id;
   syncMetaControls();
@@ -605,11 +665,15 @@ const cloudSync = createCloudSync({ client: supabase, getUser: () => authManager
 const publisher = createPublisher({ client: supabase, getUser: () => authManager.getUser() });
 
 // 웹 게시(공개 스냅샷) — 클라우드 동기화(비공개 백업)와 독립
-document.getElementById('btn-publish').addEventListener('click', () => {
+const authForDialog = {
+  signIn: (email, pw) => authManager.signIn(email, pw),
+  openSignup: () => window.egisFS.openExternal('https://e-gis.kr'),
+};
+document.getElementById('btn-publish').addEventListener('click', async () => {
   if (!doc) return;
   if (!authManager.isLoggedIn()) {
-    status.textContent = '게시하려면 프로젝트 화면에서 로그인해 주세요.';
-    return;
+    const ok = await loginDialog(authForDialog, { reason: '웹에 게시하려면 e-GIS 계정으로 로그인해 주세요.' });
+    if (!ok || !doc) return;
   }
   openPublishDialog({
     doc,
@@ -620,6 +684,7 @@ document.getElementById('btn-publish').addEventListener('click', () => {
 });
 
 let knownNames = [];
+const loadedEgis = new Map(); // 지도에 올려 둔 소스의 파일 내용(sourceId → egis). 되돌리기 때 바뀐 소스를 알아본다
 let lastCloudItems = null; // 마지막으로 불러온 클라우드 목록(고친 시각 비교용)
 let opening = false;
 
@@ -671,6 +736,7 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
       projectName = name;
       for (const source of doc.sources) {
         registry.addSource(source.sourceId, parseEgisDoc(source.egis)); // visible=false로 빌드
+        loadedEgis.set(source.sourceId, source.egis);
       }
       enterEditor();
     } catch (e) {
@@ -708,6 +774,7 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
       projectName = name;
       for (const source of doc.sources) {
         registry.addSource(source.sourceId, parseEgisDoc(source.egis)); // visible=false로 빌드
+        loadedEgis.set(source.sourceId, source.egis);
       }
       enterEditor();
       saveNow(); // 오프라인 연속성 — 즉시 로컬 .esm로도 저장
@@ -717,6 +784,18 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
       console.error(e);
     } finally {
       opening = false;
+    }
+  },
+  // 다른 폴더(USB, 메일)의 .esm: 저장 폴더로 들여온 뒤 바로 연다
+  async onImport() {
+    if (opening) return;
+    try {
+      const name = await window.egisFS.importProject();
+      if (!name) return;
+      await boot();
+      await startScreen.openByName(name);
+    } catch (e) {
+      startScreen.showError(`파일을 열지 못했어요: ${String(e.message || e).replace(/^.*Error: /, '')}`);
     }
   },
   // 시작 화면 항목 메뉴: 이름 바꾸기, 사본 만들기, 지우기
@@ -807,10 +886,17 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
 const cloudToggle = document.getElementById('cloud-toggle');
 function updateCloudToggle() {
   cloudToggle.checked = !!(doc && doc.meta.cloudSync);
-  cloudToggle.disabled = !authManager.isLoggedIn();
+  cloudToggle.disabled = false; // 로그인 안 했으면 누를 때 로그인 창을 띄운다
+  cloudToggle.title = authManager.isLoggedIn() ? '' : '누르면 로그인하고 클라우드에 함께 저장해요';
 }
-cloudToggle.addEventListener('change', () => {
+cloudToggle.addEventListener('change', async () => {
   if (!doc) return;
+  if (cloudToggle.checked && !authManager.isLoggedIn()) {
+    cloudToggle.checked = false;
+    const ok = await loginDialog(authForDialog, { reason: '클라우드에 함께 저장하려면 e-GIS 계정으로 로그인해 주세요.' });
+    if (!ok || !doc) return;
+    cloudToggle.checked = true;
+  }
   setCloudSync(doc, cloudToggle.checked);
   scheduleSave(); // 켜는 순간의 상태도 2초 뒤 로컬+클라우드로 저장
 });
@@ -850,6 +936,9 @@ function enterEditor() {
   refresh();
   const page = getPage(doc, currentPageId);
   if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 즉시 복원
+  pruneImages();
+  setImageStore(doc.images);
+  refresh(); // 사진 보관함을 등록한 뒤 다시 그린다
   history.reset(); // 이 문서를 연 상태가 되돌리기의 시작점
   updateUndoButtons();
 }
@@ -865,8 +954,23 @@ function syncMetaControls() {
   legendToggle.checked = doc.meta.legend ? doc.meta.legend.visible : true; // 범례 표시 현재값
 }
 
+/** 본문 어디에도 쓰지 않는 사진을 사진 보관함에서 뺀다(지운 사진이 파일에 계속 남지 않게). */
+function pruneImages() {
+  if (!doc.images) return;
+  const used = new Set();
+  for (const page of doc.pages) {
+    const c = page.content || {};
+    for (const t of [c.heading, c.body, c.caption, c.sideText]) {
+      if (typeof t === 'string') for (const m of t.matchAll(/\]\(img:([\w-]+)\)/g)) used.add(m[1]);
+    }
+  }
+  for (const id of Object.keys(doc.images)) if (!used.has(id)) delete doc.images[id];
+  if (!Object.keys(doc.images).length) delete doc.images;
+}
+
 /** 열다가 실패했을 때: 반쯤 올라간 레이어를 지우고 문서 상태를 비운다(다음 문서와 섞이지 않게). */
 function abandonOpen() {
+  setImageStore(null);
   registry.clear();
   doc = null;
   projectName = null;
@@ -887,6 +991,7 @@ async function backToStart() {
   clearTimeout(retryTimer);
   saveStatus.classList.remove('save-failed');
   registry.clear(); // 이전 프로젝트의 소스 레이어를 지도에서 제거(다음 프로젝트와 섞이지 않게)
+  setImageStore(null);
   doc = null;
   currentPageId = null;
   projectName = null;
@@ -924,6 +1029,7 @@ function refresh() {
   legend.render(page, { editable: true });
   applySlideColors(slideCanvas, slideBgOf(doc, page)); // 슬라이드 배경/글자색(페이지 override > 프로젝트 기본)
   slidePreview.render(page, doc.meta); // 지도 위 발표 미리보기(발표와 동일한 오버레이/커버)
+  updateCaptureMark();
 }
 
 /** .egis 형식 문서를 소스로 추가(공통 플로우 — .tif도 래핑 후 여기로). */
@@ -931,6 +1037,7 @@ function addSourceFromEgis(filename, rawJson) {
   const parsed = parseEgisDoc(rawJson);
   const sourceId = nextSourceId(doc);
   const { builtLayerIds, skipped, olLayers } = registry.addSource(sourceId, parsed);
+  loadedEgis.set(sourceId, rawJson);
   addSource(doc, { sourceId, filename, egis: rawJson }, builtLayerIds, currentPageId);
   // 카메라: .egis 저장 뷰 우선, 없으면 새 레이어 범위로. (페이지 카메라는 M4)
   if (parsed.view) mapView.setViewRaw(parsed.view.center, parsed.view.zoom); // .egis 원본 프레이밍 보존(정규화 X)
@@ -963,11 +1070,32 @@ document.getElementById('btn-folder').addEventListener('click', () => {
   window.egisFS.openFolder();
 });
 
+// 지도를 움직였는데 이 슬라이드 위치로 저장하지 않았으면 「이 위치 저장」 버튼에 점을 띄운다
+const btnCapture = document.getElementById('btn-capture');
+function updateCaptureMark() {
+  const page = doc && getPage(doc, currentPageId);
+  let unsaved = false;
+  if (page && (page.kind || 'map') === 'map') {
+    const cam = mapView.getCamera();
+    unsaved = !page.camera
+      || Math.abs(cam.center[0] - page.camera.center[0]) > 1e-4
+      || Math.abs(cam.center[1] - page.camera.center[1]) > 1e-4
+      || Math.abs(cam.zoom - page.camera.zoom) > 0.02;
+  }
+  btnCapture.classList.toggle('unsaved', unsaved);
+  btnCapture.title = unsaved
+    ? '지금 지도 화면이 이 슬라이드 위치와 달라요. 눌러서 저장하세요'
+    : '지금 지도 화면을 이 슬라이드의 위치로 저장';
+}
+mapView.map.on('moveend', updateCaptureMark);
+
 document.getElementById('btn-capture').addEventListener('click', () => {
   const page = getPage(doc, currentPageId);
   if (!page) return; // 방어: 선택 불변식이 깨져도 하드 크래시 방지
   setPageCamera(doc, currentPageId, mapView.getCamera());
   scheduleSave();
+  updateCaptureMark();
+  refresh(); // 슬라이드 목록의 위치 표시를 바로 갱신
   status.textContent = `지금 화면을 "${page.title}" 위치로 저장했어요`;
 });
 

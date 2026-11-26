@@ -132,3 +132,21 @@ export async function projectMtime(name) {
     return null;
   }
 }
+
+/**
+ * 다른 폴더의 .esm을 저장 폴더로 들여온다(원본은 그대로). 같은 이름이 있으면
+ * "{이름} (가져옴)", "{이름} (가져옴 2)" ... 로 이름을 바꾼다. 들여온 이름을 돌려준다.
+ */
+export async function importProject(srcPath) {
+  const json = await fsp.readFile(srcPath, 'utf-8');
+  let obj;
+  try { obj = JSON.parse(json); } catch { throw new Error('e-GIStory 파일(.esm)이 아니에요.'); }
+  if (!obj || !obj.meta || !Array.isArray(obj.pages) || !Array.isArray(obj.sources)) {
+    throw new Error('e-GIStory 파일(.esm)이 아니에요.');
+  }
+  const base = path.basename(srcPath).replace(/\.esm$/i, '');
+  let name = base;
+  for (let i = 1; await exists(name); i += 1) name = i === 1 ? `${base} (가져옴)` : `${base} (가져옴 ${i})`;
+  await fsp.writeFile(projectFile(name), retitle(json, name), 'utf-8');
+  return sanitize(name);
+}

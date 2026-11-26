@@ -375,3 +375,17 @@
 @media (prefers-reduced-motion: reduce) {
   :root:not(.dt-off) * { transition: none !important; }
 }
+
+/* 슬라이드 목록: 복제 버튼(이름 바꾸기와 같은 모양), 위치 저장 표시 */
+:root:not(.dt-off) .page-dup {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border: none; background: none; cursor: pointer;
+  border-radius: var(--dt-r-sm); color: var(--dt-text3);
+}
+:root:not(.dt-off) .page-dup:hover { background: var(--dt-raised); color: var(--dt-text); }
+:root:not(.dt-off) .page-row .page-dup { visibility: hidden; }
+:root:not(.dt-off) .page-row:hover .page-dup,
+:root:not(.dt-off) .page-row.selected .page-dup,
+:root:not(.dt-off) .page-row:focus-within .page-dup { visibility: visible; }
+:root:not(.dt-off) .page-cam { display: inline-flex; align-items: center; color: var(--dt-text3); }
+:root:not(.dt-off) .source-replace:hover { color: var(--dt-text); }

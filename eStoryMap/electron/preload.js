@@ -12,7 +12,8 @@ contextBridge.exposeInMainWorld('egisFS', {
   renameProject: (from, to) => ipcRenderer.invoke('project:rename', from, to),    // → 새 파일 이름
   duplicateProject: (name) => ipcRenderer.invoke('project:duplicate', name),     // → 사본 이름
   deleteProject: (name) => ipcRenderer.invoke('project:delete', name),           // → .backups로 옮긴 파일 이름
-  projectMtime: (name) => ipcRenderer.invoke('project:mtime', name),             // → 마지막 수정 시각(ms) | null
+  projectMtime: (name) => ipcRenderer.invoke('project:mtime', name),
+  importProject: () => ipcRenderer.invoke('project:import'),                     // → 들여온 이름 | null             // → 마지막 수정 시각(ms) | null
   openFolder: () => ipcRenderer.invoke('project:openFolder'),
   openExternal: (url) => ipcRenderer.invoke('app:openExternal', url), // 외부 브라우저(http(s)만, M7 가입 안내)
   savePDF: (title) => ipcRenderer.invoke('report:savePDF', title),    // 보고서 PDF 저장 → 경로 | null (M10)

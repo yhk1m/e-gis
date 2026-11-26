@@ -23,6 +23,28 @@ DOMPurify.addHook('uponSanitizeElement', (node, data) => {
   if (node.setAttribute) node.setAttribute('sandbox', IFRAME_SANDBOX);
 });
 
+// 내 컴퓨터에서 넣은 사진: 문서(doc.images)에 data URL로 두고, 본문에는 ![](img:ID)로 적는다.
+// 화면마다 doc을 넘기지 않도록, 지금 열린 문서의 사진 보관함을 여기에 등록해 둔다.
+let imageStore = null;
+/** 지금 열린 문서의 사진 보관함({id: dataUrl})을 등록한다. 문서를 열 때마다 부른다. */
+export function setImageStore(store) {
+  imageStore = store || null;
+}
+
+const LOCAL_IMG_RE = /!\[([^\]]*)\]\(img:([\w-]+)\)/g;
+function escAttr(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+/** 본문의 ![설명](img:ID)를 실제 사진 태그로 바꾼다. 없는 사진이면 안내 글로. */
+export function resolveLocalImages(text) {
+  if (!text || text.indexOf('](img:') === -1) return text;
+  return text.replace(LOCAL_IMG_RE, (whole, alt, id) => {
+    const src = imageStore && imageStore[id];
+    if (typeof src !== 'string' || !/^data:image\/(png|jpeg|gif|webp);base64,/.test(src)) return '(사진을 찾지 못했어요)';
+    return `<img class="embed-image" src="${src}" alt="${escAttr(alt)}">`;
+  });
+}
+
 const SANITIZE_OPTS = {
   ADD_TAGS: ['iframe'],
   ADD_ATTR: [
@@ -39,7 +61,7 @@ const SANITIZE_OPTS = {
  */
 export function renderMarkdown(text, opts) {
   if (!text) return '';
-  const withMedia = embedMediaLinks(text, opts); // YouTube/Drive 링크 → 임베드
+  const withMedia = embedMediaLinks(resolveLocalImages(text), opts); // YouTube/Drive 링크 → 임베드
   const html = marked.parse(withMedia, { breaks: true }); // Enter 한 번 = 줄바꿈(슬라이드 본문 친화)
   return DOMPurify.sanitize(html, SANITIZE_OPTS);
 }

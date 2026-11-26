@@ -6,7 +6,7 @@ import fsp from 'node:fs/promises';
 import https from 'node:https';
 import {
   ensureBaseDir, baseDir, listProjects, readProject, writeProject, backupProject,
-  renameProject, duplicateProject, deleteProject, projectMtime,
+  renameProject, duplicateProject, deleteProject, projectMtime, importProject,
 } from './fileService.js';
 import { isNewerVersion } from '../src/shared/version.js';
 
@@ -197,6 +197,17 @@ ipcMain.handle('project:rename', (_e, from, to) => renameProject(from, to));
 ipcMain.handle('project:duplicate', (_e, name) => duplicateProject(name));
 ipcMain.handle('project:delete', (_e, name) => deleteProject(name));
 ipcMain.handle('project:mtime', (_e, name) => projectMtime(name));
+// 다른 폴더(USB, 메일 첨부)의 .esm 열기: 골라서 저장 폴더로 들여온 뒤 이름을 돌려준다
+ipcMain.handle('project:import', async () => {
+  if (!mainWindow) return null;
+  const r = await dialog.showOpenDialog(mainWindow, {
+    title: '스토리맵 파일 열기',
+    filters: [{ name: 'e-GIStory 파일', extensions: ['esm'] }],
+    properties: ['openFile'],
+  });
+  if (r.canceled || !r.filePaths[0]) return null;
+  return importProject(r.filePaths[0]);
+});
 
 // 보고서 → PDF (M10): 현재 렌더러 DOM(@media print로 #report만)을 A4 PDF로. 저장 다이얼로그 후 기록.
 ipcMain.handle('report:savePDF', async (_e, title) => {
