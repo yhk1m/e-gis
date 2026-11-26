@@ -104,3 +104,40 @@ describe('createCloudSync', () => {
     await expect(cs.upsert(createStoryDoc('t'))).rejects.toThrow('인터넷에 연결되지 않았어요');
   });
 });
+
+describe('createCloudSync 이름 바꾸기, 지우기', () => {
+  function fake(rows) {
+    const log = [];
+    const chain = (op) => {
+      const c = {
+        select: () => c, eq: (k, v) => { log.push([op, 'eq', k, v]); return c; },
+        update: (payload) => { log.push(['update', payload]); return chain('update'); },
+        delete: () => { log.push(['delete']); return chain('delete'); },
+        then: (res) => res({ data: op === 'select' ? rows : null, error: null }),
+      };
+      return c;
+    };
+    return { log, client: { from: () => ({ select: () => chain('select'), update: (p) => { log.push(['update', p]); return chain('update'); }, delete: () => { log.push(['delete']); return chain('delete'); } }) } };
+  }
+
+  it('rename: 행 title과 문서 안 meta.title을 함께 바꾼다', async () => {
+    const { log, client } = fake([{ id: 'r1', doc: { meta: { title: '옛 이름', cloudSync: true } } }]);
+    const cs = make(client);
+    expect(await cs.rename({ title: '옛 이름' }, '새 이름')).toBe(true);
+    const upd = log.find((l) => l[0] === 'update')[1];
+    expect(upd.title).toBe('새 이름');
+    expect(upd.doc.meta.title).toBe('새 이름');
+    expect(log).toContainEqual(['update', 'eq', 'id', 'r1']);
+  });
+
+  it('rename: 행이 없으면 false', async () => {
+    const { client } = fake([]);
+    expect(await make(client).rename({ id: 'x' }, 'y')).toBe(false);
+  });
+
+  it('remove: id로 지운다', async () => {
+    const { log, client } = fake([]);
+    await make(client).remove('r9');
+    expect(log).toContainEqual(['delete', 'eq', 'id', 'r9']);
+  });
+});

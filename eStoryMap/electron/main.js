@@ -6,6 +6,7 @@ import fsp from 'node:fs/promises';
 import https from 'node:https';
 import {
   ensureBaseDir, baseDir, listProjects, readProject, writeProject, backupProject,
+  renameProject, duplicateProject, deleteProject,
 } from './fileService.js';
 import { isNewerVersion } from '../src/shared/version.js';
 
@@ -160,6 +161,9 @@ ipcMain.handle('project:read', (_e, name) => readProject(name));
 ipcMain.handle('project:save', (_e, name, json) => writeProject(name, json));
 ipcMain.handle('project:openFolder', () => shell.openPath(baseDir()));
 ipcMain.handle('project:backup', (_e, name) => backupProject(name));
+ipcMain.handle('project:rename', (_e, from, to) => renameProject(from, to));
+ipcMain.handle('project:duplicate', (_e, name) => duplicateProject(name));
+ipcMain.handle('project:delete', (_e, name) => deleteProject(name));
 
 // 보고서 → PDF (M10): 현재 렌더러 DOM(@media print로 #report만)을 A4 PDF로. 저장 다이얼로그 후 기록.
 ipcMain.handle('report:savePDF', async (_e, title) => {

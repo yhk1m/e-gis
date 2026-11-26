@@ -270,6 +270,23 @@ body.split-mode.split-swap #presentation { inset: 36px auto 0 0; width: var(--sp
   border-radius: 6px; cursor: pointer; font-size: 14px;
 }
 .start-item:hover { border-color: #3b82f6; }
+/* 시작 화면 항목 줄: 항목(열기) + 더 보기 버튼 + 펼친 메뉴 */
+.start-row { position: relative; display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+.start-row .start-item { flex: 1; min-width: 0; margin-bottom: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.start-more {
+  flex: none; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: #94a3b8; border-radius: 6px; cursor: pointer;
+}
+.start-rename { flex: 1; min-width: 0; height: 36px; padding: 0 10px; font-size: 14px; }
+.start-menu {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 10; min-width: 168px;
+  display: flex; flex-direction: column; padding: 4px; background: #1e293b; border-radius: 6px;
+}
+.start-menu-item {
+  display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; text-align: left;
+  border: none; background: transparent; color: #e5e7eb; cursor: pointer; font-size: 13px;
+}
+.start-menu-item.danger { color: #f87171; }
 
 /* M7 시작 화면 로그인 영역 */
 .start-auth { margin-top: 20px; padding-top: 14px; border-top: 1px solid #1e293b; }

@@ -488,6 +488,30 @@ document.getElementById('btn-publish').addEventListener('click', () => {
 
 let knownNames = [];
 let opening = false;
+
+/** 파일 이름 규칙(fileService.sanitize와 같음)으로 바꾼 뒤, 대소문자 무시하고 겹치는지 본다. except는 자기 자신. */
+function hasName(title, except = null) {
+  const safe = (t) => t.replace(/[\\/:*?"<>|]/g, '_').slice(0, 120).toLowerCase();
+  const target = safe(title);
+  if (except !== null && safe(except) === target) return false; // 대소문자만 바꾸는 경우
+  return knownNames.some((n) => n.toLowerCase() === target);
+}
+
+/** 저장된 .esm의 클라우드 동기화 켜짐 여부. 읽지 못하면 false. */
+async function isCloudSynced(name) {
+  try {
+    return !!JSON.parse(await window.egisFS.loadProject(name)).meta.cloudSync;
+  } catch {
+    return false;
+  }
+}
+
+/** 저장된 .esm의 클라우드 동기화를 끈다. */
+async function turnOffCloudSync(name) {
+  const obj = JSON.parse(await window.egisFS.loadProject(name));
+  if (obj.meta) delete obj.meta.cloudSync;
+  await window.egisFS.saveProject(name, JSON.stringify(obj));
+}
 const startScreen = createStartScreen(document.getElementById('start-screen'), {
   onCreate(title) {
     if (opening) return; // 열기 진행 중 생성 방지
@@ -542,6 +566,84 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
       console.error(e);
     } finally {
       opening = false;
+    }
+  },
+  // 시작 화면 항목 메뉴: 이름 바꾸기, 사본 만들기, 지우기
+  async onRename(name, to) {
+    if (opening) return;
+    if (hasName(to, name)) {
+      startScreen.showError('같은 이름의 스토리맵이 이미 있어요. 다른 이름을 입력해 주세요.');
+      return;
+    }
+    try {
+      const synced = await isCloudSynced(name);
+      await window.egisFS.renameProject(name, to);
+      // 클라우드 동기화를 켠 문서는 클라우드 쪽 이름도 같이 바꾼다(안 바꾸면 다음 저장 때 새 문서가 하나 더 생긴다)
+      if (synced && authManager.isLoggedIn()) {
+        try { await cloudSync.rename({ title: name }, to); } catch (e) {
+          startScreen.showError(`이 컴퓨터에서는 이름을 바꿨지만 클라우드는 바꾸지 못했어요: ${e.message}`);
+        }
+      }
+      await boot();
+      refreshCloudList();
+    } catch (e) {
+      startScreen.showError(`이름을 바꾸지 못했어요: ${e.message}`);
+    }
+  },
+  async onDuplicate(name) {
+    if (opening) return;
+    try {
+      await window.egisFS.duplicateProject(name);
+      await boot();
+    } catch (e) {
+      startScreen.showError(`사본을 만들지 못했어요: ${e.message}`);
+    }
+  },
+  async onDelete(name) {
+    if (opening) return;
+    const ok = await confirmDialog(
+      `「${name}」 스토리맵을 지울까요? 지운 파일은 바탕 화면 e-GIStory 폴더 안 .backups 폴더에 남아요.`,
+      { confirmText: '지우기' },
+    );
+    if (!ok) return;
+    try {
+      await window.egisFS.deleteProject(name);
+      await boot();
+    } catch (e) {
+      startScreen.showError(`지우지 못했어요: ${e.message}`);
+    }
+  },
+  async onRenameCloud(id, title, to) {
+    try {
+      const cloudTitles = ((await cloudSync.list()) || []).map((r) => r.title);
+      if (cloudTitles.includes(to)) {
+        startScreen.showError('클라우드에 같은 이름의 스토리맵이 이미 있어요.');
+        return;
+      }
+      await cloudSync.rename({ id }, to);
+      // 이 컴퓨터에 같은 이름 파일이 있으면 함께 바꾼다(다음 동기화 때 옛 이름으로 다시 올라가지 않게)
+      if (knownNames.includes(title) && !hasName(to, title)) await window.egisFS.renameProject(title, to);
+      await boot();
+      refreshCloudList();
+    } catch (e) {
+      startScreen.showError(`클라우드 이름을 바꾸지 못했어요: ${e.message}`);
+    }
+  },
+  async onDeleteCloud(id, title) {
+    const local = knownNames.includes(title);
+    const ok = await confirmDialog(
+      local
+        ? `클라우드에서 「${title}」 스토리맵을 지울까요? 이 컴퓨터의 파일은 남고, 이 파일의 클라우드 동기화는 꺼져요.`
+        : `클라우드에서 「${title}」 스토리맵을 지울까요? 이 컴퓨터에는 파일이 없어서 되찾을 수 없어요.`,
+      { confirmText: '지우기' },
+    );
+    if (!ok) return;
+    try {
+      await cloudSync.remove(id);
+      if (local) await turnOffCloudSync(title); // 켜 둔 채면 다음 저장 때 클라우드에 다시 올라간다
+      refreshCloudList();
+    } catch (e) {
+      startScreen.showError(`클라우드에서 지우지 못했어요: ${e.message}`);
     }
   },
   auth: {
