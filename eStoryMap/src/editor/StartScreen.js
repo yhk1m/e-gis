@@ -22,7 +22,8 @@ export function createStartScreen(container, {
   let authUser = null;  // updateAuth로 갱신되는 유일한 인증 상태
   let authBusy = false; // 로그인 요청 중 중복 제출 방지
   let cloudBox = null;
-  let cloudItems = null; // null=미로드/비로그인(섹션 숨김), []=비었음 안내 — renderCloud로 갱신(M8)
+  let cloudItems = null;
+  let cloudNote = null; // {message, retry?}: 불러오는 중이거나 실패했을 때 목록 대신 보여 줄 안내 // null=미로드/비로그인(섹션 숨김), []=비었음 안내 — renderCloud로 갱신(M8)
 
   function render(projectNames) {
     closeMenu();
@@ -107,11 +108,27 @@ export function createStartScreen(container, {
     if (!cloudBox) return;
     if (openMenu && cloudBox.contains(openMenu.menu)) closeMenu();
     cloudBox.innerHTML = '';
-    if (!cloudItems) return; // 비로그인/미로드 — 섹션 자체를 그리지 않는다
+    if (!cloudItems && !cloudNote) return; // 비로그인 — 섹션 자체를 그리지 않는다
     const title = document.createElement('div');
     title.className = 'start-list-title';
     title.textContent = '클라우드 스토리맵';
     cloudBox.appendChild(title);
+    if (cloudNote) {
+      // 불러오는 중이거나 불러오지 못했을 때
+      const note = document.createElement('div');
+      note.className = 'start-empty';
+      note.textContent = cloudNote.message;
+      cloudBox.appendChild(note);
+      if (cloudNote.retry) {
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'start-retry';
+        retry.textContent = '다시 불러오기';
+        retry.addEventListener('click', cloudNote.retry);
+        cloudBox.appendChild(retry);
+      }
+      return;
+    }
     if (!cloudItems.length) {
       const empty = document.createElement('div');
       empty.className = 'start-empty';
@@ -231,6 +248,20 @@ export function createStartScreen(container, {
   /** 클라우드 목록 반영(M8). render 전에 불려도 안전 — 상태만 저장, 다음 render에 반영. */
   function renderCloud(items) {
     cloudItems = items || null;
+    cloudNote = null;
+    renderCloudSection();
+  }
+
+  /** 클라우드 목록을 불러오는 중. */
+  function renderCloudLoading() {
+    cloudNote = { message: '클라우드 목록을 불러오고 있어요' };
+    renderCloudSection();
+  }
+
+  /** 클라우드 목록을 불러오지 못했을 때: 안내와 다시 불러오기 버튼. */
+  function renderCloudError(message, retry) {
+    cloudItems = null;
+    cloudNote = { message, retry };
     renderCloudSection();
   }
 
@@ -339,5 +370,5 @@ export function createStartScreen(container, {
     if (errorEl) errorEl.textContent = message;
   }
 
-  return { render, showError, updateAuth, renderCloud };
+  return { render, showError, updateAuth, renderCloud, renderCloudLoading, renderCloudError };
 }

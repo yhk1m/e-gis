@@ -34,6 +34,7 @@ import { applySlideFont } from './shared/slideFont.js';
 import { CameraAnimator } from './shared/CameraAnimator.js';
 import { serializeStoryDoc, deserializeStoryDoc, createAutosaver } from './core/LocalStore.js';
 import { createStartScreen } from './editor/StartScreen.js';
+import { createHistory } from './core/History.js';
 import { createAuthManager } from './core/AuthManager.js';
 import { createSupabaseClient } from './core/supabaseClient.js';
 import { createPresentationShell } from './viewer/PresentationShell.js';
@@ -75,7 +76,7 @@ const sourcePanel = createSourcePanel(document.getElementById('source-panel'), {
     registry.removeSource(sourceId);
     refresh();
     scheduleSave();
-    status.textContent = `${filename} 소스를 뺐어요.`;
+    status.textContent = `${filename} 소스를 뺐어요. Ctrl+Z로 되돌릴 수 있어요.`;
   },
 });
 
@@ -150,7 +151,7 @@ const contentEditor = createContentEditor(document.getElementById('content-panel
     applySlideBgToAll(doc, color); // 이 배경색을 모든 슬라이드에(프로젝트 기본 + override 제거)
     refresh();
     scheduleSave();
-    status.textContent = `배경색을 슬라이드 ${doc.pages.length}개에 모두 적용했어요.`;
+    status.textContent = `배경색을 슬라이드 ${doc.pages.length}개에 모두 적용했어요. Ctrl+Z로 되돌릴 수 있어요.`;
   },
 });
 
@@ -249,7 +250,39 @@ function ensureEgisLoaded() {
   if (egisLoaded) return;
   egisWebview.src = 'https://e-gis.kr'; // 지연 로드
   egisLoaded = true;
+  showEgisNote('loading');
 }
+
+// e-GIS 웹앱을 불러오는 동안과 불러오지 못했을 때의 안내(인터넷이 끊기면 빈 화면만 남지 않게)
+const egisNote = document.createElement('div');
+egisNote.className = 'egis-note';
+egisNote.hidden = true;
+document.getElementById('egis-pane').appendChild(egisNote);
+function showEgisNote(kind) {
+  egisNote.innerHTML = '';
+  if (!kind) { egisNote.hidden = true; return; }
+  const msg = document.createElement('p');
+  msg.textContent = kind === 'loading'
+    ? 'e-GIS를 불러오고 있어요'
+    : 'e-GIS를 열지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.';
+  egisNote.appendChild(msg);
+  if (kind === 'failed') {
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.textContent = '다시 시도';
+    retry.addEventListener('click', () => { showEgisNote('loading'); egisWebview.reload(); });
+    egisNote.appendChild(retry);
+  }
+  egisNote.hidden = false;
+}
+let egisFailed = false; // 실패하면 오류 페이지도 "다 불러옴"으로 끝나므로, 그때는 안내를 남긴다
+egisWebview.addEventListener('did-start-loading', () => { egisFailed = false; });
+egisWebview.addEventListener('did-fail-load', (e) => {
+  if (!e.isMainFrame || e.errorCode === -3) return; // -3: 다른 주소로 넘어가며 끊긴 것(오류 아님)
+  egisFailed = true;
+  showEgisNote('failed');
+});
+egisWebview.addEventListener('did-finish-load', () => { if (!egisFailed) showEgisNote(null); });
 /** 분할 모드 on/off — 왼쪽 e-GIStory(편집/발표) | 오른쪽 e-GIS. 상태는 localStorage에 기억. */
 function setSplit(on) {
   document.body.classList.toggle('split-mode', on);
@@ -389,7 +422,7 @@ document.getElementById('btn-cam-all').addEventListener('click', () => {
   applyCameraToAllPages(doc, mapView.getCamera()); // 현재 지도 뷰 → 전 페이지
   refresh();
   scheduleSave();
-  status.textContent = `지금 위치를 슬라이드 ${doc.pages.length}개에 모두 적용했어요.`;
+  status.textContent = `지금 위치를 슬라이드 ${doc.pages.length}개에 모두 적용했어요. Ctrl+Z로 되돌릴 수 있어요.`;
 });
 
 function closeCamSyncPop() {
@@ -427,43 +460,143 @@ camSyncBtn.addEventListener('click', (e) => {
 });
 
 let saveSeq = 0; // 늦게 도착한 클라우드 콜백이 더 새 상태 표시를 덮지 않게 하는 토큰(M8)
+let cloudUpload = Promise.resolve(); // 올리는 중인 클라우드 저장(창 닫기 전에 기다린다)
+let retryTimer = null; // 저장 실패 뒤 다시 저장하기
+/** 저장. 성공하면 true, 실패하면 false(10초 뒤 다시 시도). 문서가 없으면 true. */
 async function doSaveNow() {
-  if (!doc || !projectName) return;
+  if (!doc || !projectName) return true;
   const seq = ++saveSeq;
+  clearTimeout(retryTimer);
   try {
     saveStatus.textContent = '저장 중…';
     await window.egisFS.saveProject(projectName, serializeStoryDoc(doc));
+    saveStatus.classList.remove('save-failed');
+    saveStatus.title = '';
     const t = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     saveStatus.textContent = `저장됨 ${t}`;
     // 클라우드 편승(M8): 토글 on + 로그인 시 비차단 upsert — 실패해도 로컬 저장은 유효
     if (doc.meta.cloudSync && authManager.isLoggedIn()) {
       saveStatus.textContent = `${t} 저장, 클라우드에 올리는 중`;
-      cloudSync.upsert(doc)
+      cloudUpload = cloudSync.upsert(doc)
         .then(() => { if (seq === saveSeq) saveStatus.textContent = `${t} 저장, 클라우드 저장 완료`; })
         .catch((e) => {
           if (seq === saveSeq) saveStatus.textContent = `${t} 저장, 클라우드 저장 못 함: ${e.message}`;
           console.error('[cloud] upsert 실패:', e);
         });
     }
+    return true;
   } catch (e) {
-    saveStatus.textContent = `저장 실패: ${e.message}`;
+    saveStatus.classList.add('save-failed');
+    saveStatus.textContent = '저장 못 함';
+    saveStatus.title = `저장하지 못했어요. 10초 뒤 다시 저장해요. (${e.message})`;
     console.error(e);
+    retryTimer = setTimeout(() => { if (doc) saveNow(); }, 10000);
+    return false;
   }
 }
 
-let saving = Promise.resolve();
-/** 저장을 직렬화(이전 저장 완료 후 실행) — 동시 writeFile 인터리브로 .esm 손상 방지. */
+let saving = Promise.resolve(true);
+/** 저장을 직렬화(이전 저장 완료 후 실행) — 동시 writeFile 인터리브로 .esm 손상 방지. 결과는 성공 여부. */
 function saveNow() {
-  saving = saving.then(doSaveNow);
+  saving = saving.then(doSaveNow, doSaveNow);
   return saving;
 }
 
 const autosaver = createAutosaver(saveNow, { delay: 2000 });
 
-/** 문서 변이 후 호출 — 2초 디바운스 자동저장. */
+/** 문서 변이 후 호출 — 2초 디바운스 자동저장 + 되돌리기 기록. */
 function scheduleSave() {
+  history.record();
+  updateUndoButtons();
   autosaver.schedule();
 }
+
+// 되돌리기, 다시 하기: 슬라이드, 내용, 위치, 소스 목록을 한 묶음으로 되돌린다.
+// 게시 정보와 클라우드 동기화 설정은 서버 상태와 맞아야 해서 되돌리지 않는다.
+const history = createHistory({
+  snapshot: () => ({
+    meta: structuredClone(doc.meta),
+    pages: structuredClone(doc.pages),
+    sources: doc.sources.slice(), // 소스 내용은 바꾸지 않으므로 목록만 복사
+  }),
+  restore: restoreSnapshot,
+});
+
+function restoreSnapshot(s) {
+  const keep = { publish: doc.meta.publish, cloudSync: doc.meta.cloudSync };
+  doc.meta = structuredClone(s.meta);
+  for (const k of Object.keys(keep)) {
+    if (keep[k] === undefined) delete doc.meta[k];
+    else doc.meta[k] = keep[k];
+  }
+  doc.pages = structuredClone(s.pages);
+  doc.sources = s.sources.slice();
+  // 지도 레이어를 문서의 소스 목록에 맞춘다(뺀 소스를 되살리거나, 넣은 소스를 뺀다)
+  const inDoc = new Set(doc.sources.map((x) => x.sourceId));
+  const onMap = new Set(registry.entriesList().map((e) => e.sourceId));
+  for (const id of onMap) if (!inDoc.has(id)) registry.removeSource(id);
+  for (const source of doc.sources) {
+    if (!onMap.has(source.sourceId)) registry.addSource(source.sourceId, parseEgisDoc(source.egis));
+  }
+  if (!getPage(doc, currentPageId)) currentPageId = doc.pages[0].id;
+  syncMetaControls();
+  refresh();
+  autosaver.schedule(); // 되돌린 상태를 저장(기록은 남기지 않는다)
+}
+
+const btnUndo = document.getElementById('btn-undo');
+const btnRedo = document.getElementById('btn-redo');
+function updateUndoButtons() {
+  btnUndo.disabled = !doc || !history.canUndo();
+  btnRedo.disabled = !doc || !history.canRedo();
+}
+function undo() {
+  if (!doc) return;
+  if (history.undo()) status.textContent = '되돌렸어요';
+  updateUndoButtons();
+}
+function redo() {
+  if (!doc) return;
+  if (history.redo()) status.textContent = '다시 했어요';
+  updateUndoButtons();
+}
+btnUndo.addEventListener('click', undo);
+btnRedo.addEventListener('click', redo);
+
+// 편집기 단축키: Ctrl+Z 되돌리기, Ctrl+Shift+Z와 Ctrl+Y 다시 하기, Ctrl+S 바로 저장.
+// 글을 쓰는 칸 안에서는 그 칸의 되돌리기를 쓴다.
+document.addEventListener('keydown', (e) => {
+  if (!doc || document.getElementById('app').inert) return; // 시작 화면, 발표, 보고서 중에는 끔
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+  const key = e.key.toLowerCase();
+  if (key === 's') {
+    e.preventDefault();
+    saveNow();
+    return;
+  }
+  const t = e.target;
+  const typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+  if (typing && t.type !== 'checkbox' && t.type !== 'range' && t.type !== 'color') return;
+  if (key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  else if ((key === 'z' && e.shiftKey) || key === 'y') { e.preventDefault(); redo(); }
+});
+
+// 창을 닫기 전에 기다리던 저장과 클라우드 업로드를 마친다
+window.egisApp?.onBeforeClose(async () => {
+  if (doc) {
+    const ok = await autosaver.flush();
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    await Promise.race([cloudUpload, wait(5000)]);
+    if (!ok) {
+      const leave = await confirmDialog(
+        '지금 상태를 저장하지 못했어요. 그래도 끄면 마지막 저장 뒤에 고친 내용이 사라져요.',
+        { confirmText: '그래도 끄기', cancelText: '켜 두기' },
+      );
+      if (!leave) { window.egisApp.cancelClose(); return; }
+    }
+  }
+  window.egisApp.closeOk();
+});
 
 // ⚠️ auth와 cloud는 같은 클라이언트 인스턴스를 공유해야 세션(JWT)이 함께 간다
 const supabase = createSupabaseClient();
@@ -487,6 +620,7 @@ document.getElementById('btn-publish').addEventListener('click', () => {
 });
 
 let knownNames = [];
+let lastCloudItems = null; // 마지막으로 불러온 클라우드 목록(고친 시각 비교용)
 let opening = false;
 
 /** 파일 이름 규칙(fileService.sanitize와 같음)으로 바꾼 뒤, 대소문자 무시하고 겹치는지 본다. except는 자기 자신. */
@@ -540,7 +674,8 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
       }
       enterEditor();
     } catch (e) {
-      startScreen.showError(`열기 실패: ${e.message}`);
+      abandonOpen();
+      startScreen.showError(`열지 못했어요: ${e.message}`);
       console.error(e);
     } finally {
       opening = false;
@@ -553,7 +688,22 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
     try {
       const cloudDoc = await cloudSync.download(id);
       const name = cloudDoc.meta.title;
-      if (knownNames.includes(name)) await window.egisFS.backupProject(name);
+      if (knownNames.includes(name)) {
+        // 이 컴퓨터에도 같은 스토리맵이 있으면 어느 쪽이 최근인지 보여 주고 확인을 받는다
+        const localMs = await window.egisFS.projectMtime(name);
+        const item = (lastCloudItems || []).find((r) => r.id === id);
+        const cloudMs = item && item.updated_at ? Date.parse(item.updated_at) : null;
+        const fmt = (ms) => (ms ? new Date(ms).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '알 수 없음');
+        const localNewer = localMs && cloudMs && localMs > cloudMs + 60000; // 1분 넘게 더 최근일 때만
+        const ok = await confirmDialog(
+          `이 컴퓨터에도 「${name}」 스토리맵이 있어요. 이 컴퓨터 것은 ${fmt(localMs)}, 클라우드 것은 ${fmt(cloudMs)}에 고쳤어요.`
+          + (localNewer ? ' 이 컴퓨터 것이 더 최근이에요.' : '')
+          + ' 클라우드 것으로 열면 이 컴퓨터 것은 .backups 폴더에 남기고 바꿔요.',
+          { confirmText: '클라우드 것으로 열기', cancelText: '닫기', danger: !!localNewer },
+        );
+        if (!ok) return;
+        await window.egisFS.backupProject(name);
+      }
       doc = cloudDoc;
       projectName = name;
       for (const source of doc.sources) {
@@ -562,7 +712,8 @@ const startScreen = createStartScreen(document.getElementById('start-screen'), {
       enterEditor();
       saveNow(); // 오프라인 연속성 — 즉시 로컬 .esm로도 저장
     } catch (e) {
-      startScreen.showError(`클라우드 열기 실패: ${e.message}`);
+      abandonOpen();
+      startScreen.showError(`클라우드에서 열지 못했어요: ${e.message}`);
       console.error(e);
     } finally {
       opening = false;
@@ -669,10 +820,13 @@ async function refreshCloudList() {
     startScreen.renderCloud(null);
     return;
   }
+  startScreen.renderCloudLoading();
   try {
-    startScreen.renderCloud(await cloudSync.list());
+    lastCloudItems = await cloudSync.list();
+    startScreen.renderCloud(lastCloudItems);
   } catch (e) {
-    startScreen.renderCloud([]); // 앱은 정상 — 목록만 비움
+    lastCloudItems = null;
+    startScreen.renderCloudError('클라우드 목록을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.', refreshCloudList);
     console.error('[cloud] 목록 로드 실패:', e.message);
   }
 }
@@ -691,6 +845,17 @@ function enterEditor() {
   document.getElementById('app').inert = false; // 시작 화면 동안 편집기 전체(포커스·포인터) 비활성
   document.title = `${doc.meta.title} — e-GIS`;
   updateCloudToggle();
+  syncMetaControls();
+  mapView.updateSize(); // 슬라이드 캔버스(16:9) 크기 반영 후에 카메라 적용 — 줌 정규화 정확도
+  refresh();
+  const page = getPage(doc, currentPageId);
+  if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 즉시 복원
+  history.reset(); // 이 문서를 연 상태가 되돌리기의 시작점
+  updateUndoButtons();
+}
+
+/** 문서 전체 설정(발표 배치, 글꼴, 범례)을 도구 막대 칸에 반영한다. 열 때와 되돌릴 때 쓴다. */
+function syncMetaControls() {
   layoutSelect.value = doc.meta.presentationLayout || 'band'; // 발표 레이아웃 현재값 반영
   posSelect.value = doc.meta.presentationPos || 'right'; // 레이아웃 위치 현재값
   fontSelect.value = doc.meta.slideFont || 'default'; // 슬라이드 글꼴 현재값
@@ -698,16 +863,29 @@ function enterEditor() {
   fontCustom.hidden = (doc.meta.slideFont || 'default') !== 'system';
   applySlideFont(doc.meta.slideFont || 'default', doc.meta.slideFontCustom);
   legendToggle.checked = doc.meta.legend ? doc.meta.legend.visible : true; // 범례 표시 현재값
-  mapView.updateSize(); // 슬라이드 캔버스(16:9) 크기 반영 후에 카메라 적용 — 줌 정규화 정확도
-  refresh();
-  const page = getPage(doc, currentPageId);
-  if (page && page.camera) mapView.setView(page.camera.center, page.camera.zoom); // 즉시 복원
+}
+
+/** 열다가 실패했을 때: 반쯤 올라간 레이어를 지우고 문서 상태를 비운다(다음 문서와 섞이지 않게). */
+function abandonOpen() {
+  registry.clear();
+  doc = null;
+  projectName = null;
+  currentPageId = null;
 }
 
 /** 현재 프로젝트를 저장하고 시작 화면(프로젝트 목록 + 로그인/로그아웃)으로 돌아간다. */
 async function backToStart() {
   if (!doc) return;
-  await saveNow(); // 저장 완료 후에 전환 — doSaveNow는 doc=null이면 no-op이라 순서가 중요
+  // 저장 완료 후에 전환 — doSaveNow는 doc=null이면 no-op이라 순서가 중요
+  if (!(await saveNow())) {
+    const leave = await confirmDialog(
+      '지금 상태를 저장하지 못했어요. 그래도 나가면 마지막 저장 뒤에 고친 내용이 사라져요.',
+      { confirmText: '그래도 나가기', cancelText: '머무르기' },
+    );
+    if (!leave) return;
+  }
+  clearTimeout(retryTimer);
+  saveStatus.classList.remove('save-failed');
   registry.clear(); // 이전 프로젝트의 소스 레이어를 지도에서 제거(다음 프로젝트와 섞이지 않게)
   doc = null;
   currentPageId = null;
@@ -767,9 +945,16 @@ document.getElementById('btn-import').addEventListener('click', async () => {
   try {
     const picked = await window.egisFS.importEgis();
     if (!picked) return;
+    if (picked.data) {
+      // 지형 파일(GeoTIFF): 읽어서 .egis와 같은 모양으로 바꾼 뒤 소스로 넣는다
+      status.textContent = `${picked.filename} 읽는 중…`;
+      const { parseGeoTiff } = await import('./core/GeoTiffLoader.js');
+      addSourceFromEgis(picked.filename, await parseGeoTiff(picked.data, picked.filename));
+      return;
+    }
     addSourceFromEgis(picked.filename, JSON.parse(picked.text));
   } catch (e) {
-    status.textContent = `불러오기 실패: ${e.message}`;
+    status.textContent = `파일을 열지 못했어요: ${e.message}`;
     console.error(e);
   }
 });

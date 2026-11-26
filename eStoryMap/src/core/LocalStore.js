@@ -61,5 +61,15 @@ export function createAutosaver(save, { delay = 2000 } = {}) {
         save();
       }, delay);
     },
+    /** 기다리는 저장이 있는지(창 닫기 전 확인용). */
+    pending() {
+      return timer !== null;
+    },
+    /** 기다리던 저장을 바로 한다. 기다리는 게 없어도 save()를 불러 결과를 돌려준다. */
+    flush() {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      return save();
+    },
   };
 }

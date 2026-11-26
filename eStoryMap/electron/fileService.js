@@ -123,3 +123,12 @@ export async function deleteProject(name) {
   await fsp.rename(src, dest);
   return path.basename(dest);
 }
+
+/** 마지막으로 고친 시각(ms). 파일이 없으면 null. */
+export async function projectMtime(name) {
+  try {
+    return (await fsp.stat(projectFile(name))).mtimeMs;
+  } catch {
+    return null;
+  }
+}

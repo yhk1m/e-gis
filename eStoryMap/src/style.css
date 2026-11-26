@@ -705,3 +705,20 @@ body.webviewer { margin: 0; background: #000; }
   font-family: system-ui, "Segoe UI", "Malgun Gothic", sans-serif;
 }
 #viewer-brand:hover { opacity: 1; text-decoration: underline; }
+
+/* 저장 실패는 사라지지 않게 빨강으로 */
+#save-status.save-failed { color: #f87171; font-weight: 600; }
+:root:not(.dt-off) #save-status.save-failed { color: var(--dt-danger); }
+/* 시작 화면: 클라우드 목록 다시 불러오기 */
+.start-retry { margin-top: 8px; height: 36px; padding: 0 14px; border: none; border-radius: 6px; background: #1e293b; color: #e5e7eb; cursor: pointer; font-weight: 600; }
+:root:not(.dt-off) .start-retry { background: var(--dt-raised); color: var(--dt-text); border-radius: var(--dt-r); }
+:root:not(.dt-off) .start-retry:hover { background: var(--dt-active); }
+/* e-GIS 탭: 불러오는 중, 불러오지 못함 */
+.egis-note { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #121418; color: #c9ced6; font-size: 15px; z-index: 1; }
+.egis-note[hidden] { display: none; }
+.egis-note p { margin: 0; }
+.egis-note button { height: 36px; padding: 0 16px; border: none; border-radius: 7px; background: #2b3039; color: #f1f3f6; font-weight: 600; cursor: pointer; }
+:root[data-theme="light"] .egis-note { background: #f4f6f9; color: #4a5361; }
+:root[data-theme="light"] .egis-note button { background: rgba(16,24,40,.06); color: #1a1f27; }
+/* 보고서 도구 막대: PDF 저장 실패 안내 */
+.report-note { color: #f87171; font-size: 13px; }

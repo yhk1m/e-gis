@@ -6,7 +6,7 @@ import fsp from 'node:fs/promises';
 import https from 'node:https';
 import {
   ensureBaseDir, baseDir, listProjects, readProject, writeProject, backupProject,
-  renameProject, duplicateProject, deleteProject,
+  renameProject, duplicateProject, deleteProject, projectMtime,
 } from './fileService.js';
 import { isNewerVersion } from '../src/shared/version.js';
 
@@ -86,6 +86,25 @@ async function createWindow() {
     webPreferences.preload = path.join(__dirname, 'webviewPreload.js');
   });
 
+  // 창 닫기: 바로 닫지 않고 편집 화면에 기다리던 저장을 마치게 한 뒤 닫는다.
+  // 화면이 응답하지 않으면 10초 뒤 그냥 닫는다(창이 영영 안 닫히는 일 방지).
+  let closeTimer = null;
+  mainWindow.on('close', (e) => {
+    if (allowClose) return;
+    e.preventDefault();
+    if (closeTimer) return; // 이미 저장 중
+    mainWindow.webContents.send('app:before-close');
+    closeTimer = setTimeout(() => { allowClose = true; if (mainWindow) mainWindow.close(); }, 10000);
+  });
+  ipcMain.removeAllListeners('app:close-ok');
+  ipcMain.removeAllListeners('app:close-cancel');
+  ipcMain.on('app:close-ok', () => {
+    clearTimeout(closeTimer);
+    allowClose = true;
+    if (mainWindow) mainWindow.close();
+  });
+  ipcMain.on('app:close-cancel', () => { clearTimeout(closeTimer); closeTimer = null; });
+
   // 켤 때 한 번 업데이트 확인(렌더러 로드 완료 후 → 리스너가 준비된 뒤 알림)
   mainWindow.webContents.once('did-finish-load', () => checkForUpdate(mainWindow));
 
@@ -100,6 +119,8 @@ async function createWindow() {
     await mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 }
+
+let allowClose = false; // true면 창 닫기를 더 막지 않는다
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null); // 기본 메뉴바(File/Edit/View/…) 제거. 복사/붙여넣기 등은 Chromium이 기본 처리
@@ -129,11 +150,22 @@ app.on('web-contents-created', (_e, contents) => {
 ipcMain.handle('egis:import', async () => {
   if (!mainWindow) return null;
   const r = await dialog.showOpenDialog(mainWindow, {
-    title: '.egis 파일 열기',
-    filters: [{ name: 'e-GIS Project', extensions: ['egis', 'json'] }],
+    title: '지도 파일 열기',
+    filters: [
+      { name: 'e-GIS 파일, 지형 파일', extensions: ['egis', 'json', 'tif', 'tiff'] },
+      { name: 'e-GIS 파일', extensions: ['egis', 'json'] },
+      { name: '지형 파일(GeoTIFF)', extensions: ['tif', 'tiff'] },
+    ],
     properties: ['openFile'],
   });
   if (r.canceled || !r.filePaths[0]) return null;
+  if (/\.(tif|tiff)$/i.test(r.filePaths[0])) {
+    const buf = await fsp.readFile(r.filePaths[0]);
+    return {
+      filename: path.basename(r.filePaths[0]),
+      data: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+    };
+  }
   const text = await fsp.readFile(r.filePaths[0], 'utf-8');
   return { filename: path.basename(r.filePaths[0]), text };
 });
@@ -164,6 +196,7 @@ ipcMain.handle('project:backup', (_e, name) => backupProject(name));
 ipcMain.handle('project:rename', (_e, from, to) => renameProject(from, to));
 ipcMain.handle('project:duplicate', (_e, name) => duplicateProject(name));
 ipcMain.handle('project:delete', (_e, name) => deleteProject(name));
+ipcMain.handle('project:mtime', (_e, name) => projectMtime(name));
 
 // 보고서 → PDF (M10): 현재 렌더러 DOM(@media print로 #report만)을 A4 PDF로. 저장 다이얼로그 후 기록.
 ipcMain.handle('report:savePDF', async (_e, title) => {
@@ -176,7 +209,7 @@ ipcMain.handle('report:savePDF', async (_e, title) => {
     });
   } catch (err) {
     console.warn('[main] printToPDF 실패:', err);
-    return null;
+    throw new Error('PDF를 만들지 못했어요. 다시 해 주세요.');
   }
   const safe = String(title || '보고서').replace(/[\\/:*?"<>|]/g, '_').trim() || '보고서';
   const r = await dialog.showSaveDialog(mainWindow, {
@@ -185,7 +218,12 @@ ipcMain.handle('report:savePDF', async (_e, title) => {
     filters: [{ name: 'PDF', extensions: ['pdf'] }],
   });
   if (r.canceled || !r.filePath) return null;
-  await fsp.writeFile(r.filePath, data);
+  try {
+    await fsp.writeFile(r.filePath, data);
+  } catch (err) {
+    console.warn('[main] PDF 쓰기 실패:', err);
+    throw new Error('파일을 쓰지 못했어요. 같은 이름의 PDF가 다른 프로그램에 열려 있으면 닫고 다시 해 주세요.');
+  }
   return r.filePath;
 });
 
