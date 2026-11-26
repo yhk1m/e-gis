@@ -2,7 +2,9 @@
 // eStoryMap/src/editor/PageList.js
 // 좌하단 PAGES: 페이지 선택/추가(직전 복제)/삭제/순서 변경(드래그 앤 드롭).
 
-const KIND_ICON = { map: '🗺️', title: '📑', media: '🖼️' };
+import { iconSvg, setIconLabel } from '../shared/icons.js';
+
+const KIND_ICON = { map: 'map', title: 'title', media: 'image', text: 'text' };
 const KIND_TITLE = { map: '지도 슬라이드', title: '제목(표지) 슬라이드', media: '사진/영상 슬라이드' };
 
 /**
@@ -31,7 +33,7 @@ export function createPageList(container, { onSelect, onAdd, onRemove, onReorder
 
       const handle = document.createElement('span');
       handle.className = 'page-drag-handle';
-      handle.textContent = '⠿';
+      handle.innerHTML = iconSvg('grip');
       handle.title = '드래그해서 순서 변경';
       // 핸들을 누르는 동안만 행을 draggable로 — 이름 클릭(선택)과 충돌 방지
       handle.addEventListener('mousedown', () => { row.draggable = true; });
@@ -40,7 +42,7 @@ export function createPageList(container, { onSelect, onAdd, onRemove, onReorder
       const kind = page.kind || 'map';
       const icon = document.createElement('span');
       icon.className = 'page-kind';
-      icon.textContent = KIND_ICON[kind] || KIND_ICON.map;
+      icon.innerHTML = iconSvg(KIND_ICON[kind] || KIND_ICON.map);
       icon.title = KIND_TITLE[kind] || KIND_TITLE.map;
 
       const name = document.createElement('span');
@@ -72,14 +74,14 @@ export function createPageList(container, { onSelect, onAdd, onRemove, onReorder
       const edit = document.createElement('button');
       edit.type = 'button';
       edit.className = 'page-edit';
-      edit.textContent = '✏️';
+      setIconLabel(edit, 'edit', '', '이름 바꾸기');
       edit.title = '이름 변경';
       edit.addEventListener('click', (e) => { e.stopPropagation(); startRename(); });
 
       const del = document.createElement('button');
       del.type = 'button';
       del.className = 'page-del';
-      del.textContent = '×';
+      setIconLabel(del, 'close', '', '슬라이드 지우기');
       del.title = '삭제';
       del.disabled = doc.pages.length <= 1; // 최소 1페이지 유지
       del.addEventListener('click', () => onRemove(page.id));

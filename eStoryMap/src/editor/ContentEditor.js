@@ -14,8 +14,8 @@ const KIND_OPTIONS = [
 // 종류별 heading/body 라벨·힌트
 const KIND_HINTS = {
   map: { heading: '제목', body: '본문', bodyPh: '본문 (마크다운: # 제목, **굵게**, - 목록)' },
-  title: { heading: '큰 제목', body: '부제', bodyPh: '부제 · 설명 (선택)' },
-  media: { heading: '제목 (선택)', body: '사진/영상', bodyPh: '이미지·YouTube·구글드라이브 링크를 한 줄에 붙여넣기' },
+  title: { heading: '큰 제목', body: '부제', bodyPh: '부제, 설명 (선택)' },
+  media: { heading: '제목 (선택)', body: '사진/영상', bodyPh: '이미지, YouTube, 구글 드라이브 링크를 한 줄에 하나씩 붙여 넣기' },
   text: { heading: '제목 (선택)', body: '본문', bodyPh: '본문 (마크다운: # 제목, **굵게**, - 목록). 지도 없이 글만' },
 };
 
@@ -108,7 +108,7 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
   const alignRow = document.createElement('div');
   alignRow.className = 'content-align';
   const alignBtns = {};
-  for (const [val, label] of [['left', '좌'], ['center', '중앙'], ['right', '우']]) {
+  for (const [val, label] of [['left', '왼쪽'], ['center', '가운데'], ['right', '오른쪽']]) {
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = label;
@@ -199,11 +199,11 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
   mdHelp.className = 'md-help';
   mdHelp.hidden = true;
   mdHelp.innerHTML =
-    '<div><code># 제목</code> · <code>## 소제목</code></div>' +
-    '<div><code>**굵게**</code> · <code>*기울임*</code></div>' +
-    '<div><code>- 항목</code> · <code>1. 항목</code> (목록)</div>' +
+    '<div><code># 제목</code>, <code>## 소제목</code></div>' +
+    '<div><code>**굵게**</code>, <code>*기울임*</code></div>' +
+    '<div><code>- 항목</code>, <code>1. 항목</code> (목록)</div>' +
     '<div><code>[링크](주소)</code></div>' +
-    '<div><code>![설명](이미지주소)</code> — 사진(이미지 URL을 한 줄에 붙여도 표시됨)</div>' +
+    '<div><code>![설명](이미지주소)</code>: 사진 (이미지 주소만 한 줄에 붙여도 보여요)</div>' +
     '<div><code>&gt; 인용</code></div>';
 
   const mdToolbar = document.createElement('div');
@@ -212,8 +212,8 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
     ['# 제목', () => prefixLines('# ')],
     ['B', () => surround('**', '**', '굵은 글씨'), 'bold'],
     ['I', () => surround('*', '*', '기울임'), 'italic'],
-    ['• 목록', () => prefixLines('- ')],
-    ['🔗 링크', insertLink],
+    ['목록', () => prefixLines('- ')],
+    ['링크', insertLink],
   ]) {
     const b = document.createElement('button');
     b.type = 'button';
@@ -229,7 +229,7 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
   helpBtn.type = 'button';
   helpBtn.className = 'md-help-btn';
   helpBtn.tabIndex = -1;
-  helpBtn.textContent = '? 사용법';
+  helpBtn.textContent = '사용법';
   helpBtn.addEventListener('click', () => { mdHelp.hidden = !mdHelp.hidden; });
   mdToolbar.appendChild(helpBtn);
 

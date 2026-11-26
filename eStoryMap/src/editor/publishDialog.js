@@ -62,7 +62,7 @@ export function openPublishDialog({ doc, publisher, openExternal, onChanged }) {
 
     if (doc.meta.publish) {
       const url = publicUrl(doc.meta.publish);
-      msg.textContent = '이 스토리맵은 웹에 게시되어 있습니다. 링크를 아는 누구나 볼 수 있습니다.';
+      msg.textContent = '이 스토리맵은 웹에 게시돼 있어요. 링크가 있으면 누구나 볼 수 있어요.';
       const urlInput = document.createElement('input');
       urlInput.className = 'publish-url';
       urlInput.readOnly = true;
@@ -72,20 +72,20 @@ export function openPublishDialog({ doc, publisher, openExternal, onChanged }) {
         btn('링크 복사', 'confirm-cancel', async () => {
           try {
             await navigator.clipboard.writeText(url);
-            note.textContent = '링크를 복사했습니다.';
+            note.textContent = '링크를 복사했어요.';
           } catch {
             urlInput.focus(); // 클립보드 권한 실패 시 수동 복사 유도
-            note.textContent = 'Ctrl+C로 복사하세요.';
+            note.textContent = 'Ctrl+C로 복사해 주세요.';
           }
         }),
         btn('브라우저에서 열기', 'confirm-cancel', () => openExternal(url)),
-        btn('재게시', 'confirm-ok primary', () => doPublish('재게시했습니다 — 링크 내용이 현재 문서로 갱신되었습니다.')),
+        btn('재게시', 'confirm-ok primary', () => doPublish('다시 게시했어요. 링크가 지금 문서로 바뀌었어요.')),
         btn('게시 취소', 'confirm-ok danger', async () => {
-          if (!(await confirmDialog('게시를 취소할까요? 링크가 더 이상 열리지 않습니다.', { confirmText: '게시 취소' }))) return;
+          if (!(await confirmDialog('게시를 취소할까요? 링크가 더 이상 열리지 않아요.', { confirmText: '게시 취소' }))) return;
           try {
             await publisher.unpublish(doc);
             onChanged();
-            render('게시를 취소했습니다.');
+            render('게시를 취소했어요.');
           } catch (e) {
             note.textContent = `실패: ${e.message}`;
           }
@@ -94,13 +94,13 @@ export function openPublishDialog({ doc, publisher, openExternal, onChanged }) {
       );
       box.append(msg, urlInput, note, actions);
     } else {
-      msg.textContent = '이 스토리맵을 웹에 게시할까요? 링크를 아는 누구나 볼 수 있게 됩니다.';
+      msg.textContent = '이 스토리맵을 웹에 게시할까요? 링크가 있으면 누구나 볼 수 있어요.';
       if (!doneMsg && serializeStoryDoc(doc).length > SIZE_WARN_BYTES) {
-        note.textContent = '⚠️ 문서가 10MB를 넘습니다. 게시는 되지만 방문자의 로딩이 느릴 수 있습니다.';
+        note.textContent = '문서가 10MB를 넘어요. 게시는 되지만 보는 사람 화면이 늦게 열릴 수 있어요.';
       }
       actions.append(
-        btn('취소', 'confirm-cancel', close),
-        btn('게시', 'confirm-ok primary', () => doPublish('게시되었습니다! 위 링크를 공유하세요.')),
+        btn('닫기', 'confirm-cancel', close),
+        btn('게시', 'confirm-ok primary', () => doPublish('게시했어요. 위 링크를 나눠 주세요.')),
       );
       box.append(msg, note, actions);
     }

@@ -5,6 +5,8 @@
 // 오버레이 표시/숨김은 main.js가 담당하고, 이 컴포넌트는 내용만 렌더한다.
 // 인증 상태는 updateAuth({user})로 외부(main.js)에서 밀어넣는다 — render(projectNames)와 같은 단방향.
 
+import { setIconLabel } from '../shared/icons.js';
+
 /**
  * @param {HTMLElement} container
  * @param {{onCreate(title:string):void, onOpen(name:string):void,
@@ -65,7 +67,7 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
     if (!projectNames.length) {
       const empty = document.createElement('div');
       empty.className = 'start-empty';
-      empty.textContent = '저장된 스토리맵이 없습니다';
+      empty.textContent = '아직 저장된 스토리맵이 없어요';
       box.appendChild(empty);
     } else {
       for (const name of projectNames) {
@@ -104,14 +106,14 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
     if (!cloudItems.length) {
       const empty = document.createElement('div');
       empty.className = 'start-empty';
-      empty.textContent = '클라우드에 저장된 스토리맵이 없습니다';
+      empty.textContent = '클라우드에 저장된 스토리맵이 없어요';
       cloudBox.appendChild(empty);
     } else {
       for (const item of cloudItems) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'start-item cloud-item';
-        btn.textContent = `☁ ${item.title}`;
+        setIconLabel(btn, 'cloud', item.title);
         btn.addEventListener('click', () => { if (onOpenCloud) onOpenCloud(item.id); });
         cloudBox.appendChild(btn);
       }
@@ -142,7 +144,7 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
         try {
           await auth.signOut();
         } catch (e) {
-          showAuthError((e && e.message) || '로그아웃에 실패했습니다.'); // 원래 throw하지 않는 계약이지만 방어
+          showAuthError((e && e.message) || '로그아웃하지 못했어요. 다시 해 주세요.'); // 원래 throw하지 않는 계약이지만 방어
         } finally {
           if (logout.isConnected) logout.disabled = false; // updateAuth로 DOM 교체됐으면 불필요
         }
@@ -195,7 +197,7 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
     const email = authBox.querySelector('#auth-email').value.trim();
     const pw = authBox.querySelector('#auth-password').value; // 비밀번호는 트림하지 않는다
     if (!email || !pw) {
-      showAuthError('이메일과 비밀번호를 입력하세요.');
+      showAuthError('이메일과 비밀번호를 입력해 주세요.');
       return;
     }
     authBusy = true;
@@ -206,7 +208,7 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
       await auth.signIn(email, pw);
       // 성공 시 UI 전환은 main.js의 authManager.onChange → updateAuth가 담당(단방향)
     } catch (e) {
-      showAuthError((e && e.message) || '로그인에 실패했습니다.'); // 비-Error throw 방어
+      showAuthError((e && e.message) || '로그인하지 못했어요. 다시 해 주세요.'); // 비-Error throw 방어
     } finally {
       authBusy = false;
       const b = authBox.querySelector('#btn-auth-login'); // 성공 시 renderAuth로 교체됐을 수 있음

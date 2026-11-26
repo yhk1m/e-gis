@@ -117,7 +117,7 @@ describe('StartScreen 클라우드 목록(M8)', () => {
       { id: 'c2', title: '기후', updated_at: '2026-07-03T00:00:00Z' },
     ]);
     const items = [...el.querySelectorAll('.cloud-item')];
-    expect(items.map((n) => n.textContent)).toEqual(['☁ 부산 이야기', '☁ 기후']);
+    expect(items.map((n) => n.textContent)).toEqual(['부산 이야기', '기후']);
     items[1].dispatchEvent(new Event('click'));
     expect(onOpenCloud).toHaveBeenCalledWith('c2');
   });
@@ -167,19 +167,19 @@ describe('StartScreen 로그인 영역(M7)', () => {
     screen.render([]);
     el.querySelector('#btn-auth-login').dispatchEvent(new Event('click'));
     expect(auth.signIn).not.toHaveBeenCalled();
-    expect(el.querySelector('.auth-error').textContent).toContain('입력하세요');
+    expect(el.querySelector('.auth-error').textContent).toContain('입력해 주세요');
   });
 
   it('signIn 실패 → .auth-error에 메시지 표시', async () => {
     const { el, screen } = makeWithAuth({
-      signIn: vi.fn(async () => { throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.'); }),
+      signIn: vi.fn(async () => { throw new Error('이메일이나 비밀번호가 맞지 않아요.'); }),
     });
     screen.render([]);
     el.querySelector('#auth-email').value = 'a@b.c';
     el.querySelector('#auth-password').value = 'nope';
     el.querySelector('#btn-auth-login').dispatchEvent(new Event('click'));
     await flush();
-    expect(el.querySelector('.auth-error').textContent).toContain('올바르지 않습니다');
+    expect(el.querySelector('.auth-error').textContent).toContain('맞지 않아요');
   });
 
   it('updateAuth(user) → 이메일 표시 + 로그아웃 버튼(폼 없음)', () => {

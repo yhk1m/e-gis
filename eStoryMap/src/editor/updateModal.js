@@ -15,7 +15,7 @@ export function showUpdateModal({ version, name, notes, url, downloadUrl }) {
 
   const h = document.createElement('h2');
   h.className = 'update-title';
-  h.textContent = `새 버전 ${version} 이(가) 나왔습니다`;
+  h.textContent = `새 버전 ${version}이 나왔어요`;
 
   if (name && name !== version && name !== `v${version}`) {
     const sub = document.createElement('div');
@@ -32,15 +32,15 @@ export function showUpdateModal({ version, name, notes, url, downloadUrl }) {
   notesLabel.textContent = '업데이트 내역';
   const body = document.createElement('div');
   body.className = 'update-notes'; // white-space: pre-wrap (CSS)
-  body.textContent = (notes && notes.trim()) || '새로운 버전이 준비되어 있습니다.';
+  body.textContent = (notes && notes.trim()) || '새 버전이 준비돼 있어요.';
   box.append(notesLabel, body);
 
   // 안내: 아래 버튼을 누르면 무엇이 일어나는지 명시(릴리스 노트와 무관하게 일관)
   const guide = document.createElement('div');
   guide.className = 'update-guide';
   guide.textContent = downloadUrl
-    ? '👇 아래 “설치 파일 다운로드”를 누르면 최신 설치본이 바로 내려받아집니다. 받은 파일을 실행해 설치하세요.'
-    : '👇 아래 “릴리스 페이지 열기”에서 최신 설치본을 받아 설치하세요.';
+    ? '아래 「설치 파일 받기」를 누르면 최신 설치 파일을 받아요. 받은 파일을 실행해 설치해 주세요.'
+    : '아래 「내려받기 페이지 열기」에서 최신 설치 파일을 받아 설치해 주세요.';
   box.appendChild(guide);
 
   const actions = document.createElement('div');
@@ -53,7 +53,7 @@ export function showUpdateModal({ version, name, notes, url, downloadUrl }) {
   dl.type = 'button';
   dl.className = 'update-download';
   // 설치 파일이 릴리스에 첨부돼 있으면 바로 다운로드, 아니면 릴리스 페이지로
-  dl.textContent = downloadUrl ? '설치 파일 다운로드' : '릴리스 페이지 열기';
+  dl.textContent = downloadUrl ? '설치 파일 받기' : '내려받기 페이지 열기';
   actions.append(later, dl);
   box.appendChild(actions);
 

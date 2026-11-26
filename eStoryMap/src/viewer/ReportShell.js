@@ -9,6 +9,7 @@ import { DEM_COLOR_RAMP } from '../core/rasterColor.js';
 import { buildOverlay } from './presentationNav.js';
 import { applySlideColors } from '../shared/color.js';
 import { slideBgOf } from '../core/StoryDoc.js';
+import { setIconLabel } from '../shared/icons.js';
 
 function rampGradientCss() {
   const stops = DEM_COLOR_RAMP.map(
@@ -87,17 +88,17 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
     toolbar.className = 'report-toolbar';
     const title = document.createElement('span');
     title.className = 'report-title';
-    title.textContent = mode === 'slides' ? `${doc.meta.title} — 발표 PDF` : doc.meta.title;
+    title.textContent = mode === 'slides' ? `${doc.meta.title}: 발표 PDF` : doc.meta.title;
     const pdfBtn = document.createElement('button');
     pdfBtn.type = 'button';
-    pdfBtn.textContent = '📄 PDF 저장';
+    setIconLabel(pdfBtn, 'download', 'PDF 저장');
     pdfBtn.addEventListener('click', async () => {
       pdfBtn.disabled = true;
       pdfBtn.textContent = '저장 중…';
       setPdfPageRule(mode); // 인쇄 직전 @page 크기 결정
       const pdfTitle = mode === 'slides' ? `${doc.meta.title} 발표` : doc.meta.title;
       const result = onSavePDF ? await onSavePDF(pdfTitle) : null;
-      pdfBtn.textContent = result ? '저장됨 ✓' : '📄 PDF 저장';
+      setIconLabel(pdfBtn, result ? 'check' : 'download', result ? '저장했어요' : 'PDF 저장');
       pdfBtn.disabled = false;
     });
     const closeBtn = document.createElement('button');

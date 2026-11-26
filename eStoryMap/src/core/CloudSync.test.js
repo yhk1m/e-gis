@@ -70,7 +70,7 @@ describe('createCloudSync', () => {
     const client = makeFakeClient();
     client.result = { data: null, error: new TypeError('fetch failed') };
     const cs = make(client);
-    await expect(cs.upsert(createStoryDoc('t'))).rejects.toThrow('네트워크에 연결할 수 없습니다');
+    await expect(cs.upsert(createStoryDoc('t'))).rejects.toThrow('인터넷에 연결되지 않았어요');
   });
 
   it('list: 최신순 정렬 인자 + data 반환(null이면 빈 배열)', async () => {
@@ -101,6 +101,6 @@ describe('createCloudSync', () => {
       upsert: vi.fn(() => Promise.reject(new TypeError('fetch failed'))),
     }));
     const cs = make(client);
-    await expect(cs.upsert(createStoryDoc('t'))).rejects.toThrow('네트워크에 연결할 수 없습니다');
+    await expect(cs.upsert(createStoryDoc('t'))).rejects.toThrow('인터넷에 연결되지 않았어요');
   });
 });

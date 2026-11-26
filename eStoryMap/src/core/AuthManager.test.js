@@ -5,22 +5,22 @@ import { authErrorMessage, createAuthManager } from './AuthManager.js';
 describe('authErrorMessage', () => {
   it('잘못된 자격증명 → 한국어 안내', () => {
     expect(authErrorMessage(new Error('Invalid login credentials')))
-      .toBe('이메일 또는 비밀번호가 올바르지 않습니다.');
+      .toBe('이메일이나 비밀번호가 맞지 않아요.');
   });
 
   it('네트워크 실패(fetch) → 오프라인 안내', () => {
     expect(authErrorMessage(new TypeError('fetch failed')))
-      .toContain('네트워크에 연결할 수 없습니다');
+      .toContain('인터넷에 연결되지 않았어요');
   });
 
   it('이메일 미인증 → 한국어 안내', () => {
     expect(authErrorMessage(new Error('Email not confirmed')))
-      .toBe('이메일 인증이 완료되지 않은 계정입니다.');
+      .toBe('아직 이메일 인증을 하지 않은 계정이에요. 메일함을 확인해 주세요.');
   });
 
   it('알 수 없는 에러 → 원문 유지, 메시지 없으면 기본 문구', () => {
     expect(authErrorMessage(new Error('teapot'))).toBe('teapot');
-    expect(authErrorMessage(null)).toBe('로그인에 실패했습니다.');
+    expect(authErrorMessage(null)).toBe('로그인하지 못했어요. 다시 해 주세요.');
   });
 });
 
@@ -95,7 +95,7 @@ describe('createAuthManager', () => {
     }));
     const auth = createAuthManager({ client });
     await expect(auth.signIn('a@b.c', 'nope'))
-      .rejects.toThrow('이메일 또는 비밀번호가 올바르지 않습니다.');
+      .rejects.toThrow('이메일이나 비밀번호가 맞지 않아요.');
     expect(auth.isLoggedIn()).toBe(false);
   });
 
@@ -103,7 +103,7 @@ describe('createAuthManager', () => {
     const client = makeFakeClient();
     client.auth.signInWithPassword = vi.fn(async () => { throw new TypeError('fetch failed'); });
     const auth = createAuthManager({ client });
-    await expect(auth.signIn('a@b.c', 'pw')).rejects.toThrow('네트워크에 연결할 수 없습니다');
+    await expect(auth.signIn('a@b.c', 'pw')).rejects.toThrow('인터넷에 연결되지 않았어요');
   });
 
   it('signOut → user null + onChange 발화. 서버 실패(오프라인)여도 로컬은 해제', async () => {

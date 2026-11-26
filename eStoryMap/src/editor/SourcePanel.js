@@ -3,6 +3,8 @@
 // 좌측 SOURCE 트리: 소스(파일)별 레이어 체크박스.
 // 체크박스 = "현재 선택된 페이지"의 layerVisibility 편집(상위 스펙 §4).
 
+import { setIconLabel } from '../shared/icons.js';
+
 /**
  * @param {HTMLElement} container
  * @param {{
@@ -18,7 +20,7 @@ export function createSourcePanel(container, { onToggleLayer, onSetAll, onRemove
     if (!doc.sources.length) {
       const empty = document.createElement('div');
       empty.className = 'panel-empty';
-      empty.textContent = '.egis 열기로 소스를 추가하세요';
+      empty.textContent = '.egis 열기로 소스를 추가해 주세요';
       container.appendChild(empty);
       return;
     }
@@ -53,7 +55,7 @@ export function createSourcePanel(container, { onToggleLayer, onSetAll, onRemove
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'source-remove';
-      removeBtn.textContent = '✕';
+      setIconLabel(removeBtn, 'close', '', '소스 빼기');
       removeBtn.title = '이 소스를 프로젝트에서 제거 (모든 슬라이드에서 레이어 삭제)';
       removeBtn.addEventListener('click', () => onRemoveSource(source.sourceId, source.filename));
       title.append(nameSpan, removeBtn);

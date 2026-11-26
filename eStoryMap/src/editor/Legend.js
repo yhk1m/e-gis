@@ -5,6 +5,7 @@
 // 접착 컴포넌트라 단위 테스트 없음 — 수동 스모크.
 import { buildLegendItems, DEFAULT_LEGEND } from '../core/legend.js';
 import { DEM_COLOR_RAMP } from '../core/rasterColor.js';
+import { iconSvg } from '../shared/icons.js';
 
 function rampGradientCss() {
   const stops = DEM_COLOR_RAMP.map(
@@ -84,7 +85,7 @@ export function createLegend(container, { getDoc, onChange }) {
       const eye = document.createElement('button');
       eye.type = 'button';
       eye.className = 'legend-eye';
-      eye.textContent = item.hidden ? '🚫' : '👁';
+      eye.innerHTML = iconSvg(item.hidden ? 'eyeOff' : 'eye', 14);
       eye.title = item.hidden ? '범례에 표시' : '범례에서 숨김';
       eye.addEventListener('pointerdown', (e) => e.stopPropagation());
       eye.addEventListener('click', (e) => {
