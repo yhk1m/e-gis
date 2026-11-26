@@ -20,12 +20,15 @@
     <meta name="color-scheme" content="dark light" />
     <link rel="stylesheet" href="./src/style.css" />
     <link rel="stylesheet" href="./src/dangto.css" /><!-- 당토 디자인 덮어쓰기 (이 줄을 빼면 예전 모습) -->
+    <link rel="stylesheet" href="./src/controls.css" /><!-- 당토 공통 부품: 버튼, 체크, 세그먼트 -->
   </head>
   <body>
     <div id="app-tabs">
+      <div class="app-seg" role="group" aria-label="화면 고르기">
       <button id="tab-egis" class="app-tab" type="button">e-GIS</button>
       <button id="tab-estory" class="app-tab active" type="button">e-GIStory</button>
       <button id="tab-split" class="app-tab" type="button" title="e-GIStory와 e-GIS를 나란히 놓고 작업, 발표"><svg class="dt-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg><span>분할</span></button>
+      </div>
       <button id="tab-swap" class="app-tab" type="button" title="e-GIS 좌우 위치 바꾸기" aria-label="좌우 바꾸기"><svg class="dt-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h13l-3-3"/><path d="M17 17H4l3 3"/></svg></button>
     </div>
     <div id="app" inert>

@@ -1,0 +1,212 @@
+/* © 2026 김용현 */
+/*
+ * e-GIStory 당토 공통 부품 (dangto-design 1.7 assets/controls.css, SEED Design 치수)
+ *
+ * 버튼, 체크, 세그먼트만 다룬다(이 앱에는 라디오, 스위치, 칩이 없다). dangto.css 다음에 불러온다.
+ * 웹 e-GIS(src/styles/controls.css)와 같은 값이라 분할 화면에서 양쪽 부품이 같은 모양이다.
+ * 밀도는 촘촘: 버튼 32, 큰 버튼 36, 모서리 7, 굵기 600. 시작 화면만 한 단계 큰 44를 그대로 둔다.
+ * 발표 무대와 보고서 종이 안은 건드리지 않는다. <html class="dt-off">면 모두 꺼진다.
+ */
+
+/* ===== 값 ===== */
+:root {
+  --ctl-accent: var(--dt-primary);
+  --ctl-on-accent: var(--dt-on-primary);
+  --ctl-accent-press: var(--dt-primary-hover);
+  --ctl-icon-muted: #6b7380;
+  --ctl-line: rgba(255, 255, 255, 0.08);
+  --ctl-line-strong: rgba(255, 255, 255, 0.16);
+  --ctl-weak: rgba(255, 255, 255, 0.08);
+  --ctl-weak-press: rgba(255, 255, 255, 0.14);
+  --ctl-seg-on: #3a3f48;
+  --ctl-mark: 20px;
+  --ctl-mark-line: 1.5px;
+  --ctl-h: 32px;
+  --ctl-h-l: 36px;
+  --ctl-r: 7px;
+  --ctl-dur: 150ms;
+  --ctl-ease: cubic-bezier(0.35, 0, 0.35, 1);
+}
+:root[data-theme="light"] {
+  --ctl-icon-muted: #868f9c;
+  --ctl-line: rgba(16, 24, 40, 0.08);
+  --ctl-line-strong: rgba(16, 24, 40, 0.16);
+  --ctl-weak: rgba(16, 24, 40, 0.06);
+  --ctl-weak-press: rgba(16, 24, 40, 0.11);
+  --ctl-seg-on: #ffffff;
+}
+
+/* ===== 체크 (SEED Checkbox) ===== */
+:root:not(.dt-off) input[type="checkbox"]:not([role="switch"]) {
+  appearance: none; -webkit-appearance: none;
+  position: relative; flex: none; margin: 0; padding: 0;
+  width: var(--ctl-mark); height: var(--ctl-mark);
+  min-width: var(--ctl-mark); max-width: var(--ctl-mark);
+  min-height: var(--ctl-mark); max-height: var(--ctl-mark);
+  border: var(--ctl-mark-line) solid var(--ctl-icon-muted);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer; vertical-align: middle;
+  transition: background-color var(--ctl-dur) var(--ctl-ease), border-color var(--ctl-dur) var(--ctl-ease), scale var(--ctl-dur) var(--ctl-ease);
+}
+:root:not(.dt-off) input[type="checkbox"]:not([role="switch"])::before {
+  content: ""; position: absolute; inset: 0;
+  background: var(--ctl-on-accent);
+  -webkit-mask: no-repeat center / 78% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+          mask: no-repeat center / 78% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  opacity: 0;
+}
+:root:not(.dt-off) input[type="checkbox"]:not([role="switch"]):checked {
+  background: var(--ctl-accent); border-color: var(--ctl-accent);
+}
+:root:not(.dt-off) input[type="checkbox"]:not([role="switch"]):checked::before { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  :root:not(.dt-off) input[type="checkbox"]:not([role="switch"]):not(:disabled):not(:checked):hover { background: var(--ctl-weak); }
+}
+:root:not(.dt-off) input[type="checkbox"]:not(:disabled):active { scale: 0.92; }
+:root:not(.dt-off) input[type="checkbox"]:focus-visible { outline: 2px solid var(--dt-primary); outline-offset: 2px; }
+:root:not(.dt-off) input[type="checkbox"]:disabled {
+  cursor: not-allowed; border-color: var(--ctl-line-strong); background: var(--ctl-weak);
+}
+:root:not(.dt-off) input[type="checkbox"]:disabled::before { background: var(--dt-text3); }
+:root:not(.dt-off) #legend-toggle-label,
+:root:not(.dt-off) #cloud-toggle-label,
+:root:not(.dt-off) .content-split { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ===== 버튼 (SEED Action Button, 촘촘) =====
+   도구 막대와 지도 도구: 글자만(ghost), 발표: 회색(weak), 패널 안: 회색(weak),
+   대화상자: 큰 버튼(36), 주요 행동만 주색 채움, 지우기는 빨강 */
+:root:not(.dt-off) #toolbar button,
+:root:not(.dt-off) #map-tools button,
+:root:not(.dt-off) .source-bulk-btn,
+:root:not(.dt-off) #btn-add-page,
+:root:not(.dt-off) #content-bg-reset,
+:root:not(.dt-off) #content-bg-all,
+:root:not(.dt-off) .md-toolbar button,
+:root:not(.dt-off) .confirm-actions button,
+:root:not(.dt-off) .update-later,
+:root:not(.dt-off) .update-download,
+:root:not(.dt-off) .report-toolbar button {
+  border-radius: var(--ctl-r);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color var(--ctl-dur) var(--ctl-ease), color var(--ctl-dur) var(--ctl-ease), scale var(--ctl-dur) var(--ctl-ease), filter var(--ctl-dur) var(--ctl-ease);
+}
+:root:not(.dt-off) #toolbar button,
+:root:not(.dt-off) #map-tools button,
+:root:not(.dt-off) #btn-add-page { height: var(--ctl-h); min-height: var(--ctl-h); }
+:root:not(.dt-off) .source-bulk-btn,
+:root:not(.dt-off) #content-bg-reset,
+:root:not(.dt-off) #content-bg-all,
+:root:not(.dt-off) .md-toolbar button { min-height: 28px; padding: 0 10px; }
+:root:not(.dt-off) .confirm-actions button,
+:root:not(.dt-off) .update-later,
+:root:not(.dt-off) .update-download,
+:root:not(.dt-off) .report-toolbar button { height: var(--ctl-h-l); padding: 0 14px; font-size: 14px; }
+
+/* 회색(weak) 버튼 */
+:root:not(.dt-off) #toolbar #btn-present,
+:root:not(.dt-off) .source-bulk-btn,
+:root:not(.dt-off) #btn-add-page,
+:root:not(.dt-off) #content-bg-reset,
+:root:not(.dt-off) #content-bg-all,
+:root:not(.dt-off) .md-toolbar button,
+:root:not(.dt-off) .confirm-actions .confirm-cancel,
+:root:not(.dt-off) .confirm-actions button:not(.primary):not(.danger),
+:root:not(.dt-off) .update-later,
+:root:not(.dt-off) .auth-row button {
+  background: var(--ctl-weak); color: var(--dt-text); border: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  :root:not(.dt-off) #toolbar button:not(:disabled):hover,
+  :root:not(.dt-off) #map-tools button:not(:disabled):hover { background: var(--ctl-weak); color: var(--dt-text); }
+  :root:not(.dt-off) #toolbar #btn-present:not(:disabled):hover,
+  :root:not(.dt-off) .source-bulk-btn:not(:disabled):hover,
+  :root:not(.dt-off) #btn-add-page:not(:disabled):hover,
+  :root:not(.dt-off) #content-bg-reset:not(:disabled):hover,
+  :root:not(.dt-off) #content-bg-all:not(:disabled):hover,
+  :root:not(.dt-off) .md-toolbar button:not(:disabled):hover,
+  :root:not(.dt-off) .confirm-actions .confirm-cancel:not(:disabled):hover,
+  :root:not(.dt-off) .confirm-actions button:not(.primary):not(.danger):not(:disabled):hover,
+  :root:not(.dt-off) .update-later:not(:disabled):hover,
+  :root:not(.dt-off) .auth-row button:not(:disabled):hover { background: var(--ctl-weak-press); color: var(--dt-text); }
+}
+
+/* 주색 채움: 화면마다 하나 (새로 만들기, 게시, 내려받기) */
+:root:not(.dt-off) .start-new button,
+:root:not(.dt-off) .publish-box .confirm-ok.primary,
+:root:not(.dt-off) .update-download {
+  background: var(--ctl-accent); color: var(--ctl-on-accent); border: none; font-weight: 600;
+}
+@media (hover: hover) and (pointer: fine) {
+  :root:not(.dt-off) .start-new button:not(:disabled):hover,
+  :root:not(.dt-off) .publish-box .confirm-ok.primary:not(:disabled):hover,
+  :root:not(.dt-off) .update-download:not(:disabled):hover { background: var(--ctl-accent-press); }
+}
+
+/* 빨강: 되돌릴 수 없는 지우기 */
+:root:not(.dt-off) .confirm-actions .confirm-ok.danger { background: var(--dt-danger); color: var(--dt-on-danger); border: none; }
+@media (hover: hover) and (pointer: fine) {
+  :root:not(.dt-off) .confirm-actions .confirm-ok.danger:not(:disabled):hover { background: var(--dt-danger); filter: brightness(0.94); }
+}
+
+/* 시작 화면 버튼은 44 그대로, 모서리와 굵기만 맞춘다 */
+:root:not(.dt-off) .start-new button,
+:root:not(.dt-off) .auth-row button { border-radius: var(--ctl-r); font-weight: 600; }
+
+/* 누르면 살짝 줄어든다 */
+:root:not(.dt-off) :is(#toolbar, #map-tools, .confirm-actions, .start-new, .auth-row, .report-toolbar, .md-toolbar) button:not(:disabled):active,
+:root:not(.dt-off) :is(.source-bulk-btn, #btn-add-page, #content-bg-reset, #content-bg-all, .update-later, .update-download):not(:disabled):active { scale: 0.97; }
+
+/* 누를 수 없는 버튼 */
+:root:not(.dt-off) :is(#toolbar, #map-tools, .confirm-actions, .start-new, .auth-row, .md-toolbar) button:disabled,
+:root:not(.dt-off) :is(.source-bulk-btn, #btn-add-page, #content-bg-reset, #content-bg-all):disabled {
+  opacity: 1; color: var(--dt-text3); background: var(--ctl-weak); cursor: not-allowed; filter: none;
+}
+:root:not(.dt-off) :is(#toolbar, #map-tools) button:disabled { background: transparent; }
+
+/* ===== 세그먼트 (SEED Segmented Control, 촘촘) ===== */
+
+/* 앱 전환 탭: e-GIS / e-GIStory / 분할 */
+:root:not(.dt-off) .app-seg {
+  display: inline-flex; align-items: center; gap: 0;
+  padding: 3px; border-radius: 999px; background: var(--ctl-weak);
+}
+:root:not(.dt-off) .app-seg .app-tab {
+  height: 24px; padding: 0 14px; border-radius: 999px;
+  background: transparent; color: var(--dt-text3); font-weight: 600;
+}
+:root:not(.dt-off) .app-seg .app-tab:hover { background: transparent; color: var(--dt-text); }
+:root:not(.dt-off) .app-seg .app-tab.active,
+:root:not(.dt-off) .app-seg #tab-estory.active {
+  background: var(--ctl-seg-on); color: var(--dt-text);
+  box-shadow: inset 0 0 0 1px var(--ctl-line), 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+:root:not(.dt-off) #tab-swap { height: 28px; border-radius: var(--ctl-r); }
+
+/* 글 정렬 (왼쪽, 가운데, 오른쪽) */
+:root:not(.dt-off) .content-align {
+  display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  padding: 3px; gap: 0; border-radius: 999px; background: var(--ctl-weak);
+}
+:root:not(.dt-off) .content-align button {
+  min-height: 26px; padding: 0 14px; border: none; border-radius: 999px;
+  background: transparent; color: var(--dt-text3); font-weight: 600;
+}
+:root:not(.dt-off) .content-align button:hover { background: transparent; color: var(--dt-text); }
+:root:not(.dt-off) .content-align button.active {
+  background: var(--ctl-seg-on); color: var(--dt-text);
+  box-shadow: inset 0 0 0 1px var(--ctl-line), 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not(.dt-off) input[type="checkbox"],
+  :root:not(.dt-off) input[type="checkbox"]::before,
+  :root:not(.dt-off) button { transition: none; }
+  :root:not(.dt-off) input[type="checkbox"]:active,
+  :root:not(.dt-off) button:active { scale: none; }
+}
+
+/* 키보드로 옮겨 왔을 때만 주색 테두리 (창을 열 때 자동으로 잡힌 초점은 표시하지 않는다) */
+:root:not(.dt-off) :is(#toolbar, #map-tools, .confirm-actions, .start-new, .auth-row, .report-toolbar, .md-toolbar, .content-align, .app-seg) button:focus { outline: none; }
+:root:not(.dt-off) :is(#toolbar, #map-tools, .confirm-actions, .start-new, .auth-row, .report-toolbar, .md-toolbar, .content-align, .app-seg) button:focus-visible { outline: 2px solid var(--dt-primary); outline-offset: 2px; }

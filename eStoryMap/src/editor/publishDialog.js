@@ -99,7 +99,7 @@ export function openPublishDialog({ doc, publisher, openExternal, onChanged }) {
         note.textContent = '문서가 10MB를 넘어요. 게시는 되지만 보는 사람 화면이 늦게 열릴 수 있어요.';
       }
       actions.append(
-        btn('취소', 'confirm-cancel', close),
+        btn('닫기', 'confirm-cancel', close),
         btn('게시', 'confirm-ok primary', () => doPublish('게시했어요. 위 링크를 나눠 주세요.')),
       );
       box.append(msg, note, actions);

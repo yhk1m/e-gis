@@ -108,7 +108,7 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
   const alignRow = document.createElement('div');
   alignRow.className = 'content-align';
   const alignBtns = {};
-  for (const [val, label] of [['left', '좌'], ['center', '중앙'], ['right', '우']]) {
+  for (const [val, label] of [['left', '왼쪽'], ['center', '가운데'], ['right', '오른쪽']]) {
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = label;

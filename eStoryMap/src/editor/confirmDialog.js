@@ -8,7 +8,7 @@
  * @param {{confirmText?:string, cancelText?:string, danger?:boolean}} [opts]
  * @returns {Promise<boolean>}
  */
-export function confirmDialog(message, { confirmText = '삭제', cancelText = '취소', danger = true } = {}) {
+export function confirmDialog(message, { confirmText = '삭제', cancelText = '닫기', danger = true } = {}) {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
