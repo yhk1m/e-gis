@@ -1,0 +1,421 @@
+/* © 2026 김용현 */
+/**
+ * 당토 디자인 공통 부품 (dangto-design 1.7.0 assets/controls.css, SEED Design 치수)
+ * - 버튼, 체크, 라디오, 스위치, 세그먼트, 칩만 다룬다. dangto.css 다음에 불러온다.
+ * - e-GIS 는 토큰 이름이 당토와 달라(--color-primary 등) 같은 값을 --ctl-* 변수로 다시 만든다.
+ * - 밀도는 촘촘(버튼 32, 큰 버튼 36, 모서리 7, 굵기 600).
+ * - 지도 위 아이콘 버튼(.btn-icon, .btn-tool-labeled, .ol-control), 글래스 화면([data-surface="glass"])은 건드리지 않는다.
+ */
+
+/* ===== 값 ===== */
+:root,
+[data-theme="light"] {
+  --ctl-accent: var(--color-primary);
+  --ctl-on-accent: var(--text-inverse);
+  --ctl-accent-press: var(--color-primary-hover);
+  --ctl-icon-muted: #868f9c;
+  --ctl-line: rgba(16, 24, 40, 0.08);
+  --ctl-line-strong: rgba(16, 24, 40, 0.16);
+  --ctl-weak: rgba(16, 24, 40, 0.06);
+  --ctl-weak-press: rgba(16, 24, 40, 0.11);
+  --ctl-seg-on: #ffffff;   /* 세그먼트 고른 칸 */
+  --ctl-on-critical: #ffffff;
+  --ctl-mark: 20px;
+  --ctl-mark-line: 1.5px;
+  --ctl-h: 32px;     /* 버튼 (촘촘) */
+  --ctl-h-l: 36px;   /* 큰 버튼 (촘촘) */
+  --ctl-r: 7px;      /* 버튼 모서리 (촘촘) */
+  --ctl-dur: 150ms;
+  --ctl-ease: cubic-bezier(0.35, 0, 0.35, 1);
+}
+
+[data-theme="dark"] {
+  --ctl-icon-muted: #6b7380;
+  --ctl-line: rgba(255, 255, 255, 0.08);
+  --ctl-line-strong: rgba(255, 255, 255, 0.16);
+  --ctl-weak: rgba(255, 255, 255, 0.08);
+  --ctl-weak-press: rgba(255, 255, 255, 0.14);
+  --ctl-seg-on: #3a3f48;   /* 다크: 회색 길보다 밝게 */
+  --ctl-on-critical: #1f0608;
+}
+
+@media (pointer: coarse) {
+  :root { --ctl-mark: 24px; }
+}
+
+/* ===== 체크 (SEED Checkbox) ===== */
+input[type="checkbox"]:not([role="switch"]),
+.choropleth-reverse-group .checkbox-label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  width: var(--ctl-mark);
+  height: var(--ctl-mark);
+  /* 자리마다 준 width:auto, 100% 같은 값이 와도 20px 네모를 지킨다 */
+  min-width: var(--ctl-mark);
+  max-width: var(--ctl-mark);
+  min-height: var(--ctl-mark);
+  max-height: var(--ctl-mark);
+  border: var(--ctl-mark-line) solid var(--ctl-icon-muted);
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background-color var(--ctl-dur) var(--ctl-ease), border-color var(--ctl-dur) var(--ctl-ease), scale var(--ctl-dur) var(--ctl-ease);
+}
+
+input[type="checkbox"]:not([role="switch"])::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ctl-on-accent);
+  -webkit-mask: no-repeat center / 78% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+          mask: no-repeat center / 78% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  opacity: 0;
+}
+
+input[type="checkbox"]:not([role="switch"]):indeterminate::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8h8' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8h8' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+input[type="checkbox"]:not([role="switch"]):is(:checked, :indeterminate) {
+  background: var(--ctl-accent);
+  border-color: var(--ctl-accent);
+}
+
+input[type="checkbox"]:not([role="switch"]):is(:checked, :indeterminate)::before {
+  opacity: 1;
+}
+
+/* ===== 라디오 (SEED Radio) ===== */
+input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  width: var(--ctl-mark);
+  height: var(--ctl-mark);
+  /* 자리마다 준 width:auto, 100% 같은 값이 와도 20px 네모를 지킨다 */
+  min-width: var(--ctl-mark);
+  max-width: var(--ctl-mark);
+  min-height: var(--ctl-mark);
+  max-height: var(--ctl-mark);
+  border: var(--ctl-mark-line) solid var(--ctl-icon-muted);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: box-shadow var(--ctl-dur) var(--ctl-ease), border-color var(--ctl-dur) var(--ctl-ease), scale var(--ctl-dur) var(--ctl-ease);
+}
+
+/* 고르면 주색 원 안에 지름 8(손가락 기기 10)짜리 점 */
+input[type="radio"]:checked {
+  border-color: var(--ctl-accent);
+  background: var(--ctl-on-accent);
+  box-shadow: inset 0 0 0 calc((var(--ctl-mark) - var(--ctl-mark) * 0.4) / 2 - var(--ctl-mark-line)) var(--ctl-accent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  input[type="checkbox"]:not([role="switch"]):not(:disabled):not(:checked):not(:indeterminate):hover,
+  input[type="radio"]:not(:disabled):not(:checked):hover {
+    background: var(--ctl-weak);
+  }
+}
+
+:is(input[type="checkbox"]:not([role="switch"]), input[type="radio"]):not(:disabled):active { scale: 0.92; }
+
+:is(input[type="checkbox"], input[type="radio"]):focus {
+  box-shadow: none;
+}
+
+input[type="radio"]:checked:focus {
+  box-shadow: inset 0 0 0 calc((var(--ctl-mark) - var(--ctl-mark) * 0.4) / 2 - var(--ctl-mark-line)) var(--ctl-accent);
+}
+
+:is(input[type="checkbox"], input[type="radio"]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+:is(input[type="checkbox"]:not([role="switch"]), input[type="radio"]):disabled {
+  cursor: not-allowed;
+  border-color: var(--ctl-line-strong);
+  background: var(--ctl-weak);
+  box-shadow: none;
+}
+
+input[type="checkbox"]:not([role="switch"]):disabled::before { background: var(--text-disabled); }
+
+input[type="radio"]:disabled:checked {
+  box-shadow: inset 0 0 0 calc((var(--ctl-mark) - var(--ctl-mark) * 0.4) / 2 - var(--ctl-mark-line)) var(--bg-panel);
+  background: var(--text-disabled);
+}
+
+/* 칩 안에 숨긴 입력은 그대로 숨긴다 (위의 체크 모양이 자리를 차지하지 않게) */
+.lab-fb-chip input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-width: 1px;
+  max-width: 1px;
+  min-height: 1px;
+  max-height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ===== 스위치 (SEED Switch 24): 실험실 켜고 끄기 ===== */
+.labs-switch {
+  width: 38px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--ctl-icon-muted);
+  transition: background-color var(--ctl-dur) var(--ctl-ease), scale var(--ctl-dur) var(--ctl-ease);
+}
+
+.labs-switch .labs-switch-knob {
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12);
+  transform: scale(0.8);
+  transition: transform 250ms var(--ctl-ease), background-color var(--ctl-dur) var(--ctl-ease);
+}
+
+.labs-switch[aria-checked="true"] {
+  background: var(--ctl-accent);
+}
+
+.labs-switch[aria-checked="true"] .labs-switch-knob {
+  background: var(--ctl-on-accent);
+  transform: translateX(14px) scale(1);
+}
+
+.labs-switch:not(:disabled):active { scale: 0.96; }
+
+/* 글래스 화면은 iOS 초록 스위치라 손잡이를 흰색으로 둔다 */
+[data-surface="glass"] .labs-switch[aria-checked="true"] .labs-switch-knob {
+  background: #ffffff;
+}
+
+/* ===== 버튼 (SEED Action Button, 촘촘) =====
+   .btn-icon, .btn-tool-labeled(지도 툴바)는 빼고 글자 버튼만 맞춘다.
+   primary 주색 채움, secondary 반투명 회색(weak), outline 테두리, danger 빨강(critical) */
+.btn:not(.btn-icon):not(.btn-tool-labeled):not(.btn-link) {
+  min-height: var(--ctl-h);
+  padding: 0 14px;
+  border-radius: var(--ctl-r);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  transition: background-color var(--ctl-dur) var(--ctl-ease), scale var(--ctl-dur) var(--ctl-ease), filter var(--ctl-dur) var(--ctl-ease);
+}
+
+.btn.btn-sm:not(.btn-icon),
+.btn.btn-small:not(.btn-icon) {
+  min-height: var(--ctl-h);
+  padding: 0 12px;
+  font-size: var(--font-size-sm);
+}
+
+.btn.btn-full {
+  min-height: var(--ctl-h-l);
+}
+
+.btn.btn-primary {
+  background: var(--ctl-accent);
+  color: var(--ctl-on-accent);
+  border: none;
+  box-shadow: none;
+}
+
+/* 회색 버튼은 낮은 무게(:where)로: 경유지 추가(점선)처럼 자리마다 일부러 준 모양은 그대로 이긴다 */
+.btn:where(.btn-secondary, .btn-sm:not(.btn-primary, .btn-outline, .btn-danger, .btn-icon)) {
+  background: var(--ctl-weak);
+  color: var(--text-primary);
+  border: none;
+}
+
+.btn.btn-outline {
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  box-shadow: inset 0 0 0 1px var(--ctl-line-strong);
+}
+
+.btn.btn-danger {
+  background: var(--color-danger);
+  color: var(--ctl-on-critical) !important; /* .btn-danger 의 흰 글자(!important)를 다크에서 이긴다 */
+  border: none;
+}
+
+[data-theme="light"] .btn.btn-danger,
+:root:not([data-theme="dark"]) .btn.btn-danger {
+  color: #ffffff !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn.btn-primary:not(:disabled):hover { background: var(--ctl-accent-press); }
+  :where(.btn.btn-secondary, .btn.btn-sm:not(.btn-primary, .btn-outline, .btn-danger, .btn-icon)):not(:disabled):hover {
+    background: var(--ctl-weak-press);
+  }
+  .btn.btn-outline:not(:disabled):hover { background: var(--ctl-weak); color: var(--text-primary); }
+  .btn.btn-danger:not(:disabled):hover { background: var(--color-danger); filter: brightness(0.94); }
+}
+
+.btn:not(.btn-icon):not(.btn-tool-labeled):not(.btn-link):not(:disabled):active { scale: 0.97; }
+
+.btn:not(.btn-icon):not(.btn-tool-labeled):not(.btn-link):disabled {
+  opacity: 1;
+  color: var(--text-disabled) !important;
+  background: var(--ctl-weak);
+  box-shadow: none;
+  filter: none;
+  cursor: not-allowed;
+}
+
+/* 머리줄 로그인 버튼(회색 버튼): 높이와 굵기만 같게 */
+#header-login-btn.btn-primary {
+  background: var(--ctl-weak);
+}
+
+#header-login-btn.btn-primary:hover {
+  background: var(--ctl-weak-press);
+}
+
+/* ===== 세그먼트 (SEED Segmented Control, 촘촘) ===== */
+
+/* 레이어 / 브라우저 탭 */
+#left-panel .panel-tabs {
+  padding: 4px;
+  gap: 0;
+  border-radius: 999px;
+  background: var(--ctl-weak);
+}
+
+#left-panel .panel-tab {
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+#left-panel .panel-tab.active,
+[data-theme="dark"] #left-panel .panel-tab.active {
+  background: var(--ctl-seg-on);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--ctl-line), 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+/* 선 모양 (실선, 점선 ...) */
+.stroke-style-options {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  max-width: 100%;
+  padding: 4px;
+  gap: 0;
+  border-radius: 999px;
+  background: var(--ctl-weak);
+}
+
+.stroke-style-options .stroke-btn {
+  min-height: 28px;
+  padding: 4px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.stroke-style-options .stroke-btn:hover {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.stroke-style-options .stroke-btn.active,
+[data-theme="dark"] .stroke-style-options .stroke-btn.active {
+  background: var(--ctl-seg-on);
+  color: var(--text-primary) !important;
+  box-shadow: inset 0 0 0 1px var(--ctl-line), 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+/* ===== 칩 (SEED Chip, 작은 것 32) =====
+   고른 칩은 진한 회색 채움(주색이 아님: 주요 버튼과 헷갈리지 않게) */
+.lab-fb-chip span,
+.public-data-chip,
+.layer-select-mode-btn {
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: var(--ctl-weak);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  transition: background-color var(--ctl-dur) var(--ctl-ease), color var(--ctl-dur) var(--ctl-ease), scale var(--ctl-dur) var(--ctl-ease);
+}
+
+/* .layer-select-mode-btn 은 손가락 기기에서만 보이므로 display 는 원래 규칙(none / inline-flex)을 따른다 */
+.lab-fb-chip span,
+.public-data-chip {
+  display: inline-flex;
+}
+
+.lab-fb-chip input:checked + span,
+.public-data-chip.active,
+.layer-select-mode-btn.active {
+  background: var(--text-primary);
+  color: var(--bg-app);
+  font-weight: 600;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lab-fb-chip input:not(:checked) + span:hover,
+  .public-data-chip:not(.active):hover,
+  .layer-select-mode-btn:not(.active):hover {
+    background: var(--ctl-weak-press);
+    color: var(--text-primary);
+  }
+}
+
+.public-data-chip:active,
+.layer-select-mode-btn:active,
+.lab-fb-chip:active span {
+  scale: 0.96;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  input[type="checkbox"],
+  input[type="checkbox"]::before,
+  input[type="radio"],
+  .btn,
+  .labs-switch,
+  .lab-fb-chip span,
+  .public-data-chip,
+  .layer-select-mode-btn {
+    transition: none;
+  }
+
+  :is(input[type="checkbox"], input[type="radio"], .btn, .labs-switch, .public-data-chip, .layer-select-mode-btn):active,
+  .lab-fb-chip:active span {
+    scale: none;
+  }
+}

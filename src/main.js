@@ -5,6 +5,7 @@
 
 import './styles/main.css';
 import './styles/dangto.css'; // 당토 디자인 덮어쓰기 (이 줄을 빼면 예전 모습)
+import './styles/controls.css'; // 당토 공통 부품: 버튼, 체크, 라디오, 스위치, 세그먼트, 칩 (SEED 치수)
 import { AppLayout } from './ui/layout/AppLayout.js';
 import { initMobileShell } from './ui/layout/MobileShell.js';
 import { initToolbarGroups } from './ui/layout/toolbarGroups.js';
