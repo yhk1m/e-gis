@@ -4,6 +4,7 @@
 // 필드는 팩토리에서 1회 생성 — 입력 중 재렌더가 없어야 포커스가 유지된다.
 // 타이핑은 onChange로 문서에만 반영(전체 refresh 금지). 종류 변경은 refresh 필요(발표/목록 반영)라 상위에서 처리.
 import { renderMarkdown } from '../shared/markdown.js';
+import { setIconLabel } from '../shared/icons.js';
 
 const KIND_OPTIONS = [
   ['map', '지도'],
@@ -23,7 +24,7 @@ const KIND_HINTS = {
  * @param {HTMLElement} container
  * @param {{onChange(field:'kind'|'heading'|'body'|'caption', value:string):void}} handlers
  */
-export function createContentEditor(container, { onChange, onApplyBgAll }) {
+export function createContentEditor(container, { onChange, onApplyBgAll, onAddImage }) {
   container.innerHTML = '';
 
   const kind = document.createElement('select');
@@ -71,6 +72,7 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
     if (alignFieldWrap) alignFieldWrap.style.display = isMedia ? '' : 'none';
     if (splitFieldWrap) splitFieldWrap.style.display = isMedia ? '' : 'none';
     if (basemapFieldWrap) basemapFieldWrap.style.display = k === 'map' ? '' : 'none';
+    imgBtn.style.display = isMedia ? '' : 'none';
   }
 
   kind.addEventListener('change', () => {
@@ -81,6 +83,63 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
   body.addEventListener('input', () => {
     preview.innerHTML = renderMarkdown(body.value); // 살균된 HTML만 삽입
     onChange('body', body.value);
+  });
+
+  // 내 컴퓨터 사진: 파일 고르기, 붙여 넣기, 끌어 놓기. 큰 사진은 줄여서 문서 안에 넣는다.
+  async function insertImageFiles(files) {
+    const list = [...files].filter((f) => /^image\/(png|jpeg|gif|webp)$/.test(f.type));
+    if (!list.length || !onAddImage) return false;
+    const lines = [];
+    for (const f of list) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const id = onAddImage(await imageFileToDataUrl(f));
+        lines.push(`![${f.name.replace(/\.[^.]+$/, '').replace(/[\[\]]/g, '')}](img:${id})`);
+      } catch (e) {
+        console.error('[image] 사진을 넣지 못했어요:', e);
+      }
+    }
+    if (!lines.length) return false;
+    const at = body.selectionStart ?? body.value.length;
+    const before = body.value.slice(0, at);
+    const after = body.value.slice(at);
+    const pre = before && !before.endsWith('\n') ? '\n' : '';
+    const post = after && !after.startsWith('\n') ? '\n' : '';
+    body.value = before + pre + lines.join('\n') + post + after;
+    body.dispatchEvent(new Event('input'));
+    return true;
+  }
+  const imgPick = document.createElement('input');
+  imgPick.type = 'file';
+  imgPick.accept = 'image/png,image/jpeg,image/gif,image/webp';
+  imgPick.multiple = true;
+  imgPick.hidden = true;
+  imgPick.addEventListener('change', async () => {
+    await insertImageFiles(imgPick.files);
+    imgPick.value = '';
+  });
+  const imgBtn = document.createElement('button');
+  imgBtn.type = 'button';
+  imgBtn.id = 'content-add-image';
+  setIconLabel(imgBtn, 'image', '내 컴퓨터 사진 넣기');
+  imgBtn.title = '사진 파일을 골라 이 슬라이드에 넣어요. 사진은 프로젝트 파일 안에 함께 저장돼요';
+  imgBtn.addEventListener('click', () => imgPick.click());
+  body.addEventListener('paste', (e) => {
+    const files = e.clipboardData && e.clipboardData.files;
+    if (files && files.length && [...files].some((f) => f.type.startsWith('image/'))) {
+      e.preventDefault();
+      insertImageFiles(files);
+    }
+  });
+  body.addEventListener('dragover', (e) => {
+    if (e.dataTransfer && [...e.dataTransfer.items].some((i) => i.kind === 'file')) e.preventDefault();
+  });
+  body.addEventListener('drop', (e) => {
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (files && files.length) {
+      e.preventDefault();
+      insertImageFiles(files);
+    }
   });
   caption.addEventListener('input', () => onChange('caption', caption.value));
 
@@ -235,7 +294,7 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
 
   const bodyWrap = document.createElement('div');
   bodyWrap.className = 'content-body-wrap';
-  bodyWrap.append(mdToolbar, body, mdHelp);
+  bodyWrap.append(mdToolbar, body, imgBtn, imgPick, mdHelp);
 
   function field(label, el) {
     const wrap = document.createElement('div');
@@ -285,4 +344,35 @@ export function createContentEditor(container, { onChange, onApplyBgAll }) {
   }
 
   return { render };
+}
+
+/**
+ * 사진 파일 → data URL. 긴 변이 1920px보다 크거나 파일이 600KB보다 크면 줄여서 JPEG로 바꾼다
+ * (프로젝트 파일과 웹 게시가 너무 무거워지지 않게). 움직이는 GIF는 그대로 둔다.
+ */
+async function imageFileToDataUrl(file) {
+  const raw = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+  if (file.type === 'image/gif') return raw;
+  const img = await new Promise((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = () => reject(new Error('사진을 읽지 못했어요'));
+    i.src = raw;
+  });
+  const MAX = 1920;
+  const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+  if (scale === 1 && file.size <= 600 * 1024) return raw;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; // 투명한 PNG를 JPEG로 바꿀 때 검게 되지 않게
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.85);
 }

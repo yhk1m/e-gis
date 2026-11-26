@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createStoryDoc, getPage, nextSourceId, addSource, setLayerVisible, addPage, removePage,
+  duplicatePage, replaceSource,
   setPageCamera, setPageContent, setCloudSync,
   setPresentationLayout, setPresentationPos, applyCameraToAllPages, syncCameraFromPage,
   setLegendVisible, setLegendPos, setLegendOverride,
@@ -274,7 +275,24 @@ describe('addPage', () => {
     expect(p2.camera.center).not.toBe(getPage(doc, 'page_1').camera.center);
   });
 
-  it('끝에 추가되고 id/제목이 이어진다, content/overrides는 빈 값', () => {
+  it('지정 페이지 바로 뒤에 들어간다', () => {
+    const doc = createStoryDoc();
+    addPage(doc, 'page_1'); // page_2
+    const p3 = addPage(doc, 'page_1');
+    expect(doc.pages.map((p) => p.id)).toEqual(['page_1', 'page_3', 'page_2']);
+    expect(doc.pages[1]).toBe(p3);
+  });
+
+  it('배경 지도와 배경색을 이어받는다', () => {
+    const doc = createStoryDoc();
+    getPage(doc, 'page_1').basemap = 'satellite';
+    getPage(doc, 'page_1').bg = '#112233';
+    const p2 = addPage(doc, 'page_1');
+    expect(p2.basemap).toBe('satellite');
+    expect(p2.bg).toBe('#112233');
+  });
+
+  it('id/제목이 이어진다, content/overrides는 빈 값', () => {
     const doc = createStoryDoc();
     const p2 = addPage(doc, 'page_1');
     expect(doc.pages).toHaveLength(2);
@@ -491,5 +509,40 @@ describe('범례 변이 (setLegendVisible/Pos/Override)', () => {
     await new Promise((r) => setTimeout(r, 5));
     setLegendVisible(doc, true);
     expect(doc.meta.updated).not.toBe(before);
+  });
+});
+
+describe('duplicatePage', () => {
+  it('글과 종류까지 깊은 복사해서 바로 뒤에 넣는다', () => {
+    const doc = createStoryDoc();
+    const p1 = getPage(doc, 'page_1');
+    p1.kind = 'media';
+    p1.content.body = '본문';
+    addPage(doc, 'page_1'); // page_2
+    const copy = duplicatePage(doc, 'page_1');
+    expect(doc.pages.map((p) => p.id)).toEqual(['page_1', 'page_3', 'page_2']);
+    expect(copy.title).toBe('페이지 1 사본');
+    expect(copy.kind).toBe('media');
+    expect(copy.content.body).toBe('본문');
+    copy.content.body = '바뀜';
+    expect(p1.content.body).toBe('본문');
+  });
+});
+
+describe('replaceSource', () => {
+  it('남은 레이어의 켬/끔은 유지, 사라진 레이어는 빼고, 새 레이어는 현재 슬라이드에서 켠다', () => {
+    const doc = createStoryDoc();
+    addSource(doc, { sourceId: 'src_1', filename: 'a.egis', egis: { v: 1 } }, ['A', 'B'], 'page_1');
+    const p2 = addPage(doc, 'page_1');
+    setLayerVisible(doc, p2.id, 'src_1', 'A', false);
+    const old = doc.sources[0];
+    replaceSource(doc, 'src_1', { filename: 'b.egis', egis: { v: 2 } }, ['A', 'C'], p2.id);
+    expect(doc.sources[0]).not.toBe(old);
+    expect(doc.sources[0]).toMatchObject({ sourceId: 'src_1', filename: 'b.egis', egis: { v: 2 } });
+    expect(getPage(doc, 'page_1').layerVisibility).toEqual([{ sourceId: 'src_1', layerId: 'A', visible: true }]);
+    expect(getPage(doc, p2.id).layerVisibility).toEqual([
+      { sourceId: 'src_1', layerId: 'A', visible: false },
+      { sourceId: 'src_1', layerId: 'C', visible: true },
+    ]);
   });
 });

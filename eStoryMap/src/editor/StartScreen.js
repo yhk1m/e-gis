@@ -15,7 +15,7 @@ import { setIconLabel } from '../shared/icons.js';
  */
 export function createStartScreen(container, {
   onCreate, onOpen, onOpenCloud, auth,
-  onRename, onDuplicate, onDelete, onRenameCloud, onDeleteCloud,
+  onRename, onDuplicate, onDelete, onRenameCloud, onDeleteCloud, onImport,
 }) {
   let errorEl = null;
   let authBox = null;
@@ -87,6 +87,17 @@ export function createStartScreen(container, {
           onDelete && { icon: 'trash', label: '지우기', danger: true, run: () => onDelete(name) },
         ]));
       }
+    }
+
+    if (onImport) {
+      const imp = document.createElement('button');
+      imp.type = 'button';
+      imp.id = 'btn-start-import';
+      imp.className = 'start-import';
+      setIconLabel(imp, 'folderOpen', '다른 곳에 있는 파일 열기');
+      imp.title = 'USB나 메일로 받은 스토리맵 파일(.esm)을 골라 열어요. 저장 폴더로 복사해 둬요';
+      imp.addEventListener('click', () => onImport());
+      box.appendChild(imp);
     }
 
     if (auth) {
@@ -370,5 +381,10 @@ export function createStartScreen(container, {
     if (errorEl) errorEl.textContent = message;
   }
 
-  return { render, showError, updateAuth, renderCloud, renderCloudLoading, renderCloudError };
+  /** 이름으로 스토리맵을 연다(다른 곳에서 들여온 파일을 바로 열 때). */
+  function openByName(name) {
+    return onOpen(name);
+  }
+
+  return { render, showError, updateAuth, renderCloud, renderCloudLoading, renderCloudError, openByName };
 }

@@ -38,3 +38,22 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown(undefined)).toBe('');
   });
 });
+
+describe('내 컴퓨터 사진(img:ID)', () => {
+  const PNG = 'data:image/png;base64,iVBORw0KGgo=';
+  it('사진 보관함의 data URL로 바꿔 그린다', async () => {
+    const { renderMarkdown, setImageStore } = await import('./markdown.js');
+    setImageStore({ img_1: PNG });
+    const html = renderMarkdown('![바다](img:img_1)');
+    expect(html).toContain(`src="${PNG}"`);
+    expect(html).toContain('alt="바다"');
+    setImageStore(null);
+  });
+  it('없는 사진이나 이상한 값이면 안내 글', async () => {
+    const { renderMarkdown, setImageStore } = await import('./markdown.js');
+    setImageStore({ img_2: 'javascript:alert(1)' });
+    expect(renderMarkdown('![](img:img_1)')).toContain('사진을 찾지 못했어요');
+    expect(renderMarkdown('![](img:img_2)')).not.toContain('javascript');
+    setImageStore(null);
+  });
+});

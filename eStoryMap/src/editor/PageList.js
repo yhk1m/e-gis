@@ -5,14 +5,14 @@
 import { iconSvg, setIconLabel } from '../shared/icons.js';
 
 const KIND_ICON = { map: 'map', title: 'title', media: 'image', text: 'text' };
-const KIND_TITLE = { map: '지도 슬라이드', title: '제목(표지) 슬라이드', media: '사진/영상 슬라이드' };
+const KIND_TITLE = { map: '지도 슬라이드', title: '제목(표지) 슬라이드', media: '사진/영상 슬라이드', text: '글 슬라이드' };
 
 /**
  * @param {HTMLElement} container
  * @param {{onSelect(pageId):void, onAdd():void, onRemove(pageId):void,
  *          onReorder(orderedIds:string[]):void}} handlers
  */
-export function createPageList(container, { onSelect, onAdd, onRemove, onReorder, onRename }) {
+export function createPageList(container, { onSelect, onAdd, onRemove, onReorder, onRename, onDuplicate }) {
   let draggedId = null; // 드래그 세션 동안 유지(렌더 재생성과 무관하게 클로저에 보존)
 
   function clearDropMarks() {
@@ -71,12 +71,30 @@ export function createPageList(container, { onSelect, onAdd, onRemove, onReorder
         else name.textContent = page.title; // 빈값·무변경 → 원복
       });
 
+      // 지도 슬라이드에 위치를 저장했는지 표시(저장 안 한 슬라이드는 발표 때 지도 위치가 바뀌지 않는다)
+      const cam = document.createElement('span');
+      cam.className = 'page-cam';
+      if (kind === 'map' && page.camera) {
+        cam.innerHTML = iconSvg('pin', 14);
+        cam.title = '위치를 저장했어요';
+      } else if (kind === 'map') {
+        cam.classList.add('none');
+        cam.title = '아직 위치를 저장하지 않았어요';
+      }
+
       const edit = document.createElement('button');
       edit.type = 'button';
       edit.className = 'page-edit';
       setIconLabel(edit, 'edit', '', '이름 바꾸기');
       edit.title = '이름 변경';
       edit.addEventListener('click', (e) => { e.stopPropagation(); startRename(); });
+
+      const dup = document.createElement('button');
+      dup.type = 'button';
+      dup.className = 'page-dup';
+      setIconLabel(dup, 'copy', '', '슬라이드 복제');
+      dup.title = '복제 (글과 배경까지 똑같이)';
+      dup.addEventListener('click', (e) => { e.stopPropagation(); if (onDuplicate) onDuplicate(page.id); });
 
       const del = document.createElement('button');
       del.type = 'button';
@@ -125,7 +143,7 @@ export function createPageList(container, { onSelect, onAdd, onRemove, onReorder
         onReorder(order); // 상위가 setPageOrder + refresh
       });
 
-      row.append(handle, icon, name, edit, del);
+      row.append(handle, icon, name, cam, edit, ...(onDuplicate ? [dup] : []), del);
       container.appendChild(row);
     });
 
@@ -133,6 +151,7 @@ export function createPageList(container, { onSelect, onAdd, onRemove, onReorder
     add.type = 'button';
     add.id = 'btn-add-page';
     add.textContent = '+ 페이지';
+    add.title = '지금 슬라이드 바로 뒤에 새 슬라이드를 넣어요. 지도 위치와 레이어는 이어받아요';
     add.addEventListener('click', () => onAdd());
     container.appendChild(add);
   }

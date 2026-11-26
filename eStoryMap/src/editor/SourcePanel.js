@@ -13,7 +13,7 @@ import { setIconLabel } from '../shared/icons.js';
  *   onRemoveSource(sourceId:string, filename:string):void,
  * }} handlers
  */
-export function createSourcePanel(container, { onToggleLayer, onSetAll, onRemoveSource }) {
+export function createSourcePanel(container, { onToggleLayer, onSetAll, onRemoveSource, onReplaceSource }) {
   function render(doc, page, registry) {
     container.innerHTML = '';
 
@@ -58,7 +58,14 @@ export function createSourcePanel(container, { onToggleLayer, onSetAll, onRemove
       setIconLabel(removeBtn, 'close', '', '소스 빼기');
       removeBtn.title = '이 소스를 프로젝트에서 제거 (모든 슬라이드에서 레이어 삭제)';
       removeBtn.addEventListener('click', () => onRemoveSource(source.sourceId, source.filename));
-      title.append(nameSpan, removeBtn);
+      // 다른 파일로 바꾸기: e-GIS에서 고친 .egis를 같은 자리에 다시 넣는다(슬라이드별 켬/끔 유지)
+      const replaceBtn = document.createElement('button');
+      replaceBtn.type = 'button';
+      replaceBtn.className = 'source-remove source-replace';
+      setIconLabel(replaceBtn, 'swap', '', '다른 파일로 바꾸기');
+      replaceBtn.title = '고친 파일로 바꾸기 (슬라이드마다 켜고 끈 레이어는 그대로)';
+      replaceBtn.addEventListener('click', () => onReplaceSource && onReplaceSource(source.sourceId, source.filename));
+      title.append(nameSpan, ...(onReplaceSource ? [replaceBtn] : []), removeBtn);
       box.appendChild(title);
 
       for (const { sourceId, layerId, layer } of entries) {

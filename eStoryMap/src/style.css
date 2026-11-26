@@ -722,3 +722,39 @@ body.webviewer { margin: 0; background: #000; }
 :root[data-theme="light"] .egis-note button { background: rgba(16,24,40,.06); color: #1a1f27; }
 /* 보고서 도구 막대: PDF 저장 실패 안내 */
 .report-note { color: #f87171; font-size: 13px; }
+
+.page-dup { border: none; background: none; cursor: pointer; color: #94a3b8; }
+.page-cam { flex: none; display: inline-flex; width: 14px; color: #94a3b8; }
+.page-cam.none { visibility: hidden; }
+.source-replace:hover { color: #e5e7eb; }
+
+/* 업데이트 창: 이 버전 건너뛰기(글자 버튼, 왼쪽 끝) */
+.update-skip { margin-right: auto; border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 13px; padding: 0 4px; }
+.update-skip:hover { color: #e5e7eb; text-decoration: underline; }
+:root:not(.dt-off) .update-skip { color: var(--dt-text3); font-weight: 600; }
+:root:not(.dt-off) .update-skip:hover { color: var(--dt-text); }
+
+/* 시작 화면: 다른 곳에 있는 파일 열기(글자 버튼) */
+.start-import { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; height: 36px; padding: 0 10px; border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 13px; border-radius: 6px; }
+.start-import:hover { color: #e5e7eb; background: #1e293b; }
+:root:not(.dt-off) .start-import { color: var(--dt-text2); font-weight: 600; border-radius: var(--dt-r); }
+:root:not(.dt-off) .start-import:hover { color: var(--dt-text); background: var(--dt-raised); }
+/* 편집 화면 로그인 창 */
+.login-box { width: 360px; max-width: calc(100% - 32px); display: flex; flex-direction: column; gap: 10px; }
+.login-title { font-size: 17px; font-weight: 700; }
+.login-input { height: 44px; padding: 0 12px; border: 1px solid #334155; border-radius: 6px; background: #1e293b; color: #e5e7eb; font-size: 14px; }
+.login-box .auth-signup { align-self: flex-start; }
+.login-box .confirm-msg { margin: 0; }
+:root:not(.dt-off) .login-title { color: var(--dt-text); letter-spacing: -0.2px; }
+:root:not(.dt-off) .login-input { border: 1px solid var(--dt-border); border-radius: var(--dt-r); background: var(--dt-raised); color: var(--dt-text); }
+:root:not(.dt-off) .login-input:focus { outline: 2px solid var(--dt-primary); outline-offset: -1px; border-color: transparent; }
+/* 사진 넣기 버튼, 저장하지 않은 위치 표시 */
+#content-add-image { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; height: 32px; padding: 0 12px; border: none; border-radius: 7px; background: rgba(255,255,255,.08); color: inherit; font-weight: 600; cursor: pointer; }
+:root[data-theme="light"] #content-add-image { background: rgba(16,24,40,.06); }
+#btn-capture.unsaved::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; margin-left: 2px; }
+
+/* 로그인 창의 로그인 버튼은 채운 주색(이 창의 주요 행동) */
+.login-box .confirm-ok.primary { background: #3b82f6; color: #fff; }
+:root:not(.dt-off) .login-box .confirm-ok.primary { background: var(--dt-primary); color: var(--dt-on-primary); }
+:root:not(.dt-off) .login-box .confirm-ok.primary:hover:not(:disabled) { background: var(--dt-primary-hover); }
+.login-box .auth-error:empty { display: none; }

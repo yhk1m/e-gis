@@ -175,6 +175,36 @@ export function addSource(doc, source, layerIds, pageId) {
   return source;
 }
 
+/**
+ * 소스 바꾸기: 같은 자리(sourceId)에 새 파일 내용을 넣는다. 슬라이드마다 켜고 끈 상태는
+ * 새 파일에도 있는 레이어만 남기고, 새로 생긴 레이어는 pageId 슬라이드에서 켠다.
+ * 소스 객체는 새로 만든다(되돌리기 기록이 옛 객체를 그대로 쥐고 있게).
+ */
+export function replaceSource(doc, sourceId, { filename, egis }, layerIds, pageId) {
+  const idx = doc.sources.findIndex((s) => s.sourceId === sourceId);
+  if (idx === -1) return null;
+  const keep = new Set(layerIds);
+  const known = new Set();
+  for (const page of doc.pages) {
+    page.layerVisibility = page.layerVisibility.filter((v) => {
+      if (v.sourceId !== sourceId) return true;
+      if (!keep.has(v.layerId)) return false;
+      known.add(v.layerId);
+      return true;
+    });
+  }
+  const page = getPage(doc, pageId);
+  if (page) {
+    for (const layerId of layerIds) {
+      if (!known.has(layerId)) page.layerVisibility.push({ sourceId, layerId, visible: true });
+    }
+  }
+  const source = { ...doc.sources[idx], filename, egis };
+  doc.sources[idx] = source;
+  touch(doc);
+  return source;
+}
+
 /** 소스 제거 — sources에서 빼고 모든 페이지의 해당 layerVisibility 엔트리도 지운다.
  *  없는 sourceId면 null(no-op). OL 레이어 제거는 SourceRegistry.removeSource가 담당. */
 export function removeSource(doc, sourceId) {
@@ -201,8 +231,9 @@ export function setLayerVisible(doc, pageId, sourceId, layerId, visible) {
 }
 
 /**
- * 새 페이지를 끝에 추가. 지정 페이지(보통 현재 페이지)의
- * layerVisibility·camera를 복제한다(연속 편집 편의 — 상위 스펙 §4).
+ * 새 페이지를 지정 페이지(보통 현재 페이지) 바로 뒤에 넣는다. 지도 상태(layerVisibility,
+ * camera, 배경 지도, 배경색)는 이어받고, 글은 비운다(연속 편집 편의, 상위 스펙 §4).
+ * 지정 페이지가 없으면 끝에 넣는다.
  */
 export function addPage(doc, copyFromPageId) {
   const from = getPage(doc, copyFromPageId);
@@ -214,10 +245,29 @@ export function addPage(doc, copyFromPageId) {
     page.camera = from.camera
       ? { center: [...from.camera.center], zoom: from.camera.zoom }
       : null;
+    page.basemap = from.basemap || 'standard';
+    if (from.bg) page.bg = from.bg;
   }
-  doc.pages.push(page);
+  insertAfter(doc, page, copyFromPageId);
   touch(doc);
   return page;
+}
+
+/** 슬라이드 복제: 종류, 글, 배경, 지도 상태까지 모두 복사해 바로 뒤에 넣는다. 제목은 "… 사본". */
+export function duplicatePage(doc, pageId) {
+  const from = getPage(doc, pageId);
+  if (!from) return null;
+  const id = nextPageId(doc);
+  const page = { ...structuredClone(from), id, title: `${from.title} 사본` };
+  insertAfter(doc, page, pageId);
+  touch(doc);
+  return page;
+}
+
+function insertAfter(doc, page, afterId) {
+  const i = doc.pages.findIndex((p) => p.id === afterId);
+  if (i === -1) doc.pages.push(page);
+  else doc.pages.splice(i + 1, 0, page);
 }
 
 /**

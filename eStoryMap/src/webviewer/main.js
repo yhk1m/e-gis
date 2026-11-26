@@ -16,6 +16,7 @@ import { MapView } from '../core/MapView.js';
 import { SourceRegistry } from '../core/SourceRegistry.js';
 import { parseEgisDoc } from '../core/egisParse.js';
 import { deserializeStoryDoc } from '../core/LocalStore.js';
+import { setImageStore } from '../shared/markdown.js';
 import { CameraAnimator } from '../shared/CameraAnimator.js';
 import { applySlideFont } from '../shared/slideFont.js';
 import { createPresentationShell } from '../viewer/PresentationShell.js';
@@ -58,6 +59,7 @@ async function boot() {
   let doc;
   try {
     doc = deserializeStoryDoc(JSON.stringify(row.doc)); // .esm과 같은 구조 검증
+    setImageStore(doc.images); // 내 컴퓨터에서 넣은 사진(본문의 img:ID)
   } catch (e) {
     console.error('[viewer] 문서 손상:', e);
     return fail('스토리맵 문서를 열 수 없습니다.');
