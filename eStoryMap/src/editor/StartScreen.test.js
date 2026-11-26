@@ -226,3 +226,55 @@ describe('StartScreen 로그인 영역(M7)', () => {
     expect(auth.signIn).toHaveBeenCalledWith('a@b.c', 'pw');
   });
 });
+
+describe('StartScreen 항목 메뉴(이름 바꾸기, 사본, 지우기)', () => {
+  function withHandlers() {
+    const h = { onRename: vi.fn(), onDuplicate: vi.fn(), onDelete: vi.fn() };
+    const { el, screen } = make(h);
+    document.body.appendChild(el);
+    screen.render(['부산 이야기']);
+    return { el, h };
+  }
+
+  it('더 보기를 누르면 메뉴 3개가 뜨고, 다시 누르면 닫힌다', () => {
+    const { el } = withHandlers();
+    const more = el.querySelector('.start-more');
+    more.click();
+    expect([...el.querySelectorAll('.start-menu-item')].map((n) => n.textContent))
+      .toEqual(['이름 바꾸기', '사본 만들기', '지우기']);
+    expect(more.getAttribute('aria-expanded')).toBe('true');
+    more.click();
+    expect(el.querySelector('.start-menu')).toBeNull();
+    el.remove();
+  });
+
+  it('지우기 → onDelete(이름), 사본 → onDuplicate(이름)', () => {
+    const { el, h } = withHandlers();
+    el.querySelector('.start-more').click();
+    el.querySelectorAll('.start-menu-item')[2].click();
+    expect(h.onDelete).toHaveBeenCalledWith('부산 이야기');
+    el.querySelector('.start-more').click();
+    el.querySelectorAll('.start-menu-item')[1].click();
+    expect(h.onDuplicate).toHaveBeenCalledWith('부산 이야기');
+    el.remove();
+  });
+
+  it('이름 바꾸기: Enter면 onRename(옛 이름, 새 이름), Esc면 그대로', () => {
+    const { el, h } = withHandlers();
+    el.querySelector('.start-more').click();
+    el.querySelectorAll('.start-menu-item')[0].click();
+    let input = el.querySelector('.start-rename');
+    input.value = ' 부산 답사 ';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(h.onRename).toHaveBeenCalledWith('부산 이야기', '부산 답사');
+    expect(el.querySelector('.start-rename')).toBeNull();
+
+    el.querySelector('.start-more').click();
+    el.querySelectorAll('.start-menu-item')[0].click();
+    input = el.querySelector('.start-rename');
+    input.value = '바뀌면 안 됨';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(h.onRename).toHaveBeenCalledTimes(1);
+    el.remove();
+  });
+});

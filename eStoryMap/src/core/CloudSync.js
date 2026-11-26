@@ -56,5 +56,26 @@ export function createCloudSync({ client, getUser }) {
       const data = await run(client.from(TABLE).select('doc').eq('id', id).single());
       return deserializeStoryDoc(JSON.stringify(data.doc));
     },
+
+    /** 클라우드 문서 이름 바꾸기. 행의 title과 문서 안 meta.title을 함께 바꾼다.
+     *  where: {id} 또는 {title}. 해당 행이 없으면 false. */
+    async rename(where, newTitle) {
+      const user = requireUser();
+      let q = client.from(TABLE).select('id,doc');
+      q = where.id ? q.eq('id', where.id) : q.eq('user_id', user.id).eq('title', where.title);
+      const rows = await run(q);
+      const row = rows && rows[0];
+      if (!row) return false;
+      const doc = row.doc || {};
+      const next = { ...doc, meta: { ...(doc.meta || {}), title: newTitle } };
+      await run(client.from(TABLE).update({ title: newTitle, doc: next, updated_at: new Date().toISOString() }).eq('id', row.id));
+      return true;
+    },
+
+    /** 클라우드 문서 지우기(이 컴퓨터의 .esm 파일은 그대로). */
+    async remove(id) {
+      requireUser();
+      await run(client.from(TABLE).delete().eq('id', id));
+    },
   };
 }

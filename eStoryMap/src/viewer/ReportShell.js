@@ -97,15 +97,25 @@ export function createReportShell(root, { mapView, registry, getDoc, onExit, onS
       pdfBtn.textContent = '저장 중…';
       setPdfPageRule(mode); // 인쇄 직전 @page 크기 결정
       const pdfTitle = mode === 'slides' ? `${doc.meta.title} 발표` : doc.meta.title;
-      const result = onSavePDF ? await onSavePDF(pdfTitle) : null;
+      note.textContent = '';
+      let result = null;
+      try {
+        result = onSavePDF ? await onSavePDF(pdfTitle) : null;
+      } catch (e) {
+        // 메인 프로세스가 보낸 오류는 "Error invoking remote method ...: Error: 원래 문구" 모양
+        note.textContent = String((e && e.message) || e).replace(/^.*Error: /, '') || 'PDF를 저장하지 못했어요.';
+      }
       setIconLabel(pdfBtn, result ? 'check' : 'download', result ? '저장했어요' : 'PDF 저장');
       pdfBtn.disabled = false;
     });
+    const note = document.createElement('span');
+    note.className = 'report-note';
+    note.setAttribute('role', 'status');
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.textContent = '닫기';
     closeBtn.addEventListener('click', close);
-    toolbar.append(title, pdfBtn, closeBtn);
+    toolbar.append(title, note, pdfBtn, closeBtn);
     return toolbar;
   }
 

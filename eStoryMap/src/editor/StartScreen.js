@@ -13,15 +13,20 @@ import { setIconLabel } from '../shared/icons.js';
  *          auth?: {signIn(email:string,pw:string):Promise<object>, signOut():Promise<void>, openSignup():void}}} handlers
  *        auth 미주입 시 로그인 영역을 렌더하지 않는다(테스트·이전 계약 유지).
  */
-export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, auth }) {
+export function createStartScreen(container, {
+  onCreate, onOpen, onOpenCloud, auth,
+  onRename, onDuplicate, onDelete, onRenameCloud, onDeleteCloud,
+}) {
   let errorEl = null;
   let authBox = null;
   let authUser = null;  // updateAuth로 갱신되는 유일한 인증 상태
   let authBusy = false; // 로그인 요청 중 중복 제출 방지
   let cloudBox = null;
-  let cloudItems = null; // null=미로드/비로그인(섹션 숨김), []=비었음 안내 — renderCloud로 갱신(M8)
+  let cloudItems = null;
+  let cloudNote = null; // {message, retry?}: 불러오는 중이거나 실패했을 때 목록 대신 보여 줄 안내 // null=미로드/비로그인(섹션 숨김), []=비었음 안내 — renderCloud로 갱신(M8)
 
   function render(projectNames) {
+    closeMenu();
     container.innerHTML = '';
     authBox = null;
     cloudBox = null;
@@ -76,7 +81,11 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
         item.className = 'start-item';
         item.textContent = name;
         item.addEventListener('click', () => onOpen(name));
-        box.appendChild(item);
+        box.appendChild(withMenu(item, name, [
+          onRename && { icon: 'edit', label: '이름 바꾸기', run: (row) => startRename(row, name, (to) => onRename(name, to)) },
+          onDuplicate && { icon: 'copy', label: '사본 만들기', run: () => onDuplicate(name) },
+          onDelete && { icon: 'trash', label: '지우기', danger: true, run: () => onDelete(name) },
+        ]));
       }
     }
 
@@ -97,12 +106,29 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
 
   function renderCloudSection() {
     if (!cloudBox) return;
+    if (openMenu && cloudBox.contains(openMenu.menu)) closeMenu();
     cloudBox.innerHTML = '';
-    if (!cloudItems) return; // 비로그인/미로드 — 섹션 자체를 그리지 않는다
+    if (!cloudItems && !cloudNote) return; // 비로그인 — 섹션 자체를 그리지 않는다
     const title = document.createElement('div');
     title.className = 'start-list-title';
     title.textContent = '클라우드 스토리맵';
     cloudBox.appendChild(title);
+    if (cloudNote) {
+      // 불러오는 중이거나 불러오지 못했을 때
+      const note = document.createElement('div');
+      note.className = 'start-empty';
+      note.textContent = cloudNote.message;
+      cloudBox.appendChild(note);
+      if (cloudNote.retry) {
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'start-retry';
+        retry.textContent = '다시 불러오기';
+        retry.addEventListener('click', cloudNote.retry);
+        cloudBox.appendChild(retry);
+      }
+      return;
+    }
     if (!cloudItems.length) {
       const empty = document.createElement('div');
       empty.className = 'start-empty';
@@ -115,14 +141,127 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
         btn.className = 'start-item cloud-item';
         setIconLabel(btn, 'cloud', item.title);
         btn.addEventListener('click', () => { if (onOpenCloud) onOpenCloud(item.id); });
-        cloudBox.appendChild(btn);
+        cloudBox.appendChild(withMenu(btn, item.title, [
+          onRenameCloud && { icon: 'edit', label: '이름 바꾸기', run: (row) => startRename(row, item.title, (to) => onRenameCloud(item.id, item.title, to)) },
+          onDeleteCloud && { icon: 'trash', label: '클라우드에서 지우기', danger: true, run: () => onDeleteCloud(item.id, item.title) },
+        ]));
       }
     }
+  }
+
+  let openMenu = null; // 지금 열린 항목 메뉴(한 번에 하나)
+
+  function closeMenu() {
+    if (!openMenu) return;
+    openMenu.menu.remove();
+    openMenu.btn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('pointerdown', onOutside, true);
+    document.removeEventListener('keydown', onMenuKey, true);
+    openMenu = null;
+  }
+  function onOutside(e) {
+    if (!openMenu) return;
+    if (openMenu.menu.contains(e.target) || openMenu.btn.contains(e.target)) return;
+    closeMenu();
+  }
+  function onMenuKey(e) {
+    if (e.key === 'Escape' && openMenu) {
+      const btn = openMenu.btn;
+      closeMenu();
+      btn.focus();
+    }
+  }
+
+  /** 목록 항목 옆에 「더 보기」 버튼과 메뉴(이름 바꾸기, 사본, 지우기)를 붙인 줄을 만든다. */
+  function withMenu(item, name, actions) {
+    const list = actions.filter(Boolean);
+    if (!list.length) return item; // 핸들러가 없으면 예전처럼 항목만(테스트, 이전 계약)
+    const row = document.createElement('div');
+    row.className = 'start-row';
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'start-more';
+    more.title = '더 보기';
+    more.setAttribute('aria-haspopup', 'menu');
+    more.setAttribute('aria-expanded', 'false');
+    setIconLabel(more, 'more', '', `「${name}」 더 보기`);
+    more.addEventListener('click', () => {
+      const wasMine = openMenu && openMenu.btn === more;
+      closeMenu();
+      if (wasMine) return;
+      const menu = document.createElement('div');
+      menu.className = 'start-menu';
+      menu.setAttribute('role', 'menu');
+      for (const a of list) {
+        const mi = document.createElement('button');
+        mi.type = 'button';
+        mi.className = 'start-menu-item' + (a.danger ? ' danger' : '');
+        mi.setAttribute('role', 'menuitem');
+        setIconLabel(mi, a.icon, a.label);
+        mi.addEventListener('click', () => { closeMenu(); a.run(row); });
+        menu.appendChild(mi);
+      }
+      row.appendChild(menu);
+      more.setAttribute('aria-expanded', 'true');
+      openMenu = { menu, btn: more };
+      document.addEventListener('pointerdown', onOutside, true);
+      document.addEventListener('keydown', onMenuKey, true);
+      const first = menu.querySelector('button');
+      if (first) first.focus();
+    });
+    row.append(item, more);
+    return row;
+  }
+
+  /** 줄 안에서 이름을 바로 고친다. Enter나 칸 밖을 누르면 저장, Esc는 그대로 둔다. */
+  function startRename(row, current, commit) {
+    const item = row.querySelector('.start-item');
+    const more = row.querySelector('.start-more');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'start-rename';
+    input.value = current;
+    input.setAttribute('aria-label', '새 이름');
+    item.hidden = true;
+    more.hidden = true;
+    row.insertBefore(input, item);
+    input.focus();
+    input.select();
+    let done = false;
+    const finish = (save) => {
+      if (done) return;
+      done = true;
+      const to = input.value.trim();
+      input.remove();
+      item.hidden = false;
+      more.hidden = false;
+      if (save && to && to !== current) commit(to);
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.isComposing || e.keyCode === 229) return; // 한글 IME 조합 중 Enter 무시
+      if (e.key === 'Enter') finish(true);
+      else if (e.key === 'Escape') { e.stopPropagation(); finish(false); item.focus(); }
+    });
+    input.addEventListener('blur', () => finish(true));
   }
 
   /** 클라우드 목록 반영(M8). render 전에 불려도 안전 — 상태만 저장, 다음 render에 반영. */
   function renderCloud(items) {
     cloudItems = items || null;
+    cloudNote = null;
+    renderCloudSection();
+  }
+
+  /** 클라우드 목록을 불러오는 중. */
+  function renderCloudLoading() {
+    cloudNote = { message: '클라우드 목록을 불러오고 있어요' };
+    renderCloudSection();
+  }
+
+  /** 클라우드 목록을 불러오지 못했을 때: 안내와 다시 불러오기 버튼. */
+  function renderCloudError(message, retry) {
+    cloudItems = null;
+    cloudNote = { message, retry };
     renderCloudSection();
   }
 
@@ -231,5 +370,5 @@ export function createStartScreen(container, { onCreate, onOpen, onOpenCloud, au
     if (errorEl) errorEl.textContent = message;
   }
 
-  return { render, showError, updateAuth, renderCloud };
+  return { render, showError, updateAuth, renderCloud, renderCloudLoading, renderCloudError };
 }
