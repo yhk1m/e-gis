@@ -229,7 +229,7 @@ GIS 프로젝트 클라우드 저장 및 불러오기, 스토리맵 웹 게시, 
 • 비밀번호 암호화: 이용자의 비밀번호는 암호화되어 저장
 • 전송 구간 암호화: 전 구간 HTTPS 암호화 통신 적용(HTTP 접속은 HTTPS로 자동 전환), TLS 1.3 사용
 • 접근 권한 관리: 데이터베이스 행 수준 보안(RLS) 적용으로 이용자는 자신의 데이터에만 접근 가능
-• 웹 보안 헤더 적용: Content-Security-Policy(악성 스크립트 삽입 차단), frame-ancestors(허용한 발표 자료 사이트 외 화면 삽입 차단, 클릭재킹 방지), X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+• 웹 보안 헤더 적용: Content-Security-Policy(악성 스크립트 삽입 차단), X-Frame-Options(클릭재킹 차단), X-Content-Type-Options, Referrer-Policy, Permissions-Policy
 • 이용자가 입력한 이름이 화면에 표시될 때 스크립트로 실행되지 않도록 처리
 
 <strong>물리적 조치</strong>
