@@ -19,17 +19,47 @@ import { publicDataTab } from './publicDataTab.js';
 import { flowPanel } from '../panels/FlowPanel.js';
 
 const TAB_FOOTER_TEXT = {
-  basic: '점·선·면·흐름·속성 자료는 클릭으로, 래스터는 골라서 한꺼번에 불러옵니다',
-  public: '공공데이터포털의 데이터를 실시간으로 불러옵니다',
-  sheets: '공개된 구글 스프레드시트 링크로 속성·좌표 데이터를 가져옵니다'
+  basic: '점, 선, 면, 흐름, 속성 자료는 눌러서 바로, 래스터는 여러 개 골라 한꺼번에 불러와요',
+  public: '공공데이터포털의 자료를 지금 받아서 불러와요',
+  sheets: '공개된 구글 스프레드시트 링크로 속성 자료나 좌표 자료를 가져와요'
 };
 
+/** 선 SVG 아이콘 (당토 디자인: 이모지 대신 굵기 1.75, 끝 둥글게) */
+const svg = (d, size = 16) => `<svg class="bd-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  folderOpen: '<path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/>',
+  folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  sheet: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
+  pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  line: '<circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M6.5 16.5 10 11l4 2 3.5-5.5"/>',
+  area: '<path d="M4 7 11 3l9 5-2 11-11 2z"/>',
+  mountain: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>',
+  flow: '<path d="M4 17c4-8 12-8 16 0"/><path d="m16 13 4 4-4 4"/>',
+  table: '<path d="M12 3v18"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18"/>',
+  map: '<path d="M14.1 6.3 9.9 4.2a2 2 0 0 0-1.8 0L3.6 6.4A1 1 0 0 0 3 7.3v12.1a1 1 0 0 0 1.4.9l3.7-1.9a2 2 0 0 1 1.8 0l4.2 2.1a2 2 0 0 0 1.8 0l4.5-2.2a1 1 0 0 0 .6-.9V5.3a1 1 0 0 0-1.4-.9l-3.7 1.9a2 2 0 0 1-1.8 0z"/><path d="M15 6v15M9 3v15"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  back: '<path d="m15 18-6-6 6-6"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+};
+/** 실습 그룹 id → 아이콘 (카탈로그의 이모지는 쓰지 않는다) */
+const GROUP_ICON = {
+  'point-data': 'pin', 'line-data': 'line', 'area-data': 'area',
+  'raster-data': 'mountain', 'flow-data': 'flow', 'attribute-data': 'table'
+};
+const groupIcon = (g) => svg(ICON[GROUP_ICON[g.id] || (g.type === 'raster' ? 'mountain' : 'folder')]);
+/** 성공과 실패 한 줄 (기호 대신 아이콘) */
+const okLine = (text) => `<span class="bd-result ok">${svg(ICON.check, 14)}${text}</span>`;
+const errLine = (text) => `<span class="bd-result err">${svg(ICON.x, 14)}${text}</span>`;
+
 const PRACTICE_TYPE_META = {
-  spatial: { icon: '🗺️', label: '공간' },
-  attribute: { icon: '📊', label: '속성' },
-  coordinate: { icon: '📍', label: '좌표' },
-  raster: { icon: '🏔', label: '래스터' },
-  flow: { icon: '🔀', label: '흐름' }
+  spatial: { icon: 'map', label: '공간' },
+  attribute: { icon: 'table', label: '속성' },
+  coordinate: { icon: 'pin', label: '좌표' },
+  raster: { icon: 'mountain', label: '래스터' },
+  flow: { icon: 'flow', label: '흐름' }
 };
 
 class BuiltinDataDialog {
@@ -72,15 +102,15 @@ class BuiltinDataDialog {
       <div class="modal-overlay active" id="builtin-data-overlay">
         <div class="modal" style="width: 540px; max-height: 82vh;">
           <div class="modal-header">
-            <h3>📂 데이터 불러오기</h3>
+            <h3 class="bd-title">${svg(ICON.folderOpen, 18)}데이터 불러오기</h3>
             <button class="modal-close" id="builtin-data-close">&times;</button>
           </div>
           <div class="modal-body" style="padding: 0;">
             <!-- 탭 -->
             <div class="builtin-tabs">
-              <button class="builtin-tab" data-tab="basic">📂 실습 데이터</button>
-              <button class="builtin-tab" data-tab="public">🌐 공공데이터</button>
-              <button class="builtin-tab" data-tab="sheets">📋 스프레드시트</button>
+              <button class="builtin-tab" data-tab="basic">${svg(ICON.book)}실습 데이터</button>
+              <button class="builtin-tab" data-tab="public">${svg(ICON.globe)}공공데이터</button>
+              <button class="builtin-tab" data-tab="sheets">${svg(ICON.sheet)}스프레드시트</button>
             </div>
             <div class="builtin-tab-content" data-tab-content="basic">
               ${this._renderBasicTab()}
@@ -92,7 +122,7 @@ class BuiltinDataDialog {
               ${this._renderSheetsTab()}
             </div>
           </div>
-          <div class="modal-footer" style="font-size: 11px; color: var(--text-muted); justify-content: center;">
+          <div class="modal-footer bd-footer">
             <span id="builtin-footer-text"></span>
           </div>
         </div>
@@ -133,7 +163,7 @@ class BuiltinDataDialog {
     if (!groups || groups.length === 0) {
       return `
         <div style="padding: 36px 24px; text-align: center; color: var(--text-muted); font-size: 12px; line-height: 1.9;">
-          <div style="font-size: 30px; margin-bottom: 10px;">📂</div>
+          <div class="bd-empty-icon">${svg(ICON.folder, 32)}</div>
           아직 등록된 실습 데이터가 없습니다.<br>
           <code>public/data/builtin/practice_catalog.json</code>에<br>
           데이터 형태별 그룹과 데이터셋을 추가하면 여기에 표시됩니다.
@@ -143,9 +173,8 @@ class BuiltinDataDialog {
 
     return `
       <!-- 검색 -->
-      <div style="padding: 12px 16px; border-bottom: 1px solid var(--border-color);">
-        <input type="text" id="builtin-data-search" placeholder="데이터 검색..."
-          style="width: 100%; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-input); color: var(--text-primary); font-size: 13px;">
+      <div class="bd-search-row">
+        <input type="search" id="builtin-data-search" class="bd-search" placeholder="자료 이름으로 찾기" aria-label="실습 데이터 찾기">
       </div>
       <!-- 데이터 목록 -->
       <div id="builtin-data-list" style="overflow-y: auto; max-height: calc(82vh - 210px);">
@@ -161,7 +190,7 @@ class BuiltinDataDialog {
   _renderSectionHeader(group, count) {
     return `
       <div class="builtin-category-header" data-toggle="${group.id}">
-        <span>${group.icon || '📂'} ${group.name}</span>
+        <span class="bd-group-name">${groupIcon(group)}${group.name}</span>
         <span class="builtin-badge" style="margin-left:auto; margin-right:8px;">${count}개</span>
         <svg class="builtin-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
@@ -187,7 +216,7 @@ class BuiltinDataDialog {
         <div class="builtin-folder-header">
           <button type="button" class="builtin-folder-name" data-toggle-group="${name}">
             <svg class="builtin-folder-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            📁 ${name}
+            ${svg(ICON.folder, 14)}${name}
             <span class="builtin-badge">${items.length}</span>
           </button>
         </div>
@@ -201,7 +230,7 @@ class BuiltinDataDialog {
       <div class="builtin-category" data-category="${g.id}">
         ${this._renderSectionHeader(g, datasets.length)}
         <div class="builtin-category-body">
-          ${g.description ? `<div style="padding: 8px 16px; font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color);">${g.description}</div>` : ''}
+          ${g.description ? `<div class="bd-group-desc">${g.description}</div>` : ''}
           ${datasets.length === 0 ? '<div style="padding: 14px 16px; font-size: 12px; color: var(--text-muted); text-align: center;">아직 등록된 데이터가 없습니다.</div>' : ''}
           ${folderHTML}
           ${loose.map(d => this._renderPracticeCard(g, d)).join('')}
@@ -211,11 +240,11 @@ class BuiltinDataDialog {
   }
 
   _renderPracticeCard(g, d) {
-    const meta = PRACTICE_TYPE_META[d.type] || { icon: '📄', label: d.type };
+    const meta = PRACTICE_TYPE_META[d.type] || { icon: 'file', label: d.type };
     return `
       <div class="builtin-dataset-card" data-practice-type="${g.id}" data-id="${d.id}">
         <div class="builtin-dataset-main">
-          <div class="builtin-dataset-name">${meta.icon} ${d.name}</div>
+          <div class="builtin-dataset-name">${svg(ICON[meta.icon] || ICON.file)}${d.name}</div>
           <div class="builtin-dataset-desc">${d.description || ''}</div>
         </div>
         <div class="builtin-dataset-meta">
@@ -243,7 +272,7 @@ class BuiltinDataDialog {
           <input type="checkbox" class="builtin-folder-all" data-group="${g.name}" aria-label="${g.name} 전체 선택">
           <button type="button" class="builtin-folder-name" data-toggle-group="${g.name}">
             <svg class="builtin-folder-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            📁 ${g.name}
+            ${svg(ICON.folder, 14)}${g.name}
             <span class="builtin-badge">${g.items.length}</span>
           </button>
         </div>
@@ -268,7 +297,7 @@ class BuiltinDataDialog {
       <div class="builtin-category" data-category="raster">
         ${this._renderSectionHeader(group, totalCount)}
         <div class="builtin-category-body">
-          ${group.description ? `<div style="padding: 8px 16px; font-size: 11px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color);">${group.description}</div>` : ''}
+          ${group.description ? `<div class="bd-group-desc">${group.description}</div>` : ''}
           ${emptyMsg}
           ${totalCount > 0 ? `
             <div class="raster-toolbar">
@@ -293,9 +322,11 @@ class BuiltinDataDialog {
     return `
       <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; max-height: calc(82vh - 170px);">
         <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.7;">
-          구글 스프레드시트의 <b>공유 링크</b>를 붙여넣어 데이터를 가져옵니다.<br>
-          · 시트가 <b>"링크가 있는 모든 사용자"</b>에게 공개되어 있어야 합니다.<br>
-          · 첫 행은 머리글(컬럼명)이어야 합니다.
+          구글 스프레드시트의 <b>공유 링크</b>를 붙여 넣으면 자료를 가져와요.
+          <ul class="bd-rules">
+            <li>시트를 <b>「링크가 있는 모든 사용자」</b>에게 공개해 주세요.</li>
+            <li>첫 줄에는 열 이름(머리글)을 적어 주세요.</li>
+          </ul>
         </div>
 
         <div>
@@ -310,15 +341,15 @@ class BuiltinDataDialog {
           <label class="sheet-type-option">
             <input type="radio" name="sheet-data-type" value="attribute" ${this._lastSheetType === 'attribute' ? 'checked' : ''}>
             <div>
-              <div class="sheet-type-name">📊 속성 데이터</div>
-              <div class="sheet-type-desc">레이어에 테이블 결합 — 지역명·코드 등 키 컬럼으로 기존 레이어와 연결합니다</div>
+              <div class="sheet-type-name">${svg(ICON.table)}속성 데이터</div>
+              <div class="sheet-type-desc">지역 이름이나 코드 같은 열로 지금 있는 레이어에 붙여요(테이블 결합)</div>
             </div>
           </label>
           <label class="sheet-type-option">
             <input type="radio" name="sheet-data-type" value="coordinate" ${this._lastSheetType === 'coordinate' ? 'checked' : ''}>
             <div>
-              <div class="sheet-type-name">📍 좌표 데이터</div>
-              <div class="sheet-type-desc">위도/경도 컬럼으로 포인트 레이어를 생성합니다</div>
+              <div class="sheet-type-name">${svg(ICON.pin)}좌표 데이터</div>
+              <div class="sheet-type-desc">위도와 경도 열로 점 레이어를 만들어요</div>
             </div>
           </label>
         </div>
@@ -343,7 +374,7 @@ class BuiltinDataDialog {
     this._lastSheetType = dataType;
 
     if (!url) {
-      statusEl.innerHTML = '<span style="color: var(--danger-color, #ef4444);">스프레드시트 링크를 입력하세요.</span>';
+      statusEl.innerHTML = errLine('스프레드시트 링크를 붙여 넣어 주세요.');
       return;
     }
 
@@ -367,7 +398,7 @@ class BuiltinDataDialog {
         this._showCoordinateImport({ headers, data });
       }
     } catch (error) {
-      statusEl.innerHTML = `<span style="color: var(--danger-color, #ef4444);">✕ ${error.message}</span>`;
+      statusEl.innerHTML = errLine(error.message);
       loadBtn.disabled = false;
     }
   }
@@ -414,12 +445,12 @@ class BuiltinDataDialog {
     const modal = this.overlay.querySelector('.modal');
     modal.innerHTML = `
       <div class="modal-header">
-        <h3>📍 좌표 데이터 가져오기</h3>
+        <h3 class="bd-title">${svg(ICON.pin, 18)}좌표 데이터 가져오기</h3>
         <button class="modal-close" id="builtin-coord-close">&times;</button>
       </div>
       <div class="modal-body" style="padding: 12px 16px; overflow-y: auto;">
         <div style="margin-bottom: 12px; font-size: 12px; color: var(--text-secondary);">
-          ${data.length}행 × ${headers.length}열 | 출처: ${source}
+          ${data.length}행, ${headers.length}열. 출처: ${source}
         </div>
 
         <!-- 미리보기 테이블 -->
@@ -451,12 +482,12 @@ class BuiltinDataDialog {
               <label style="font-size: 12px; white-space: nowrap; min-width: 80px;">레이어 이름</label>
               <input type="text" id="builtin-coord-name" value="${displayName.replace(/"/g, '&quot;')}" style="${selectStyle}">
             </div>
-            <div id="builtin-coord-preview" style="font-size: 11px; color: var(--text-muted); min-height: 18px;"></div>
+            <div id="builtin-coord-preview" style="font-size: 12px; color: var(--text-muted); min-height: 18px;"></div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary btn-sm" id="builtin-coord-back">← 목록으로</button>
+        <button class="btn btn-secondary btn-sm bd-back" id="builtin-coord-back">${svg(ICON.back, 14)}목록으로</button>
         <button class="btn btn-primary btn-sm" id="builtin-coord-create" disabled>레이어 생성</button>
       </div>
     `;
@@ -501,7 +532,7 @@ class BuiltinDataDialog {
       }
     }
 
-    previewEl.innerHTML = `유효 좌표 <b>${validCount}</b>개 · 잘못된 좌표 <b>${invalidCount}</b>개`;
+    previewEl.innerHTML = `쓸 수 있는 좌표 <b>${validCount}</b>개, 잘못된 좌표 <b>${invalidCount}</b>개`;
     createBtn.disabled = validCount === 0;
   }
 
@@ -513,11 +544,11 @@ class BuiltinDataDialog {
 
     try {
       const result = tableLoader.createPointLayer(latCol, lonCol, layerName || '스프레드시트 좌표');
-      previewEl.innerHTML = `<span style="color: var(--success-color, #10b981);">✓ 레이어 생성 완료! 포인트 ${result.featureCount}개${result.skippedCount > 0 ? ` · 제외 ${result.skippedCount}행` : ''}</span>`;
+      previewEl.innerHTML = okLine(`점 ${result.featureCount}개로 레이어를 만들었어요${result.skippedCount > 0 ? `. ${result.skippedCount}줄은 좌표가 없어 뺐어요` : ''}`);
       tableLoader.clear();
       setTimeout(() => this.close(), 1200);
     } catch (error) {
-      previewEl.innerHTML = `<span style="color: var(--danger-color, #ef4444);">✕ ${error.message}</span>`;
+      previewEl.innerHTML = errLine(error.message);
     }
   }
 
@@ -555,11 +586,11 @@ class BuiltinDataDialog {
           practiceKey: `${typeId}|${datasetId}` // 패널의 실습 데이터 드롭다운이 고른 자료를 보여 주도록
         });
       } else {
-        loadingEl.innerHTML = '<span style="color: var(--success-color, #10b981);">✓ 레이어 추가 완료!</span>';
+        loadingEl.innerHTML = okLine('레이어를 추가했어요');
         setTimeout(() => this.close(), 600);
       }
     } catch (error) {
-      loadingEl.innerHTML = `<span style="color: var(--danger-color, #ef4444);">✕ ${error.message}</span>`;
+      loadingEl.innerHTML = errLine(error.message);
       mainEl.style.opacity = '1';
       metaEl.style.display = 'flex';
       setTimeout(() => {
@@ -732,10 +763,10 @@ class BuiltinDataDialog {
         success++;
         const info = layerManager.getLayer(layerId);
         if (info && info.demData) extents.push(info.demData.extent);
-        if (loadingEl) loadingEl.innerHTML = '<span style="color: var(--success-color, #10b981);">✓</span>';
+        if (loadingEl) loadingEl.innerHTML = `<span class="bd-result ok" aria-label="불러옴">${svg(ICON.check, 14)}</span>`;
       } catch (e) {
         failed++;
-        if (loadingEl) loadingEl.innerHTML = `<span style="color: var(--danger-color, #ef4444);" title="${e.message}">✕</span>`;
+        if (loadingEl) loadingEl.innerHTML = `<span class="bd-result err" title="${e.message}" aria-label="불러오지 못함">${svg(ICON.x, 14)}</span>`;
       }
     }
 
@@ -750,7 +781,7 @@ class BuiltinDataDialog {
       mapManager.fitExtent(union);
     }
 
-    loadBtn.textContent = `✓ ${success}개 완료${failed > 0 ? ` · ✕ ${failed}` : ''}`;
+    loadBtn.textContent = `${success}개 불러옴${failed > 0 ? `, ${failed}개 못 불러옴` : ''}`;
     this.loadingId = null;
     setTimeout(() => this.close(), 900);
   }
@@ -774,13 +805,13 @@ class BuiltinDataDialog {
     const modal = this.overlay.querySelector('.modal');
     modal.innerHTML = `
       <div class="modal-header">
-        <h3>📊 ${fileName}</h3>
+        <h3 class="bd-title">${svg(ICON.table, 18)}${fileName}</h3>
         <button class="modal-close" id="builtin-preview-close">&times;</button>
       </div>
       <div class="modal-body" style="padding: 12px 16px; overflow-y: auto;">
         <!-- 데이터 요약 -->
         <div style="margin-bottom: 12px; font-size: 12px; color: var(--text-secondary);">
-          ${data.length}행 × ${headers.length}열 | 출처: ${dataset.source || '-'}
+          ${data.length}행, ${headers.length}열. 출처: ${dataset.source || '-'}
         </div>
 
         <!-- 미리보기 테이블 -->
@@ -823,13 +854,13 @@ class BuiltinDataDialog {
                   ${headers.map(h => `<option value="${h}" ${h === dataset.keyColumn ? 'selected' : ''}>${h}</option>`).join('')}
                 </select>
               </div>
-              <div id="builtin-join-result" style="font-size: 11px; color: var(--text-muted); min-height: 18px;"></div>
+              <div id="builtin-join-result" style="font-size: 12px; color: var(--text-muted); min-height: 18px;"></div>
             </div>
           `}
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary btn-sm" id="builtin-preview-back">← 목록으로</button>
+        <button class="btn btn-secondary btn-sm bd-back" id="builtin-preview-back">${svg(ICON.back, 14)}목록으로</button>
         ${layers.length > 0 ? '<button class="btn btn-primary btn-sm" id="builtin-join-execute">테이블 결합</button>' : ''}
       </div>
     `;
@@ -875,7 +906,7 @@ class BuiltinDataDialog {
     const resultEl = document.getElementById('builtin-join-result');
 
     if (!layerId || !layerKey || !attrKey) {
-      resultEl.innerHTML = '<span style="color: var(--danger-color, #ef4444);">모든 필드를 선택하세요.</span>';
+      resultEl.innerHTML = errLine('레이어와 키 열을 모두 골라 주세요.');
       return;
     }
 
@@ -884,10 +915,10 @@ class BuiltinDataDialog {
 
     try {
       const result = tableJoinTool.join(layerId, layerKey, this._attrData, attrKey, joinFields);
-      resultEl.innerHTML = `<span style="color: var(--success-color, #10b981);">✓ 결합 완료! ${result.joinedCount}/${result.totalFeatures}개 매칭, ${result.fieldsAdded.length}개 필드 추가</span>`;
+      resultEl.innerHTML = okLine(`붙였어요. ${result.totalFeatures}개 가운데 ${result.joinedCount}개가 맞았고, 열 ${result.fieldsAdded.length}개를 더했어요`);
       setTimeout(() => this.close(), 1200);
     } catch (error) {
-      resultEl.innerHTML = `<span style="color: var(--danger-color, #ef4444);">✕ ${error.message}</span>`;
+      resultEl.innerHTML = errLine(error.message);
     }
   }
 

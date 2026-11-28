@@ -3,12 +3,12 @@
     "id": "point-data",
     "name": "Point Data(점)",
     "icon": "📍",
-    "description": "점(포인트) 형태의 실습 데이터 — 위경도 좌표를 포인트 레이어로 불러옵니다",
+    "description": "점(포인트) 형태의 실습 데이터, 위경도 좌표를 포인트 레이어로 불러옵니다",
     "datasets": [
       {
         "id": "seoul-welfare-facilities",
         "name": "서울 의료복지시설 현황",
-        "description": "지오코딩된 의료·복지시설 235개 지점",
+        "description": "지오코딩된 의료, 복지시설 235개 지점",
         "type": "coordinate",
         "file": "practice/Point Data/서울_의료복지시설현황.xlsx",
         "latColumn": "Latitude",
@@ -18,7 +18,7 @@
       {
         "id": "seoul-starbucks",
         "name": "서울 스타벅스 매장 목록",
-        "description": "서울 스타벅스 매장 692곳 — 매장명·도로명주소 (2026.07.)",
+        "description": "서울 스타벅스 매장 692곳, 매장명, 도로명주소 (2026.07.)",
         "type": "coordinate",
         "file": "practice/Point Data/서울_스타벅스_매장.xlsx",
         "latColumn": "Latitude",
@@ -28,7 +28,7 @@
       {
         "id": "korea-mcdonalds",
         "name": "전국 맥도날드 매장 목록",
-        "description": "전국 맥도날드 매장 404곳 — 지점명·주소·시도·구군·전화번호 (2026.07.)",
+        "description": "전국 맥도날드 매장 404곳, 지점명, 주소, 시도, 구군, 전화번호 (2026.07.)",
         "type": "coordinate",
         "file": "practice/Point Data/전국_맥도날드_매장.xlsx",
         "latColumn": "latitude",
@@ -38,7 +38,7 @@
       {
         "id": "seoul-subway-line2",
         "name": "서울 지하철 2호선 역",
-        "description": "2호선 역 51개 지점(지선 포함) — 역명(sub_nm). '2호선 8~9시 승하차'와 결합해 도형표현도로",
+        "description": "2호선 역 51개 지점(지선 포함), 역명(sub_nm). '2호선 8~9시 승하차'와 결합해 도형표현도로",
         "type": "spatial",
         "file": "practice/Point Data/서울_지하철_2호선_역.geojson",
         "source": ""
@@ -56,7 +56,7 @@
     "id": "area-data",
     "name": "Area Data(면)",
     "icon": "🟩",
-    "description": "면(폴리곤) 형태의 실습 데이터 — 행정경계는 속성정보를 결합하는 바탕이 됩니다",
+    "description": "면(폴리곤) 형태의 실습 데이터, 행정경계는 속성정보를 결합하는 바탕이 됩니다",
     "datasets": [
       {
         "id": "korea-sigungu",
@@ -70,7 +70,7 @@
       {
         "id": "korea-sido-20260701",
         "name": "대한민국 시도(2026.07.01.~)",
-        "description": "16개 시도 경계 — 전남·광주 통합 이후",
+        "description": "16개 시도 경계, 전남, 광주 통합 이후",
         "type": "spatial",
         "folder": "행정경계",
         "file": "practice/Area Data/행정경계/대한민국 시도(2026.07.01.~).geojson",
@@ -79,7 +79,7 @@
       {
         "id": "korea-sido-20260630",
         "name": "대한민국 시도(~2026.06.30.)",
-        "description": "17개 시도 경계 — 전남·광주 통합 이전",
+        "description": "17개 시도 경계, 전남, 광주 통합 이전",
         "type": "spatial",
         "folder": "행정경계",
         "file": "practice/Area Data/행정경계/대한민국 시도(~2026.06.30.).geojson",
@@ -97,7 +97,7 @@
       {
         "id": "world-countries",
         "name": "세계 국가",
-        "description": "177개 국가 경계 (인구·GDP 추정치 포함)",
+        "description": "177개 국가 경계 (인구, GDP 추정치 포함)",
         "type": "spatial",
         "folder": "행정경계",
         "file": "practice/Area Data/행정경계/세계 국가.geojson",
@@ -110,18 +110,18 @@
     "name": "Raster Data(래스터)",
     "icon": "🏔",
     "type": "raster",
-    "description": "한반도 전체(270m)와 광역자치단체별(90m) DEM GeoTIFF — 폴더를 열어 여러 개를 골라 한꺼번에 불러옵니다"
+    "description": "한반도 전체(270m)와 광역자치단체별(90m) DEM GeoTIFF, 폴더를 열어 여러 개를 골라 한꺼번에 불러옵니다"
   },
   {
     "id": "flow-data",
     "name": "Flow Data(흐름)",
     "icon": "🔀",
-    "description": "지역 간 이동량(출발·도착·양) — 주제도 › 흐름도에서 곡선으로 그립니다. 행정경계와 함께 쓰세요",
+    "description": "지역 간 이동량(출발, 도착, 양), 주제도 › 흐름도에서 곡선으로 그립니다. 행정경계와 함께 쓰세요",
     "datasets": [
       {
         "id": "sido-migration-example",
-        "name": "시도 간 인구이동 (예시 자료 · 가상 수치)",
-        "description": "16개 시도 간 이동자수 행렬 — 중력 모형으로 만든 가상 값. 실제 자료는 KOSIS 국내인구이동통계로 교체 예정",
+        "name": "시도 간 인구이동 (예시 자료, 가상 수치)",
+        "description": "16개 시도 간 이동자수 행렬, 중력 모형으로 만든 가상 값. 실제 자료는 KOSIS 국내인구이동통계로 교체 예정",
         "type": "flow",
         "file": "practice/Flow Data/시도간_인구이동_예시.xlsx",
         "source": "예시 자료"
@@ -132,12 +132,12 @@
     "id": "attribute-data",
     "name": "Attribute Data(속성정보)",
     "icon": "📊",
-    "description": "레이어에 테이블 결합으로 붙이는 속성 데이터 — Area Data의 행정경계와 함께 쓰세요",
+    "description": "레이어에 테이블 결합으로 붙이는 속성 데이터, Area Data의 행정경계와 함께 쓰세요",
     "datasets": [
       {
         "id": "seoul-elderly-ratio",
         "name": "서울 자치구별 고령인구비율",
-        "description": "자치구별 고령인구비율·총인구 (2026.06) — 서울 자치구 경계와 결합",
+        "description": "자치구별 고령인구비율, 총인구 (2026.06), 서울 자치구 경계와 결합",
         "type": "attribute",
         "file": "practice/Attribute Data/서울_자치구별_고령인구비율.csv",
         "keyColumn": "gu_nm",
@@ -146,7 +146,7 @@
       {
         "id": "korea-sido-population",
         "name": "시도별 인구",
-        "description": "17개 시도 총인구·남녀·세대수·인구밀도 — 대한민국 시도(~2026.06.30.)와 결합",
+        "description": "17개 시도 총인구, 남녀, 세대수, 인구밀도, 대한민국 시도(~2026.06.30.)와 결합",
         "type": "attribute",
         "file": "practice/Attribute Data/korea_sido_population.xlsx",
         "keyColumn": "code",
@@ -155,7 +155,7 @@
       {
         "id": "korea-sido-population-20260701",
         "name": "시도별 인구 (2026.7.1~)",
-        "description": "16개 시도 총인구·남녀·세대수·인구밀도 — 대한민국 시도(2026.07.01.~)와 결합",
+        "description": "16개 시도 총인구, 남녀, 세대수, 인구밀도, 대한민국 시도(2026.07.01.~)와 결합",
         "type": "attribute",
         "file": "practice/Attribute Data/korea_sido_population_20260701.xlsx",
         "keyColumn": "code",
@@ -164,7 +164,7 @@
       {
         "id": "korea-sido-grdp",
         "name": "시도별 GRDP",
-        "description": "17개 시도 GRDP·1인당 GRDP·성장률 — 대한민국 시도(~2026.06.30.)와 결합",
+        "description": "17개 시도 GRDP, 1인당 GRDP, 성장률, 대한민국 시도(~2026.06.30.)와 결합",
         "type": "attribute",
         "file": "practice/Attribute Data/korea_sido_grdp.xlsx",
         "keyColumn": "code",
@@ -173,7 +173,7 @@
       {
         "id": "korea-sido-grdp-20260701",
         "name": "시도별 GRDP (2026.7.1~)",
-        "description": "16개 시도 GRDP·1인당 GRDP·성장률 — 대한민국 시도(2026.07.01.~)와 결합",
+        "description": "16개 시도 GRDP, 1인당 GRDP, 성장률, 대한민국 시도(2026.07.01.~)와 결합",
         "type": "attribute",
         "file": "practice/Attribute Data/korea_sido_grdp_20260701.xlsx",
         "keyColumn": "code",
@@ -182,7 +182,7 @@
       {
         "id": "seoul-subway-line2-rush",
         "name": "2호선 8~9시 승하차",
-        "description": "역별 8~9시 승차·하차 인원(49역) — '서울 지하철 2호선 역'과 결합 (sub_nm ↔ stn_nm)",
+        "description": "역별 8~9시 승차, 하차 인원(49역), '서울 지하철 2호선 역'과 결합 (sub_nm ↔ stn_nm)",
         "type": "attribute",
         "file": "practice/Attribute Data/서울_지하철_2호선_8-9시_승하차.csv",
         "keyColumn": "stn_nm",

@@ -129,7 +129,7 @@ function renderDetail(entry) {
   return `
     <div class="public-data-detail">
       <div class="public-data-detail-head">
-        <button class="public-data-back" data-pubdata-back>← 목록</button>
+        <button class="public-data-back" data-pubdata-back><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>목록</button>
         <span class="public-data-item-name">${entry.name}</span>
       </div>
       <div class="public-data-form" data-pubdata-form>${renderParamForm(entry)}</div>

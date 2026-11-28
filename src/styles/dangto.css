@@ -505,7 +505,6 @@ input[type="radio"] {
 [data-theme="dark"] .egis-basemap > button.active,
 [data-theme="dark"] .egis-basemap-panel .egis-basemap-option.active,
 [data-theme="dark"] .choropleth-footer .btn-primary,
-[data-theme="dark"] .builtin-category.open > .builtin-category-header .builtin-badge,
 [data-theme="dark"] .helper-buttons button:hover,
 [data-theme="dark"] .swap-btn:hover,
 [data-theme="dark"] .geo-type-btn.active,
@@ -535,4 +534,290 @@ input[type="radio"] {
 [data-theme="dark"] .multi-select-btn.danger:hover,
 [data-theme="dark"] .multi-select-btn.danger:focus-visible {
   color: #ffffff;
+}
+
+/* ===== 데이터 불러오기 창 (이모지 대신 선 아이콘, 촘촘 밀도) ===== */
+.bd-icon {
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: -3px;
+}
+
+.bd-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bd-title .bd-icon {
+  color: var(--text-muted);
+}
+
+#builtin-data-overlay .builtin-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 13px;
+}
+
+#builtin-data-overlay .builtin-tab:hover {
+  background: none;
+}
+
+.bd-search-row {
+  padding: 12px 16px 8px;
+}
+
+.bd-search {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.bd-search:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+@media (pointer: coarse), (max-width: 743px) {
+  .bd-search { height: 44px; font-size: 16px; }
+}
+
+/* 큰 묶음: 바탕은 차분하게, 펼친 묶음만 왼쪽 일자 막대와 주색 글자 */
+.builtin-category {
+  border-bottom: 0;
+}
+
+.builtin-category + .builtin-category {
+  border-top: 1px solid var(--border-color);
+}
+
+.builtin-category-header {
+  min-height: 44px;
+  padding: 0 16px;
+  gap: 8px;
+  font-size: 14px;
+  background: var(--bg-panel);
+}
+
+.builtin-category-header:hover {
+  background: var(--bg-hover);
+}
+
+.builtin-category.open > .builtin-category-header {
+  background: var(--bg-panel);
+  color: var(--color-primary);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.bd-group-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bd-group-name .bd-icon {
+  color: var(--text-muted);
+}
+
+.builtin-category.open .bd-group-name .bd-icon {
+  color: var(--color-primary);
+}
+
+.builtin-badge,
+.builtin-category.open > .builtin-category-header .builtin-badge {
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 500;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.bd-group-desc {
+  padding: 4px 16px 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* 자료 한 줄: 선 없이 여백으로 나누고 줄 전체가 눌린다 */
+.builtin-dataset-card {
+  padding: 10px 16px;
+  border-bottom: 0;
+}
+
+.builtin-dataset-name {
+  gap: 8px;
+  font-size: 14px;
+}
+
+.builtin-dataset-name .bd-icon {
+  color: var(--text-muted);
+}
+
+.builtin-dataset-desc {
+  margin-top: 2px;
+  padding-left: 24px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.builtin-dataset-meta,
+.builtin-dataset-loading {
+  padding-left: 24px;
+}
+
+.builtin-folder {
+  border-bottom: 0;
+}
+
+.builtin-folder-header {
+  min-height: 40px;
+  padding: 0 16px;
+  background: none;
+}
+
+.builtin-folder-header:hover {
+  background: var(--bg-hover);
+}
+
+.builtin-folder-name {
+  gap: 8px;
+  min-height: 40px;
+  font-size: 13px;
+}
+
+.builtin-folder-name .bd-icon {
+  color: var(--text-muted);
+}
+
+.builtin-folder-body > .builtin-dataset-card {
+  padding-left: 36px;
+}
+
+.raster-toolbar {
+  padding: 8px 16px;
+  border-bottom: 0;
+  background: var(--bg-panel);
+}
+
+.raster-card {
+  padding: 8px 16px 8px 40px;
+  border-top: 0;
+}
+
+.raster-card-name {
+  font-size: 13px;
+}
+
+.raster-card-desc,
+.raster-card-loading {
+  font-size: 12px;
+}
+
+/* 스프레드시트 탭 */
+.bd-rules {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.sheet-type-option {
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 8px;
+}
+
+.sheet-type-option:has(input:checked) {
+  background: var(--color-primary-light);
+}
+
+.sheet-type-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.sheet-type-name .bd-icon {
+  color: var(--text-muted);
+}
+
+.sheet-type-desc {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#sheet-url-input {
+  height: 36px;
+  border-color: var(--border-color-strong) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 13px !important;
+}
+
+/* 결과 한 줄: 기호 대신 아이콘, 성공은 초록, 실패는 빨강 */
+.bd-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.bd-result.ok {
+  color: var(--color-accent);
+}
+
+.bd-result.err {
+  color: var(--color-danger);
+}
+
+.bd-back,
+.public-data-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bd-empty-icon {
+  margin-bottom: 8px;
+  color: var(--text-disabled);
+}
+
+.bd-footer {
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.public-data-notice,
+.public-data-item-desc,
+.public-data-back {
+  font-size: 12px;
+}
+
+.public-data-item {
+  border-bottom: 0;
+}
+
+.public-data-item-name {
+  font-size: 14px;
+}
+
+/* 다크: 밝은 주색 버튼 위 글자는 어둡게 */
+[data-theme="dark"] #builtin-data-overlay .btn-primary {
+  color: var(--text-inverse);
 }
